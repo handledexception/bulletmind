@@ -1,9 +1,9 @@
+#include "bitwise.h"
+#include "command.h"
 #include "input.h"
 #include <stdio.h>
 #include <string.h>
 #include <SDL.h>
-
-#include "bitwise.h"
 
 #define MAX_KEYS 512
 
@@ -16,20 +16,16 @@ static key_t *g_array_keys = NULL;
 size_t sz_arraykeys = sizeof(key_t) * MAX_KEYS;
 
 void in_init()
-{
-	array_cmds = (uint32_t *)malloc(sizeof(uint32_t));
-	memset(array_cmds, 0, sizeof(uint32_t));
-	*array_cmds = 0;
-	
+{	
 	g_array_keys = (key_t *)malloc(sz_arraykeys);
 	if (g_array_keys) {	memset(g_array_keys, 0, sz_arraykeys); }
-	printf("in_init OK\n");
 	
 	in_setkeybind(SDL_SCANCODE_ESCAPE, CMD_QUIT);
 	in_setkeybind(SDL_SCANCODE_W, CMD_PLAYER_UP);
 	in_setkeybind(SDL_SCANCODE_S, CMD_PLAYER_DOWN);
 	in_setkeybind(SDL_SCANCODE_A, CMD_PLAYER_LEFT);
 	in_setkeybind(SDL_SCANCODE_D, CMD_PLAYER_RIGHT);
+	printf("in_init OK\n");
 }
 
 uint32_t in_refresh()
@@ -57,8 +53,8 @@ void in_setkeystate(uint16_t key, uint8_t state)
 		printf("[key:state:cmd] %d : %d : %d\n", key, state, cmd);
 		
 		//cmd_exec(cmd);
-		if (cmd > 0) { bit_set_uint32(array_cmds, cmd); printf("+cmd\n"); } else
-		if (cmd < 0) { bit_clear_uint32(array_cmds, abs(cmd)); printf("-cmd\n"); }
+		if (cmd > 0) { bit_set_uint32(g_array_cmds, cmd); printf("+cmd\n"); } else
+		if (cmd < 0) { bit_clear_uint32(g_array_cmds, abs(cmd)); printf("-cmd\n"); }
 	}
 }
 
@@ -72,11 +68,10 @@ uint8_t	in_getkeystate(uint16_t key)
 	return state;
 }
 
+// todo: print key names and commands to log
 void in_setkeybind(uint16_t key, int32_t cmd)
 {
 	if (g_array_keys) {
-		g_array_keys[key].cmd = cmd;
-		//g_array_keys[key].cmds[0] = -cmd;
-		//g_array_keys[key].cmds[1] = cmd;
+		g_array_keys[key].cmd = cmd;		
 	}
 }

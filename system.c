@@ -1,5 +1,8 @@
+#include "command.h"
+#include "main.h"
 #include "input.h"
 #include "system.h"
+#include "timing.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,8 +11,10 @@
 SDL_Window *sys_window = 0;
 SDL_Renderer *sys_renderer = 0;
 
-uint8_t sys_init()
+uint8_t sys_init(engine_t *eng)
 {	
+	timing_init(&eng->timing);
+
 	SDL_Init(SDL_INIT_EVERYTHING);
 	sys_window = SDL_CreateWindow
 	(
@@ -30,9 +35,10 @@ uint8_t sys_init()
 		printf("sys_renderer: %s\n", SDL_GetError());
 		return -1;
 	}
-	printf("sys_init OK\n");
-	in_init();	
+	in_init();
+	cmd_init();	
 	
+	printf("sys_init OK [%fms]\n", timing_interval_ms(&eng->timing));
 	return 0;
 }
 
@@ -52,8 +58,9 @@ void sys_refresh()
 	}
 }
 
-void sys_shutdown()
+void sys_shutdown(engine_t *eng)
 {
+	cmd_shutdown();
 	in_shutdown();
 	
 	SDL_DestroyWindow(sys_window);
