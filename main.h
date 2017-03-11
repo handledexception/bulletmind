@@ -3,6 +3,7 @@
 
 #include "timing.h"
 #include <stdio.h>
+#include <SDL.h>
 
 #define TARGET_FPS 60
 #define TARGET_FRAMETIME(f) 1/(f)
@@ -14,6 +15,8 @@ typedef enum {
 } engine_state_t;
 
 struct _engine_s {
+	SDL_Window *window;
+	SDL_Renderer *renderer;
 	engine_state_t state;
 	timing_t timing;
 };

@@ -3,11 +3,11 @@
 
 #include <math.h>
 
-typedef struct {
+typedef union {
 	float x, y;
 } vec2f;
 
-typedef struct {
+typedef union {
 	float x, y, z;
 } vec3f;
 
@@ -43,16 +43,16 @@ float vec2f_sqrlen(vec2f *a)
 // return the length of vector
 float vec2f_length(vec2f *a)
 {
-	return sqrt(vec2f_sqrlen(a));
+	return sqrtf(vec2f_sqrlen(a));
 }
 
 // produce a unit vector
 float vec2f_norm(vec2f *a)
 {
 	float length = 1.0f / vec2f_sqrlen(a);
-	a->x *= len;
-	a->y *= len;
-	return len;
+	a->x *= length;
+	a->y *= length;
+	return length;
 }
 
 // return the dot product of vectors a and b

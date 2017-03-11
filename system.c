@@ -8,30 +8,29 @@
 #include <stdlib.h>
 #include <SDL.h>
 
-SDL_Window *sys_window = 0;
-SDL_Renderer *sys_renderer = 0;
+
 
 uint8_t sys_init(engine_t *eng)
 {	
 	timing_init(&eng->timing);
 
 	SDL_Init(SDL_INIT_EVERYTHING);
-	sys_window = SDL_CreateWindow
+	eng->window = SDL_CreateWindow
 	(
 		"SDLGame", 
 		SDL_WINDOWPOS_CENTERED, 
 		SDL_WINDOWPOS_CENTERED,
-		960, 540,
+		WINDOW_WIDTH, WINDOW_HEIGHT,
 		SDL_WINDOW_SHOWN
 	);
 	
-	if(!sys_window) {
+	if(!eng->window) {
 		printf("sys_window: %s\n", SDL_GetError());
 		return -1;
 	}
 	
-	sys_renderer = SDL_CreateRenderer(sys_window, -1, SDL_RENDERER_ACCELERATED);
-	if (!sys_renderer) {
+	eng->renderer = SDL_CreateRenderer(eng->window, -1, SDL_RENDERER_ACCELERATED);
+	if (!eng->renderer) {
 		printf("sys_renderer: %s\n", SDL_GetError());
 		return -1;
 	}
@@ -63,9 +62,9 @@ void sys_shutdown(engine_t *eng)
 	cmd_shutdown();
 	in_shutdown();
 	
-	SDL_DestroyWindow(sys_window);
-	SDL_DestroyRenderer(sys_renderer);
-	sys_window = NULL;
-	sys_renderer = NULL;
+	SDL_DestroyRenderer(eng->renderer);
+	SDL_DestroyWindow(eng->window);
+	eng->renderer = NULL;
+	eng->window = NULL;
 	SDL_Quit();
 }
