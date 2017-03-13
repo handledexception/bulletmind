@@ -1,6 +1,8 @@
 #ifndef H_TIMING
 #define H_TIMING
 
+#include "c99defs.h"
+
 typedef struct {
 	double original;
 	double start;
@@ -10,14 +12,7 @@ typedef struct {
 	double micro;
 } timing_t;
 
-void timing_init(timing_t *timing);
-
-/* 
-these functions return the time elapsed since the last call
-or since the first call to timing_init
-*/
-double timing_interval_ms(timing_t *timing);
-double timing_interval_sec(timing_t *timing);
-double timing_interval_micro(timing_t *timing);
+double timing_getmillisec(void);
+uint64_t timing_getnanosec(void);
 
 #endif

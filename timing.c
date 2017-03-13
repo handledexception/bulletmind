@@ -1,55 +1,36 @@
 #include "timing.h"
-
 #include <Windows.h>
 
-void timing_init(timing_t *timing)
+static LARGE_INTEGER clock_freq;
+
+static inline uint64_t get_clock_freq(void)
 {
-	if (timing != NULL) {
-		LARGE_INTEGER qpf, qpc;
-
-		QueryPerformanceFrequency(&qpf);
-		timing->freq = (double)qpf.QuadPart;
-
-		QueryPerformanceCounter(&qpc);		
-		timing->original = timing->start = (double)qpc.QuadPart;
-		timing->milli = 0.0;
-		timing->sec = 0.0;
-		timing->micro = 0.0;
-	}
+	QueryPerformanceFrequency(&clock_freq);
+	return clock_freq.QuadPart;
 }
 
-double timing_interval_ms(timing_t *timing)
+double timing_getmillisec(void)
 {
-	double msec = 0.0;
-	if (timing != NULL) {
-		LARGE_INTEGER qpc;
-		QueryPerformanceCounter(&qpc);		
-		msec = (qpc.QuadPart - timing->start) / (timing->freq / 1000.0);
-		timing->start = (double)qpc.QuadPart;
-	}
-	return msec;
+	LARGE_INTEGER current_time;
+	long long time_val;
+
+	QueryPerformanceCounter(&current_time);
+	time_val = current_time.QuadPart;
+	time_val *= 1000LL;
+	time_val /= get_clock_freq();
+
+	return (double)time_val;
 }
 
-double timing_interval_sec(timing_t *timing)
+uint64_t timing_getnanosec(void)
 {
-	double sec = 0.0;
-	if (timing != NULL) {
-		LARGE_INTEGER qpc;
-		QueryPerformanceCounter(&qpc);
-		sec = (qpc.QuadPart - timing->start) / (timing->freq);
-		timing->start = (double)qpc.QuadPart;
-	}
-	return sec;
-}
+	LARGE_INTEGER current_time;
+	double time_val;
 
-double timing_interval_micro(timing_t *timing)
-{
-	double micro = 0.0;	
-	if (timing != NULL) {
-		LARGE_INTEGER qpc;
-		QueryPerformanceCounter(&qpc);
-		micro = (qpc.QuadPart - timing->start) / (timing->freq / 1000000.0);
-		timing->start = (double)qpc.QuadPart;
-	}	
-	return micro;
+	QueryPerformanceCounter(&current_time);
+	time_val = (double)current_time.QuadPart;
+	time_val *= 1000000000.0;
+	time_val /= (double)get_clock_freq();
+
+	return (uint64_t)time_val;
 }

@@ -12,7 +12,7 @@
 
 uint8_t sys_init(engine_t *eng)
 {	
-	timing_init(&eng->timing);
+	double init_start = timing_getmillisec();
 
 	SDL_Init(SDL_INIT_EVERYTHING);
 	eng->window = SDL_CreateWindow
@@ -37,7 +37,7 @@ uint8_t sys_init(engine_t *eng)
 	in_init();
 	cmd_init();	
 	
-	printf("sys_init OK [%fms]\n", timing_interval_ms(&eng->timing));
+	printf("sys_init OK [%fms]\n", timing_getmillisec() - init_start);
 	return 0;
 }
 

@@ -6,7 +6,7 @@
 #include <SDL.h>
 
 #define TARGET_FPS 60
-#define TARGET_FRAMETIME(f) 1/(f)
+#define TARGET_FRAMETIME(f) 1/(f) * 1000
 
 typedef enum {
 	ES_STARTUP,
@@ -23,9 +23,8 @@ struct _engine_s {
 
 typedef struct _engine_s engine_t;
 
-inline void engine_lockfps(engine_t *e, double fps)
-{	
-	double frame_time = timing_interval_ms(&e->timing);
+inline void engine_lockfps(double frame_time, double fps)
+{		
 	if (frame_time < (double)TARGET_FRAMETIME(fps)) {
 		while (frame_time < (double)TARGET_FRAMETIME(fps)) {
 			frame_time += 0.0001;

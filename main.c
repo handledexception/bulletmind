@@ -8,8 +8,10 @@
 #include "input.h"
 #include "main.h"
 #include "system.h"
+#include "timing.h"
 #include "vector.h"
 #include <stdio.h>
+
 
 void drawrect_centered(SDL_Renderer *rend, int32_t x, int32_t y, int32_t w, int32_t h, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {		
@@ -49,7 +51,8 @@ int main(int argc, char *argv[])
 	sys_init(engine);		
 	// main loop
 	engine->state = ES_PLAY;	
-	while(engine->state != ES_QUIT) {		
+	while(engine->state != ES_QUIT) {
+		double frame_start = timing_getmillisec();
 		switch(engine->state) {
 			case ES_STARTUP:
 				break;
@@ -66,8 +69,9 @@ int main(int argc, char *argv[])
 			case ES_QUIT:
 				break;
 		}
-		SDL_RenderPresent(engine->renderer);
-		engine_lockfps(engine, TARGET_FPS);
+		double frame_time = timing_getmillisec() - frame_start;
+		engine_lockfps(frame_time, TARGET_FPS);
+		SDL_RenderPresent(engine->renderer);	
 	}
 	sys_shutdown(engine);	
 	free(engine);
