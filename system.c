@@ -1,14 +1,13 @@
-#include "command.h"
 #include "main.h"
-#include "input.h"
 #include "system.h"
-#include "timing.h"
+#include "input.h"
+#include "command.h"
+#include "entity.h"
+//#include "timing.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL.h>
-
-
 
 uint8_t sys_init(engine_t *eng)
 {	
@@ -35,8 +34,8 @@ uint8_t sys_init(engine_t *eng)
 		return -1;
 	}
 	in_init();
-	cmd_init();	
-	
+	cmd_init();
+	//ent_init();
 	printf("sys_init OK [%fms]\n", timing_getmillisec() - init_start);
 	return 0;
 }

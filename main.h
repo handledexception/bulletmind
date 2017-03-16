@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <SDL.h>
 
+#define ARRAY_SIZE(x) sizeof(x) / sizeof(x[0])
 #define TARGET_FPS 60
 #define TARGET_FRAMETIME(f) 1/(f) * 1000
 
@@ -30,7 +31,7 @@ inline void engine_lockfps(double frame_time, double fps)
 			frame_time += 0.0001;
 		}
 	}
-	printf("frame time: %fms\n", frame_time);
+	/*printf("frame time: %fms\n", frame_time);*/
 }
 
 #endif

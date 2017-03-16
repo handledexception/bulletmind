@@ -3,7 +3,7 @@
 
 #include "c99defs.h"
 
-uint32_t *g_array_cmds;
+uint32_t *array_cmds;
 
 void cmd_init();
 bool cmd_getstate(uint32_t cmd);

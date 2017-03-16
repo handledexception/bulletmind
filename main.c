@@ -10,37 +10,23 @@
 #include "system.h"
 #include "timing.h"
 #include "vector.h"
-#include <stdio.h>
 
+#include <stdio.h>
+#include <string.h>
 
 void drawrect_centered(SDL_Renderer *rend, int32_t x, int32_t y, int32_t w, int32_t h, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {		
-	SDL_Rect rec = { 
+	recti32_t rec = { 
 		x - (w / 2), 
 		y - (w / 2), 
-		w, h 
+		w, h
 	};
-	SDL_SetRenderDrawColor(rend, r, g, b, a);	
-	SDL_RenderFillRect(rend, &rec);
+
+	SDL_SetRenderDrawColor(rend, r, g, b, a);
+	SDL_RenderFillRect(rend, (const SDL_Rect *)&rec);
 }
 
-#define MAX_ENTITY_CAPS 64
 
-typedef enum {
-	MOVER,
-	SHOOTER,
-	DESTROYABLE,
-	COLLIDER,
-	PLAYSOUND	
-} entity_caps;
-
-typedef struct {
-	int32_t index;
-	vec2f pos;
-	vec2f heading;
-	SDL_Rect rect;
-	entity_caps caps[MAX_ENTITY_CAPS];
-} entity_t;
 
 int main(int argc, char *argv[])
 {	
