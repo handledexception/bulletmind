@@ -18,13 +18,14 @@ size_t sz_arraykeys = sizeof(key_t) * MAX_KEYS;
 void in_init()
 {	
 	array_keys = (key_t *)malloc(sz_arraykeys);
-	if (array_keys != NULL) {	memset(array_keys, 0, sz_arraykeys); }
+	if (array_keys != NULL) {memset(array_keys, 0, sz_arraykeys); }
 	
 	in_setkeybind(SDL_SCANCODE_ESCAPE, CMD_QUIT);
 	in_setkeybind(SDL_SCANCODE_W, CMD_PLAYER_UP);
 	in_setkeybind(SDL_SCANCODE_S, CMD_PLAYER_DOWN);
 	in_setkeybind(SDL_SCANCODE_A, CMD_PLAYER_LEFT);
 	in_setkeybind(SDL_SCANCODE_D, CMD_PLAYER_RIGHT);
+	in_setkeybind(SDL_SCANCODE_X, 0x7f);
 	printf("in_init OK\n");
 }
 
@@ -69,9 +70,23 @@ uint8_t	in_getkeystate(uint16_t key)
 }
 
 // todo: print key names and commands to log
-void in_setkeybind(uint16_t key, int32_t cmd)
+bool in_setkeybind(uint16_t key, int32_t cmd)
 {
+	bool foundcmd = false;	
+	for (uint32_t i = 0; i < COMMAND_COUNT; i++) {
+		if (COMMAND_LIST[i] == cmd) { 
+			foundcmd = true;
+		}
+	}
+	if (!foundcmd) {
+		
+		printf("in_setkeybind - error binding key %s, unknown command: %d!\n", SDL_GetScancodeName(key), cmd);
+		return false;
+	} 
+	
 	if (array_keys) {
 		array_keys[key].cmd = cmd;		
 	}
+	
+	return true;
 }

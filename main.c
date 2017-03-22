@@ -26,8 +26,6 @@ void drawrect_centered(SDL_Renderer *rend, int32_t x, int32_t y, int32_t w, int3
 	SDL_RenderFillRect(rend, (const SDL_Rect *)&rec);
 }
 
-
-
 int main(int argc, char *argv[])
 {	
 	engine_t *engine = (engine_t *)malloc(sizeof(engine_t));

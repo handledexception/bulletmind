@@ -10,6 +10,6 @@ void		in_shutdown();
 
 void 		in_setkeystate(uint16_t key, uint8_t state);
 uint8_t 	in_getkeystate(uint16_t key);
-void		in_setkeybind(uint16_t key, int32_t cmd);
+bool		in_setkeybind(uint16_t key, int32_t cmd);
 
 #endif
