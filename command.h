@@ -9,8 +9,6 @@ void cmd_init();
 bool cmd_getstate(uint32_t cmd);
 void cmd_shutdown();
 
-#define MAX_COMMANDS 256
-
 #define COMMAND_VALS \
 	CMD (CMD_PLAYER_UP, 			0x01, "Player Move Up") \
 	CMD (CMD_PLAYER_DOWN, 			0x02, "Player Move Down") \

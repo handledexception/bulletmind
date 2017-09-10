@@ -29,7 +29,7 @@ entity_t *ent_new(int32_t id, entity_caps cap, vec2f_t pos, vec2f_t dir, float a
 	entity_t *e = (entity_t *)malloc(sizeof(entity_t));
 	if (e != NULL) {
 		e->id = id;
-		e->caps |= cap;
+		e->caps |= 1 << cap;
 		e->pos = pos;
 		e->dir = dir;
 		e->angle = ang;

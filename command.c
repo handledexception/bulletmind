@@ -12,8 +12,7 @@ void cmd_init() {
 
 bool cmd_getstate(uint32_t cmd)
 {
-	bool triggeredcmd = (bit_check_uint32(*array_cmds, cmd) > 0) ? true : false;
-
+	bool triggeredcmd = (bit_check_uint32(*array_cmds, cmd) > 0) ? true : false;	
 	return triggeredcmd;
 }
 

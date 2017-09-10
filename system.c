@@ -33,7 +33,7 @@ uint8_t sys_init(engine_t *eng)
 		printf("sys_renderer: %s\n", SDL_GetError());
 		return -1;
 	}
-	
+
 	in_init();
 	cmd_init();
 	//ent_init();
@@ -53,8 +53,22 @@ void sys_refresh()
 			case SDL_KEYUP:
 				in_setkeystate(e.key.keysym.scancode, e.key.state);
 				break;
+			case SDL_MOUSEBUTTONDOWN:
+				//printf("%d\n", SDL_BUTTON(e.button.button));
+				in_setmousebuttonstate((e.button.button), e.button.state);
+				break;
+			case SDL_MOUSEBUTTONUP:
+				in_setmousebuttonstate((e.button.button), e.button.state);
+				break;			
 		}		
 	}
+	
+	if (cmd_getstate(CMD_PLAYER_UP) == true) { printf("sys_refresh - CMD_PLAYER_UP triggered!\n"); }
+	if (cmd_getstate(CMD_PLAYER_DOWN) == true) { printf("sys_refresh - CMD_PLAYER_DOWN triggered!\n"); }
+	if (cmd_getstate(CMD_PLAYER_LEFT) == true) { printf("sys_refresh - CMD_PLAYER_LEFT triggered!\n"); }
+	if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { printf("sys_refresh - CMD_PLAYER_RIGHT triggered!\n"); }
+	if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_PRIMARY_FIRE triggered!\n"); }
+	if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }
 }
 
 void sys_shutdown(engine_t *eng)
