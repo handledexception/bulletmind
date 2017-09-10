@@ -32,6 +32,12 @@ static const uint32_t COMMAND_LIST[] = {
 };
 #undef CMD
 
+#define CMD(c1, c2, c3) c3,
+static const char *COMMAND_NAMES[] = {
+	COMMAND_VALS
+};
+#undef CMD
+
 static volatile const uint32_t COMMAND_COUNT = sizeof(COMMAND_LIST);
 
 #endif

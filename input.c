@@ -72,20 +72,24 @@ uint8_t	in_getkeystate(uint16_t key)
 // todo: print key names and commands to log
 bool in_setkeybind(uint16_t key, int32_t cmd)
 {
-	bool foundcmd = false;	
+	bool found_cmd = false;
+	const char *cmd_name = NULL;
+
 	for (uint32_t i = 0; i < COMMAND_COUNT; i++) {
-		if (COMMAND_LIST[i] == cmd) { 
-			foundcmd = true;
+		if (COMMAND_LIST[i] == cmd) {
+			cmd_name = COMMAND_NAMES[i];
+			found_cmd = true;
 		}
 	}
-	if (!foundcmd) {
-		
-		printf("in_setkeybind - error binding key %s, unknown command: %d!\n", SDL_GetScancodeName(key), cmd);
+
+	if (!found_cmd) {		
+		printf("in_setkeybind - error binding Key \"%s\", unknown Command ID \"%d\"!\n", SDL_GetScancodeName(key), cmd);
 		return false;
 	} 
 	
 	if (array_keys) {
-		array_keys[key].cmd = cmd;		
+		array_keys[key].cmd = cmd;
+		printf("in_setkeybind - successfully bound Key \"%s\" to Command \"%s\"\n", SDL_GetScancodeName(key), cmd_name);
 	}
 	
 	return true;

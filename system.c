@@ -33,6 +33,7 @@ uint8_t sys_init(engine_t *eng)
 		printf("sys_renderer: %s\n", SDL_GetError());
 		return -1;
 	}
+	
 	in_init();
 	cmd_init();
 	//ent_init();

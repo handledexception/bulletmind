@@ -33,7 +33,8 @@ int main(int argc, char *argv[])
 
 	engine->state = ES_STARTUP;
 	sys_init(engine);		
-	// main loop
+	
+	// main loop	
 	engine->state = ES_PLAY;	
 	while(engine->state != ES_QUIT) {
 		double frame_start = timing_getmillisec();
