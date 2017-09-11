@@ -71,8 +71,10 @@ void in_setkeystate(uint16_t key, uint8_t state)
 		}
 				
 		int32_t cmd = (array_keys[key].state > 0) ? array_keys[key].cmd : -array_keys[key].cmd;
-		if (cmd > 0) { bit_set_uint32(array_cmds, cmd); /* printf("in_setkeystate - +cmd\n"); */ } else
-		if (cmd < 0) { bit_clear_uint32(array_cmds, abs(cmd)); /* printf("in_setkeystate - -cmd\n");*/ }
+		//if (cmd > 0) { bit_set_uint32(array_cmds, cmd); /* printf("in_setkeystate - +cmd\n"); */ } else
+		//if (cmd < 0) { bit_clear_uint32(array_cmds, abs(cmd)); /* printf("in_setkeystate - -cmd\n");*/ }
+		if (cmd > 0) { *array_cmds |= cmd; }
+		if (cmd < 0) { *array_cmds &= ~cmd; }
 		//printf("in_setkeystate - [key:state:cmd] %d : %d : %d\n", key, state, cmd);		
 	}
 }
@@ -146,8 +148,10 @@ void in_setmousebuttonstate(uint8_t button, uint8_t state)
 	}
 
 	int32_t cmd = (array_mbuttons[button].state > 0) ? array_mbuttons[button].cmd : -array_mbuttons[button].cmd;
-	if (cmd > 0) { bit_set_uint32(array_cmds, cmd); /* printf("in_setkeystate - +cmd\n"); */ } else
-	if (cmd < 0) { bit_clear_uint32(array_cmds, abs(cmd)); /* printf("in_setkeystate - -cmd\n");*/ }
+	if (cmd > 0) { *array_cmds |= cmd; }
+	if (cmd < 0) { *array_cmds &= ~cmd; }
+	//if (cmd > 0) { bit_set_uint32(array_cmds, cmd); /* printf("in_setkeystate - +cmd\n"); */ } else
+	//if (cmd < 0) { bit_clear_uint32(array_cmds, abs(cmd)); /* printf("in_setkeystate - -cmd\n");*/ }
 	//printf("in_setmousebuttonstate - [button:state:cmd] %d : %d : %d\n", button, state, cmd);
 
 }

@@ -5,6 +5,7 @@
 
 #include "bitwise.h"
 #include "command.h"
+#include "entity.h"
 #include "input.h"
 #include "main.h"
 #include "system.h"
@@ -28,6 +29,10 @@ void drawrect_centered(SDL_Renderer *rend, int32_t x, int32_t y, int32_t w, int3
 
 int main(int argc, char *argv[])
 {	
+	int32_t caps = 0;
+	caps = MOVER | COLLIDER;
+	printf("caps = %d\n", caps);
+
 	engine_t *engine = (engine_t *)malloc(sizeof(engine_t));
 	if (engine == NULL) { return -1; }	
 

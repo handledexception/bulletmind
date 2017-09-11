@@ -8,17 +8,17 @@
 #define MAX_ENTITY_CAPS 64
 
 typedef enum {
-	MOVER = 0x01,
-	SHOOTER = 0x02,
-	DESTROYABLE = 0x03,
-	COLLIDER = 0x04,
-	PLAYSOUND = 0x05
+	MOVER = 4,
+	SHOOTER = 16,
+	DESTROYABLE = 32,
+	COLLIDER = 64,
+	PLAYSOUND = 256
 } entity_caps;
 
 typedef struct {
 	int32_t id;
 	char name[256];
-	entity_caps caps;
+	int32_t caps;
 	
 	vec2f_t pos;
 
