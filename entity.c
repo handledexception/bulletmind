@@ -1,42 +1,55 @@
 #include "entity.h"
+#include "main.h"
 #include "timing.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-/*
-int arry[5] = { 2, 4, 6, 8, 10 };
-memset(&arry, 0, sizeof(int) * 5);
-arry[0] = 1;
-size_t szarray = ARRAY_SIZE(arry);
-for (int i = 0; i < szarray; i++) {
-if (arry[i] == 0) {
-arry[i] = 2;
-break;
-}
-}
-*/
 
 void ent_init()
 {
 	array_ents = (entity_t *)malloc(sz_arrayents);
-	if (array_ents != NULL) { memset(array_ents, 0, sz_arrayents); }	
+	if (array_ents != NULL) { memset(array_ents, 0, sz_arrayents); }
+	for (int32_t i = 0; i < MAX_ENTITIES; i++) {
+		array_ents[i].caps = NULL_BITFIELD;
+	}
+	printf("ent_init OK\n");
+
+	ent_spawn(PLAYER | MOVER | SHOOTER | COLLIDER);
 }
 
-entity_t *ent_new(int32_t id, entity_caps cap, vec2f_t pos, vec2f_t dir, float ang, rectf_t bbox)
+int32_t ent_new()
 {
-	entity_t *e = (entity_t *)malloc(sizeof(entity_t));
-	if (e != NULL) {
-		e->id = id;
-		e->caps |= cap;
-		e->pos = pos;
-		e->dir = dir;
-		e->angle = ang;
-		e->bbox = bbox;
-		e->time_created = timing_getmillisec();
-	}
-	return e;
+	static int32_t ent = 0;
+	int32_t start = ent;
+	entity_t *e = NULL;
+
+	do {
+		ent = (ent + 1) & MASK_ENTITIES;
+		if (ent == start) {
+			printf("ent_new overflow!\n");
+			return NULL_BITFIELD;
+		}
+	} while (array_ents[ent].caps != NULL_BITFIELD);
+
+	e = &array_ents[ent];
+	memset(e, 0, sizeof(entity_t));
+	
+	printf("ent_new with index %d\n", ent);
+
+	return ent;
+}
+
+int32_t ent_spawn(entity_caps caps)
+{
+	int ent = ent_new();
+	if (ent == NULL_BITFIELD) { return NULL_BITFIELD; }
+	
+	entity_t *e = &array_ents[ent];
+	e->caps |= caps;
+
+	printf("ent_spawn with caps %d\n", caps);
 }
 
 void ent_delete(entity_t *e)
@@ -47,15 +60,18 @@ void ent_delete(entity_t *e)
 	}
 }
 
-void ent_setpos(int32_t id, vec2f_t pos)
+void ent_setpos(entity_t *e, vec2f_t *pos)
 {	
-	ent_find(id)->pos = pos;
+	if (e != NULL) {
+		e->pos = *pos;
+	}
 }
 
-void ent_setdir(int32_t id, vec2f_t dir, float ang)
+void ent_setdir(entity_t *e, vec2f_t *dir, float ang)
 {
-	entity_t *e = ent_find(id);
-	e->dir = dir;
+	if (e != NULL) {
+		e->dir = *dir;
+	}
 	//e->angle = atan(vec2f_dot(&e->pos, &e->dir));
 }
 
@@ -70,4 +86,13 @@ entity_t *ent_find(int32_t id)
 	}
 	printf("could not locate entity by id: %d\n", id);
 	return NULL;
+}
+
+void ent_shutdown()
+{
+	if (array_ents) {
+		free(array_ents);
+		array_ents = NULL;
+	}
+	printf("ent_shutdown OK\n");
 }

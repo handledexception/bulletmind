@@ -61,6 +61,8 @@ void in_shutdown()
 		free(array_mbuttons);
 		array_mbuttons = NULL;
 	}
+
+	printf("in_shutdown OK\n");
 }
 
 void in_setkeystate(uint16_t key, uint8_t state)
@@ -153,5 +155,4 @@ void in_setmousebuttonstate(uint8_t button, uint8_t state)
 	//if (cmd > 0) { bit_set_uint32(array_cmds, cmd); /* printf("in_setkeystate - +cmd\n"); */ } else
 	//if (cmd < 0) { bit_clear_uint32(array_cmds, abs(cmd)); /* printf("in_setkeystate - -cmd\n");*/ }
 	//printf("in_setmousebuttonstate - [button:state:cmd] %d : %d : %d\n", button, state, cmd);
-
 }

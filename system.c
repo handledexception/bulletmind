@@ -11,7 +11,9 @@
 
 uint8_t sys_init(engine_t *eng)
 {	
+	eng->state = ES_STARTUP;
 	double init_start = timing_getmillisec();
+	eng->frame_count = 0;
 
 	SDL_Init(SDL_INIT_EVERYTHING);
 	eng->window = SDL_CreateWindow
@@ -36,7 +38,7 @@ uint8_t sys_init(engine_t *eng)
 
 	in_init();
 	cmd_init();
-	//ent_init();
+	ent_init();
 	printf("sys_init OK [%fms]\n", timing_getmillisec() - init_start);
 	return 0;
 }
@@ -73,12 +75,14 @@ void sys_refresh()
 
 void sys_shutdown(engine_t *eng)
 {
+	ent_shutdown();
 	cmd_shutdown();
 	in_shutdown();
-	
+
 	SDL_DestroyRenderer(eng->renderer);
 	SDL_DestroyWindow(eng->window);
 	eng->renderer = NULL;
 	eng->window = NULL;
 	SDL_Quit();
+	printf("sys_shutdown OK\n\nGoodbye!\n");
 }

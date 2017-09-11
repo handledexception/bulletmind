@@ -22,26 +22,21 @@ void drawrect_centered(SDL_Renderer *rend, int32_t x, int32_t y, int32_t w, int3
 		y - (w / 2), 
 		w, h
 	};
-
+	
 	SDL_SetRenderDrawColor(rend, r, g, b, a);
 	SDL_RenderFillRect(rend, (const SDL_Rect *)&rec);
 }
 
 int main(int argc, char *argv[])
 {	
-	int32_t caps = 0;
-	caps = MOVER | COLLIDER;
-	printf("caps = %d\n", caps);
-
 	engine_t *engine = (engine_t *)malloc(sizeof(engine_t));
 	if (engine == NULL) { return -1; }	
-
-	engine->state = ES_STARTUP;
+	
 	sys_init(engine);		
 	
 	// main loop	
 	engine->state = ES_PLAY;	
-	while(engine->state != ES_QUIT) {
+	while(engine->state != ES_QUIT) {		
 		double frame_start = timing_getmillisec();
 		switch(engine->state) {
 			case ES_STARTUP:
@@ -61,9 +56,13 @@ int main(int argc, char *argv[])
 		}
 		double frame_time = timing_getmillisec() - frame_start;
 		engine_lockfps(frame_time, TARGET_FPS);
-		SDL_RenderPresent(engine->renderer);	
+		SDL_RenderPresent(engine->renderer);
+		
+		engine->frame_count++;		
 	}
+
 	sys_shutdown(engine);	
+
 	free(engine);
 	engine = NULL;
 	return 0;
