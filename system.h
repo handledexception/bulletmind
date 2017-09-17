@@ -21,24 +21,23 @@ typedef enum {
 	ES_QUIT
 } engine_state_t;
 
-struct _engine_s {
+typedef struct {
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	engine_state_t state;
-    timing_t timing;
+    //double engine_time;
     uint32_t frame_count;
-};
-
-typedef struct _engine_s engine_t;
+} engine_t;
 
 inline void engine_lockfps(double frame_time, double fps)
 {		
-	if (frame_time < (double)TARGET_FRAMETIME(fps)) {
-		while (frame_time < (double)TARGET_FRAMETIME(fps)) {
-			frame_time += 0.0001;
+	double lock_time = frame_time;
+	if (lock_time < (double)TARGET_FRAMETIME(fps)) {
+		while (lock_time < (double)TARGET_FRAMETIME(fps)) {
+			lock_time += 0.0001;
 		}
 	}
-	/*printf("frame time: %fms\n", frame_time);*/
+	//printf("frame time: %fms\n", lock_time);
 }
 
 uint8_t sys_init(engine_t *eng);

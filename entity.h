@@ -4,7 +4,7 @@
 #include "c99defs.h"
 #include "vector.h"
 
-#define MAX_ENTITIES 1024
+#define MAX_ENTITIES 4
 #define MASK_ENTITIES (MAX_ENTITIES - 1)
 #define MAX_ENTITY_CAPS 64
 

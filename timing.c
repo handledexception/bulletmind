@@ -12,14 +12,14 @@ static inline uint64_t get_clock_freq(void)
 double timing_getmillisec(void)
 {
 	LARGE_INTEGER current_time;
-	long long time_val;
+	double time_val;
 
 	QueryPerformanceCounter(&current_time);
-	time_val = current_time.QuadPart;
+	time_val = (double)current_time.QuadPart;
 	time_val *= 1000LL;
-	time_val /= get_clock_freq();
-
-	return (double)time_val;
+	time_val /= (double)get_clock_freq();	
+	
+	return time_val;
 }
 
 uint64_t timing_getnanosec(void)

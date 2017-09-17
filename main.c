@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <string.h>
 
+double engine_time = 0.0;
+
 void drawrect_centered(SDL_Renderer *rend, int32_t x, int32_t y, int32_t w, int32_t h, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {		
 	recti32_t rec = { 
@@ -38,6 +40,7 @@ int main(int argc, char *argv[])
 	engine->state = ES_PLAY;	
 	while(engine->state != ES_QUIT) {		
 		double frame_start = timing_getmillisec();
+		
 		switch(engine->state) {
 			case ES_STARTUP:
 				break;
@@ -54,11 +57,13 @@ int main(int argc, char *argv[])
 			case ES_QUIT:
 				break;
 		}
-		double frame_time = timing_getmillisec() - frame_start;
-		engine_lockfps(frame_time, TARGET_FPS);
+		
 		SDL_RenderPresent(engine->renderer);
 		
-		engine->frame_count++;		
+		engine_time = timing_getmillisec() - frame_start;
+		engine_lockfps(engine_time, TARGET_FPS);
+		
+		engine->frame_count++;
 	}
 
 	sys_shutdown(engine);	
