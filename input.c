@@ -1,4 +1,4 @@
-#include "bitwise.h"
+//#include "bitwise.h"
 #include "command.h"
 #include "input.h"
 #include <stdio.h>

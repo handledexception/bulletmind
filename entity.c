@@ -8,6 +8,9 @@
 #include <string.h>
 #include <math.h>
 
+entity_t *array_ents;
+size_t sz_arrayents = sizeof(entity_t) * MAX_ENTITIES;
+
 double engine_time;
 int last_entity = 0;
 
@@ -33,6 +36,7 @@ bool ent_init()
 		}
 	}
 	
+	// spawn player as first entity
 	last_entity = ent_spawn(PLAYER | MOVER | SHOOTER | COLLIDER);
 	if (last_entity == NULL_INDEX) {
 		printf("ent_init - failed initializing player entity!\n");
@@ -83,22 +87,26 @@ int32_t ent_spawn(entity_caps caps)
 	return ent;
 }
 
-void ent_refresh()
+void ent_refresh(SDL_Renderer *renderer)
 {
 	//printf("ent_refresh - last_entity = %d\n", last_entity);
-	for (int32_t edx = last_entity; edx < MAX_ENTITIES; edx++) {
-		entity_t *e = ent_byindex(edx);
+			entity_t *e = ent_byindex(1);
 		if (e != NULL) {
-			if (ent_hascaps(edx, PLAYER) == true) {				
-				if (cmd_getstate(CMD_PLAYER_UP) == true) { printf("sys_refresh - CMD_PLAYER_UP triggered!\n"); }
-				if (cmd_getstate(CMD_PLAYER_DOWN) == true) { printf("sys_refresh - CMD_PLAYER_DOWN triggered!\n"); }
-				if (cmd_getstate(CMD_PLAYER_LEFT) == true) { printf("sys_refresh - CMD_PLAYER_LEFT triggered!\n"); }
-				if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { printf("sys_refresh - CMD_PLAYER_RIGHT triggered!\n"); }
+			if (ent_hascaps(edx, PLAYER) == true) {					
+				if (cmd_getstate(CMD_PLAYER_UP) == true) { e->vel.y = -1.0f; }
+				if (cmd_getstate(CMD_PLAYER_DOWN) == true) { e->vel.y = 1.0f; }
+				if (cmd_getstate(CMD_PLAYER_LEFT) == true) { e->vel.x = -1.0f; }
+				if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { e->vel.x = 1.0f; }
 				if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_PRIMARY_FIRE triggered!\n"); }
 				if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }
+				vec2f_scale(&e->vel, 0.25f);
+				vec2f_add(&e->pos, &e->vel);
+				drawrect_centered(renderer, e->pos.x, e->pos.y, e->bbox.w, e->bbox.h, 0xff, 0x00, 0x00, 0xff);
 			}
 		}
-	}
+	/*for (int32_t edx = last_entity; edx < MAX_ENTITIES; edx++) {
+
+	}*/
 }
 
 int32_t ent_setcaps(int32_t ent, entity_caps caps)
@@ -128,7 +136,7 @@ bool ent_hascaps(int32_t ent, entity_caps caps)
 	bool found = false;
 	entity_t *e = &array_ents[ent];
 	if (e != NULL) {
-		if (e->caps & caps == caps) {
+		if ((e->caps & caps) == caps) {
 			found = true;
 		}
 	}

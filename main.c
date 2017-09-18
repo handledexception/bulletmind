@@ -3,7 +3,7 @@
 		v0.1.030817a
 */
 
-#include "bitwise.h"
+//#include "bitwise.h"
 #include "command.h"
 #include "entity.h"
 #include "input.h"
@@ -18,7 +18,7 @@
 double engine_time = 0.0;
 
 int main(int argc, char *argv[])
-{	
+{		
 	engine_t *engine = (engine_t *)malloc(sizeof(engine_t));
 	if (engine == NULL) { return -1; }	
 	
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 				SDL_SetRenderDrawColor(engine->renderer, 0x00, 0x00, 0x00, 0xFF);
 				SDL_RenderClear(engine->renderer);
 				
-				ent_refresh();			
+				ent_refresh(engine->renderer);			
 		
 				if (cmd_getstate(CMD_QUIT) == true) { engine->state = ES_QUIT; }
 				break;

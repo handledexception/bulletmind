@@ -4,6 +4,8 @@
 #include "c99defs.h"
 #include "vector.h"
 
+#include <SDL.h>
+
 #define MAX_ENTITIES 64
 #define MASK_ENTITIES (MAX_ENTITIES - 1)
 #define MAX_ENTITY_CAPS 64
@@ -31,13 +33,10 @@ typedef struct {
 	double lifetime;
 } entity_t;
 
-entity_t *array_ents;
-static size_t sz_arrayents = sizeof(entity_t) * MAX_ENTITIES;
-
 bool ent_init();
 int32_t ent_new();
 int32_t ent_spawn(entity_caps caps);
-void ent_refresh();
+void ent_refresh(SDL_Renderer *renderer);
 int32_t ent_setcaps(int32_t ent, entity_caps caps);
 int32_t ent_removecaps(int32_t ent, entity_caps caps);
 bool ent_hascaps(int32_t ent, entity_caps caps);
