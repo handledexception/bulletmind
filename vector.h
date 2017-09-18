@@ -14,11 +14,11 @@ typedef struct {
 	float w, h;
 } rectf_t;
 
-typedef union vec2f {
+typedef struct vec2f {
 	float x, y;
 } vec2f_t;
 
-typedef union vec3f {
+typedef struct vec3f {
 	float x, y, z;
 } vec3f_t;
 

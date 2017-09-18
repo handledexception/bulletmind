@@ -25,13 +25,13 @@ uint8_t sys_init(engine_t *eng)
 		SDL_WINDOW_SHOWN
 	);
 	
-	if(!eng->window) {
+	if(eng->window == NULL) {
 		printf("sys_window: %s\n", SDL_GetError());
 		return -1;
 	}
 	
 	eng->renderer = SDL_CreateRenderer(eng->window, -1, SDL_RENDERER_ACCELERATED);
-	if (!eng->renderer) {
+	if (eng->renderer == NULL) {
 		printf("sys_renderer: %s\n", SDL_GetError());
 		return -1;
 	}
@@ -64,13 +64,6 @@ void sys_refresh()
 				break;			
 		}		
 	}
-	
-	if (cmd_getstate(CMD_PLAYER_UP) == true) { printf("sys_refresh - CMD_PLAYER_UP triggered!\n"); }
-	if (cmd_getstate(CMD_PLAYER_DOWN) == true) { printf("sys_refresh - CMD_PLAYER_DOWN triggered!\n"); }
-	if (cmd_getstate(CMD_PLAYER_LEFT) == true) { printf("sys_refresh - CMD_PLAYER_LEFT triggered!\n"); }
-	if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { printf("sys_refresh - CMD_PLAYER_RIGHT triggered!\n"); }
-	if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_PRIMARY_FIRE triggered!\n"); }
-	if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }
 }
 
 void sys_shutdown(engine_t *eng)

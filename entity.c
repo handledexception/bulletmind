@@ -1,3 +1,4 @@
+#include "command.h"
 #include "entity.h"
 #include "main.h"
 #include "timing.h"
@@ -8,8 +9,21 @@
 #include <math.h>
 
 double engine_time;
+int last_entity = 0;
 
-void ent_init()
+void drawrect_centered(SDL_Renderer *rend, int32_t x, int32_t y, int32_t w, int32_t h, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{		
+	recti32_t rec = { 
+		x - (w / 2), 
+		y - (w / 2), 
+		w, h
+	};
+	
+	SDL_SetRenderDrawColor(rend, r, g, b, a);
+	SDL_RenderFillRect(rend, (const SDL_Rect *)&rec);
+}
+
+bool ent_init()
 {
 	array_ents = (entity_t *)malloc(sz_arrayents);
 	if (array_ents != NULL) { 
@@ -19,18 +33,20 @@ void ent_init()
 		}
 	}
 	
-	printf("ent_init OK\n");
+	last_entity = ent_spawn(PLAYER | MOVER | SHOOTER | COLLIDER);
+	if (last_entity == NULL_INDEX) {
+		printf("ent_init - failed initializing player entity!\n");
+		return false;
+	}
+	recti32_t bounding = { 0, 0, 16, 16 };
+	vec2f_t pos = { (float)(WINDOW_WIDTH / 2), (float)(WINDOW_HEIGHT / 2) };
+	entity_t *player = &array_ents[last_entity];	
+	player->id = 999;
+	player->bbox = bounding;
+	ent_setpos(last_entity, &pos);
 
-	ent_spawn(PLAYER | MOVER | SHOOTER | COLLIDER);
-	ent_spawn(MOVER | SHOOTER | COLLIDER);
-	ent_spawn(SHOOTER | COLLIDER);
-	ent_spawn(COLLIDER);
-	ent_spawn(MOVER);
-	array_ents[2].caps = NULL_INDEX;
-	ent_spawn(SHOOTER);
-	for (int n = 0; n < 4; n++)
-		printf("caps = %d\n", array_ents[n].caps);
-	//ent_removecaps(1, PLAYER);
+	printf("ent_init OK\n");
+	return true;
 }
 
 int32_t ent_new()
@@ -62,8 +78,27 @@ int32_t ent_spawn(entity_caps caps)
 	
 	entity_t *e = &array_ents[ent];
 	e->caps |= caps;
-	e->time_created = timing_getmillisec();	
+	e->time_created = engine_time;
 	printf("%f - ent_spawn with caps %d\n", e->time_created, caps);
+	return ent;
+}
+
+void ent_refresh()
+{
+	//printf("ent_refresh - last_entity = %d\n", last_entity);
+	for (int32_t edx = last_entity; edx < MAX_ENTITIES; edx++) {
+		entity_t *e = ent_byindex(edx);
+		if (e != NULL) {
+			if (ent_hascaps(edx, PLAYER) == true) {				
+				if (cmd_getstate(CMD_PLAYER_UP) == true) { printf("sys_refresh - CMD_PLAYER_UP triggered!\n"); }
+				if (cmd_getstate(CMD_PLAYER_DOWN) == true) { printf("sys_refresh - CMD_PLAYER_DOWN triggered!\n"); }
+				if (cmd_getstate(CMD_PLAYER_LEFT) == true) { printf("sys_refresh - CMD_PLAYER_LEFT triggered!\n"); }
+				if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { printf("sys_refresh - CMD_PLAYER_RIGHT triggered!\n"); }
+				if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_PRIMARY_FIRE triggered!\n"); }
+				if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }
+			}
+		}
+	}
 }
 
 int32_t ent_setcaps(int32_t ent, entity_caps caps)
@@ -71,7 +106,10 @@ int32_t ent_setcaps(int32_t ent, entity_caps caps)
 	entity_t *e = &array_ents[ent];
 	if (e != NULL) {
 		e->caps |= caps;
-	}	
+		return ent;
+	}
+
+	return NULL_INDEX;
 }
 
 int32_t ent_removecaps(int32_t ent, entity_caps caps)
@@ -79,10 +117,26 @@ int32_t ent_removecaps(int32_t ent, entity_caps caps)
 	entity_t *e = &array_ents[ent];
 	if (e != NULL) {
 		e->caps &= ~caps;
+		return ent;
 	}
+
+	return NULL_INDEX;
 }
 
-void ent_delete(entity_t *e)
+bool ent_hascaps(int32_t ent, entity_caps caps)
+{
+	bool found = false;
+	entity_t *e = &array_ents[ent];
+	if (e != NULL) {
+		if (e->caps & caps == caps) {
+			found = true;
+		}
+	}
+
+	return found;
+}
+
+void ent_free(entity_t *e)
 {
 	if (e != NULL) {
 		free(e);
@@ -90,32 +144,31 @@ void ent_delete(entity_t *e)
 	}
 }
 
-void ent_setpos(entity_t *e, vec2f_t *pos)
+void ent_setpos(int32_t ent, vec2f_t *pos)
 {	
-	if (e != NULL) {
+	entity_t *e = &array_ents[ent];
+	if (e != NULL && pos != NULL) {
 		e->pos = *pos;
 	}
 }
 
-void ent_setdir(entity_t *e, vec2f_t *dir, float ang)
+void ent_setvel(int32_t ent, vec2f_t *vel, float ang)
 {
-	if (e != NULL) {
-		e->dir = *dir;
+	entity_t *e = &array_ents[ent];
+	if (e != NULL && vel != NULL) {
+		e->vel = *vel;
+		e->angle = atan(vec2f_dot(&e->pos, &e->vel));
 	}
-	//e->angle = atan(vec2f_dot(&e->pos, &e->dir));
 }
 
-entity_t *ent_find(int32_t id)
+entity_t *ent_byindex(int32_t idx)
 {
-	if (array_ents != NULL) {
-		for (uint32_t e = 0; e < sz_arrayents; e++) {
-			if (array_ents[e].id == id) {
-				return &array_ents[e];
-			}
-		}
+	entity_t *e = &array_ents[idx];
+	if (e == NULL) {
+		printf("ent_byindex - NULL entity at index %d\n", idx);
 	}
-	printf("could not locate entity by id: %d\n", id);
-	return NULL;
+	
+	return e;
 }
 
 void ent_shutdown()

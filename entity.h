@@ -4,7 +4,7 @@
 #include "c99defs.h"
 #include "vector.h"
 
-#define MAX_ENTITIES 4
+#define MAX_ENTITIES 64
 #define MASK_ENTITIES (MAX_ENTITIES - 1)
 #define MAX_ENTITY_CAPS 64
 
@@ -23,24 +23,28 @@ typedef struct {
 	int32_t caps;
 		
 	vec2f_t pos;
-	vec2f_t dir;
+	vec2f_t vel;
 	float angle;
-	rectf_t *bbox;
+	recti32_t bbox;
 		
 	double time_created;
+	double lifetime;
 } entity_t;
 
 entity_t *array_ents;
 static size_t sz_arrayents = sizeof(entity_t) * MAX_ENTITIES;
 
-void ent_init();
+bool ent_init();
 int32_t ent_new();
 int32_t ent_spawn(entity_caps caps);
-
-void ent_delete(entity_t *e);
-void ent_setpos(entity_t *e, vec2f_t *pos);
-void ent_setdir(entity_t *e, vec2f_t *dir, float ang);
-entity_t *ent_find(int32_t id);
+void ent_refresh();
+int32_t ent_setcaps(int32_t ent, entity_caps caps);
+int32_t ent_removecaps(int32_t ent, entity_caps caps);
+bool ent_hascaps(int32_t ent, entity_caps caps);
+void ent_free(entity_t *e);
+void ent_setpos(int32_t ent, vec2f_t *pos);
+void ent_setvel(int32_t ent, vec2f_t *vel, float ang);
+entity_t *ent_byindex(int32_t idx);
 void ent_shutdown();
 
 #endif

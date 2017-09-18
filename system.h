@@ -6,11 +6,6 @@
 #include <stdio.h>
 #include <SDL.h>
 
-#define WINDOW_WIDTH 960
-#define WINDOW_HEIGHT 540
-#define WINDOW_WIDTH_HALF WINDOW_WIDTH/2
-#define WINDOW_HEIGHT_HALF WINDOW_HEIGHT/2
-
 #define ARRAY_SIZE(x) sizeof(x) / sizeof(x[0])
 #define TARGET_FPS 60
 #define TARGET_FRAMETIME(f) 1/(f) * 1000
