@@ -87,25 +87,37 @@ int32_t ent_spawn(entity_caps caps)
 	return ent;
 }
 
-void ent_refresh(SDL_Renderer *renderer)
+void ent_refresh(SDL_Renderer *renderer, double dt)
 {
-	//printf("ent_refresh - last_entity = %d\n", last_entity);
-			entity_t *e = ent_byindex(1);
-		if (e != NULL) {
-			if (ent_hascaps(edx, PLAYER) == true) {					
-				if (cmd_getstate(CMD_PLAYER_UP) == true) { e->vel.y = -1.0f; }
-				if (cmd_getstate(CMD_PLAYER_DOWN) == true) { e->vel.y = 1.0f; }
-				if (cmd_getstate(CMD_PLAYER_LEFT) == true) { e->vel.x = -1.0f; }
-				if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { e->vel.x = 1.0f; }
-				if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_PRIMARY_FIRE triggered!\n"); }
-				if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }
-				vec2f_scale(&e->vel, 0.25f);
-				vec2f_add(&e->pos, &e->vel);
-				drawrect_centered(renderer, e->pos.x, e->pos.y, e->bbox.w, e->bbox.h, 0xff, 0x00, 0x00, 0xff);
-			}
+	//printf("ent_refresh - last_entity = %d\n", last_entity);	
+	entity_t *e = ent_byindex(1);
+	if (e != NULL) {
+		if (ent_hascaps(1, PLAYER) == true) {			
+			vec2f_t accel = {};			
+			// pos = 0.5 * accel * dt^2 + newvel
+			if (cmd_getstate(CMD_PLAYER_UP) == true) { accel.y = -1.f; }
+			if (cmd_getstate(CMD_PLAYER_DOWN) == true) { accel.y = 1.f; } 
+			if (cmd_getstate(CMD_PLAYER_LEFT) == true) { accel.x = -1.f; }
+			if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { accel.x = 1.f; }			
+			if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_PRIMARY_FIRE triggered!\n"); }
+			if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }			
+			
+			
+			vec2f_t old_vel = {};
+			vec2f_equ(&old_vel, &e->vel);
+			vec2f_scale(&accel, dt);
+			vec2f_addequ(&e->vel, &accel);
+			vec2f_t avg_vel = {};
+			vec2f_add(&avg_vel, &old_vel, &e->vel);
+			vec2f_scale(&avg_vel, 0.0005 * dt);						
+			
+			vec2f_addequ(&e->pos, &avg_vel);
+					
+			drawrect_centered(renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0xff, 0x00, 0x00, 0xff);						
 		}
+	}
 	/*for (int32_t edx = last_entity; edx < MAX_ENTITIES; edx++) {
-
+		//todo: entity lewp
 	}*/
 }
 

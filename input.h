@@ -4,6 +4,9 @@
 #include "c99defs.h"
 #include <stdlib.h>
 
+#define KEY_DOWN 1
+#define KEY_UP 0
+
 void 		in_init();
 uint32_t	in_refresh();
 void		in_shutdown();

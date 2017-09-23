@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <SDL.h>
 
+unsigned char *keyboard_state = NULL;
+
 uint8_t sys_init(engine_t *eng)
 {	
 	eng->state = ES_STARTUP;
@@ -36,6 +38,8 @@ uint8_t sys_init(engine_t *eng)
 		return -1;
 	}
 
+	keyboard_state = (unsigned char*)SDL_GetKeyboardState(NULL);
+	
 	in_init();
 	cmd_init();
 	ent_init();
@@ -49,11 +53,11 @@ void sys_refresh()
 	
 	while (SDL_PollEvent(&e)) {
 		switch(e.type) {
-			case SDL_KEYDOWN:
-				in_setkeystate(e.key.keysym.scancode, e.key.state);
+			case SDL_KEYDOWN:				
+				in_setkeystate(e.key.keysym.scancode, KEY_DOWN);
 				break;
 			case SDL_KEYUP:
-				in_setkeystate(e.key.keysym.scancode, e.key.state);
+				in_setkeystate(e.key.keysym.scancode, KEY_UP);				
 				break;
 			case SDL_MOUSEBUTTONDOWN:
 				//printf("%d\n", SDL_BUTTON(e.button.button));
