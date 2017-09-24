@@ -37,6 +37,7 @@ void in_init()
 	in_setkeybind(SDL_SCANCODE_S, CMD_PLAYER_DOWN);
 	in_setkeybind(SDL_SCANCODE_A, CMD_PLAYER_LEFT);
 	in_setkeybind(SDL_SCANCODE_D, CMD_PLAYER_RIGHT);
+	in_setkeybind(SDL_SCANCODE_LSHIFT, CMD_PLAYER_SPEED);
 	//in_setkeybind(SDL_SCANCODE_X, 0x7f); // fail case for testing
 
 	in_setmbuttonbind(SDL_BUTTON_LEFT, CMD_PLAYER_PRIMARY_FIRE);

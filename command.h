@@ -14,8 +14,9 @@ void cmd_shutdown();
 	CMD (CMD_PLAYER_DOWN, 			0x02, "Player Move Down") \
 	CMD (CMD_PLAYER_LEFT, 			0x04, "Player Move Left") \
 	CMD (CMD_PLAYER_RIGHT, 			0x08, "Player Move Right") \
-	CMD (CMD_PLAYER_PRIMARY_FIRE, 	0x10, "Player Primary Fire") \
-	CMD (CMD_PLAYER_ALTERNATE_FIRE, 0x20, "Player Alternate Fire") \
+	CMD (CMD_PLAYER_SPEED, 			0x10, "Player Speedup") \
+	CMD (CMD_PLAYER_PRIMARY_FIRE, 	0x20, "Player Primary Fire") \
+	CMD (CMD_PLAYER_ALTERNATE_FIRE, 0x40, "Player Alternate Fire") \
 	CMD (CMD_QUIT, 					0x80, "Quit Game")
 
 #define CMD(c1, c2, c3) c1 = c2,
