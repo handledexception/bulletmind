@@ -3,7 +3,7 @@
 
 #define NULL_INDEX -1
 
-extern double engine_time;
+extern double system_time;
 
 #define WINDOW_WIDTH 960
 #define WINDOW_HEIGHT 540

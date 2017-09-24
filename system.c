@@ -9,8 +9,6 @@
 #include <stdlib.h>
 #include <SDL.h>
 
-unsigned char *keyboard_state = NULL;
-
 uint8_t sys_init(engine_t *eng)
 {	
 	eng->state = ES_STARTUP;
@@ -37,8 +35,6 @@ uint8_t sys_init(engine_t *eng)
 		printf("sys_renderer: %s\n", SDL_GetError());
 		return -1;
 	}
-
-	keyboard_state = (unsigned char*)SDL_GetKeyboardState(NULL);
 	
 	in_init();
 	cmd_init();

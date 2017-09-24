@@ -5,7 +5,7 @@
 #include <string.h>
 #include <SDL.h>
 
-#define MAX_KEYS 512
+#define MAX_KEYS 285
 #define MAX_MBUTTONS 64
 
 typedef struct {
@@ -31,7 +31,7 @@ void in_init()
 	
 	array_mbuttons = (mbutton_t *)malloc(sz_arraymbuttons);
 	if (array_mbuttons != NULL) { memset(array_mbuttons, 0, sz_arraymbuttons); }
-
+	
 	in_setkeybind(SDL_SCANCODE_ESCAPE, CMD_QUIT);
 	in_setkeybind(SDL_SCANCODE_W, CMD_PLAYER_UP);
 	in_setkeybind(SDL_SCANCODE_S, CMD_PLAYER_DOWN);
@@ -46,7 +46,7 @@ void in_init()
 }
 
 uint32_t in_refresh()
-{	
+{		
 	return 0;
 }
 
@@ -108,6 +108,7 @@ bool in_setkeybind(uint16_t key, int32_t cmd)
 	
 	if (array_keys) {
 		array_keys[key].cmd = cmd;
+		//printf("scancode = %d\n", key);
 		printf("in_setkeybind - successfully bound Key \"%s\" to Command \"%s\"\n", SDL_GetScancodeName(key), cmd_name);
 	}
 	

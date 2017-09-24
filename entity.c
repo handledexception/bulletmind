@@ -48,7 +48,7 @@ bool ent_init()
 	player->id = 999;
 	player->bbox = bounding;
 	ent_setpos(last_entity, &pos);
-
+	
 	printf("ent_init OK\n");
 	return true;
 }
@@ -98,7 +98,11 @@ void ent_refresh(SDL_Renderer *renderer, double dt)
 			if (cmd_getstate(CMD_PLAYER_UP) == true) { accel.y = -1.f; }
 			if (cmd_getstate(CMD_PLAYER_DOWN) == true) { accel.y = 1.f; } 
 			if (cmd_getstate(CMD_PLAYER_LEFT) == true) { accel.x = -1.f; }
-			if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { accel.x = 1.f; }			
+			if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { accel.x = 1.f; }
+			/*if (keyboard_state[SDL_SCANCODE_W]) { accel.y = -1.f; }
+			if (keyboard_state[SDL_SCANCODE_S]) { accel.y = 1.f; }
+			if (keyboard_state[SDL_SCANCODE_A]) { accel.x = -1.f; }
+			if (keyboard_state[SDL_SCANCODE_D]) { accel.x = 1.f; }*/
 			if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_PRIMARY_FIRE triggered!\n"); }
 			if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }			
 			
