@@ -32,7 +32,7 @@ bool ent_init()
 	if (array_ents != NULL) { 
 		memset(array_ents, 0, sz_arrayents); 
 		for (int32_t i = 0; i < MAX_ENTITIES; i++) {
-			array_ents[i].caps = NULL_INDEX;
+			array_ents[i].caps = 0;
 		}
 	}
 	
@@ -65,7 +65,7 @@ int32_t ent_new()
 			printf("ent_new overflow!\n");
 			return NULL_INDEX;
 		}
-	} while (array_ents[ent].caps != NULL_INDEX);
+	} while (array_ents[ent].caps != 0);
 
 	e = &array_ents[ent];
 	memset(e, 0, sizeof(entity_t));
@@ -93,29 +93,29 @@ void ent_refresh(SDL_Renderer *renderer, double dt)
 	entity_t *e = ent_byindex(1);
 	if (e != NULL) {
 		if (ent_hascaps(1, PLAYER) == true) {			
+			vec2f_t old_vel = {};
 			vec2f_t accel = {};			
+			vec2f_equ(&old_vel, &e->vel);
 			// pos = 0.5 * accel * dt^2 + newvel
 			if (cmd_getstate(CMD_PLAYER_UP) == true) { accel.y = -1.f; }
 			if (cmd_getstate(CMD_PLAYER_DOWN) == true) { accel.y = 1.f; } 
 			if (cmd_getstate(CMD_PLAYER_LEFT) == true) { accel.x = -1.f; }
-			if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { accel.x = 1.f; }
-			/*if (keyboard_state[SDL_SCANCODE_W]) { accel.y = -1.f; }
-			if (keyboard_state[SDL_SCANCODE_S]) { accel.y = 1.f; }
-			if (keyboard_state[SDL_SCANCODE_A]) { accel.x = -1.f; }
-			if (keyboard_state[SDL_SCANCODE_D]) { accel.x = 1.f; }*/
+			if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { accel.x = 1.f; }			
 			if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_PRIMARY_FIRE triggered!\n"); }
 			if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }			
-			
-			
-			vec2f_t old_vel = {};
-			vec2f_equ(&old_vel, &e->vel);
-			vec2f_scale(&accel, dt);
-			vec2f_addequ(&e->vel, &accel);
+
 			vec2f_t avg_vel = {};
+			vec2f_scale(&accel, 0.005f);			
+			vec2f_scale(&accel, dt);
+			vec2f_addequ(&e->vel, &accel);			
 			vec2f_add(&avg_vel, &old_vel, &e->vel);
-			vec2f_scale(&avg_vel, 0.0005 * dt);						
-			
+			vec2f_scale(&avg_vel, 0.5 * dt);
+			vec2f_scale(&avg_vel, 0.5);			
 			vec2f_addequ(&e->pos, &avg_vel);
+			
+			//printf("e->vel: %.3f, %.3f\n", e->vel.x, e->vel.y);
+			//printf("avg_vel: %.3f, %.3f\n", avg_vel.x, avg_vel.y);
+			printf("old_vel: %.3f, %.3f\n", old_vel.x, old_vel.y);
 					
 			drawrect_centered(renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0xff, 0x00, 0x00, 0xff);						
 		}
