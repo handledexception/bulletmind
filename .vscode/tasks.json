@@ -9,7 +9,7 @@
             "command": "gcc",
             "args": [
                 "--std=c99",
-                "-O2",
+                "-O1",
                 "-Wall",
                 "buffer.c",
                 "command.c",
