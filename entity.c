@@ -90,15 +90,18 @@ int32_t ent_spawn(entity_caps caps)
 void ent_refresh(SDL_Renderer *renderer, double dt)
 {
 	//printf("ent_refresh - last_entity = %d\n", last_entity);	
-	entity_t *e = ent_byindex(1);
+	for (int32_t edx = last_entity; edx < MAX_ENTITIES; edx++) {
+		//todo: entity lewp
+	
+	entity_t *e = ent_byindex(edx);
 	if (e != NULL) {
 		if (ent_hascaps(1, PLAYER) == true) {
-			float speed = 1.5f;
+			float speed = 3.f;
 			vec2f_t old_vel = { };
 			vec2f_t accel = { };			
 			vec2f_equ(&old_vel, &e->vel);
 			// pos = 0.5 * accel * dt^2 + newvel
-			if (cmd_getstate(CMD_PLAYER_SPEED) == true) { speed = 3.5f; }
+			if (cmd_getstate(CMD_PLAYER_SPEED) == true) { speed = 6.0f; }
 			if (cmd_getstate(CMD_PLAYER_UP) == true) { accel.y = -speed; }
 			if (cmd_getstate(CMD_PLAYER_DOWN) == true) { accel.y = speed; } 
 			if (cmd_getstate(CMD_PLAYER_LEFT) == true) { accel.x = -speed; }
@@ -107,24 +110,22 @@ void ent_refresh(SDL_Renderer *renderer, double dt)
 			if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }			
 
 			vec2f_t avg_vel = { };
-			vec2f_scale(&accel, 0.0005f);
+			vec2f_scale(&accel, 0.005f);
 			vec2f_scale(&accel, dt);
 			vec2f_addequ(&e->vel, &accel);
-			vec2f_scale(&e->vel, 0.99f);
+			vec2f_scale(&e->vel, 0.96f);
 			vec2f_add(&avg_vel, &old_vel, &e->vel);
 			vec2f_scale(&avg_vel, 0.5 * dt * dt);			
 			vec2f_addequ(&e->pos, &avg_vel);
 			
-			printf("e->vel: %.3f, %.3f\n", e->vel.x, e->vel.y);
+			//printf("e->vel: %.3f, %.3f\n", e->vel.x, e->vel.y);
 			//printf("avg_vel: %.3f, %.3f\n", avg_vel.x, avg_vel.y);
 			//printf("old_vel: %.3f, %.3f\n", old_vel.x, old_vel.y);
 					
 			drawrect_centered(renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0xff, 0x00, 0x00, 0xff);						
 		}
 	}
-	/*for (int32_t edx = last_entity; edx < MAX_ENTITIES; edx++) {
-		//todo: entity lewp
-	}*/
+	}
 }
 
 int32_t ent_setcaps(int32_t ent, entity_caps caps)

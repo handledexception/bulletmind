@@ -18,7 +18,7 @@ uint8_t sys_init(engine_t *eng)
 	SDL_Init(SDL_INIT_EVERYTHING);
 	eng->window = SDL_CreateWindow
 	(
-		"SDLGame", 
+		"bulletmind", 
 		SDL_WINDOWPOS_CENTERED, 
 		SDL_WINDOWPOS_CENTERED,
 		WINDOW_WIDTH, WINDOW_HEIGHT,

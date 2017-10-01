@@ -6,6 +6,7 @@
 //#include "bitwise.h"
 #include "command.h"
 #include "entity.h"
+#include "imgfile.h"
 #include "input.h"
 #include "main.h"
 #include "system.h"
@@ -31,6 +32,9 @@ static void drawrect(SDL_Renderer *rend, int32_t x, int32_t y, int32_t w, int32_
 
 int main(int argc, char *argv[])
 {		
+	imgfile_init(".\\assets\\7px_font.tga");	
+	return 0;
+
 	engine_t *engine = (engine_t *)malloc(sizeof(engine_t));
 	if (engine == NULL) { return -1; }	
 	
