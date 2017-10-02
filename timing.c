@@ -9,6 +9,18 @@ static inline uint64_t get_clock_freq(void)
 	return clock_freq.QuadPart;
 }
 
+double timing_getsec(void)
+{
+	LARGE_INTEGER current_time;
+	double time_val;
+
+	QueryPerformanceCounter(&current_time);
+	time_val = (double)current_time.QuadPart;
+	time_val /= (double)get_clock_freq();
+
+	return time_val;
+}
+
 double timing_getmillisec(void)
 {
 	LARGE_INTEGER current_time;
