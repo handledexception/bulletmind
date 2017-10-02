@@ -31,13 +31,7 @@ static void drawrect(SDL_Renderer *rend, int32_t x, int32_t y, int32_t w, int32_
 }
 
 int main(int argc, char *argv[])
-{		
-	imgfile_t img;
-	imgfile_init(".\\assets\\7px_font.tga", &img);	
-	printf("%dx%d\n", img.width, img.height);
-	SDL_Surface *tgasurf = SDL_CreateRGBSurfaceFrom(img.data, img.width, img.height, 24, 3, 0, 0, 0, 0);
-	SDL_Rect srcrect = { 0, 0, img.width, img.height };
-
+{	
 	engine_t *engine = (engine_t *)malloc(sizeof(engine_t));
 	if (engine == NULL) { return -1; }	
 	
@@ -47,9 +41,13 @@ int main(int argc, char *argv[])
 	else {
 		printf("sys_init failed!\n");
 		return -1;
-	}
-	
-	SDL_Texture *tgatex = SDL_CreateTextureFromSurface(engine->renderer, tgasurf);
+	}	
+
+	imgfile_t img;	
+	//imgfile_init(".\\assets\\7px_font.tga", &img);
+	imgfile_init(".\\assets\\colors.tga", &img);		
+	SDL_Texture *tgatex = SDL_CreateTexture(engine->renderer, SDL_PIXELFORMAT_BGR24, SDL_TEXTUREACCESS_STATIC, img.width, img.height);	
+	SDL_UpdateTexture(tgatex, NULL, img.data, img.width * 3);
 
 	// main loop	
 	while(engine->state != ES_QUIT) {		
@@ -63,7 +61,7 @@ int main(int argc, char *argv[])
 				
 				SDL_SetRenderDrawColor(engine->renderer, 0x00, 0x00, 0x00, 0xFF);
 				SDL_RenderClear(engine->renderer);
-				SDL_RenderCopy(engine->renderer, tgatex, &srcrect, &srcrect);
+				SDL_RenderCopy(engine->renderer, tgatex, NULL, NULL);
 				ent_refresh(engine->renderer, engine_time);
 		
 				if (cmd_getstate(CMD_QUIT) == true) { engine->state = ES_QUIT; }

@@ -64,36 +64,37 @@ bool imgfile_init(const char *path, imgfile_t *out)
     uint16_t height = header->img_height;
     uint8_t bytes_per_pixel = header->img_bpp / 8;
     size_t pixel_size = width * height * bytes_per_pixel;
-    uint8_t pixelbuf[pixel_size];
+    //uint8_t pixelbuf[pixel_size];
     printf("imgfile_init: %dx%d @ %d bytes per pixel\n", width, height, bytes_per_pixel);
+    out->data = (uint8_t *)malloc(pixel_size);
 
-    imgfile_t tmp;
-    
     uint8_t *tgapixels = buf + tga_header_size;
     // origin bit of img_desc set to 1 ... upper-left origin pixel
     if ((header->img_desc >> 5) & 1) {        
-        memcpy(pixelbuf, tgapixels, pixel_size);
+        memcpy(out->data, tgapixels, pixel_size);
     }
     // origin bit set to 0 ... lower-left origin pixel
     else {
         int32_t stride = width * bytes_per_pixel;
         for (int32_t c = 0; c < height; c++) {            
-            memcpy(pixelbuf + stride * c, tgapixels + stride * (height - (c+1)), stride);            
+            memcpy(out->data + stride * c, tgapixels + stride * (height - (c+1)), stride);            
         }
     }
 
-    uint8_t swap;
-    for (int32_t c = 0; c < pixel_size; c++) {
-        swap = pixelbuf[c];
-        pixelbuf[c] = pixelbuf[c + 2];
-        pixelbuf[c + 2] = swap;
-    }
+    // uint8_t swap;
+    // for (int32_t c = 0; c < pixel_size; c++) {
+    //     swap = out->data[c];
+    //     out->data[c] = out->data[c + 2];
+    //     out->data[c + 2] = swap;
+    // }
 
-    tmp.width = width;
-    tmp.height = height;
-    tmp.data = pixelbuf;
-    *out = tmp;
-
+    out->width = width;
+    out->height = height;
+    out->bpp = header->img_bpp;
+    
+    out->stride = width * bytes_per_pixel;
+    out->type = BGR;
+    
     fclose(fptr);
 
     return true;

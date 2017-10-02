@@ -110,10 +110,10 @@ void ent_refresh(SDL_Renderer *renderer, double dt)
 			if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }			
 
 			vec2f_t avg_vel = { };
-			vec2f_scale(&accel, 0.005f);
+			vec2f_scale(&accel, 0.05f);
 			vec2f_scale(&accel, dt);
 			vec2f_addequ(&e->vel, &accel);
-			vec2f_scale(&e->vel, 0.96f);
+			vec2f_scale(&e->vel, 0.99f);
 			vec2f_add(&avg_vel, &old_vel, &e->vel);
 			vec2f_scale(&avg_vel, 0.5 * dt * dt);			
 			vec2f_addequ(&e->pos, &avg_vel);

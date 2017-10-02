@@ -5,11 +5,14 @@
 
 typedef enum {
     TARGA,
-    RGB
+    RGB,
+    BGR
 } imgtype_t;
 
 typedef struct imgfile_s {
     int32_t width, height;
+    int8_t bpp;
+    int32_t stride;
     uint8_t *data;
     size_t filesize;
     imgtype_t type;
