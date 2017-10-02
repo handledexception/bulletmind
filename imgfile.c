@@ -26,7 +26,6 @@ struct tga_header_s {
 
 struct tga_header_s header;
 
-
 // todo(paulh): refactor so file reading is in its own source
 bool imgfile_init(const char *path, imgfile_t *out)
 {
@@ -82,7 +81,7 @@ bool imgfile_init(const char *path, imgfile_t *out)
     }
 
     // uint8_t swap;
-    // for (int32_t c = 0; c < pixel_size; c++) {
+    // for (int32_t c = 0; c < pixel_size; c+= bytes_per_pixel) {
     //     swap = out->data[c];
     //     out->data[c] = out->data[c + 2];
     //     out->data[c + 2] = swap;
@@ -91,7 +90,7 @@ bool imgfile_init(const char *path, imgfile_t *out)
     out->width = width;
     out->height = height;
     out->bpp = header->img_bpp;
-    
+    out->filesize = pixel_size;
     out->stride = width * bytes_per_pixel;
     out->type = BGR;
     

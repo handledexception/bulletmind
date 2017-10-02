@@ -12,6 +12,7 @@ typedef struct {
 	double micro;
 } timing_t;
 
+double timing_getsec(void);
 double timing_getmillisec(void);
 uint64_t timing_getnanosec(void);
 

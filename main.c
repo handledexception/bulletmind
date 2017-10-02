@@ -18,18 +18,6 @@
 
 double engine_time = 0.0;
 
-static void drawrect(SDL_Renderer *rend, int32_t x, int32_t y, int32_t w, int32_t h, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
-{		
-	recti32_t rec = { 
-		x - (w / 2), 
-		y - (w / 2), 
-		w, h
-	};
-	
-	SDL_SetRenderDrawColor(rend, r, g, b, a);
-	SDL_RenderFillRect(rend, (const SDL_Rect *)&rec);
-}
-
 int main(int argc, char *argv[])
 {	
 	engine_t *engine = (engine_t *)malloc(sizeof(engine_t));
@@ -44,10 +32,10 @@ int main(int argc, char *argv[])
 	}	
 
 	imgfile_t img;	
-	//imgfile_init(".\\assets\\7px_font.tga", &img);
-	imgfile_init(".\\assets\\colors.tga", &img);		
+	imgfile_init(".\\assets\\7px_font.tga", &img);
+	//imgfile_init(".\\assets\\colors.tga", &img);		
 	SDL_Texture *tgatex = SDL_CreateTexture(engine->renderer, SDL_PIXELFORMAT_BGR24, SDL_TEXTUREACCESS_STATIC, img.width, img.height);	
-	SDL_UpdateTexture(tgatex, NULL, img.data, img.width * 3);
+	SDL_UpdateTexture(tgatex, NULL, img.data, img.stride);
 
 	// main loop	
 	while(engine->state != ES_QUIT) {		

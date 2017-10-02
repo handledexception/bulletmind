@@ -49,6 +49,16 @@ bool ent_init()
 	player->bbox = bounding;
 	ent_setpos(last_entity, &pos);
 	
+	last_entity = ent_spawn(ENEMY | MOVER | SHOOTER | COLLIDER);
+	if (last_entity == NULL_INDEX) { return false; }
+	vec2f_t epos;
+	epos.x = player->pos.x + 150;
+	epos.y = player->pos.y + 75;
+	entity_t *enemy = &array_ents[last_entity];
+	enemy->id = 101;
+	enemy->bbox = bounding;
+	ent_setpos(last_entity, &epos);
+
 	printf("ent_init OK\n");
 	return true;
 }
@@ -89,42 +99,47 @@ int32_t ent_spawn(entity_caps caps)
 
 void ent_refresh(SDL_Renderer *renderer, double dt)
 {
-	//printf("ent_refresh - last_entity = %d\n", last_entity);	
-	for (int32_t edx = last_entity; edx < MAX_ENTITIES; edx++) {
-		//todo: entity lewp
-	
-	entity_t *e = ent_byindex(edx);
-	if (e != NULL) {
-		if (ent_hascaps(1, PLAYER) == true) {
-			float speed = 3.f;
-			vec2f_t old_vel = { };
-			vec2f_t accel = { };			
-			vec2f_equ(&old_vel, &e->vel);
-			// pos = 0.5 * accel * dt^2 + newvel
-			if (cmd_getstate(CMD_PLAYER_SPEED) == true) { speed = 6.0f; }
-			if (cmd_getstate(CMD_PLAYER_UP) == true) { accel.y = -speed; }
-			if (cmd_getstate(CMD_PLAYER_DOWN) == true) { accel.y = speed; } 
-			if (cmd_getstate(CMD_PLAYER_LEFT) == true) { accel.x = -speed; }
-			if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { accel.x = speed; }		
-			if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_PRIMARY_FIRE triggered!\n"); }
-			if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }			
+	//todo(paulh): decide whether to use pointers or indices to deal w/ entities in functions
+	for (int32_t edx = 0; edx <= last_entity; edx++) {
+				
+		entity_t *e = ent_byindex(edx);
+		if (e != NULL) {
+			// PLAYER
+			if (ent_hascaps(edx, PLAYER) == true) {
+				float speed = 3.f;
+				vec2f_t old_vel = { };
+				vec2f_t accel = { };			
+				vec2f_equ(&old_vel, &e->vel);
+				// pos = 0.5 * accel * dt^2 + newvel
+				if (cmd_getstate(CMD_PLAYER_SPEED) == true) { speed = 6.0f; }
+				if (cmd_getstate(CMD_PLAYER_UP) == true) { accel.y = -speed; }
+				if (cmd_getstate(CMD_PLAYER_DOWN) == true) { accel.y = speed; } 
+				if (cmd_getstate(CMD_PLAYER_LEFT) == true) { accel.x = -speed; }
+				if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { accel.x = speed; }		
+				if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_PRIMARY_FIRE triggered!\n"); }
+				if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }			
 
-			vec2f_t avg_vel = { };
-			vec2f_scale(&accel, 0.05f);
-			vec2f_scale(&accel, dt);
-			vec2f_addequ(&e->vel, &accel);
-			vec2f_scale(&e->vel, 0.99f);
-			vec2f_add(&avg_vel, &old_vel, &e->vel);
-			vec2f_scale(&avg_vel, 0.5 * dt * dt);			
-			vec2f_addequ(&e->pos, &avg_vel);
-			
-			//printf("e->vel: %.3f, %.3f\n", e->vel.x, e->vel.y);
-			//printf("avg_vel: %.3f, %.3f\n", avg_vel.x, avg_vel.y);
-			//printf("old_vel: %.3f, %.3f\n", old_vel.x, old_vel.y);
-					
-			drawrect_centered(renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0xff, 0x00, 0x00, 0xff);						
+				vec2f_t avg_vel = { };
+				vec2f_scale(&accel, 0.05f);
+				vec2f_scale(&accel, dt);
+				vec2f_addequ(&e->vel, &accel);
+				vec2f_scale(&e->vel, 0.99f);
+				vec2f_add(&avg_vel, &old_vel, &e->vel);
+				vec2f_scale(&avg_vel, 0.5 * dt * dt);			
+				vec2f_addequ(&e->pos, &avg_vel);
+				
+				//printf("e->vel: %.3f, %.3f\n", e->vel.x, e->vel.y);
+				//printf("avg_vel: %.3f, %.3f\n", avg_vel.x, avg_vel.y);
+				//printf("old_vel: %.3f, %.3f\n", old_vel.x, old_vel.y);
+						
+				drawrect_centered(renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0xff, 0x00, 0x00, 0xff);						
+			}
+
+			// ENEMIES
+			if (ent_hascaps(edx, ENEMY) == true) {				
+				drawrect_centered(renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0x00, 0xff, 0x00, 0xff);						
+			}
 		}
-	}
 	}
 }
 

@@ -15,7 +15,7 @@ typedef enum {
 	SHOOTER = 16,
 	DESTROYABLE = 32,
 	COLLIDER = 64,
-	PLAYSOUND = 256,
+	ENEMY = 256,
 	PLAYER = 512
 } entity_caps;
 

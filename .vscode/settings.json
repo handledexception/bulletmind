@@ -4,6 +4,7 @@
         "string.h": "c",
         "vector": "c",
         "xstring": "c",
-        "xutility": "c"
+        "xutility": "c",
+        "stdio.h": "c"
     }
 }
