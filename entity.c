@@ -49,7 +49,7 @@ bool ent_init()
 	player->bbox = bounding;
 	ent_setpos(last_entity, &pos);
 	
-	last_entity = ent_spawn(ENEMY | MOVER | SHOOTER | COLLIDER);
+	last_entity = ent_spawn(SATELLITE | MOVER | SHOOTER);
 	if (last_entity == NULL_INDEX) { return false; }
 	vec2f_t epos;
 	epos.x = player->pos.x + 150;
@@ -68,7 +68,7 @@ int32_t ent_new()
 	static int32_t ent = 0;
 	int32_t start = ent;
 	entity_t *e = NULL;
-	printf("ent_new = %d\n", ent);
+	//printf("ent_new = %d\n", ent);
 	do {
 		ent = (ent + 1) & MASK_ENTITIES;
 		if (ent == start) {
@@ -103,6 +103,7 @@ void ent_refresh(SDL_Renderer *renderer, double dt)
 	for (int32_t edx = 0; edx <= last_entity; edx++) {
 				
 		entity_t *e = ent_byindex(edx);
+		
 		if (e != NULL) {
 			// PLAYER
 			if (ent_hascaps(edx, PLAYER) == true) {
@@ -135,8 +136,23 @@ void ent_refresh(SDL_Renderer *renderer, double dt)
 				drawrect_centered(renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0xff, 0x00, 0x00, 0xff);						
 			}
 
-			// ENEMIES
-			if (ent_hascaps(edx, ENEMY) == true) {				
+			// Player Satellite AKA Option
+			if (ent_hascaps(edx, SATELLITE) == true) {
+				vec2f_t orig_opt_pos = {};
+				vec2f_equ(&orig_opt_pos, &e->pos);
+				
+				vec2f_t option_pos = {};
+				vec2f_t player_pos = {};
+				vec2f_t dist = {};
+				
+				entity_t *player = ent_byindex(1);
+				vec2f_equ(&option_pos, &e->pos);
+				vec2f_equ(&player_pos, &player->pos);
+				vec2f_sub(&dist, &player_pos, &option_pos);				
+				vec2f_norm(&dist);
+				vec2f_scale(&dist, dt * 0.075);
+				//vec2f_add(&option_pos, &orig_opt_pos, &dist)
+				vec2f_addequ(&e->pos, &dist);
 				drawrect_centered(renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0x00, 0xff, 0x00, 0xff);						
 			}
 		}
