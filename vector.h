@@ -117,7 +117,7 @@ inline float vec2f_length(vec2f_t *a)
 // produce a unit vector
 inline float vec2f_norm(vec2f_t *a)
 {
-	float length = 1.0f / vec2f_sqrlen(a);
+	float length = 1.0f / vec2f_length(a);
 	a->x *= length;
 	a->y *= length;
 	return length;
