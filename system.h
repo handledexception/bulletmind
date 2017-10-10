@@ -20,6 +20,7 @@ typedef struct {
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	engine_state_t state;
+	int32_t cx, cy;
     //double engine_time;
     uint32_t frame_count;
 } engine_t;

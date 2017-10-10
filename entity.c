@@ -97,7 +97,7 @@ int32_t ent_spawn(entity_caps caps)
 	return ent;
 }
 
-void ent_refresh(SDL_Renderer *renderer, double dt)
+void ent_refresh(SDL_Renderer *renderer, double dt, recti32_t *screen)
 {
 	//todo(paulh): decide whether to use pointers or indices to deal w/ entities in functions
 	for (int32_t edx = 0; edx <= last_entity; edx++) {
@@ -107,28 +107,32 @@ void ent_refresh(SDL_Renderer *renderer, double dt)
 		if (e != NULL) {
 			// PLAYER
 			if (ent_hascaps(edx, PLAYER) == true) {
-				float speed = 3.f;
-				vec2f_t old_vel = { };
-				vec2f_t accel = { };			
-				vec2f_equ(&old_vel, &e->vel);
+				float speed = 1.f;				
+				vec2f_t accel = { };
+				vec2f_t avgvel = { };
+				vec2f_t oldvel = { };
+				
 				// pos = 0.5 * accel * dt^2 + newvel
-				if (cmd_getstate(CMD_PLAYER_SPEED) == true) { speed = 6.0f; }
+				if (cmd_getstate(CMD_PLAYER_SPEED) == true) { speed = 3.0f; }
 				if (cmd_getstate(CMD_PLAYER_UP) == true) { accel.y = -speed; }
 				if (cmd_getstate(CMD_PLAYER_DOWN) == true) { accel.y = speed; } 
 				if (cmd_getstate(CMD_PLAYER_LEFT) == true) { accel.x = -speed; }
-				if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { accel.x = speed; }		
+				if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { accel.x = speed; }	
 				if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_PRIMARY_FIRE triggered!\n"); }
-				if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }			
-
-				vec2f_t avg_vel = { };
-				vec2f_scale(&accel, 0.05f);
-				vec2f_scale(&accel, dt);
-				vec2f_addequ(&e->vel, &accel);
-				vec2f_scale(&e->vel, 0.99f);
-				vec2f_add(&avg_vel, &old_vel, &e->vel);
-				vec2f_scale(&avg_vel, 0.5 * dt * dt);			
-				vec2f_addequ(&e->pos, &avg_vel);
+				if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }					
 				
+				vec2f_equ(&oldvel, &e->vel);
+				vec2f_scale(&accel, 0.5);
+				//vec2f_scale(&accel, dt);
+				vec2f_addequ(&e->vel, &accel);
+				vec2f_add(&avgvel, &oldvel, &e->vel);
+				vec2f_scale(&avgvel, 0.5 * (dt * dt));
+				vec2f_addequ(&e->pos, &avgvel);				
+				
+				if (e->pos.x > screen->w) { e->pos.x = screen->w; }
+				if (e->pos.y > screen->h) { e->pos.y = screen->h; }
+				if (e->pos.x < screen->x) { e->pos.x = screen->x; }
+				if (e->pos.y < screen->y) { e->pos.y = screen->y; }
 				//printf("e->vel: %.3f, %.3f\n", e->vel.x, e->vel.y);
 				//printf("avg_vel: %.3f, %.3f\n", avg_vel.x, avg_vel.y);
 				//printf("old_vel: %.3f, %.3f\n", old_vel.x, old_vel.y);
@@ -150,9 +154,10 @@ void ent_refresh(SDL_Renderer *renderer, double dt)
 				vec2f_equ(&player_pos, &player->pos);
 				vec2f_sub(&dist, &player_pos, &option_pos);				
 				vec2f_norm(&dist);
-				vec2f_scale(&dist, dt * 0.075);
+				vec2f_scale(&dist, 0.5 * dt);
 				//vec2f_add(&option_pos, &orig_opt_pos, &dist)
 				vec2f_addequ(&e->pos, &dist);
+				
 				drawrect_centered(renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0x00, 0xff, 0x00, 0xff);						
 			}
 		}

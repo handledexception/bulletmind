@@ -5,8 +5,8 @@
 
 extern double system_time;
 
-#define WINDOW_WIDTH 960
-#define WINDOW_HEIGHT 540
+#define WINDOW_WIDTH 800
+#define WINDOW_HEIGHT 600
 #define WINDOW_WIDTH_HALF WINDOW_WIDTH/2
 #define WINDOW_HEIGHT_HALF WINDOW_HEIGHT/2
 

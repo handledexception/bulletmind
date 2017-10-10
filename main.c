@@ -3,7 +3,7 @@
 		v0.1.030817a
 */
 
-//#include "bitwise.h"
+
 #include "command.h"
 #include "entity.h"
 #include "imgfile.h"
@@ -16,7 +16,8 @@
 #include <stdio.h>
 #include <string.h>
 
-double engine_time = 0.0;
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
 
 int main(int argc, char *argv[])
 {	
@@ -37,32 +38,38 @@ int main(int argc, char *argv[])
 	SDL_Texture *tgatex = SDL_CreateTexture(engine->renderer, SDL_PIXELFORMAT_BGR24, SDL_TEXTUREACCESS_STATIC, img.width, img.height);	
 	SDL_UpdateTexture(tgatex, NULL, img.data, img.stride);
 
+	
+	double dt = 0.0;
+	recti32_t scr = { 0, 0, engine->cx, engine->cy };
+	
 	// main loop	
 	while(engine->state != ES_QUIT) {		
-		double frame_start = timing_getmillisec();
+		double frame_start = timing_getmillisec();		
 
 		switch(engine->state) {
 			case ES_STARTUP:
 				break;
-			case ES_PLAY:
-				sys_refresh();
-				
+			case ES_PLAY:		
+
+				SDL_RenderClear(engine->renderer);			
 				SDL_SetRenderDrawColor(engine->renderer, 0x00, 0x00, 0x00, 0xFF);
-				SDL_RenderClear(engine->renderer);
-				SDL_RenderCopy(engine->renderer, tgatex, NULL, NULL);
-				ent_refresh(engine->renderer, engine_time);
+
+				SDL_RenderCopy(engine->renderer, tgatex, NULL, NULL);				
 		
+				sys_refresh();				
+				ent_refresh(engine->renderer, dt, &scr);
+				
 				if (cmd_getstate(CMD_QUIT) == true) { engine->state = ES_QUIT; }
 				break;
 			case ES_QUIT:
 				break;
 		}
 		
-		SDL_RenderPresent(engine->renderer);
-		
-		engine_time = timing_getmillisec() - frame_start;
+		dt = timing_getmillisec() - frame_start;
 		//engine_lockfps(engine_time, TARGET_FPS);
-		engine->frame_count++;
+		
+		SDL_RenderPresent(engine->renderer);
+		engine->frame_count++;		
 	}
 
 	sys_shutdown(engine);	

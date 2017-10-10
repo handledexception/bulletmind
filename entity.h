@@ -37,7 +37,7 @@ typedef struct {
 bool ent_init();
 int32_t ent_new();
 int32_t ent_spawn(entity_caps caps);
-void ent_refresh(SDL_Renderer *renderer, double dt);
+void ent_refresh(SDL_Renderer *renderer, double dt, recti32_t *screen);
 int32_t ent_setcaps(int32_t ent, entity_caps caps);
 int32_t ent_removecaps(int32_t ent, entity_caps caps);
 bool ent_hascaps(int32_t ent, entity_caps caps);
