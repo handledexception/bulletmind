@@ -12,7 +12,7 @@
 uint8_t sys_init(engine_t *eng)
 {	
 	eng->state = ES_STARTUP;
-	double init_start = timing_getmillisec();
+	double init_start = timing_getsec();
 	eng->frame_count = 0;
 
 	SDL_Init(SDL_INIT_EVERYTHING);
@@ -42,7 +42,7 @@ uint8_t sys_init(engine_t *eng)
 	in_init();
 	cmd_init();
 	ent_init();
-	printf("sys_init OK [%fms]\n", timing_getmillisec() - init_start);
+	printf("sys_init OK [%fms]\n", (timing_getsec() - init_start) * 1000.0);
 	return 0;
 }
 

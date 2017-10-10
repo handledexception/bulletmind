@@ -17,7 +17,9 @@ void cmd_shutdown();
 	CMD (CMD_PLAYER_SPEED, 			0x10, "Player Speedup") \
 	CMD (CMD_PLAYER_PRIMARY_FIRE, 	0x20, "Player Primary Fire") \
 	CMD (CMD_PLAYER_ALTERNATE_FIRE, 0x40, "Player Alternate Fire") \
-	CMD (CMD_QUIT, 					0x80, "Quit Game")
+	CMD (CMD_SET_FPS_60, 			0x80, "Set FPS 60") \
+	CMD (CMD_SET_FPS_10, 			0x100, "Set FPS 10") \
+	CMD (CMD_QUIT, 					0x200, "Quit Game")
 
 #define CMD(c1, c2, c3) c1 = c2,
 enum {

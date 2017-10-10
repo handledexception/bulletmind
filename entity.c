@@ -107,13 +107,13 @@ void ent_refresh(SDL_Renderer *renderer, double dt, recti32_t *screen)
 		if (e != NULL) {
 			// PLAYER
 			if (ent_hascaps(edx, PLAYER) == true) {
-				float speed = 1.f;				
+				float speed = 500.f;				
 				vec2f_t accel = { };
 				vec2f_t avgvel = { };
 				vec2f_t oldvel = { };
-				
+				vec2f_t delta = { };
 				// pos = 0.5 * accel * dt^2 + newvel
-				if (cmd_getstate(CMD_PLAYER_SPEED) == true) { speed = 3.0f; }
+				if (cmd_getstate(CMD_PLAYER_SPEED) == true) { speed = 20.0f; }
 				if (cmd_getstate(CMD_PLAYER_UP) == true) { accel.y = -speed; }
 				if (cmd_getstate(CMD_PLAYER_DOWN) == true) { accel.y = speed; } 
 				if (cmd_getstate(CMD_PLAYER_LEFT) == true) { accel.x = -speed; }
@@ -121,13 +121,20 @@ void ent_refresh(SDL_Renderer *renderer, double dt, recti32_t *screen)
 				if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_PRIMARY_FIRE triggered!\n"); }
 				if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }					
 				
-				vec2f_equ(&oldvel, &e->vel);
-				vec2f_scale(&accel, 0.5);
-				//vec2f_scale(&accel, dt);
+				// euler
+				vec2f_scale(&accel, dt);
+				vec2f_addequ(&e->vel, &accel);
+				vec2f_equ(&delta, &e->vel);
+				vec2f_scale(&delta, dt);
+				vec2f_addequ(&e->pos, &delta);
+				
+				// totally wrong ass verlet
+				/*vec2f_equ(&oldvel, &e->vel);
+				vec2f_scale(&accel, dt);
 				vec2f_addequ(&e->vel, &accel);
 				vec2f_add(&avgvel, &oldvel, &e->vel);
 				vec2f_scale(&avgvel, 0.5 * (dt * dt));
-				vec2f_addequ(&e->pos, &avgvel);				
+				vec2f_addequ(&e->pos, &avgvel);*/
 				
 				if (e->pos.x > screen->w) { e->pos.x = screen->w; }
 				if (e->pos.y > screen->h) { e->pos.y = screen->h; }
@@ -154,6 +161,7 @@ void ent_refresh(SDL_Renderer *renderer, double dt, recti32_t *screen)
 				vec2f_equ(&player_pos, &player->pos);
 				vec2f_sub(&dist, &player_pos, &option_pos);				
 				vec2f_norm(&dist);
+				vec2f_scale(&dist, 100.f);
 				vec2f_scale(&dist, 0.5 * dt);
 				//vec2f_add(&option_pos, &orig_opt_pos, &dist)
 				vec2f_addequ(&e->pos, &dist);

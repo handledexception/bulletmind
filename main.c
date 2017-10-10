@@ -40,11 +40,12 @@ int main(int argc, char *argv[])
 
 	
 	double dt = 0.0;
+	double target_frametime = TARGET_FRAMETIME(60);	
 	recti32_t scr = { 0, 0, engine->cx, engine->cy };
 	
 	// main loop	
 	while(engine->state != ES_QUIT) {		
-		double frame_start = timing_getmillisec();		
+		double frame_start = timing_getsec();	
 
 		switch(engine->state) {
 			case ES_STARTUP:
@@ -60,14 +61,17 @@ int main(int argc, char *argv[])
 				ent_refresh(engine->renderer, dt, &scr);
 				
 				if (cmd_getstate(CMD_QUIT) == true) { engine->state = ES_QUIT; }
+				if (cmd_getstate(CMD_SET_FPS_60) == true) { target_frametime = TARGET_FRAMETIME(60); }
+				if (cmd_getstate(CMD_SET_FPS_10) == true) { target_frametime = TARGET_FRAMETIME(10); }
 				break;
 			case ES_QUIT:
 				break;
-		}
+		}			
 		
-		dt = timing_getmillisec() - frame_start;
-		//engine_lockfps(engine_time, TARGET_FPS);
-		
+		do { 
+			dt = timing_getsec() - frame_start;
+		} while (dt < target_frametime);
+		// printf("%f\n", dt);
 		SDL_RenderPresent(engine->renderer);
 		engine->frame_count++;		
 	}
