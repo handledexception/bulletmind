@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <Windows.h>
+
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
@@ -49,8 +51,11 @@ int main(int argc, char* argv[])
 				SDL_SetRenderDrawColor(engine->renderer, 0x00, 0x00, 0x00, 0xFF);
 				SDL_RenderClear(engine->renderer);			
 				
+				char timebuf[256];
+				_strtime_s(timebuf, 128);
+
 				font_print(engine->renderer, 25, 25, 1.0, "Frametime: %f", dt);
-				font_print(engine->renderer, 25, 45, 1.0, "timing_getsec: %f", timing_getsec());
+				font_print(engine->renderer, 25, 45, 1.0, "Time: %s", timebuf);
 		
 				sys_refresh();				
 				ent_refresh(engine->renderer, dt, &scr);
@@ -65,8 +70,9 @@ int main(int argc, char* argv[])
 		
 		do { 
 			dt = timing_getsec() - frame_start;
+			if (dt > TARGET_FRAMETIME(30)) { dt = TARGET_FRAMETIME(30); }
 		} while (dt < target_frametime);
-		// printf("%f\n", dt);
+		//printf("%f\n", dt);
 		SDL_RenderPresent(engine->renderer);
 		engine->frame_count++;		
 	}

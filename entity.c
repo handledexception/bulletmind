@@ -1,5 +1,6 @@
 #include "command.h"
 #include "entity.h"
+#include "font.h"
 #include "main.h"
 #include "timing.h"
 
@@ -143,7 +144,7 @@ void ent_refresh(SDL_Renderer *renderer, double dt, recti32_t *screen)
 				//printf("e->vel: %.3f, %.3f\n", e->vel.x, e->vel.y);
 				//printf("avg_vel: %.3f, %.3f\n", avg_vel.x, avg_vel.y);
 				//printf("old_vel: %.3f, %.3f\n", old_vel.x, old_vel.y);
-						
+				
 				drawrect_centered(renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0xff, 0x00, 0x00, 0xff);						
 			}
 
@@ -166,6 +167,9 @@ void ent_refresh(SDL_Renderer *renderer, double dt, recti32_t *screen)
 				//vec2f_add(&option_pos, &orig_opt_pos, &dist)
 				vec2f_addequ(&e->pos, &dist);
 				
+				/*font_print(renderer, 0, 0, 2.0, "player: %f, %f", player->pos.x, player->pos.y);
+				font_print(renderer, 0, 50, 2.0, "satellite: %f, %f", e->pos.x, e->pos.y);
+				font_print(renderer, 0, 150, 2.0, "dist: %f, %f", dist.x, dist.y);*/
 				drawrect_centered(renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0x00, 0xff, 0x00, 0xff);						
 			}
 		}
