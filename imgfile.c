@@ -1,8 +1,11 @@
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS 1
+#endif
+
 #include "imgfile.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 
 struct tga_header_s {
     uint8_t id_length;              // field 1
@@ -53,7 +56,7 @@ bool imgfile_init(const char *path, imgfile_t *out)
     size_t tga_header_size = sizeof(*header);    
     // make sure we have a valid minimal TGA header and raw unmapped RGB data
     if (tga_header_size != 18 || header->color_map_type > 0 || header->image_type != 2) {
-        printf("imgfile_init: Incorrect TGA header size! (%zu bytes) Should be 18 bytes.\n");
+        printf("imgfile_init: Incorrect TGA header size! (%zu bytes) Should be 18 bytes.\n", tga_header_size);
         free(buf);
         buf = NULL;
         return false;
@@ -96,5 +99,15 @@ bool imgfile_init(const char *path, imgfile_t *out)
     
     fclose(fptr);
 
+	printf("imgfile_init: OK reading %s\n", path);
     return true;
+}
+
+void imgfile_shutdown(imgfile_t *img)
+{
+	if (img != NULL) {
+		free(img);
+		img = NULL;
+		printf("imagefile_shutdown: OK!\n");
+	}
 }

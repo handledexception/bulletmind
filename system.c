@@ -30,8 +30,8 @@ uint8_t sys_init(engine_t *eng)
 		return -1;
 	}
 	
-	eng->cx = WINDOW_WIDTH;
-	eng->cy = WINDOW_HEIGHT;
+	eng->scr_width = WINDOW_WIDTH;
+	eng->scr_height = WINDOW_HEIGHT;
 	
 	eng->renderer = SDL_CreateRenderer(eng->window, -1, SDL_RENDERER_ACCELERATED);
 	if (eng->renderer == NULL) {

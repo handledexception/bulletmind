@@ -108,10 +108,10 @@ void ent_refresh(SDL_Renderer *renderer, double dt, recti32_t *screen)
 			// PLAYER
 			if (ent_hascaps(edx, PLAYER) == true) {
 				float speed = 500.f;				
-				vec2f_t accel = { };
-				vec2f_t avgvel = { };
-				vec2f_t oldvel = { };
-				vec2f_t delta = { };
+				vec2f_t accel = { 0 };
+				vec2f_t avgvel = { 0 };
+				vec2f_t oldvel = { 0 };
+				vec2f_t delta = { 0 };
 				// pos = 0.5 * accel * dt^2 + newvel
 				if (cmd_getstate(CMD_PLAYER_SPEED) == true) { speed = 20.0f; }
 				if (cmd_getstate(CMD_PLAYER_UP) == true) { accel.y = -speed; }
@@ -136,10 +136,10 @@ void ent_refresh(SDL_Renderer *renderer, double dt, recti32_t *screen)
 				vec2f_scale(&avgvel, 0.5 * (dt * dt));
 				vec2f_addequ(&e->pos, &avgvel);*/
 				
-				if (e->pos.x > screen->w) { e->pos.x = screen->w; }
-				if (e->pos.y > screen->h) { e->pos.y = screen->h; }
-				if (e->pos.x < screen->x) { e->pos.x = screen->x; }
-				if (e->pos.y < screen->y) { e->pos.y = screen->y; }
+				if (e->pos.x > (float)screen->w) { e->pos.x = (float)screen->w; }
+				if (e->pos.y > (float)screen->h) { e->pos.y = (float)screen->h; }
+				if (e->pos.x < (float)screen->x) { e->pos.x = (float)screen->x; }
+				if (e->pos.y < (float)screen->y) { e->pos.y = (float)screen->y; }
 				//printf("e->vel: %.3f, %.3f\n", e->vel.x, e->vel.y);
 				//printf("avg_vel: %.3f, %.3f\n", avg_vel.x, avg_vel.y);
 				//printf("old_vel: %.3f, %.3f\n", old_vel.x, old_vel.y);
@@ -149,12 +149,12 @@ void ent_refresh(SDL_Renderer *renderer, double dt, recti32_t *screen)
 
 			// Player Satellite AKA Option
 			if (ent_hascaps(edx, SATELLITE) == true) {
-				vec2f_t orig_opt_pos = {};
+				vec2f_t orig_opt_pos = { 0 };
 				vec2f_equ(&orig_opt_pos, &e->pos);
 				
-				vec2f_t option_pos = {};
-				vec2f_t player_pos = {};
-				vec2f_t dist = {};
+				vec2f_t option_pos = { 0 };
+				vec2f_t player_pos = { 0 };
+				vec2f_t dist = { 0 };
 				
 				entity_t *player = ent_byindex(1);
 				vec2f_equ(&option_pos, &e->pos);
@@ -162,7 +162,7 @@ void ent_refresh(SDL_Renderer *renderer, double dt, recti32_t *screen)
 				vec2f_sub(&dist, &player_pos, &option_pos);				
 				vec2f_norm(&dist);
 				vec2f_scale(&dist, 100.f);
-				vec2f_scale(&dist, 0.5 * dt);
+				vec2f_scale(&dist, (float)(0.5 * dt));
 				//vec2f_add(&option_pos, &orig_opt_pos, &dist)
 				vec2f_addequ(&e->pos, &dist);
 				
