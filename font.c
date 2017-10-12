@@ -1,8 +1,7 @@
-#define _CRT_SECURE_NO_WARNINGS
-
 #include "font.h"
 #include "imgfile.h"
 
+#include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -18,7 +17,7 @@
 static imgfile_t *bitmap_font = NULL;
 static SDL_Texture *fontex = NULL;
 
-bool font_init(SDL_Renderer *ren, const char *path)
+bool font_init(void *ren, const char *path)
 {
 	bitmap_font = (imgfile_t *)malloc(sizeof(imgfile_t));
 	bool loaded = imgfile_init(path, bitmap_font);
@@ -28,7 +27,7 @@ bool font_init(SDL_Renderer *ren, const char *path)
 	}
 
 	fontex = SDL_CreateTexture(
-							ren, 
+							(SDL_Renderer *)ren, 
 							SDL_PIXELFORMAT_BGR24, 
 							SDL_TEXTUREACCESS_STATIC, 
 							bitmap_font->width, 
@@ -42,15 +41,13 @@ bool font_init(SDL_Renderer *ren, const char *path)
 	return true;
 }
 
-void font_print(SDL_Renderer *ren, int32_t x, int32_t y, float scale, const char *str, ...)
+void font_print(void *ren, int32_t x, int32_t y, float scale, const char *str, ...)
 {
 	va_list args;
 	char text[256];
 	int32_t c = 0;	
-	int32_t fx, tu, tv;
-	uint8_t *bitmap = NULL;
-
-	int32_t stride = FONT_PX * (bitmap_font->bpp / 8);
+	int32_t fx, tu, tv;	
+	
 	if (*str == '\0') {
 		return;
 	}
@@ -66,7 +63,7 @@ void font_print(SDL_Renderer *ren, int32_t x, int32_t y, float scale, const char
 			tv = (float)(fx / FONT_COLS) * FONT_PX;
 			SDL_Rect src = { tu, tv, FONT_PX, FONT_PX };
 			SDL_Rect dst = { x, y, FONT_PX * scale, FONT_PX * scale };
-			SDL_RenderCopy(ren, fontex, &src, &dst);
+			SDL_RenderCopy((SDL_Renderer *)ren, fontex, &src, &dst);
 			x += FONT_PX * scale;
 		}		
 		c++;

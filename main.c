@@ -1,6 +1,6 @@
 /* 		Bulletmind
 		(c) 2017 Paul Hindt
-		v0.1.030817a
+		v0.1.101117a
 */
 #include "command.h"
 #include "entity.h"
