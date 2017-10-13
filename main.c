@@ -2,6 +2,9 @@
 		(c) 2017 Paul Hindt
 		v0.1.101117a
 */
+
+#define DEBUG_PRINT
+
 #include "command.h"
 #include "entity.h"
 //#include "imgfile.h"
@@ -14,11 +17,14 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
-#include <Windows.h>
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
+
+double engine_time;
+int frame_count;
 
 int main(int argc, char* argv[])
 {	
@@ -33,7 +39,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}	
 	
-	font_init(engine->renderer, "G:\\bulletmind\\assets\\7px_font.tga");
+	font_init(engine->renderer, "C:\\Users\\paulh\\Documents\\Code\\Bulletmind\\assets\\7px_font.tga");
 	
 	double dt = 0.0;
 	double target_frametime = TARGET_FRAMETIME(60);	
@@ -41,23 +47,24 @@ int main(int argc, char* argv[])
 	
 	// main loop	
 	while(engine->state != ES_QUIT) {		
-		double frame_start = timing_getsec();	
+		double frame_start = timing_getsec();
 
 		switch(engine->state) {
 			case ES_STARTUP:
 				break;
-			case ES_PLAY:		
-
+			case ES_PLAY:
 				SDL_SetRenderDrawColor(engine->renderer, 0x00, 0x00, 0x00, 0xFF);
 				SDL_RenderClear(engine->renderer);			
 				
+#ifdef DEBUG_PRINT
 				char timebuf[256];
 				_strtime_s(timebuf, 128);
-
-				font_print(engine->renderer, 25, 25, 1.0, "Frametime: %f", dt);
-				font_print(engine->renderer, 25, 45, 1.0, "Time: %s", timebuf);
-		
-				sys_refresh();				
+				font_print(engine->renderer, 25, 10, 1.0, "Engine Time: %f", engine_time);
+				font_print(engine->renderer, 25, 20, 1.0, "Frametime: %f", dt);
+				font_print(engine->renderer, 25, 30, 1.0, "Frame Count: %d", frame_count);
+				font_print(engine->renderer, 25, 40, 1.0, "Time: %s", timebuf);
+#endif				
+				sys_refresh();			
 				ent_refresh(engine->renderer, dt, &scr);
 				
 				if (cmd_getstate(CMD_QUIT) == true) { engine->state = ES_QUIT; }
@@ -74,7 +81,7 @@ int main(int argc, char* argv[])
 		} while (dt < target_frametime);
 		//printf("%f\n", dt);
 		SDL_RenderPresent(engine->renderer);
-		engine->frame_count++;		
+		frame_count++;		
 	}
 
 	font_shutdown();

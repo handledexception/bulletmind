@@ -13,7 +13,7 @@ uint8_t sys_init(engine_t *eng)
 {	
 	eng->state = ES_STARTUP;
 	double init_start = timing_getsec();
-	eng->frame_count = 0;
+	frame_count = 0;
 
 	SDL_Init(SDL_INIT_EVERYTHING);
 	eng->window = SDL_CreateWindow
@@ -47,7 +47,8 @@ uint8_t sys_init(engine_t *eng)
 }
 
 void sys_refresh()
-{
+{	
+	engine_time = timing_getsec();
 	SDL_Event e;
 	
 	while (SDL_PollEvent(&e)) {
