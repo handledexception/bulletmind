@@ -129,4 +129,18 @@ inline float vec2f_dot(vec2f_t *a, vec2f_t *b)
 	return (a->x * b->x + a->y * b->y);
 }
 
+// vector friction
+inline void vec2f_friction(vec2f_t *a, float friction)
+{
+	float speed = vec2f_length(a);
+	float newspeed = speed - speed * friction;
+
+	if(newspeed > 0)
+		newspeed /= speed;
+	else
+		newspeed = 0;
+
+	vec2f_scale(a, newspeed);
+}
+
 #endif
