@@ -19,8 +19,6 @@ typedef struct {
 	SDL_Renderer *renderer;
 	engine_state_t state;
 	int32_t scr_width, scr_height;
-    //double engine_time;
-    uint32_t frame_count;
 } engine_t;
 
 uint8_t sys_init(engine_t *eng);

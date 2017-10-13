@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS 1
+
 #include "command.h"
 #include "entity.h"
 #include "font.h"
@@ -9,10 +11,11 @@
 #include <string.h>
 #include <math.h>
 
+#include <SDL.h>
+
 entity_t *array_ents;
 size_t sz_arrayents = sizeof(entity_t) * MAX_ENTITIES;
 
-double engine_time;
 int last_entity = 0;
 
 void drawrect_centered(SDL_Renderer *rend, int32_t x, int32_t y, int32_t w, int32_t h, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
@@ -38,27 +41,18 @@ bool ent_init()
 	}
 	
 	// spawn player as first entity
-	last_entity = ent_spawn(PLAYER | MOVER | SHOOTER | COLLIDER);
+	vec2f_t org = { (float)(WINDOW_WIDTH / 2), (float)(WINDOW_HEIGHT / 2) };
+	last_entity = ent_spawn("player", FOREVER, &org, (PLAYER | MOVER | SHOOTER | COLLIDER));
 	if (last_entity == NULL_INDEX) {
 		printf("ent_init - failed initializing player entity!\n");
 		return false;
 	}
-	recti32_t bounding = { 0, 0, 16, 16 };
-	vec2f_t pos = { (float)(WINDOW_WIDTH / 2), (float)(WINDOW_HEIGHT / 2) };
+
 	entity_t *player = &array_ents[last_entity];	
-	player->id = 999;
-	player->bbox = bounding;
-	ent_setpos(last_entity, &pos);
-	
-	last_entity = ent_spawn(SATELLITE | MOVER | SHOOTER);
-	if (last_entity == NULL_INDEX) { return false; }
 	vec2f_t epos;
 	epos.x = player->pos.x + 150;
 	epos.y = player->pos.y + 75;
-	entity_t *enemy = &array_ents[last_entity];
-	enemy->id = 101;
-	enemy->bbox = bounding;
-	ent_setpos(last_entity, &epos);
+	last_entity = ent_spawn("satellite", FOREVER, &epos, (SATELLITE | MOVER | SHOOTER));
 
 	printf("ent_init OK\n");
 	return true;
@@ -66,112 +60,113 @@ bool ent_init()
 
 int32_t ent_new()
 {
-	static int32_t ent = 0;
-	int32_t start = ent;
 	entity_t *e = NULL;
-	//printf("ent_new = %d\n", ent);
-	do {
-		ent = (ent + 1) & MASK_ENTITIES;
-		if (ent == start) {
-			printf("ent_new overflow!\n");
-			return NULL_INDEX;
+	for (int32_t edx = 0; edx < MAX_ENTITIES; edx++) {
+		e = &array_ents[edx];
+		if (e->caps == 0) {
+			printf("ent_new: found empty slot %d for entity\n", edx);
+			memset(e, 0, sizeof(entity_t));
+			return edx;
 		}
-	} while (array_ents[ent].caps != 0);
+	}	
 
-	e = &array_ents[ent];
-	memset(e, 0, sizeof(entity_t));
-	
-	printf("ent_new with index %d\n", ent);
-
-	return ent;
+	return NULL_INDEX;
 }
 
-int32_t ent_spawn(entity_caps caps)
+int32_t ent_spawn(const char *name, float lifetime, vec2f_t *org, entity_caps caps)
 {
 	int32_t ent = ent_new();
 	if (ent == NULL_INDEX) { return NULL_INDEX; }
 	
+	const recti32_t bounding = { 0, 0, 16, 16 }; // default rect of entity is 16x16px
 	entity_t *e = &array_ents[ent];
+	if (name != NULL && strlen(name) <= 256+1) { strcpy(e->name, name); }
 	e->caps |= caps;
-	e->time_created = engine_time;
-	printf("%f - ent_spawn with caps %d\n", e->time_created, caps);
+	e->pos = *org;
+	e->angle = 0.f;
+	e->bbox = bounding;
+	e->timestamp = timing_getsec();
+	e->lifetime = lifetime;
+	printf("ent_spawn: (%f) \"%s\" with caps %d\n", e->timestamp, e->name, caps);
 	return ent;
 }
 
-void ent_refresh(SDL_Renderer *renderer, double dt, recti32_t *screen)
+void ent_refresh(void *renderer, double dt, recti32_t *screen)
 {
 	//todo(paulh): decide whether to use pointers or indices to deal w/ entities in functions
-	for (int32_t edx = 0; edx <= last_entity; edx++) {
-				
-		entity_t *e = ent_byindex(edx);
-		
-		if (e != NULL) {
-			// PLAYER
-			if (ent_hascaps(edx, PLAYER) == true) {
-				float speed = 500.f;				
-				vec2f_t accel = { 0 };
-				vec2f_t avgvel = { 0 };
-				vec2f_t oldvel = { 0 };
-				vec2f_t delta = { 0 };
-				// pos = 0.5 * accel * dt^2 + newvel
-				if (cmd_getstate(CMD_PLAYER_SPEED) == true) { speed = 20.0f; }
-				if (cmd_getstate(CMD_PLAYER_UP) == true) { accel.y = -speed; }
-				if (cmd_getstate(CMD_PLAYER_DOWN) == true) { accel.y = speed; } 
-				if (cmd_getstate(CMD_PLAYER_LEFT) == true) { accel.x = -speed; }
-				if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { accel.x = speed; }	
-				if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_PRIMARY_FIRE triggered!\n"); }
-				if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }					
-				
-				// euler
-				vec2f_scale(&accel, dt);
-				vec2f_addequ(&e->vel, &accel);
-				vec2f_equ(&delta, &e->vel);
-				vec2f_scale(&delta, dt);
-				vec2f_addequ(&e->pos, &delta);
-				
-				// totally wrong ass verlet
-				/*vec2f_equ(&oldvel, &e->vel);
-				vec2f_scale(&accel, dt);
-				vec2f_addequ(&e->vel, &accel);
-				vec2f_add(&avgvel, &oldvel, &e->vel);
-				vec2f_scale(&avgvel, 0.5 * (dt * dt));
-				vec2f_addequ(&e->pos, &avgvel);*/
-				
-				if (e->pos.x > (float)screen->w) { e->pos.x = (float)screen->w; }
-				if (e->pos.y > (float)screen->h) { e->pos.y = (float)screen->h; }
-				if (e->pos.x < (float)screen->x) { e->pos.x = (float)screen->x; }
-				if (e->pos.y < (float)screen->y) { e->pos.y = (float)screen->y; }
-				//printf("e->vel: %.3f, %.3f\n", e->vel.x, e->vel.y);
-				//printf("avg_vel: %.3f, %.3f\n", avg_vel.x, avg_vel.y);
-				//printf("old_vel: %.3f, %.3f\n", old_vel.x, old_vel.y);
-				
-				drawrect_centered(renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0xff, 0x00, 0x00, 0xff);						
-			}
+	for (int32_t edx = 0; edx <= MAX_ENTITIES; edx++) {
 
-			// Player Satellite AKA Option
-			if (ent_hascaps(edx, SATELLITE) == true) {
-				vec2f_t orig_opt_pos = { 0 };
-				vec2f_equ(&orig_opt_pos, &e->pos);
-				
-				vec2f_t option_pos = { 0 };
-				vec2f_t player_pos = { 0 };
-				vec2f_t dist = { 0 };
-				
-				entity_t *player = ent_byindex(1);
-				vec2f_equ(&option_pos, &e->pos);
-				vec2f_equ(&player_pos, &player->pos);
-				vec2f_sub(&dist, &player_pos, &option_pos);				
-				vec2f_norm(&dist);
-				vec2f_scale(&dist, 100.f);
-				vec2f_scale(&dist, (float)(0.5 * dt));
-				//vec2f_add(&option_pos, &orig_opt_pos, &dist)
-				vec2f_addequ(&e->pos, &dist);
-				
-				/*font_print(renderer, 0, 0, 2.0, "player: %f, %f", player->pos.x, player->pos.y);
-				font_print(renderer, 0, 50, 2.0, "satellite: %f, %f", e->pos.x, e->pos.y);
-				font_print(renderer, 0, 150, 2.0, "dist: %f, %f", dist.x, dist.y);*/
-				drawrect_centered(renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0x00, 0xff, 0x00, 0xff);						
-			}
+		entity_t *e = ent_byindex(edx);
+		if (e->caps == 0 || e == NULL) {
+			//printf("ent_refresh: bad entity index: %d\n", edx);
+			return;
+		}
+
+		// PLAYER
+		if (ent_hascaps(edx, PLAYER) == true) {
+			float speed = 800.f;
+			vec2f_t accel = { 0 };
+			vec2f_t avgvel = { 0 };
+			vec2f_t oldvel = { 0 };
+			vec2f_t delta = { 0 };
+			// pos = 0.5 * accel * dt^2 + newvel
+			if (cmd_getstate(CMD_PLAYER_SPEED) == true) { speed *= 1.5f; }
+			if (cmd_getstate(CMD_PLAYER_UP) == true) { accel.y = -speed; }
+			if (cmd_getstate(CMD_PLAYER_DOWN) == true) { accel.y = speed; }
+			if (cmd_getstate(CMD_PLAYER_LEFT) == true) { accel.x = -speed; }
+			if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { accel.x = speed; }
+			if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_PRIMARY_FIRE triggered!\n"); }
+			if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }
+
+			// euler
+			vec2f_scale(&accel, dt);
+			vec2f_addequ(&e->vel, &accel);
+			vec2f_equ(&delta, &e->vel);
+			vec2f_scale(&delta, dt);
+			vec2f_addequ(&e->pos, &delta);
+
+			// totally wrong ass verlet
+			/*vec2f_equ(&oldvel, &e->vel);
+			vec2f_scale(&accel, dt);
+			vec2f_addequ(&e->vel, &accel);
+			vec2f_add(&avgvel, &oldvel, &e->vel);
+			vec2f_scale(&avgvel, 0.5 * (dt * dt));
+			vec2f_addequ(&e->pos, &avgvel);*/
+
+			if (e->pos.x > (float)screen->w) { e->pos.x = (float)screen->w; }
+			if (e->pos.y > (float)screen->h) { e->pos.y = (float)screen->h; }
+			if (e->pos.x < (float)screen->x) { e->pos.x = (float)screen->x; }
+			if (e->pos.y < (float)screen->y) { e->pos.y = (float)screen->y; }
+			//printf("e->vel: %.3f, %.3f\n", e->vel.x, e->vel.y);
+			//printf("avg_vel: %.3f, %.3f\n", avg_vel.x, avg_vel.y);
+			//printf("old_vel: %.3f, %.3f\n", old_vel.x, old_vel.y);
+
+			drawrect_centered((SDL_Renderer *)renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0xff, 0x00, 0x00, 0xff);
+		}
+
+		// Player Satellite AKA Option
+		if (ent_hascaps(edx, SATELLITE) == true) {
+			vec2f_t orig_opt_pos = { 0 };
+			vec2f_equ(&orig_opt_pos, &e->pos);
+
+			vec2f_t option_pos = { 0 };
+			vec2f_t player_pos = { 0 };
+			vec2f_t dist = { 0 };
+
+			entity_t *player = ent_byindex(0);
+			vec2f_equ(&option_pos, &e->pos);
+			vec2f_equ(&player_pos, &player->pos);
+			vec2f_sub(&dist, &player_pos, &option_pos);
+			vec2f_norm(&dist);
+			vec2f_scale(&dist, 100.f);
+			vec2f_scale(&dist, (float)(0.5 * dt));
+			//vec2f_add(&option_pos, &orig_opt_pos, &dist)
+			vec2f_addequ(&e->pos, &dist);
+
+			/*font_print(renderer, 0, 0, 2.0, "player: %f, %f", player->pos.x, player->pos.y);
+			font_print(renderer, 0, 50, 2.0, "satellite: %f, %f", e->pos.x, e->pos.y);
+			font_print(renderer, 0, 150, 2.0, "dist: %f, %f", dist.x, dist.y);*/
+			drawrect_centered((SDL_Renderer *)renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0x00, 0xff, 0x00, 0xff);
 		}
 	}
 }
