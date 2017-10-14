@@ -8,6 +8,8 @@
 
 #define ARRAY_SIZE(x) sizeof(x) / sizeof(x[0])
 
+extern int32_t mousex, mousey;
+
 typedef enum {
 	ES_STARTUP,
 	ES_PLAY,
