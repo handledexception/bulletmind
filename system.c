@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <SDL.h>
 
+int32_t mousex, mousey; // extern
+
 uint8_t sys_init(engine_t *eng)
 {	
 	eng->state = ES_STARTUP;
@@ -42,14 +44,17 @@ uint8_t sys_init(engine_t *eng)
 	in_init();
 	cmd_init();
 	ent_init();
+	timing_init();
+
 	printf("sys_init OK [%fms]\n", (timing_getsec() - init_start) * 1000.0);
 	return 0;
 }
 
 void sys_refresh()
 {	
-	engine_time = timing_getsec();
 	SDL_Event e;
+	
+	SDL_GetMouseState(&mousex, &mousey);	
 	
 	while (SDL_PollEvent(&e)) {
 		switch(e.type) {
