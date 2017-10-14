@@ -14,6 +14,7 @@
                 "buffer.c",
                 "command.c",
                 "entity.c",
+                "font.c",
                 "imgfile.c",
                 "input.c",
                 "system.c",
