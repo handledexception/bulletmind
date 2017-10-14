@@ -4,9 +4,9 @@
 #include "c99defs.h"
 #include "vector.h"
 
-#define FOREVER 0.f
+#define FOREVER 0.0
 
-#define MAX_ENTITIES 32 // small max ents for debugging
+#define MAX_ENTITIES 128 // small max ents for debugging
 #define MASK_ENTITIES (MAX_ENTITIES - 1)
 #define MAX_ENTITY_CAPS 64
 
@@ -16,7 +16,7 @@ typedef enum {
 	DESTROYABLE = 32,
 	COLLIDER = 64,
 	SATELLITE = 128,
-	ENEMY = 256,
+	BULLET = 256,
 	PLAYER = 512
 } entity_caps;
 
@@ -26,6 +26,8 @@ typedef struct {
 		
 	vec2f_t pos;
 	vec2f_t vel;
+	vec2f_t mouse_org;
+
 	float angle;
 	recti32_t bbox;
 		
@@ -41,8 +43,11 @@ int32_t ent_setcaps(int32_t ent, entity_caps caps);
 int32_t ent_removecaps(int32_t ent, entity_caps caps);
 bool ent_hascaps(int32_t ent, entity_caps caps);
 void ent_free(entity_t *e);
+
 void ent_setpos(int32_t ent, vec2f_t *pos);
 void ent_setvel(int32_t ent, vec2f_t *vel, float ang);
+void ent_setmouseorg(int32_t ent, vec2f_t *morg);
+void ent_setbbox(int32_t ent, recti32_t *bbox);
 entity_t *ent_byindex(int32_t idx);
 void ent_shutdown();
 

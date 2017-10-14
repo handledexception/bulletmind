@@ -17,6 +17,7 @@ entity_t *array_ents;
 size_t sz_arrayents = sizeof(entity_t) * MAX_ENTITIES;
 
 int last_entity = 0;
+int32_t mousex, mousey;
 
 void drawrect_centered(SDL_Renderer *rend, int32_t x, int32_t y, int32_t w, int32_t h, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {		
@@ -52,7 +53,7 @@ bool ent_init()
 	vec2f_t epos;
 	epos.x = player->pos.x + 150;
 	epos.y = player->pos.y + 75;
-	last_entity = ent_spawn("satellite", FOREVER, &epos, (SATELLITE | MOVER | SHOOTER));
+	last_entity = ent_spawn("satellite", FOREVER, &epos, (SATELLITE | MOVER | SHOOTER | COLLIDER));
 
 	printf("ent_init OK\n");
 	return true;
@@ -76,7 +77,10 @@ int32_t ent_new()
 int32_t ent_spawn(const char *name, float lifetime, vec2f_t *org, entity_caps caps)
 {
 	int32_t ent = ent_new();
-	if (ent == NULL_INDEX) { return NULL_INDEX; }
+	if (ent == NULL_INDEX) { 
+		printf("ent_spawn: no slots found to spawn entity %s\n", name);
+		return NULL_INDEX; 
+	}
 	
 	const recti32_t bounding = { 0, 0, 16, 16 }; // default rect of entity is 16x16px
 	entity_t *e = &array_ents[ent];
@@ -85,63 +89,104 @@ int32_t ent_spawn(const char *name, float lifetime, vec2f_t *org, entity_caps ca
 	e->pos = *org;
 	e->angle = 0.f;
 	e->bbox = bounding;
-	e->timestamp = timing_getsec();
-	e->lifetime = lifetime;
+	e->timestamp = timing_enginetime();
+	e->lifetime = e->timestamp + lifetime;
 	printf("ent_spawn: (%f) \"%s\" with caps %d\n", e->timestamp, e->name, caps);
 	return ent;
 }
 
 void ent_refresh(void *renderer, double dt, recti32_t *screen)
 {
-	//todo(paulh): decide whether to use pointers or indices to deal w/ entities in functions
-	for (int32_t edx = 0; edx <= MAX_ENTITIES; edx++) {
+	static float p_shoot_time = 0;
+	static bool pshooting = false;
+	float p_weap_fire_rate = 0.150;
 
+	//todo(paulh): decide whether to use pointers or indices to deal w/ entities in functions
+	for (int32_t edx = 0; edx <= MAX_ENTITIES; edx++) {		
 		entity_t *e = ent_byindex(edx);
-		if (e->caps == 0 || e == NULL) {
-			//printf("ent_refresh: bad entity index: %d\n", edx);
-			return;
+		// kill entities that have a fixed lifetime
+		if (e->lifetime > 0.0 && timing_enginetime() >= e->lifetime) {
+			//memset(e, 0, sizeof(entity_t));			
+			e->caps = 0;
 		}
 
 		// PLAYER
-		if (ent_hascaps(edx, PLAYER) == true) {
+		if (ent_hascaps(edx, PLAYER) == true) {			
 			float speed = 800.f;
 			vec2f_t accel = { 0 };
 			vec2f_t avgvel = { 0 };
 			vec2f_t oldvel = { 0 };
 			vec2f_t delta = { 0 };
-			// pos = 0.5 * accel * dt^2 + newvel
+			
+			// todo(paulh): take this out of the entity loop
 			if (cmd_getstate(CMD_PLAYER_SPEED) == true) { speed *= 1.5f; }
 			if (cmd_getstate(CMD_PLAYER_UP) == true) { accel.y = -speed; }
 			if (cmd_getstate(CMD_PLAYER_DOWN) == true) { accel.y = speed; }
 			if (cmd_getstate(CMD_PLAYER_LEFT) == true) { accel.x = -speed; }
 			if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { accel.x = speed; }
-			if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_PRIMARY_FIRE triggered!\n"); }
-			if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); }
+			if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) { 				
+				if (pshooting == false) {
+					p_shoot_time = (float)timing_getsec() + p_weap_fire_rate;
+					pshooting = true;
+				}				
+			}
+			else if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == false) {
+				pshooting = false;				
+			}
+			if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { 
+				printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); 
+			}
+
+			// player shooting
+			if (pshooting && timing_getsec() >= p_shoot_time) {
+				p_shoot_time = timing_getsec() + p_weap_fire_rate;
+				entity_t *player = ent_byindex(0);
+				vec2f_t bullet_org = player->pos;
+				vec2f_t mouse = { mousex, mousey };
+				bullet_org.x += (float)(player->bbox.w / 2);
+				bullet_org.y += (float)(player->bbox.h / 2);
+
+				int32_t bullet = ent_spawn("basic_bullet", 5.0, &bullet_org, BULLET | MOVER | COLLIDER);
+				recti32_t bbox = { 0, 0, 8, 8 };
+				ent_setbbox(bullet, &bbox);
+				ent_setmouseorg(bullet, &mouse);
+				printf("%d, %d\n", mousex, mousey);
+			}
 
 			// euler
 			vec2f_scale(&accel, dt);
 			vec2f_addequ(&e->vel, &accel);
+			vec2f_friction(&e->vel, 0.035);
 			vec2f_equ(&delta, &e->vel);
 			vec2f_scale(&delta, dt);
-			vec2f_addequ(&e->pos, &delta);
+			vec2f_addequ(&e->pos, &delta);			
 
-			// totally wrong ass verlet
-			/*vec2f_equ(&oldvel, &e->vel);
-			vec2f_scale(&accel, dt);
-			vec2f_addequ(&e->vel, &accel);
-			vec2f_add(&avgvel, &oldvel, &e->vel);
-			vec2f_scale(&avgvel, 0.5 * (dt * dt));
-			vec2f_addequ(&e->pos, &avgvel);*/
-
+			// screen bounds checking
 			if (e->pos.x > (float)screen->w) { e->pos.x = (float)screen->w; }
 			if (e->pos.y > (float)screen->h) { e->pos.y = (float)screen->h; }
 			if (e->pos.x < (float)screen->x) { e->pos.x = (float)screen->x; }
 			if (e->pos.y < (float)screen->y) { e->pos.y = (float)screen->y; }
-			//printf("e->vel: %.3f, %.3f\n", e->vel.x, e->vel.y);
-			//printf("avg_vel: %.3f, %.3f\n", avg_vel.x, avg_vel.y);
-			//printf("old_vel: %.3f, %.3f\n", old_vel.x, old_vel.y);
-
+			
 			drawrect_centered((SDL_Renderer *)renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0xff, 0x00, 0x00, 0xff);
+		}
+
+		// Bullets
+		if (ent_hascaps(edx, BULLET) == true) {
+			if (e->vel.x == 0.0 && e->vel.y == 0.0) {
+				vec2f_t dist = { 0 };
+				static vec2f_t org = { 0 };
+				org.x = e->pos.x;
+				org.y = e->pos.y;
+
+				vec2f_sub(&dist, &e->mouse_org, &org);
+				vec2f_norm(&dist);
+				vec2f_scale(&dist, 500.f);
+				vec2f_scale(&dist, (float)(0.5 * dt));
+				vec2f_equ(&e->vel, &dist);
+			}
+			vec2f_addequ(&e->pos, &e->vel);
+
+			drawrect_centered((SDL_Renderer *)renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0xc0, 0xa0, 0xdd, 0xff);
 		}
 
 		// Player Satellite AKA Option
@@ -158,7 +203,7 @@ void ent_refresh(void *renderer, double dt, recti32_t *screen)
 			vec2f_equ(&player_pos, &player->pos);
 			vec2f_sub(&dist, &player_pos, &option_pos);
 			vec2f_norm(&dist);
-			vec2f_scale(&dist, 100.f);
+			vec2f_scale(&dist, 300.f);
 			vec2f_scale(&dist, (float)(0.5 * dt));
 			//vec2f_add(&option_pos, &orig_opt_pos, &dist)
 			vec2f_addequ(&e->pos, &dist);
@@ -229,6 +274,18 @@ void ent_setvel(int32_t ent, vec2f_t *vel, float ang)
 		e->vel = *vel;
 		e->angle = atan(vec2f_dot(&e->pos, &e->vel));
 	}
+}
+
+void ent_setbbox(int32_t ent, recti32_t *bbox)
+{
+	entity_t *e = ent_byindex(ent);
+	e->bbox = *bbox;
+}
+
+void ent_setmouseorg(int32_t ent, vec2f_t *morg)
+{
+	entity_t *e = ent_byindex(ent);
+	e->mouse_org = *morg;
 }
 
 entity_t *ent_byindex(int32_t idx)
