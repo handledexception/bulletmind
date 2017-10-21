@@ -10,6 +10,4 @@
 #define TARGET_FPS 60
 #define TARGET_FRAMETIME(x) 1.0/x
 
-extern int frame_count;
-
 #endif

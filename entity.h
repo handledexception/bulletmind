@@ -24,9 +24,9 @@ typedef struct {
 	int8_t name[128];
 	int32_t caps;
 		
-	vec2f_t pos;
+	vec2f_t org;
 	vec2f_t vel;
-	vec2f_t mouse_org;
+	vec2f_t mouse_org; // click origin
 
 	float angle;
 	recti32_t bbox;
@@ -35,16 +35,19 @@ typedef struct {
 	double lifetime;
 } entity_t;
 
+extern entity_t *array_ents;
+
 bool ent_init();
 int32_t ent_new();
 int32_t ent_spawn(const char *name, float lifetime, vec2f_t *org, entity_caps caps);
-void ent_refresh(void *renderer, double dt, recti32_t *screen);
+void ent_eulermove(entity_t *e, vec2f_t *accel, float friction, double dt);
+void ent_refresh(void *renderer, double dt);
 int32_t ent_setcaps(int32_t ent, entity_caps caps);
 int32_t ent_removecaps(int32_t ent, entity_caps caps);
 bool ent_hascaps(int32_t ent, entity_caps caps);
 void ent_free(entity_t *e);
 
-void ent_setpos(int32_t ent, vec2f_t *pos);
+void ent_setpos(int32_t ent, vec2f_t *org);
 void ent_setvel(int32_t ent, vec2f_t *vel, float ang);
 void ent_setmouseorg(int32_t ent, vec2f_t *morg);
 void ent_setbbox(int32_t ent, recti32_t *bbox);

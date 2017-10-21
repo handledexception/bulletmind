@@ -4,6 +4,7 @@
 #include "entity.h"
 #include "font.h"
 #include "main.h"
+#include "system.h"
 #include "timing.h"
 
 #include <stdlib.h>
@@ -13,14 +14,14 @@
 
 #include <SDL.h>
 
-entity_t *array_ents;
+entity_t *array_ents; // extern
 size_t sz_arrayents = sizeof(entity_t) * MAX_ENTITIES;
 
 int last_entity = 0;
-int32_t mousex, mousey;
+int32_t mousex, mousey; // extern
 
 void drawrect_centered(SDL_Renderer *rend, int32_t x, int32_t y, int32_t w, int32_t h, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
-{		
+{
 	recti32_t rec = { 
 		x - (w / 2), 
 		y - (w / 2), 
@@ -49,10 +50,10 @@ bool ent_init()
 		return false;
 	}
 
-	entity_t *player = &array_ents[last_entity];	
+	entity_t *player = ent_byindex(last_entity);
 	vec2f_t epos;
-	epos.x = player->pos.x + 150;
-	epos.y = player->pos.y + 75;
+	epos.x = player->org.x + 150;
+	epos.y = player->org.y + 75;
 	last_entity = ent_spawn("satellite", FOREVER, &epos, (SATELLITE | MOVER | SHOOTER | COLLIDER));
 
 	printf("ent_init OK\n");
@@ -65,7 +66,7 @@ int32_t ent_new()
 	for (int32_t edx = 0; edx < MAX_ENTITIES; edx++) {
 		e = &array_ents[edx];
 		if (e->caps == 0) {
-			printf("ent_new: found empty slot %d for entity\n", edx);
+			//printf("ent_new: found empty slot %d for entity\n", edx);
 			memset(e, 0, sizeof(entity_t));
 			return edx;
 		}
@@ -86,20 +87,56 @@ int32_t ent_spawn(const char *name, float lifetime, vec2f_t *org, entity_caps ca
 	entity_t *e = &array_ents[ent];
 	if (name != NULL && strlen(name) <= 256+1) { strcpy(e->name, name); }
 	e->caps |= caps;
-	e->pos = *org;
+	e->org = *org;
 	e->angle = 0.f;
 	e->bbox = bounding;
+	//e->org.x += (float)(e->bbox.w / 2);
+	//e->org.y += (float)(e->bbox.h / 2);
 	e->timestamp = timing_enginetime();
 	e->lifetime = e->timestamp + lifetime;
 	printf("ent_spawn: (%f) \"%s\" with caps %d\n", e->timestamp, e->name, caps);
 	return ent;
 }
 
-void ent_refresh(void *renderer, double dt, recti32_t *screen)
+void ent_eulermove(entity_t *e, vec2f_t *accel, float friction, double dt)
 {
-	static float p_shoot_time = 0;
-	static bool pshooting = false;
-	float p_weap_fire_rate = 0.150;
+	vec2f_t delta = { 0 };
+
+	vec2f_scale(accel, dt);
+	vec2f_addequ(&e->vel, accel);
+	vec2f_friction(&e->vel, friction);
+	vec2f_equ(&delta, &e->vel);
+	vec2f_scale(&delta, dt);
+	vec2f_addequ(&e->org, &delta);
+}
+
+void ent_refresh(engine_t *engine, double dt)
+{
+	vec2f_t p_accel = { 0 };
+	float p_speed = 800.f;
+	float p_weap_fire_rate = 0.150f;
+	static double p_shoot_time = 0.0;
+	static bool p_shooting = false;
+
+	// Player entity movement
+	if (cmd_getstate(CMD_PLAYER_SPEED) == true) { p_speed *= 1.5f; }
+	if (cmd_getstate(CMD_PLAYER_UP) == true) { p_accel.y = -p_speed; }
+	if (cmd_getstate(CMD_PLAYER_DOWN) == true) { p_accel.y = p_speed; }
+	if (cmd_getstate(CMD_PLAYER_LEFT) == true) { p_accel.x = -p_speed; }
+	if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { p_accel.x = p_speed; }
+
+	// Player entity shooting
+	if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) {
+		if (p_shooting == false) {						
+			p_shooting = true;
+		}
+	}
+	else if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == false) {
+		p_shooting = false;
+	}
+	if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) {
+		printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n");
+	}
 
 	//todo(paulh): decide whether to use pointers or indices to deal w/ entities in functions
 	for (int32_t edx = 0; edx <= MAX_ENTITIES; edx++) {		
@@ -112,107 +149,78 @@ void ent_refresh(void *renderer, double dt, recti32_t *screen)
 
 		// PLAYER
 		if (ent_hascaps(edx, PLAYER) == true) {			
-			float speed = 800.f;
-			vec2f_t accel = { 0 };
-			vec2f_t avgvel = { 0 };
-			vec2f_t oldvel = { 0 };
-			vec2f_t delta = { 0 };
-			
-			// todo(paulh): take this out of the entity loop
-			if (cmd_getstate(CMD_PLAYER_SPEED) == true) { speed *= 1.5f; }
-			if (cmd_getstate(CMD_PLAYER_UP) == true) { accel.y = -speed; }
-			if (cmd_getstate(CMD_PLAYER_DOWN) == true) { accel.y = speed; }
-			if (cmd_getstate(CMD_PLAYER_LEFT) == true) { accel.x = -speed; }
-			if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { accel.x = speed; }
-			if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) { 				
-				if (pshooting == false) {
-					p_shoot_time = (float)timing_getsec() + p_weap_fire_rate;
-					pshooting = true;
-				}				
-			}
-			else if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == false) {
-				pshooting = false;				
-			}
-			if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) { 
-				printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n"); 
-			}
-
 			// player shooting
-			if (pshooting && timing_getsec() >= p_shoot_time) {
-				p_shoot_time = timing_getsec() + p_weap_fire_rate;
+			if (p_shooting && timing_getsec() >= p_shoot_time) {
+				p_shoot_time = timing_getsec() + p_weap_fire_rate;				
 				entity_t *player = ent_byindex(0);
-				vec2f_t bullet_org = player->pos;
+				vec2f_t bullet_org = player->org;
 				vec2f_t mouse = { mousex, mousey };
-				bullet_org.x += (float)(player->bbox.w / 2);
-				bullet_org.y += (float)(player->bbox.h / 2);
 
 				int32_t bullet = ent_spawn("basic_bullet", 5.0, &bullet_org, BULLET | MOVER | COLLIDER);
-				recti32_t bbox = { 0, 0, 8, 8 };
+				recti32_t bbox = { 0, 0, 12, 12 };
 				ent_setbbox(bullet, &bbox);
-				ent_setmouseorg(bullet, &mouse);
-				printf("%d, %d\n", mousex, mousey);
+				ent_setmouseorg(bullet, &mouse);				
 			}
 
 			// euler
-			vec2f_scale(&accel, dt);
-			vec2f_addequ(&e->vel, &accel);
-			vec2f_friction(&e->vel, 0.035);
-			vec2f_equ(&delta, &e->vel);
-			vec2f_scale(&delta, dt);
-			vec2f_addequ(&e->pos, &delta);			
+			ent_eulermove(e, &p_accel, 0.035, dt);
 
 			// screen bounds checking
-			if (e->pos.x > (float)screen->w) { e->pos.x = (float)screen->w; }
-			if (e->pos.y > (float)screen->h) { e->pos.y = (float)screen->h; }
-			if (e->pos.x < (float)screen->x) { e->pos.x = (float)screen->x; }
-			if (e->pos.y < (float)screen->y) { e->pos.y = (float)screen->y; }
+			if (e->org.x > (float)engine->scr_bounds.w) { e->org.x = (float)engine->scr_bounds.w; }
+			if (e->org.y > (float)engine->scr_bounds.h) { e->org.y = (float)engine->scr_bounds.h; }
+			if (e->org.x < (float)engine->scr_bounds.x) { e->org.x = (float)engine->scr_bounds.x; }
+			if (e->org.y < (float)engine->scr_bounds.y) { e->org.y = (float)engine->scr_bounds.y; }
 			
-			drawrect_centered((SDL_Renderer *)renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0xff, 0x00, 0x00, 0xff);
+			drawrect_centered(engine->renderer, (float)e->org.x, (float)e->org.y, e->bbox.w, e->bbox.h, 0xff, 0x00, 0x00, 0xff);
 		}
 
-		// Bullets
+		// BULLETS
 		if (ent_hascaps(edx, BULLET) == true) {
+				static vec2f_t dist = { 0 };				
 			if (e->vel.x == 0.0 && e->vel.y == 0.0) {
-				vec2f_t dist = { 0 };
-				static vec2f_t org = { 0 };
-				org.x = e->pos.x;
-				org.y = e->pos.y;
 
-				vec2f_sub(&dist, &e->mouse_org, &org);
+				// vector between entity mouse origin and entity origin
+				vec2f_sub(&dist, &e->mouse_org, &e->org);
 				vec2f_norm(&dist);
-				vec2f_scale(&dist, 500.f);
-				vec2f_scale(&dist, (float)(0.5 * dt));
-				vec2f_equ(&e->vel, &dist);
+				vec2f_scale(&dist, 50000.f);		
+				
+				// reflection: r = d-2(d*n)n where d*nd*n is the dot product, and nn must be normalized.				
 			}
-			vec2f_addequ(&e->pos, &e->vel);
+			ent_eulermove(e, &dist, 0.0, dt);
+			//vec2f_addequ(&e->org, &e->vel);
 
-			drawrect_centered((SDL_Renderer *)renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0xc0, 0xa0, 0xdd, 0xff);
+			drawrect_centered(engine->renderer, (float)e->org.x, (float)e->org.y, e->bbox.w, e->bbox.h, 0xc0, 0xa0, 0xdd, 0xff);
 		}
 
-		// Player Satellite AKA Option
-		if (ent_hascaps(edx, SATELLITE) == true) {
-			vec2f_t orig_opt_pos = { 0 };
-			vec2f_equ(&orig_opt_pos, &e->pos);
-
-			vec2f_t option_pos = { 0 };
-			vec2f_t player_pos = { 0 };
+		// SATELLITE
+		if (ent_hascaps(edx, SATELLITE) == true) {			
 			vec2f_t dist = { 0 };
 
-			entity_t *player = ent_byindex(0);
-			vec2f_equ(&option_pos, &e->pos);
-			vec2f_equ(&player_pos, &player->pos);
-			vec2f_sub(&dist, &player_pos, &option_pos);
+			entity_t *player = ent_byindex(0);			
+			vec2f_sub(&dist, &player->org, &e->org);
 			vec2f_norm(&dist);
-			vec2f_scale(&dist, 300.f);
-			vec2f_scale(&dist, (float)(0.5 * dt));
-			//vec2f_add(&option_pos, &orig_opt_pos, &dist)
-			vec2f_addequ(&e->pos, &dist);
+			vec2f_scale(&dist, 800.f);
+			ent_eulermove(e, &dist, 0.05, dt);
 
-			/*font_print(renderer, 0, 0, 2.0, "player: %f, %f", player->pos.x, player->pos.y);
-			font_print(renderer, 0, 50, 2.0, "satellite: %f, %f", e->pos.x, e->pos.y);
-			font_print(renderer, 0, 150, 2.0, "dist: %f, %f", dist.x, dist.y);*/
-			drawrect_centered((SDL_Renderer *)renderer, (float)e->pos.x, (float)e->pos.y, e->bbox.w, e->bbox.h, 0x00, 0xff, 0x00, 0xff);
+			drawrect_centered(engine->renderer, (float)e->org.x, (float)e->org.y, e->bbox.w, e->bbox.h, 0x00, 0xff, 0x00, 0xff);
 		}
+
+		//if (ent_hascaps(edx, COLLIDER) == true) {
+		//	for (int32_t c = 0; c < MAX_ENTITIES; c++) {
+		//		if (c == edx) break;
+		//		if (ent_hascaps(c, COLLIDER) == true) {
+		//			entity_t *coll = ent_byindex(c);
+		//			float ex = e->org.x + e->bbox.w;
+		//			float ey = e->org.y + e->bbox.h;
+		//			if (ex >= coll->org.x) {
+		//				e->org.x = coll->org.x - e->bbox.w;
+		//			}
+		//			if (ey > coll->org.y) {
+		//				e->org.y = coll->org.y - e->bbox.h;
+		//			}
+		//		}
+		//	}
+		//}
 	}
 }
 
@@ -259,11 +267,11 @@ void ent_free(entity_t *e)
 	}
 }
 
-void ent_setpos(int32_t ent, vec2f_t *pos)
+void ent_setpos(int32_t ent, vec2f_t *org)
 {	
 	entity_t *e = &array_ents[ent];
-	if (e != NULL && pos != NULL) {
-		e->pos = *pos;
+	if (e != NULL && org != NULL) {
+		e->org = *org;
 	}
 }
 
@@ -272,7 +280,7 @@ void ent_setvel(int32_t ent, vec2f_t *vel, float ang)
 	entity_t *e = &array_ents[ent];
 	if (e != NULL && vel != NULL) {
 		e->vel = *vel;
-		e->angle = atan(vec2f_dot(&e->pos, &e->vel));
+		e->angle = atan(vec2f_dot(&e->org, &e->vel));
 	}
 }
 
@@ -280,6 +288,8 @@ void ent_setbbox(int32_t ent, recti32_t *bbox)
 {
 	entity_t *e = ent_byindex(ent);
 	e->bbox = *bbox;
+	e->org.x -= e->bbox.w / 2;
+	e->org.y -= e->bbox.h / 2 ;
 }
 
 void ent_setmouseorg(int32_t ent, vec2f_t *morg)

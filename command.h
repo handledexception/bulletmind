@@ -3,11 +3,12 @@
 
 #include "c99defs.h"
 
-uint32_t *array_cmds;
+uint32_t *array_cmds; // this doesn't need to be a pointer
 
-void cmd_init();
+void cmd_init(void);
 bool cmd_getstate(uint32_t cmd);
-void cmd_shutdown();
+void cmd_refresh(void *engine);
+void cmd_shutdown(void);
 
 #define COMMAND_VALS \
 	CMD (CMD_PLAYER_UP, 			0x01, "Player Move Up") \

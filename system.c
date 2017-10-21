@@ -9,15 +9,16 @@
 #include <stdlib.h>
 #include <SDL.h>
 
+#define SDL_FLAGS (SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER)
 int32_t mousex, mousey; // extern
 
 uint8_t sys_init(engine_t *eng)
 {	
 	eng->state = ES_STARTUP;
 	double init_start = timing_getsec();
-	frame_count = 0;
+	eng->frame_count = 0;
 
-	SDL_Init(SDL_INIT_EVERYTHING);
+	SDL_Init(SDL_FLAGS);
 	eng->window = SDL_CreateWindow
 	(
 		"bulletmind", 
