@@ -7,6 +7,7 @@
         "xutility": "c",
         "stdio.h": "c",
         "system.h": "c",
-        "sdl.h": "c"
+        "sdl.h": "c",
+        "entity.h": "c"
     }
 }

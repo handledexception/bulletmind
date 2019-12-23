@@ -1,2 +1,6 @@
-/SDL/
-/x86/
+/SDL2
+/out
+/msvc
+cloc.bat
+cloc.exe
+history.txt
