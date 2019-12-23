@@ -4,52 +4,32 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "clang build debug x86",
+            "label": "Clean Build (clang-x86-debug)",
             "type": "shell",
-            "command": "clang",
-            "args": [
-                // "-v",
-                "--std=c11",
-                "-g",
-                "-O0",
-                "-Wall",
-                "-m32",
-                "${workspaceFolder}\\src\\buffer.c",
-                "${workspaceFolder}\\src\\command.c",
-                "${workspaceFolder}\\src\\entity.c",
-                "${workspaceFolder}\\src\\font.c",
-                "${workspaceFolder}\\src\\imgfile.c",
-                "${workspaceFolder}\\src\\input.c",
-                "${workspaceFolder}\\src\\system.c",
-                "${workspaceFolder}\\src\\timing.c",
-                "${workspaceFolder}\\src\\main.c",
-                "-I${workspaceFolder}\\src",
-                "-I${workspaceFolder}\\SDL2\\include",
-                "-L${workspaceFolder}\\SDL2\\lib\\x86",
-                "-lkernel32",
-                "-lSDL2main",
-                "-lSDL2",
-                "-Xlinker",
-                "/SUBSYSTEM:console",
-                "-o",
-                "${workspaceFolder}\\x86\\debug\\bmind.exe"
-            ],
+            "group": "build",
+            "windows": {
+                "command": "del /Q ${workspaceFolder}\\out\\windows\\clang-x86-debug\\*",
+            }
+        },
+        {
+            "label": "Compile and Link (clang-x86-debug)",
+            "type": "shell",
+            "group": "build",
+            "dependsOn": "Clean Build (clang-x86-debug)",
+            "windows": {
+                "command": "${workspaceFolder}\\clang-x86-debug-build.bat"
+            }
+        },
+        {
+            "label": "Build All (clang-x86-debug)",
+            "type": "shell",
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "problemMatcher": [
-                "$gcc"
-            ]
-        },
-        {
-            "label": "clean build",
-            "type": "shell",
-            "command": "del /Q ${workspaceFolder}\\x86\\debug\\*",
-            "args": [],
-            "group": {
-                "kind": "test",
-                "isDefault": true
+            "dependsOn": "Compile and Link (clang-x86-debug)",
+            "windows": {
+                "command": "${workspaceFolder}\\clang-x86-debug-copydeps.bat"
             }
         }
     ]
