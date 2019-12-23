@@ -10,21 +10,21 @@
 struct tga_header_s {
     uint8_t id_length;              // field 1
     uint8_t color_map_type;         // field 2
-    uint8_t image_type;             // field 3                        
-                                    
+    uint8_t image_type;             // field 3
+
     uint8_t color_map_spec[5];      // field 4
     /*
-        uint16_t first_entry_index;     
+        uint16_t first_entry_index;
         uint16_t color_map_length;
         uint8_t color_map_entry_size;
-    */    
-    
+    */
+
     uint16_t x_origin;              // field 5
     uint16_t y_origin;
     uint16_t img_width;
     uint16_t img_height;
     uint8_t img_bpp;
-    uint8_t img_desc;    
+    uint8_t img_desc;
 };
 
 struct tga_header_s header;
@@ -51,17 +51,17 @@ bool imgfile_init(const char *path, imgfile_t *out)
         buf = NULL;
         return false;
     }
-    
+
     struct tga_header_s *header = (struct tga_header_s *)buf;
-    size_t tga_header_size = sizeof(*header);    
+    size_t tga_header_size = sizeof(*header);
     // make sure we have a valid minimal TGA header and raw unmapped RGB data
     if (tga_header_size != 18 || header->color_map_type > 0 || header->image_type != 2) {
         printf("imgfile_init: Incorrect TGA header size! (%zu bytes) Should be 18 bytes.\n", tga_header_size);
         free(buf);
         buf = NULL;
         return false;
-    }    
-    
+    }
+
     uint16_t width = header->img_width;
     uint16_t height = header->img_height;
     uint8_t bytes_per_pixel = header->img_bpp / 8;
@@ -72,14 +72,14 @@ bool imgfile_init(const char *path, imgfile_t *out)
 
     uint8_t *tgapixels = buf + tga_header_size;
     // origin bit of img_desc set to 1 ... upper-left origin pixel
-    if ((header->img_desc >> 5) & 1) {        
+    if ((header->img_desc >> 5) & 1) {
         memcpy(out->data, tgapixels, pixel_size);
     }
     // origin bit set to 0 ... lower-left origin pixel
     else {
         int32_t stride = width * bytes_per_pixel;
-        for (int32_t c = 0; c < height; c++) {            
-            memcpy(out->data + stride * c, tgapixels + stride * (height - (c+1)), stride);            
+        for (int32_t c = 0; c < height; c++) {
+            memcpy(out->data + stride * c, tgapixels + stride * (height - (c+1)), stride);
         }
     }
 
@@ -96,18 +96,18 @@ bool imgfile_init(const char *path, imgfile_t *out)
     out->filesize = pixel_size;
     out->stride = width * bytes_per_pixel;
     out->type = BGR;
-    
+
     fclose(fptr);
 
-	printf("imgfile_init: OK reading %s\n", path);
+    printf("imgfile_init: OK reading %s\n", path);
     return true;
 }
 
 void imgfile_shutdown(imgfile_t *img)
 {
-	if (img != NULL) {
-		free(img);
-		img = NULL;
-		printf("imagefile_shutdown: OK!\n");
-	}
+    if (img != NULL) {
+        free(img);
+        img = NULL;
+        printf("imagefile_shutdown: OK!\n");
+    }
 }

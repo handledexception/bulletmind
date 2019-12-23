@@ -12,28 +12,28 @@
 #define MAX_ENTITY_CAPS 64
 
 typedef enum {
-	MOVER = 4,
-	SHOOTER = 16,
-	DESTROYABLE = 32,
-	COLLIDER = 64,
-	SATELLITE = 128,
-	BULLET = 256,
-	PLAYER = 512
+    MOVER = 4,
+    SHOOTER = 16,
+    DESTROYABLE = 32,
+    COLLIDER = 64,
+    SATELLITE = 128,
+    BULLET = 256,
+    PLAYER = 512
 } entity_caps;
 
 typedef struct {
-	int8_t name[128];
-	int32_t caps;
+    int8_t name[128];
+    int32_t caps;
 
-	vec2f_t org;
-	vec2f_t vel;
-	vec2f_t mouse_org; // click origin
+    vec2f_t org;
+    vec2f_t vel;
+    vec2f_t mouse_org; // click origin
 
-	float angle;
-	recti32_t bbox;
+    float angle;
+    recti32_t bbox;
 
-	double timestamp;
-	double lifetime;
+    double timestamp;
+    double lifetime;
 } entity_t;
 
 extern entity_t *array_ents;
