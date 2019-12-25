@@ -12,4 +12,4 @@ REM copy deps and assets
 xcopy /Y %SDL_LIB_PATH_X86%\SDL2.lib %BUILD_OUT_PATH%\
 xcopy /Y %SDL_LIB_PATH_X86%\SDL2.dll %BUILD_OUT_PATH%\
 xcopy /Y %SDL_LIB_PATH_X86%\SDL2main.lib %BUILD_OUT_PATH%\
-xcopy /Y %ASSETS_PATH%\7px_font.tga %BUILD_OUT_PATH%\
+xcopy /Y %ASSETS_PATH%\font_7px.tga %BUILD_OUT_PATH%\

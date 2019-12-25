@@ -12,24 +12,15 @@
             }
         },
         {
-            "label": "Compile and Link (clang-x86-debug)",
-            "type": "shell",
-            "group": "build",
-            "dependsOn": "Clean Build (clang-x86-debug)",
-            "windows": {
-                "command": "${workspaceFolder}\\clang-x86-debug-build.bat"
-            }
-        },
-        {
             "label": "Build All (clang-x86-debug)",
             "type": "shell",
-            "group": {
+            "group":{
                 "kind": "build",
                 "isDefault": true
             },
-            "dependsOn": "Compile and Link (clang-x86-debug)",
+            "dependsOn": "Clean Build (clang-x86-debug)",
             "windows": {
-                "command": "${workspaceFolder}\\clang-x86-debug-copydeps.bat"
+                "command": "${workspaceFolder}\\clang-x86-debug-build.bat"
             }
         }
     ]
