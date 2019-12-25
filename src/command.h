@@ -2,12 +2,13 @@
 #define H_COMMAND
 
 #include "c99defs.h"
+#include "system.h"
 
 uint32_t *array_cmds; // this doesn't need to be a pointer
 
 void cmd_init(void);
 bool cmd_getstate(uint32_t cmd);
-void cmd_refresh(void *engine);
+void cmd_refresh(engine_t* engine);
 void cmd_shutdown(void);
 
 #define COMMAND_VALS \

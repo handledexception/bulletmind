@@ -3,6 +3,8 @@
 
 #include "c99defs.h"
 
+#define DEFAULT_FONT_7PX "font_7px.tga"
+
 bool font_init(void *ren, const char *path);
 void font_print(void *ren, int32_t x, int32_t y, float scale, const char *str, ...);
 void font_shutdown();

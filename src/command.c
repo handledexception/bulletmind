@@ -2,7 +2,6 @@
 #include "command.h"
 #include "entity.h"
 #include "main.h"
-#include "system.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,10 +25,8 @@ bool cmd_getstate(uint32_t cmd)
     return triggeredcmd;
 }
 
-void cmd_refresh(void *engine)
+void cmd_refresh(engine_t* eng)
 {
-    engine_t *eng = (engine_t *)engine;
-
     if (cmd_getstate(CMD_QUIT) == true) { eng->state = ES_QUIT; }
     if (cmd_getstate(CMD_SET_FPS_60) == true) { eng->target_frametime = TARGET_FRAMETIME(60); }
     if (cmd_getstate(CMD_SET_FPS_10) == true) { eng->target_frametime = TARGET_FRAMETIME(10); }

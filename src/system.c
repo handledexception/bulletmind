@@ -1,4 +1,5 @@
 #include "main.h"
+#include "font.h"
 #include "system.h"
 #include "input.h"
 #include "command.h"
@@ -12,9 +13,8 @@
 #define SDL_FLAGS (SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER)
 int32_t mousex, mousey; // extern
 
-uint8_t sys_init(engine_t *eng)
+bool sys_init(engine_t* eng)
 {
-    eng->state = ES_STARTUP;
     double init_start = timing_getsec();
     eng->frame_count = 0;
 
@@ -24,31 +24,35 @@ uint8_t sys_init(engine_t *eng)
         "bulletmind",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        WINDOW_WIDTH, WINDOW_HEIGHT,
+        eng->scr_width, eng->scr_height,
         SDL_WINDOW_SHOWN
     );
 
     if(eng->window == NULL) {
         printf("sys_window: %s\n", SDL_GetError());
-        return -1;
+        return false;
     }
 
-    eng->scr_width = WINDOW_WIDTH;
-    eng->scr_height = WINDOW_HEIGHT;
-
-    eng->renderer = SDL_CreateRenderer(eng->window, -1, SDL_RENDERER_ACCELERATED);
+    eng->renderer = SDL_CreateRenderer(eng->window, eng->adapter_index, SDL_RENDERER_ACCELERATED);
     if (eng->renderer == NULL) {
         printf("sys_renderer: %s\n", SDL_GetError());
-        return -1;
+        return false;
     }
 
     in_init();
     cmd_init();
     ent_init();
     timing_init();
+    font_init(eng->renderer, "font_7px.tga");
+
+    recti32_t scr = { 0, 0, eng->scr_width, eng->scr_height };
+    eng->scr_bounds = scr;
+    eng->target_frametime = TARGET_FRAMETIME(eng->target_fps);
+    eng->state = ES_STARTUP;
 
     printf("sys_init OK [%fms]\n", (timing_getsec() - init_start) * 1000.0);
-    return 0;
+
+    return true;
 }
 
 void sys_refresh()
@@ -76,7 +80,7 @@ void sys_refresh()
     }
 }
 
-void sys_shutdown(engine_t *eng)
+void sys_shutdown(engine_t* eng)
 {
     ent_shutdown();
     cmd_shutdown();
