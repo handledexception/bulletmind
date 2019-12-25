@@ -2,7 +2,7 @@
 #define H_MAIN
 
 #define NULL_INDEX -1
-#define TEMP_STRING_MAX 4096
+#define TEMP_STRING_MAX 256
 
 #define WINDOW_WIDTH 960
 #define WINDOW_HEIGHT 720

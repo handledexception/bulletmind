@@ -1,28 +1,36 @@
 #ifndef H_ENTITY
 #define H_ENTITY
 
+#include "bitflags.h"
 #include "c99defs.h"
 #include "vector.h"
 #include "system.h"
 
 #define FOREVER 0.0
 
-#define MAX_ENTITIES 128 // small max ents for debugging
+#define MAX_ENTITIES 32 // small max ents for debugging
 #define MASK_ENTITIES (MAX_ENTITIES - 1)
 #define MAX_ENTITY_CAPS 64
 
+#define PLAYER_ENTITY_INDEX 0
+
+#define PLAYER_CAPS (1 << PLAYER | 1 << MOVER | 1 << COLLIDER | 1 << SHOOTER)
+#define SATELLITE_CAPS (1 << SATELLITE | 1 << MOVER | 1 << SHOOTER | 1 << COLLIDER)
+#define BULLET_CAPS (1 << BULLET | 1 << MOVER | 1 << COLLIDER)
+
 typedef enum {
-    MOVER = 4,
-    SHOOTER = 16,
-    DESTROYABLE = 32,
-    COLLIDER = 64,
-    SATELLITE = 128,
-    BULLET = 256,
-    PLAYER = 512
-} entity_caps;
+    MOVER = 1,
+    SHOOTER = 2,
+    DESTROYABLE = 3,
+    COLLIDER = 4,
+    SATELLITE = 5,
+    BULLET = 6,
+    PLAYER = 7
+} entity_caps_t;
 
 typedef struct {
-    int8_t name[128];
+    int32_t index;
+    int8_t name[4096];
     int32_t caps;
 
     vec2f_t org;
@@ -36,24 +44,32 @@ typedef struct {
     double lifetime;
 } entity_t;
 
-extern entity_t *array_ents;
+extern entity_t* array_ents;
+extern int32_t active_ents;
 
 bool ent_init();
-int32_t ent_new();
-int32_t ent_spawn(const char *name, float lifetime, vec2f_t *org, entity_caps caps);
-void ent_eulermove(entity_t *e, vec2f_t *accel, float friction, double dt);
-void ent_lifetime_update(entity_t *e);
-void ent_refresh(engine_t *engine, double dt);
-int32_t ent_setcaps(int32_t ent, entity_caps caps);
-int32_t ent_removecaps(int32_t ent, entity_caps caps);
-bool ent_hascaps(int32_t ent, entity_caps caps);
-void ent_free(entity_t *e);
-
-void ent_setpos(int32_t ent, vec2f_t *org);
-void ent_setvel(int32_t ent, vec2f_t *vel, float ang);
-void ent_setmouseorg(int32_t ent, vec2f_t *morg);
-void ent_setbbox(int32_t ent, recti32_t *bbox);
-entity_t *ent_byindex(int32_t idx);
 void ent_shutdown();
+
+entity_t* ent_new();
+void ent_free(entity_t* e);
+entity_t* ent_spawn(const char* name, float lifetime, vec2f_t* org, int32_t caps);
+
+void ent_lifetime_update(entity_t* e);
+void ent_refresh(engine_t* engine, double dt);
+
+entity_t* ent_by_index(int32_t idx);
+
+void ent_add_caps(entity_t* e, entity_caps_t caps);
+void ent_remove_caps(entity_t* e, entity_caps_t caps);
+void ent_set_caps(entity_t* e, int32_t cap_flags);
+bool ent_has_caps(entity_t* e, entity_caps_t caps);
+bool ent_has_no_caps(entity_t* e);
+
+void ent_euler_move(entity_t* e, vec2f_t* accel, float friction, double dt);
+void ent_set_pos(entity_t* e, vec2f_t* org);
+void ent_set_vel(entity_t* e, vec2f_t *vel, float ang);
+void ent_set_mouse_org(entity_t* e, vec2f_t* morg);
+void ent_set_bbox(entity_t* e, recti32_t* bbox);
+
 
 #endif

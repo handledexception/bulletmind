@@ -29,11 +29,13 @@ bool font_init(void *ren, const char *path)
     }
 
     fontex = SDL_CreateTexture(
-                            (SDL_Renderer *)ren,
-                            SDL_PIXELFORMAT_BGR24,
-                            SDL_TEXTUREACCESS_STATIC,
-                            bitmap_font->width,
-                            bitmap_font->height);
+        (SDL_Renderer *)ren,
+        SDL_PIXELFORMAT_BGR24,
+        SDL_TEXTUREACCESS_STATIC,
+        bitmap_font->width,
+        bitmap_font->height
+    );
+
     if (fontex == NULL) {
         printf("font_init: failed to create texture for font!\n");
         return false;

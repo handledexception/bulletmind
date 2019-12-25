@@ -9,7 +9,7 @@ typedef enum {
     BGR
 } imgtype_t;
 
-typedef struct imgfile_s {
+typedef struct {
     int32_t width, height;
     int8_t bpp;
     int32_t stride;

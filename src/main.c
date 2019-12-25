@@ -40,7 +40,7 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    font_init(engine->renderer, "7px_font.tga");
+    font_init(engine->renderer, "font_7px.tga");
 
     double dt = 0.0;
     engine->target_frametime = TARGET_FRAMETIME(60);
@@ -65,6 +65,7 @@ int main(int argc, char** argv)
                 font_print(engine->renderer, 25, 20, 1.0, "Frametime: %f", dt);
                 font_print(engine->renderer, 25, 30, 1.0, "Frame Count: %d", engine->frame_count);
                 font_print(engine->renderer, 25, 40, 1.0, "Time: %s", timebuf);
+                font_print(engine->renderer, 25, 50, 1.0, "Active Ents: %d", active_ents);
 #endif
                 cmd_refresh(engine);
                 sys_refresh();
