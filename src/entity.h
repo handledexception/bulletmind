@@ -3,8 +3,8 @@
 
 #include "bitflags.h"
 #include "c99defs.h"
+#include "main.h"
 #include "vector.h"
-#include "system.h"
 
 #define FOREVER 0.0
 
@@ -30,15 +30,16 @@ typedef enum {
 
 typedef struct {
     int32_t index;
-    int8_t name[4096];
+    int8_t name[TEMP_STRING_MAX];
     int32_t caps;
 
     vec2f_t org;
+    vec2f_t size;
     vec2f_t vel;
     vec2f_t mouse_org; // click origin
 
     float angle;
-    recti32_t bbox;
+    rectf_t bbox;
 
     double timestamp;
     double lifetime;
@@ -48,16 +49,16 @@ extern entity_t* array_ents;
 extern int32_t active_ents;
 
 bool ent_init();
+void ent_refresh(engine_t* engine, double dt);
 void ent_shutdown();
 
 entity_t* ent_new();
 void ent_free(entity_t* e);
-entity_t* ent_spawn(const char* name, float lifetime, vec2f_t* org, int32_t caps);
-
-void ent_lifetime_update(entity_t* e);
-void ent_refresh(engine_t* engine, double dt);
-
 entity_t* ent_by_index(int32_t idx);
+
+entity_t* ent_spawn(const char* name, double lifetime, vec2f_t* org, vec2f_t* size, int32_t caps);
+void ent_lifetime_update(entity_t* e);
+void ent_bbox_update(entity_t* e);
 
 void ent_add_caps(entity_t* e, entity_caps_t caps);
 void ent_remove_caps(entity_t* e, entity_caps_t caps);
@@ -65,11 +66,12 @@ void ent_set_caps(entity_t* e, int32_t cap_flags);
 bool ent_has_caps(entity_t* e, entity_caps_t caps);
 bool ent_has_no_caps(entity_t* e);
 
-void ent_euler_move(entity_t* e, vec2f_t* accel, float friction, double dt);
 void ent_set_pos(entity_t* e, vec2f_t* org);
 void ent_set_vel(entity_t* e, vec2f_t *vel, float ang);
+void ent_set_bbox(entity_t* e, rectf_t* bbox);
 void ent_set_mouse_org(entity_t* e, vec2f_t* morg);
-void ent_set_bbox(entity_t* e, recti32_t* bbox);
+void ent_euler_move(entity_t* e, vec2f_t* accel, float friction, double dt);
 
+bool ent_spawn_player();
 
 #endif

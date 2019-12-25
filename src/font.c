@@ -1,7 +1,8 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
-#include "font.h"
 #include "imgfile.h"
+#include "font.h"
+#include "main.h"
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -48,7 +49,7 @@ bool font_init(void *ren, const char *path)
 void font_print(void *ren, int32_t x, int32_t y, float scale, const char *str, ...)
 {
     va_list args;
-    char text[256];
+    char text[TEMP_STRING_MAX];
     int32_t c = 0;
     int32_t fx, tu, tv;
 
