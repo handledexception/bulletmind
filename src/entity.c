@@ -12,11 +12,8 @@
 
 #include <SDL.h>
 
-entity_t* array_ents; // extern
-size_t sz_arrayents = sizeof(entity_t) * MAX_ENTITIES;
 int32_t active_ents = 0; // extern
-
-int last_entity = 0;
+int32_t last_entity = 0; // extern
 
 void drawrect_centered (SDL_Renderer *rend, int32_t x, int32_t y, int32_t w, int32_t h, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
@@ -31,18 +28,18 @@ void drawrect_centered (SDL_Renderer *rend, int32_t x, int32_t y, int32_t w, int
     SDL_RenderFillRect(rend, (const SDL_Rect *)&rec);
 }
 
-bool ent_init()
+bool ent_init(entity_t** ent_list, int32_t num_ents)
 {
-    // allocate entity array
-    array_ents = (entity_t* )malloc(sz_arrayents);
-    memset(array_ents, 0, sz_arrayents);
+    size_t sz_ent_list = sizeof(entity_t) * num_ents;
+    *ent_list = (entity_t*)malloc(sz_ent_list);
+    memset(*ent_list, 0, sz_ent_list);
 
     printf("ent_init OK\n");
 
     return true;
 }
 
-void ent_refresh(engine_t* engine, double dt)
+void ent_refresh(entity_t* ent_list, double dt)
 {
     vec2f_t p_accel = { 0 };
     float p_speed = 800.f;
@@ -72,7 +69,7 @@ void ent_refresh(engine_t* engine, double dt)
 
     active_ents = 0;
     for (int32_t edx = 0; edx < MAX_ENTITIES; edx++) {
-        entity_t* e = ent_by_index(edx);
+        entity_t* e = ent_by_index(ent_list, edx);
         if (e == NULL)
             continue;
 
@@ -84,11 +81,12 @@ void ent_refresh(engine_t* engine, double dt)
             // player shooting
             if (p_shooting && timing_getsec() >= p_shoot_time) {
                 p_shoot_time = timing_getsec() + p_weap_fire_rate;
-                entity_t* player = ent_by_index(PLAYER_ENTITY_INDEX);
+                entity_t* player = ent_by_index(ent_list, PLAYER_ENTITY_INDEX);
                 vec2f_t bullet_org = player->org;
                 vec2f_t mouse = { mouse_x, mouse_y };
                 vec2f_t bullet_size = { 12.f, 12.f };
                 entity_t* bullet = ent_spawn(
+                    ent_list,
                     "basic_bullet",
                     5.0,
                     &bullet_org,
@@ -101,10 +99,10 @@ void ent_refresh(engine_t* engine, double dt)
             ent_euler_move(e, &p_accel, 0.035, dt);
 
             // screen bounds checking
-            if (e->org.x > (float)engine->scr_bounds.w) { e->org.x = (float)engine->scr_bounds.w; }
-            if (e->org.y > (float)engine->scr_bounds.h) { e->org.y = (float)engine->scr_bounds.h; }
-            if (e->org.x < (float)engine->scr_bounds.x) { e->org.x = (float)engine->scr_bounds.x; }
-            if (e->org.y < (float)engine->scr_bounds.y) { e->org.y = (float)engine->scr_bounds.y; }
+            // if (e->org.x > (float)engine->scr_bounds.w) { e->org.x = (float)engine->scr_bounds.w; }
+            // if (e->org.y > (float)engine->scr_bounds.h) { e->org.y = (float)engine->scr_bounds.h; }
+            // if (e->org.x < (float)engine->scr_bounds.x) { e->org.x = (float)engine->scr_bounds.x; }
+            // if (e->org.y < (float)engine->scr_bounds.y) { e->org.y = (float)engine->scr_bounds.y; }
 
             ent_bbox_update(e);
             drawrect_centered(
@@ -141,7 +139,7 @@ void ent_refresh(engine_t* engine, double dt)
         if (ent_has_caps(e, SATELLITE)) {
             vec2f_t dist = { 0 };
 
-            entity_t* player = ent_by_index(PLAYER_ENTITY_INDEX);
+            entity_t* player = ent_by_index(ent_list, PLAYER_ENTITY_INDEX);
             vec2f_sub(&dist, &player->org, &e->org);
             vec2f_norm(&dist);
             vec2f_scale(&dist, 800.f);
@@ -179,22 +177,22 @@ void ent_refresh(engine_t* engine, double dt)
     }
 }
 
-void ent_shutdown()
+void ent_shutdown(entity_t** ent_list)
 {
-    if (array_ents) {
-        free(array_ents);
-        array_ents = NULL;
+    if (ent_list) {
+        free(*ent_list);
+        *ent_list = NULL;
     }
     printf("ent_shutdown OK\n");
 }
 
-entity_t* ent_new()
+entity_t* ent_new(entity_t* ent_list)
 {
     entity_t* e = NULL;
 
     // search entity list for first slot with no caps set
     for (int32_t edx = 0; edx < MAX_ENTITIES; edx++) {
-        e = ent_by_index(edx);
+        e = ent_by_index(ent_list, edx);
         if (e == NULL) {
             printf("Entity slot %d is NULL!\n", edx);
             continue;
@@ -219,9 +217,9 @@ void ent_free(entity_t* e)
     }
 }
 
-entity_t* ent_by_index(int32_t idx)
+entity_t* ent_by_index(entity_t* ent_list, int32_t idx)
 {
-    entity_t* e = &array_ents[idx];
+    entity_t* e = &ent_list[idx];
     if (e == NULL) {
         printf("ent_by_index - NULL entity at index %d\n", idx);
     }
@@ -229,9 +227,9 @@ entity_t* ent_by_index(int32_t idx)
     return e;
 }
 
-entity_t* ent_spawn(const char* name, double lifetime, vec2f_t* org, vec2f_t* size, int32_t caps)
+entity_t* ent_spawn(entity_t* ent_list, const char* name, double lifetime, vec2f_t* org, vec2f_t* size, int32_t caps)
 {
-    entity_t* e = ent_new();
+    entity_t* e = ent_new(ent_list);
     if (e != NULL) {
         vec2f_t half_size = { size->x * 0.5f, size->y * 0.5f };
         rectf_t bounding = {
@@ -340,12 +338,13 @@ void ent_euler_move(entity_t* e, vec2f_t *accel, float friction, double dt)
     vec2f_addequ(&e->org, &delta);
 }
 
-bool ent_spawn_player()
+bool ent_spawn_player(entity_t* ent_list)
 {
     // screen center
     vec2f_t player_org = { (float)(WINDOW_WIDTH * 0.5f), (float)(WINDOW_HEIGHT * 0.5f) };
     vec2f_t player_size = { 16.f, 16.f };
     entity_t* player = ent_spawn(
+        ent_list,
         "player",
         FOREVER,
         &player_org,
@@ -362,6 +361,7 @@ bool ent_spawn_player()
     vec2f_t sat_size = { 16.f, 16.f };
     vec2f_set(&sat_org, player_org.x + 64.f, player_org.y + 64.f);
     entity_t* satellite = ent_spawn(
+        ent_list,
         "satellite",
         FOREVER,
         &sat_org,

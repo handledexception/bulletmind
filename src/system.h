@@ -2,6 +2,7 @@
 #define H_SYSTEM
 
 #include "c99defs.h"
+#include "entity.h"
 #include "timing.h"
 #include "vector.h"
 #include <stdio.h>
@@ -27,6 +28,8 @@ typedef struct {
     int32_t frame_count;
 
     engine_state_t state;
+
+    entity_t* ent_list;
 } engine_t;
 
 extern engine_t* engine;

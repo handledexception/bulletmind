@@ -45,18 +45,18 @@ typedef struct {
     double lifetime;
 } entity_t;
 
-extern entity_t* array_ents;
 extern int32_t active_ents;
+extern int32_t last_entity;
 
-bool ent_init();
-void ent_refresh(engine_t* engine, double dt);
-void ent_shutdown();
+bool ent_init(entity_t** ent_list, int32_t num_ents);
+void ent_refresh(entity_t* ent_list, double dt);
+void ent_shutdown(entity_t** ent_list);
 
-entity_t* ent_new();
+entity_t* ent_new(entity_t* ent_list);
 void ent_free(entity_t* e);
-entity_t* ent_by_index(int32_t idx);
+entity_t* ent_by_index(entity_t* ent_list, int32_t idx);
 
-entity_t* ent_spawn(const char* name, double lifetime, vec2f_t* org, vec2f_t* size, int32_t caps);
+entity_t* ent_spawn(entity_t* ent_list, const char* name, double lifetime, vec2f_t* org, vec2f_t* size, int32_t caps);
 void ent_lifetime_update(entity_t* e);
 void ent_bbox_update(entity_t* e);
 
@@ -72,6 +72,6 @@ void ent_set_bbox(entity_t* e, rectf_t* bbox);
 void ent_set_mouse_org(entity_t* e, vec2f_t* morg);
 void ent_euler_move(entity_t* e, vec2f_t* accel, float friction, double dt);
 
-bool ent_spawn_player();
+bool ent_spawn_player(entity_t* ent_list);
 
 #endif

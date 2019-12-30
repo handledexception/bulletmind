@@ -3,7 +3,6 @@
 #include "system.h"
 #include "input.h"
 #include "command.h"
-#include "entity.h"
 //#include "timing.h"
 
 #include <stdio.h>
@@ -42,7 +41,7 @@ bool sys_init(engine_t* eng)
 
     in_init();
     cmd_init();
-    ent_init();
+    ent_init(&eng->ent_list, MAX_ENTITIES);
     timing_init();
     font_init(eng->renderer, "font_7px.tga");
 
@@ -83,7 +82,7 @@ void sys_refresh()
 
 void sys_shutdown(engine_t* eng)
 {
-    ent_shutdown();
+    ent_shutdown(&eng->ent_list);
     cmd_shutdown();
     in_shutdown();
 
