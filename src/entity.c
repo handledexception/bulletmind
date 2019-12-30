@@ -3,8 +3,6 @@
 #include "command.h"
 #include "entity.h"
 #include "font.h"
-#include "main.h"
-#include "system.h"
 #include "timing.h"
 
 #include <stdlib.h>
@@ -19,9 +17,8 @@ size_t sz_arrayents = sizeof(entity_t) * MAX_ENTITIES;
 int32_t active_ents = 0; // extern
 
 int last_entity = 0;
-int32_t mousex, mousey; // extern
 
-void drawrect_centered(SDL_Renderer *rend, int32_t x, int32_t y, int32_t w, int32_t h, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+void drawrect_centered (SDL_Renderer *rend, int32_t x, int32_t y, int32_t w, int32_t h, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
     recti32_t rec = {
         x - (w / 2),
@@ -54,7 +51,7 @@ void ent_refresh(engine_t* engine, double dt)
     static bool p_shooting = false;
 
     // Player entity movement
-    if (cmd_getstate(CMD_PLAYER_SPEED) == true) { p_speed *= 1.5f; }
+    if (cmd_getstate(CMD_PLAYER_SPEED) == true) { p_speed *= 2.f; }
     if (cmd_getstate(CMD_PLAYER_UP) == true) { p_accel.y = -p_speed; }
     if (cmd_getstate(CMD_PLAYER_DOWN) == true) { p_accel.y = p_speed; }
     if (cmd_getstate(CMD_PLAYER_LEFT) == true) { p_accel.x = -p_speed; }
@@ -89,7 +86,7 @@ void ent_refresh(engine_t* engine, double dt)
                 p_shoot_time = timing_getsec() + p_weap_fire_rate;
                 entity_t* player = ent_by_index(PLAYER_ENTITY_INDEX);
                 vec2f_t bullet_org = player->org;
-                vec2f_t mouse = { mousex, mousey };
+                vec2f_t mouse = { mouse_x, mouse_y };
                 vec2f_t bullet_size = { 12.f, 12.f };
                 entity_t* bullet = ent_spawn(
                     "basic_bullet",
@@ -301,8 +298,7 @@ void ent_set_caps(entity_t* e, int32_t cap_flags)
 
 bool ent_has_caps(entity_t* e, entity_caps_t caps)
 {
-    int32_t flag_set = IS_FLAG_SET(e->caps, caps);
-    return flag_set != 0;
+    return IS_FLAG_SET(e->caps, caps) != 0;
 }
 
 bool ent_has_no_caps(entity_t* e)

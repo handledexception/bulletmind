@@ -3,7 +3,6 @@
 
 #include "bitflags.h"
 #include "c99defs.h"
-#include "system.h"
 #include "main.h"
 #include "vector.h"
 

@@ -24,8 +24,6 @@ v0.1.122219a
 
 #include <SDL.h>
 
-engine_t* engine = NULL;
-
 int main(int argc, char** argv)
 {
     size_t sz_engine = sizeof(engine_t);
@@ -63,8 +61,8 @@ int main(int argc, char** argv)
                 font_print(engine->renderer, 25, 40, 1.0, "Time: %s", time_buf);
                 font_print(engine->renderer, 25, 50, 1.0, "Active Ents: %d", active_ents);
 #endif
-                cmd_refresh(engine);
                 sys_refresh();
+                cmd_refresh(engine);
                 ent_refresh(engine, dt);
                 break;
             case ES_QUIT:

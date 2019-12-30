@@ -29,7 +29,8 @@ typedef struct {
     engine_state_t state;
 } engine_t;
 
-extern int32_t mousex, mousey;
+extern engine_t* engine;
+extern int32_t mouse_x, mouse_y;
 
 bool sys_init(engine_t* eng);
 void sys_refresh();

@@ -8,6 +8,9 @@
         "stdio.h": "c",
         "system.h": "c",
         "sdl.h": "c",
-        "entity.h": "c"
+        "entity.h": "c",
+        "main.h": "c",
+        "font.h": "c",
+        "command.h": "c"
     }
 }

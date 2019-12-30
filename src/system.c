@@ -11,7 +11,8 @@
 #include <SDL.h>
 
 #define SDL_FLAGS (SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER)
-int32_t mousex, mousey; // extern
+engine_t* engine = NULL;
+int32_t mouse_x, mouse_y; // extern
 
 bool sys_init(engine_t* eng)
 {
@@ -59,7 +60,7 @@ void sys_refresh()
 {
     SDL_Event e;
 
-    SDL_GetMouseState(&mousex, &mousey);
+    SDL_GetMouseState(&mouse_x, &mouse_y);
 
     while (SDL_PollEvent(&e)) {
         switch(e.type) {

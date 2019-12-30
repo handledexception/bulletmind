@@ -1,4 +1,3 @@
-//#include "bitwise.h"
 #include "command.h"
 #include "entity.h"
 #include "main.h"
