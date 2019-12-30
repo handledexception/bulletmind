@@ -7,12 +7,11 @@
 typedef struct {
     int32_t x, y;
     int32_t w, h;
-} recti32_t;
+} rect_t;
 
-typedef struct {
-    float x, y;
-    float w, h;
-} rectf_t;
+typedef struct vec2i {
+    int32_t x, y;
+} vec2i_t;
 
 typedef struct vec2i {
     int32_t x, y;
@@ -26,11 +25,13 @@ typedef struct vec3f {
     float x, y, z;
 } vec3f_t;
 
-/*	________________
+typedef struct vec4f {
+    float x, y, z, w;
+} vec4f_t;
 
-    vec2f operations
-    ________________
-*/
+typedef struct rgba {
+    float r, g, b, a;
+} rgba_t;
 
 inline void vec2f_set(vec2f_t *dst, float x, float y)
 {
@@ -79,12 +80,6 @@ inline void vec2f_sqr(vec2f_t *a)
     a->x *= a->x;
     a->y *= a->y;
 }
-
-/*	________________
-
-    float operations
-    ________________
-*/
 
 // add float to vec2f
 inline void vec2f_addf(vec2f_t *a, float s)

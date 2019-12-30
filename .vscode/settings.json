@@ -11,6 +11,8 @@
         "entity.h": "c",
         "main.h": "c",
         "font.h": "c",
-        "command.h": "c"
+        "command.h": "c",
+        "render.h": "c",
+        "sdl_render.h": "c"
     }
 }

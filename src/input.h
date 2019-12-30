@@ -7,15 +7,15 @@
 #define KEY_DOWN 1
 #define KEY_UP 0
 
-void in_init();
-uint32_t in_refresh();
-void in_shutdown();
+void inp_init();
+uint32_t inp_refresh();
+void inp_shutdown();
 
-void in_setkeystate(uint16_t key, uint8_t state);
-uint8_t in_getkeystate(uint16_t key);
-bool in_setkeybind(uint16_t key, int32_t cmd);
+void inp_set_key_state(uint16_t key, uint8_t state);
+uint8_t inp_get_key_state(uint16_t key);
+bool inp_set_key_bind(uint16_t key, int32_t cmd);
 
-bool in_setmbuttonbind(uint8_t button, int32_t cmd);
-void in_setmousebuttonstate(uint8_t button, uint8_t state);
+bool inp_set_mouse_bind(uint8_t button, int32_t cmd);
+void inp_set_mouse_state(uint8_t button, uint8_t state);
 
 #endif
