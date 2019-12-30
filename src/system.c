@@ -10,8 +10,8 @@
 #include <SDL.h>
 
 #define SDL_FLAGS (SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER)
+
 engine_t* engine = NULL;
-int32_t mouse_x, mouse_y; // extern
 
 bool sys_init(engine_t* eng)
 {
@@ -39,13 +39,13 @@ bool sys_init(engine_t* eng)
         return false;
     }
 
-    in_init();
+    inp_init();
     cmd_init();
     ent_init(&eng->ent_list, MAX_ENTITIES);
     timing_init();
     font_init(eng->renderer, "font_7px.tga");
 
-    recti32_t scr = { 0, 0, eng->scr_width, eng->scr_height };
+    rect_t scr = { 0, 0, eng->scr_width, eng->scr_height };
     eng->scr_bounds = scr;
     eng->target_frametime = TARGET_FRAMETIME(eng->target_fps);
     eng->state = ES_STARTUP;
@@ -55,26 +55,26 @@ bool sys_init(engine_t* eng)
     return true;
 }
 
-void sys_refresh()
+void sys_refresh(engine_t* eng)
 {
     SDL_Event e;
 
-    SDL_GetMouseState(&mouse_x, &mouse_y);
+    SDL_GetMouseState(&eng->mouse_pos.x, &eng->mouse_pos.y);
 
     while (SDL_PollEvent(&e)) {
         switch(e.type) {
             case SDL_KEYDOWN:
-                in_setkeystate(e.key.keysym.scancode, KEY_DOWN);
+                inp_set_key_state(e.key.keysym.scancode, KEY_DOWN);
                 break;
             case SDL_KEYUP:
-                in_setkeystate(e.key.keysym.scancode, KEY_UP);
+                inp_set_key_state(e.key.keysym.scancode, KEY_UP);
                 break;
             case SDL_MOUSEBUTTONDOWN:
                 //printf("%d\n", SDL_BUTTON(e.button.button));
-                in_setmousebuttonstate((e.button.button), e.button.state);
+                inp_set_mouse_state((e.button.button), e.button.state);
                 break;
             case SDL_MOUSEBUTTONUP:
-                in_setmousebuttonstate((e.button.button), e.button.state);
+                inp_set_mouse_state((e.button.button), e.button.state);
                 break;
         }
     }
@@ -84,7 +84,7 @@ void sys_shutdown(engine_t* eng)
 {
     ent_shutdown(&eng->ent_list);
     cmd_shutdown();
-    in_shutdown();
+    inp_shutdown();
 
     SDL_DestroyRenderer(eng->renderer);
     SDL_DestroyWindow(eng->window);

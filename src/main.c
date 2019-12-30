@@ -61,9 +61,9 @@ int main(int argc, char** argv)
                 font_print(engine->renderer, 25, 40, 1.0, "Time: %s", time_buf);
                 font_print(engine->renderer, 25, 50, 1.0, "Active Ents: %d", active_ents);
 #endif
-                sys_refresh();
+                sys_refresh(engine);
                 cmd_refresh(engine);
-                ent_refresh(engine->ent_list, dt);
+                ent_refresh(engine->ent_list, engine->mouse_pos, dt);
                 break;
             case ES_QUIT:
                 break;
