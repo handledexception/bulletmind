@@ -13,10 +13,6 @@ typedef struct vec2i {
     int32_t x, y;
 } vec2i_t;
 
-typedef struct vec2i {
-    int32_t x, y;
-} vec2i_t;
-
 typedef struct vec2f {
     float x, y;
 } vec2f_t;

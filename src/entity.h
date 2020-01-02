@@ -39,7 +39,6 @@ typedef struct {
     int32_t caps;
 
     vec2f_t org;
-    vec2f_t size;
     vec2f_t vel;
     vec2i_t size;
     rect_t bbox;
