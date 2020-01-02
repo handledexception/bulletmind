@@ -6,9 +6,8 @@
 #include "timing.h"
 #include "vector.h"
 
-#include <stdio.h>
-
-#include <SDL.h>
+typedef struct SDL_Window SDL_Window;
+typedef struct SDL_Renderer SDL_Renderer;
 
 typedef enum {
     ES_STARTUP,
@@ -16,7 +15,7 @@ typedef enum {
     ES_QUIT
 } engine_state_t;
 
-typedef struct {
+typedef struct engine_s {
     int32_t adapter_index;
 
     SDL_Window* window;

@@ -13,6 +13,7 @@
         "font.h": "c",
         "command.h": "c",
         "render.h": "c",
-        "sdl_render.h": "c"
+        "sdl_render.h": "c",
+        "c99defs.h": "c"
     }
 }

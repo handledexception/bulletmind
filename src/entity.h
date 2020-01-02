@@ -6,6 +6,8 @@
 #include "main.h"
 #include "vector.h"
 
+typedef struct engine_s engine_t;
+
 #define FOREVER 0.0
 
 #define MAX_ENTITIES 1024 // small max ents for debugging
@@ -53,8 +55,8 @@ extern int32_t active_ents;
 extern int32_t last_entity;
 
 bool ent_init(entity_t** ent_list, int32_t num_ents);
-void ent_refresh(entity_t* ent_list, vec2i_t mouse_pos, double dt);
-void ent_shutdown(entity_t** ent_list);
+void ent_refresh(engine_t* eng, double dt);
+void ent_shutdown(entity_t* ent_list);
 
 entity_t* ent_new(entity_t* ent_list);
 void ent_free(entity_t* e);
