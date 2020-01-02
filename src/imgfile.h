@@ -9,16 +9,16 @@ typedef enum {
     BGR
 } imgtype_t;
 
-typedef struct {
+typedef struct img_file {
     int32_t width, height;
     int8_t bpp;
     int32_t stride;
     uint8_t *data;
     size_t filesize;
     imgtype_t type;
-} imgfile_t;
+} img_file_t;
 
-bool imgfile_init(const char *path, imgfile_t *out);
-void imgfile_shutdown();
+bool img_file_init(const char* path, img_file_t** out);
+void img_file_shutdown(img_file_t* img);
 
 #endif

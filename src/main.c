@@ -13,6 +13,7 @@ v0.1.122219a
 #include "command.h"
 #include "entity.h"
 #include "font.h"
+#include "imgfile.h"
 #include "input.h"
 #include "memarena.h"
 #include "system.h"
@@ -21,13 +22,11 @@ v0.1.122219a
 
 #include <SDL.h>
 
-#define ENGINE_ALLOC_BYTES 1024
-
 int main(int argc, char** argv)
 {
-    static uint8_t arena_buf[ENGINE_ALLOC_BYTES];
-    static arena_t arena = {0};
-    arena_init(&arena, arena_buf, ENGINE_ALLOC_BYTES);
+    static uint8_t arena_buf[ARENA_TOTAL_BYTES];
+    static arena_t arena = {};
+    arena_init(&arena, arena_buf, ARENA_TOTAL_BYTES);
 
     size_t sz_engine = sizeof(engine_t);
     engine = (engine_t*)arena_alloc(&arena, sz_engine, DEFAULT_ALIGNMENT);
@@ -40,9 +39,15 @@ int main(int argc, char** argv)
         return -1;
     }
 
+    struct img_file* sprite = (img_file_t*)malloc(sizeof(struct img_file));
+    img_file_init("bullet_ps.tga", &sprite);
+    SDL_Texture* sprite_tex = SDL_CreateTexture(engine->renderer, SDL_PIXELFORMAT_BGR24, SDL_TEXTUREACCESS_STATIC, sprite->width, sprite->height);
+    SDL_UpdateTexture(sprite_tex, NULL, sprite->data, sprite->stride);
+    const SDL_Rect sprite_dst = { 0, 0, sprite->width, sprite->height };
+    SDL_RenderCopyEx(engine->renderer, sprite_tex, NULL, &sprite_dst, 0.f, NULL, SDL_FLIP_NONE);
+
     // main loop
     double dt = 0.0;
-
     while(engine->state != ES_QUIT) {
         double frame_start = timing_getsec();
 
@@ -66,7 +71,7 @@ int main(int argc, char** argv)
 #endif
                 sys_refresh(engine);
                 cmd_refresh(engine);
-                ent_refresh(engine->ent_list, engine->mouse_pos, dt);
+                ent_refresh(engine, dt);
                 break;
             case ES_QUIT:
                 break;
@@ -84,7 +89,6 @@ int main(int argc, char** argv)
     font_shutdown();
     sys_shutdown(engine);
 
-    // free(engine);
     engine = NULL;
     return 0;
 }

@@ -18,6 +18,9 @@ int32_t last_entity = 0; // extern
 
 bool ent_init(entity_t** ent_list, int32_t num_ents)
 {
+    if (ent_list == NULL)
+        return false;
+
     size_t sz_ent_list = sizeof(entity_t) * num_ents;
     *ent_list = (entity_t*)malloc(sz_ent_list);
     memset(*ent_list, 0, sz_ent_list);
@@ -27,8 +30,14 @@ bool ent_init(entity_t** ent_list, int32_t num_ents)
     return true;
 }
 
-void ent_refresh(entity_t* ent_list, vec2i_t mouse_pos, double dt)
+void ent_refresh(engine_t* eng, double dt)
 {
+    if (eng == NULL)
+        return;
+
+    entity_t* ent_list = eng->ent_list;
+    vec2i_t mouse_pos = eng->mouse_pos;
+
     vec2f_t p_accel = { 0 };
     float p_speed = 800.f;
     float p_weap_fire_rate = 0.075f;
@@ -155,11 +164,11 @@ void ent_refresh(entity_t* ent_list, vec2i_t mouse_pos, double dt)
     }
 }
 
-void ent_shutdown(entity_t** ent_list)
+void ent_shutdown(entity_t* ent_list)
 {
     if (ent_list) {
-        free(*ent_list);
-        *ent_list = NULL;
+        free(ent_list);
+        ent_list = NULL;
     }
     printf("ent_shutdown OK\n");
 }

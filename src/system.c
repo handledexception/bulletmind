@@ -1,12 +1,9 @@
-#include "main.h"
-#include "font.h"
-#include "system.h"
-#include "input.h"
 #include "command.h"
-//#include "timing.h"
+#include "font.h"
+#include "input.h"
+#include "main.h"
+#include "system.h"
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <SDL.h>
 
 #define SDL_FLAGS (SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER)
@@ -82,7 +79,7 @@ void sys_refresh(engine_t* eng)
 
 void sys_shutdown(engine_t* eng)
 {
-    ent_shutdown(&eng->ent_list);
+    ent_shutdown(eng->ent_list);
     cmd_shutdown();
     inp_shutdown();
 

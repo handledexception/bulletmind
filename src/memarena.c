@@ -2,6 +2,8 @@
 
 #include <assert.h>
 
+static size_t arena_allocated_bytes = 0;
+
 bool is_power_of_two(uintptr_t x)
 {
     return (x & (x - 1)) == 0;
@@ -53,6 +55,9 @@ void* arena_alloc(arena_t* arena, size_t size, size_t align)
         arena->prev_offset = offset;
         arena->curr_offset = offset + size;
         memset(ptr, 0, size);
+
+        arena_allocated_bytes += (size + align);
+        printf("Memory Arena Usage: %zu/%zu bytes. %zu bytes free.\n", arena_allocated_bytes, ARENA_TOTAL_BYTES, ARENA_TOTAL_BYTES-arena_allocated_bytes);
 
         return ptr;
     }
