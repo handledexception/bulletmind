@@ -14,20 +14,23 @@ v0.1.122219a
 #include "entity.h"
 #include "font.h"
 #include "input.h"
+#include "memarena.h"
 #include "system.h"
 #include "timing.h"
 #include "vector.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-
 #include <SDL.h>
+
+#define ENGINE_ALLOC_BYTES 1024
 
 int main(int argc, char** argv)
 {
+    static uint8_t arena_buf[ENGINE_ALLOC_BYTES];
+    static arena_t arena = {0};
+    arena_init(&arena, arena_buf, ENGINE_ALLOC_BYTES);
+
     size_t sz_engine = sizeof(engine_t);
-    engine = (engine_t*)malloc(sz_engine);
+    engine = (engine_t*)arena_alloc(&arena, sz_engine, DEFAULT_ALIGNMENT);
     engine->adapter_index = -1; // SDL default to first available
     engine->scr_width = WINDOW_WIDTH;
     engine->scr_height = WINDOW_HEIGHT;
@@ -81,7 +84,7 @@ int main(int argc, char** argv)
     font_shutdown();
     sys_shutdown(engine);
 
-    free(engine);
+    // free(engine);
     engine = NULL;
     return 0;
 }
