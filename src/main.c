@@ -74,7 +74,7 @@ int main(int argc, char** argv)
         test_pattern[idx+1] = (pixel>>8) & 0xff;
         test_pattern[idx+2] = pixel & 0xff;
     }
-    
+
     sprite_create(test_pattern, w, h, 24, w * 3, SDL_PIXELFORMAT_RGB24, &raw_sprite);
     sprite_create_texture(engine->renderer, raw_sprite);
     raw_sprite->surface->clip_rect.x = 120;
@@ -120,6 +120,7 @@ int main(int argc, char** argv)
             if (dt > TARGET_FRAMETIME(5)) { dt = TARGET_FRAMETIME(5); }
         } while (dt < engine->target_frametime);
         //printf("%f\n", dt);
+
         SDL_RenderPresent(engine->renderer);
         engine->frame_count++;
     }

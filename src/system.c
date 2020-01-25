@@ -65,7 +65,7 @@ bool sys_init(engine_t* eng)
     cmd_init();
     ent_init(&eng->ent_list, MAX_ENTITIES);
     timing_init();
-    font_init(eng->renderer, "font_7px.tga");
+    font_init(eng->renderer, DEFAULT_FONT_7PX);
 
     eng->target_frametime = TARGET_FRAMETIME(eng->target_fps);
     eng->state = ES_STARTUP;

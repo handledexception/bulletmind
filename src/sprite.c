@@ -27,7 +27,7 @@ typedef struct tga_header_s {
     uint16_t width;
     uint16_t height;
     uint8_t bpp;
-    uint8_t desc;
+    uint8_t desc;               // bits 3-0 = alpha channel depth, bits 5-4 img direction
 } tga_header_t;
 
 bool sprite_load(const char* path, sprite_t** out)
@@ -94,6 +94,16 @@ bool sprite_load(const char* path, sprite_t** out)
                 memcpy(img->data + stride * c, tga_pixels + stride * (height - (c+1)), stride);
             }
         }
+        
+        uint32_t pix_fmt = SDL_PIXELFORMAT_BGR24;
+        if (bytes_per_pixel == 3) {
+            pix_fmt = SDL_PIXELFORMAT_BGR24;
+            img->has_alpha = false;
+        }
+        else if (bytes_per_pixel == 4) {
+            pix_fmt = SDL_PIXELFORMAT_BGRA32;
+            img->has_alpha = true;
+        }
 
         img->surface = SDL_CreateRGBSurfaceWithFormatFrom(
             img->data,
@@ -101,7 +111,7 @@ bool sprite_load(const char* path, sprite_t** out)
             height,
             header->bpp,
             stride,
-            SDL_PIXELFORMAT_BGR24
+            pix_fmt
         );
 
         free(fbuf);
@@ -144,6 +154,8 @@ void sprite_create_texture(SDL_Renderer* ren, sprite_t* img)
         img->surface->w,
         img->surface->h
     );
+
+    SDL_SetTextureBlendMode(img->texture, img->has_alpha ? SDL_BLENDMODE_BLEND : SDL_BLENDMODE_NONE);
 
     if (img->texture != NULL) {
         SDL_UpdateTexture(

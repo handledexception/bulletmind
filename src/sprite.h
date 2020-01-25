@@ -26,6 +26,7 @@ typedef struct sprite_s {
     imgtype_t type;
     SDL_Surface* surface;
     SDL_Texture* texture;
+    bool has_alpha;
 } sprite_t;
 
 bool sprite_load(const char* path, sprite_t** out);
