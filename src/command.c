@@ -24,9 +24,33 @@ bool cmd_getstate(uint32_t cmd)
     return triggeredcmd;
 }
 
+void cmd_toggle_bool(uint32_t cmd, bool* value)
+{
+    static bool toggled = false;
+    if (cmd_getstate(cmd) == true) {
+        if (toggled == false) {
+            if (value != NULL) {
+                if (*value == true)
+                    *value = false;
+                else
+                    *value = true;
+            }
+            toggled = true;
+        }
+    }
+    else {
+        if (toggled == true)
+            toggled = false;
+    }
+}
+
 void cmd_refresh(engine_t* eng)
 {
+    // static bool toggled = false;
     if (cmd_getstate(CMD_QUIT) == true) { eng->state = ES_QUIT; }
+
+    cmd_toggle_bool(CMD_SET_DEBUG, &eng->debug);
+
     if (cmd_getstate(CMD_SET_FPS_60) == true) { eng->target_frametime = TARGET_FRAMETIME(60); }
     if (cmd_getstate(CMD_SET_FPS_10) == true) { eng->target_frametime = TARGET_FRAMETIME(10); }
 }

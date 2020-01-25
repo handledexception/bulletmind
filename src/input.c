@@ -40,6 +40,7 @@ void inp_init()
     inp_set_key_bind(SDL_SCANCODE_LSHIFT, CMD_PLAYER_SPEED);
     inp_set_key_bind(SDL_SCANCODE_F5, CMD_SET_FPS_60);
     inp_set_key_bind(SDL_SCANCODE_F6, CMD_SET_FPS_10);
+    inp_set_key_bind(SDL_SCANCODE_F1, CMD_SET_DEBUG);
     //inp_set_key_bind(SDL_SCANCODE_X, 0x7f); // fail case for testing
 
     inp_set_mouse_bind(SDL_BUTTON_LEFT, CMD_PLAYER_PRIMARY_FIRE);

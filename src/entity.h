@@ -6,6 +6,7 @@
 #include "main.h"
 #include "vector.h"
 
+typedef struct game_resource_s game_resource_t;
 typedef struct engine_s engine_t;
 
 #define FOREVER 0.0
@@ -54,7 +55,7 @@ extern int32_t active_ents;
 extern int32_t last_entity;
 
 bool ent_init(entity_t** ent_list, int32_t num_ents);
-void ent_refresh(engine_t* eng, double dt);
+void ent_refresh(engine_t* eng, game_resource_t** game_res, double dt);
 void ent_shutdown(entity_t* ent_list);
 
 entity_t* ent_new(entity_t* ent_list);

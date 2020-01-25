@@ -30,7 +30,7 @@ bool ent_init(entity_t** ent_list, int32_t num_ents)
     return true;
 }
 
-void ent_refresh(engine_t* eng, double dt)
+void ent_refresh(engine_t* eng, game_resource_t** game_res, double dt)
 {
     if (eng == NULL)
         return;
@@ -88,7 +88,7 @@ void ent_refresh(engine_t* eng, double dt)
                 entity_t* player = ent_by_index(ent_list, PLAYER_ENTITY_INDEX);
                 vec2f_t bullet_org = player->org;
                 vec2f_t mouse = { mouse_pos.x, mouse_pos.y };
-                vec2i_t bullet_size = { 12, 12 };
+                vec2i_t bullet_size = { 8, 8 };
                 rgba_t bullet_color = { 0xf5, 0xa4, 0x42, 0xff };
                 entity_t* bullet = ent_spawn(
                     ent_list,
@@ -338,8 +338,8 @@ void ent_euler_move(entity_t* e, vec2f_t *accel, float friction, double dt)
 bool ent_spawn_player(entity_t* ent_list)
 {
     // screen center
-    vec2f_t player_org = { (float)(WINDOW_WIDTH * 0.5f), (float)(WINDOW_HEIGHT * 0.5f) };
-    vec2i_t player_size = { 16, 16 };
+    vec2f_t player_org = { (float)(CAMERA_WIDTH * 0.5f), (float)(CAMERA_HEIGHT * 0.5f) };
+    vec2i_t player_size = { 10, 10 };
     rgba_t player_color = { 0x0, 0x0, 0xff, 0xff };
     entity_t* player = ent_spawn(
         ent_list,
@@ -357,7 +357,7 @@ bool ent_spawn_player(entity_t* ent_list)
 
     // spawn satellite
     vec2f_t sat_org = {};
-    vec2i_t sat_size = { 16, 16 };
+    vec2i_t sat_size = { 10, 10 };
     rgba_t sat_color = { 0x90, 0xf5, 0x42, 0xff };
     vec2f_set(&sat_org, player_org.x + 64.f, player_org.y + 64.f);
     entity_t* satellite = ent_spawn(

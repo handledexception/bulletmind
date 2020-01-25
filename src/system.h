@@ -6,8 +6,18 @@
 #include "timing.h"
 #include "vector.h"
 
+#define MAX_GAME_RESOURCES 256
+
 typedef struct SDL_Window SDL_Window;
 typedef struct SDL_Renderer SDL_Renderer;
+typedef struct SDL_Surface SDL_Surface;
+typedef struct SDL_Texture SDL_Texture;
+typedef struct img_file_s img_file_t;
+
+typedef struct game_resource_s {
+    char name[256];
+    img_file_t* img_file;
+} game_resource_t;
 
 typedef enum {
     ES_STARTUP,
@@ -20,8 +30,12 @@ typedef struct engine_s {
 
     SDL_Window* window;
     SDL_Renderer* renderer;
+    // SDL_Surface* scr_surface;
+    // SDL_Texture* scr_texture;
 
+    int32_t wnd_width, wnd_height;
     int32_t scr_width, scr_height;
+    int32_t scr_scale_x, scr_scale_y;
     rect_t scr_bounds;
     vec2i_t mouse_pos;
 
@@ -30,11 +44,13 @@ typedef struct engine_s {
     int32_t frame_count;
 
     engine_state_t state;
+    bool debug;
 
     entity_t* ent_list;
 } engine_t;
 
 extern engine_t* engine;
+extern game_resource_t** game_resources;
 
 bool sys_init(engine_t* eng);
 void sys_refresh(engine_t* eng);

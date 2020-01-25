@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 // generic data buffer
-typedef struct {
+typedef struct buffer_s {
     char *data;
     size_t size;
 } buffer_t;

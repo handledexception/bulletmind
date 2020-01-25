@@ -3,6 +3,7 @@
 
 #include "c99defs.h"
 
+// Basic linear allocator
 // https://www.gingerbill.org/article/2019/02/08/memory-allocation-strategies-002/
 
 #ifndef DEFAULT_ALIGNMENT
@@ -11,12 +12,15 @@
 
 #define ARENA_TOTAL_BYTES 4092000
 
-typedef struct {
+typedef struct arena_s {
     uint8_t* buffer;
     size_t sz_buffer;
     size_t prev_offset;
     size_t curr_offset;
 } arena_t;
+
+uint8_t arena_buf[ARENA_TOTAL_BYTES];
+arena_t mem_arena;
 
 bool is_power_of_two(uintptr_t x);
 uintptr_t align_forward(uintptr_t ptr, size_t align);
