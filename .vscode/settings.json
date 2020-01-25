@@ -14,6 +14,8 @@
         "command.h": "c",
         "render.h": "c",
         "sdl_render.h": "c",
-        "c99defs.h": "c"
+        "c99defs.h": "c",
+        "vector.h": "c",
+        "bitflags.h": "c"
     }
 }
