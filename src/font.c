@@ -17,16 +17,16 @@
 #define FONT_COLS 16
 #define FONT_ROWS 6
 
-static img_file_t* bitmap_font = NULL;
+static sprite_t* bitmap_font = NULL;
 
 bool font_init(SDL_Renderer *ren, const char *path)
 {
-    if (!img_file_load(path, &bitmap_font)) {
-        printf("font_init: img_file_load failed loading font: %s\n", path);
+    if (!sprite_load(path, &bitmap_font)) {
+        printf("font_init: sprite_load failed loading font: %s\n", path);
         return false;
     }
 
-    img_file_create_texture(ren, bitmap_font);
+    sprite_create_texture(ren, bitmap_font);
 
     return true;
 }
@@ -64,7 +64,7 @@ void font_print(SDL_Renderer* ren, int32_t x, int32_t y, float scale, const char
 void font_shutdown()
 {
     if (bitmap_font) {
-        img_file_shutdown(bitmap_font);
+        sprite_shutdown(bitmap_font);
         bitmap_font = NULL;
     }
     printf("font_shutdown: OK!\n");

@@ -12,11 +12,11 @@ typedef struct SDL_Window SDL_Window;
 typedef struct SDL_Renderer SDL_Renderer;
 typedef struct SDL_Surface SDL_Surface;
 typedef struct SDL_Texture SDL_Texture;
-typedef struct img_file_s img_file_t;
+typedef struct sprite_s sprite_t;
 
 typedef struct game_resource_s {
     char name[256];
-    img_file_t* img_file;
+    sprite_t* sprite;
 } game_resource_t;
 
 typedef enum {
@@ -35,9 +35,9 @@ typedef struct engine_s {
 
     int32_t wnd_width, wnd_height;
     int32_t scr_width, scr_height;
-    int32_t scr_scale_x, scr_scale_y;
+    float scr_scale_x, scr_scale_y;
     rect_t scr_bounds;
-    vec2i_t mouse_pos;
+    vec2f_t mouse_pos;
 
     float target_fps;
     double target_frametime;

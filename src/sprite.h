@@ -21,16 +21,16 @@ typedef enum {
     ARGB32,
 } pix_fmt_t;
 
-typedef struct img_file_s {
+typedef struct sprite_s {
     uint8_t* data;
     imgtype_t type;
     SDL_Surface* surface;
     SDL_Texture* texture;
-} img_file_t;
+} sprite_t;
 
-bool img_file_load(const char* path, img_file_t** out);
-void img_file_create(uint8_t* data, uint32_t w, uint32_t h, uint32_t bpp, uint32_t stride, uint32_t format, img_file_t** out);
-void img_file_create_texture(SDL_Renderer* ren, img_file_t* img);
-void img_file_shutdown(img_file_t* img);
+bool sprite_load(const char* path, sprite_t** out);
+void sprite_create(uint8_t* data, uint32_t w, uint32_t h, uint32_t bpp, uint32_t stride, uint32_t format, sprite_t** out);
+void sprite_create_texture(SDL_Renderer* ren, sprite_t* img);
+void sprite_shutdown(sprite_t* img);
 
 #endif

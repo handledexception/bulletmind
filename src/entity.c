@@ -36,7 +36,7 @@ void ent_refresh(engine_t* eng, game_resource_t** game_res, double dt)
         return;
 
     entity_t* ent_list = eng->ent_list;
-    vec2i_t mouse_pos = eng->mouse_pos;
+    vec2f_t mouse_pos = eng->mouse_pos;
 
     vec2f_t p_accel = { 0 };
     float p_speed = 800.f;

@@ -39,9 +39,9 @@ bool sys_init(engine_t* eng)
 
     rect_t scr = { 0, 0, eng->scr_width, eng->scr_height };
     eng->scr_bounds = scr;
-    SDL_RenderSetViewport(eng->renderer, (SDL_Rect*)&eng->scr_bounds);
+    // SDL_RenderSetViewport(eng->renderer, (SDL_Rect*)&eng->scr_bounds);
     SDL_RenderSetLogicalSize(eng->renderer, eng->scr_width, eng->scr_height);
-    SDL_RenderSetIntegerScale(eng->renderer, true);
+    // SDL_RenderSetIntegerScale(eng->renderer, true);
 
     // eng->scr_surface = SDL_CreateRGBSurface(
     //     0,
@@ -79,7 +79,10 @@ void sys_refresh(engine_t* eng)
 {
     SDL_Event e;
 
-    SDL_GetMouseState(&eng->mouse_pos.x, &eng->mouse_pos.y);
+    int mx, my;
+    SDL_GetMouseState(&mx, &my);
+    eng->mouse_pos.x = (float)mx;
+    eng->mouse_pos.y = (float)my;
     eng->mouse_pos.x /= eng->scr_scale_x;
     eng->mouse_pos.y /= eng->scr_scale_y;
 
