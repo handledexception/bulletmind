@@ -4,6 +4,7 @@
 #include "c99defs.h"
 #include "entity.h"
 #include "timing.h"
+#include "sprite.h"
 #include "vector.h"
 
 #define MAX_GAME_RESOURCES 256
@@ -12,7 +13,6 @@ typedef struct SDL_Window SDL_Window;
 typedef struct SDL_Renderer SDL_Renderer;
 typedef struct SDL_Surface SDL_Surface;
 typedef struct SDL_Texture SDL_Texture;
-typedef struct sprite_s sprite_t;
 
 typedef struct game_resource_s {
     char name[256];
@@ -47,13 +47,15 @@ typedef struct engine_s {
     bool debug;
 
     entity_t* ent_list;
+    game_resource_t** game_resources;
 } engine_t;
 
 extern engine_t* engine;
-extern game_resource_t** game_resources;
 
 bool sys_init(engine_t* eng);
 void sys_refresh(engine_t* eng);
 void sys_shutdown(engine_t* eng);
+
+void game_res_init(engine_t* eng, const char* assets_path);
 
 #endif

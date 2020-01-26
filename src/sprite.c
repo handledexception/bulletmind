@@ -94,7 +94,7 @@ bool sprite_load(const char* path, sprite_t** out)
                 memcpy(img->data + stride * c, tga_pixels + stride * (height - (c+1)), stride);
             }
         }
-        
+
         uint32_t pix_fmt = SDL_PIXELFORMAT_BGR24;
         if (bytes_per_pixel == 3) {
             pix_fmt = SDL_PIXELFORMAT_BGR24;

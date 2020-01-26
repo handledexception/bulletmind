@@ -42,43 +42,27 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    /*
-    TODO: make functions for allocating, initializing, etc. of game resource objects
-    - create_game_resource(name, image)
-    - get_game_resource(name)
-    */
-    game_resources = arena_alloc(&mem_arena, sizeof(game_resource_t*) * MAX_GAME_RESOURCES, DEFAULT_ALIGNMENT);
-    game_resource_t* sprite_res = arena_alloc(&mem_arena, sizeof(game_resource_t), DEFAULT_ALIGNMENT);
-    // game_resource_t* font_res = arena_alloc(&mem_arena, sizeof(game_resource_t), DEFAULT_ALIGNMENT);
-    sprite_t* sprite = NULL;
-    // sprite_t* font = NULL;
-    // sprite_load("font_7px.tga", &font);
-    // sprite_create_texture(engine->renderer, font);
-    sprite_load("bullet_ps.tga", &sprite);
-    sprite_create_texture(engine->renderer, sprite);
-    sprintf(sprite_res->name, "bullet");
-    sprite_res->sprite = sprite;
-    // sprintf(font_res->name, "7px font");
-    // font_res->sprite = font;
-    game_resources[0] = sprite_res;
-    // game_resources[1] = font_res;
+    // sprite_t* raw_sprite = NULL;
+    // const uint32_t w = 32;
+    // const uint32_t h = 32;
+    // const size_t pix_size = w * h * 3;
+    // uint8_t test_pattern[pix_size];
+    // const uint32_t pixel = 0xcc99ff;
+    // for (int idx = 0; idx < pix_size; idx+=3) {
+    //     test_pattern[idx] = (pixel>>16) & 0xff;
+    //     test_pattern[idx+1] = (pixel>>8) & 0xff;
+    //     test_pattern[idx+2] = pixel & 0xff;
+    // }
 
-    sprite_t* raw_sprite = NULL;
-    const uint32_t w = 32;
-    const uint32_t h = 32;
-    const size_t pix_size = w * h * 3;
-    uint8_t test_pattern[pix_size];
-    const uint32_t pixel = 0xcc99ff;
-    for (int idx = 0; idx < pix_size; idx+=3) {
-        test_pattern[idx] = (pixel>>16) & 0xff;
-        test_pattern[idx+1] = (pixel>>8) & 0xff;
-        test_pattern[idx+2] = pixel & 0xff;
-    }
+    // sprite_create(test_pattern, w, h, 24, w * 3, SDL_PIXELFORMAT_RGB24, &raw_sprite);
+    // sprite_create_texture(engine->renderer, raw_sprite);
+    // raw_sprite->surface->clip_rect.x = 120;
+    // raw_sprite->surface->clip_rect.y = 120;
 
-    sprite_create(test_pattern, w, h, 24, w * 3, SDL_PIXELFORMAT_RGB24, &raw_sprite);
-    sprite_create_texture(engine->renderer, raw_sprite);
-    raw_sprite->surface->clip_rect.x = 120;
-    raw_sprite->surface->clip_rect.y = 120;
+    // game_resource_t* raw_sprite_res = arena_alloc(&mem_arena, sizeof(game_resource_t), DEFAULT_ALIGNMENT);
+    // sprintf(raw_sprite_res->name, "raw sprite");
+    // raw_sprite_res->sprite = raw_sprite;
+    // game_resources[1] = raw_sprite_res;
 
     // main loop
     double dt = 0.0;
@@ -94,22 +78,23 @@ int main(int argc, char** argv)
                 SDL_SetRenderDrawColor(engine->renderer, 0x10, 0x10, 0x10, 0xFF);
                 SDL_RenderClear(engine->renderer);
 
-                SDL_RenderCopyEx(engine->renderer, game_resources[0]->sprite->texture, NULL, &game_resources[0]->sprite->surface->clip_rect, 0.f, NULL, SDL_FLIP_NONE); // bullet
-                SDL_RenderCopyEx(engine->renderer, raw_sprite->texture, NULL, &raw_sprite->surface->clip_rect, 0.f, NULL, SDL_FLIP_NONE); // test_pattern
-
                 if (engine->debug) {
                     char time_buf[TEMP_STRING_MAX];
                     _strtime(time_buf);
-                    font_print(engine->renderer, 10, 10,  2.0, "Time: %s", time_buf);
-                    font_print(engine->renderer, 10, 30, 2.0, "Engine Time: %f", timing_enginetime());
-                    font_print(engine->renderer, 10, 50, 2.0, "Frame Time: %f", dt);
-                    font_print(engine->renderer, 10, 70, 2.0, "Frame Count: %d", engine->frame_count);
-                    font_print(engine->renderer, 10, 90, 2.0, "Active Ents: %d", active_ents);
-                    font_print(engine->renderer, 10, 110, 2.0, "Mouse X,Y (%.2f, %.2f)", engine->mouse_pos.x, engine->mouse_pos.y);
+                    font_print(engine, 10, 10,  2.0, "Time: %s", time_buf);
+                    font_print(engine, 10, 30, 2.0, "Engine Time: %f", timing_enginetime());
+                    font_print(engine, 10, 50, 2.0, "Frame Time: %f", dt);
+                    font_print(engine, 10, 70, 2.0, "Frame Count: %d", engine->frame_count);
+                    font_print(engine, 10, 90, 2.0, "Active Ents: %d", active_ents);
+                    font_print(engine, 10, 110, 2.0, "Mouse X,Y (%.2f, %.2f)", engine->mouse_pos.x, engine->mouse_pos.y);
                 }
+
                 sys_refresh(engine);
                 cmd_refresh(engine);
-                ent_refresh(engine, game_resources, dt);
+                ent_refresh(engine, dt);
+
+                SDL_RenderCopyEx(engine->renderer, engine->game_resources[0]->sprite->texture, NULL, &engine->game_resources[0]->sprite->surface->clip_rect, 0.f, NULL, SDL_FLIP_NONE); // bullet
+                // SDL_RenderCopyEx(engine->renderer, engine->game_resources[1]->sprite->texture, NULL, &engine->game_resources[1]->sprite->surface->clip_rect, 0.f, NULL, SDL_FLIP_NONE); // raw_sprite
                 break;
             case ES_QUIT:
                 break;
@@ -125,7 +110,6 @@ int main(int argc, char** argv)
         engine->frame_count++;
     }
 
-    font_shutdown();
     sys_shutdown(engine);
 
     engine = NULL;

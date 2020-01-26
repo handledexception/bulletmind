@@ -17,21 +17,7 @@
 #define FONT_COLS 16
 #define FONT_ROWS 6
 
-static sprite_t* bitmap_font = NULL;
-
-bool font_init(SDL_Renderer *ren, const char *path)
-{
-    if (!sprite_load(path, &bitmap_font)) {
-        printf("font_init: sprite_load failed loading font: %s\n", path);
-        return false;
-    }
-
-    sprite_create_texture(ren, bitmap_font);
-
-    return true;
-}
-
-void font_print(SDL_Renderer* ren, int32_t x, int32_t y, float scale, const char *str, ...)
+void font_print(engine_t* eng, int32_t x, int32_t y, float scale, const char *str, ...)
 {
     va_list args;
     char text[TEMP_STRING_MAX];
@@ -54,19 +40,9 @@ void font_print(SDL_Renderer* ren, int32_t x, int32_t y, float scale, const char
             tv = (float)(fx / FONT_COLS) * FONT_PX;
             SDL_Rect src = { tu, tv, FONT_PX, FONT_PX };
             SDL_Rect dst = { x, y, FONT_PX * scale, FONT_PX * scale };
-            SDL_RenderCopy((SDL_Renderer *)ren, bitmap_font->texture, &src, &dst);
+            SDL_RenderCopy((SDL_Renderer *)eng->renderer, eng->game_resources[1]->sprite->texture, &src, &dst);
             x += FONT_PX * scale;
         }
         c++;
     }
-}
-
-void font_shutdown()
-{
-    if (bitmap_font) {
-        sprite_shutdown(bitmap_font);
-        bitmap_font = NULL;
-    }
-    printf("font_shutdown: OK!\n");
-    return;
 }

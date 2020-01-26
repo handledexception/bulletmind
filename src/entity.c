@@ -30,7 +30,7 @@ bool ent_init(entity_t** ent_list, int32_t num_ents)
     return true;
 }
 
-void ent_refresh(engine_t* eng, game_resource_t** game_res, double dt)
+void ent_refresh(engine_t* eng, double dt)
 {
     if (eng == NULL)
         return;
