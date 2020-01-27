@@ -5,6 +5,7 @@
 #include "font.h"
 #include "render.h"
 #include "timing.h"
+#include "utils.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -40,10 +41,7 @@ void ent_refresh(engine_t* eng, double dt)
 
     vec2f_t p_accel = { 0 };
     float p_speed = 800.f;
-    float p_weap_fire_rate = 0.075f;
-    static double p_shoot_time = 0.0;
     static bool p_shooting = false;
-
     // Player entity movement
     if (cmd_getstate(CMD_PLAYER_SPEED) == true) { p_speed *= 2.f; }
     if (cmd_getstate(CMD_PLAYER_UP) == true) { p_accel.y = -p_speed; }
@@ -83,6 +81,8 @@ void ent_refresh(engine_t* eng, double dt)
         // PLAYER
         if (ent_has_caps(e, PLAYER)) {
             // player shooting
+            float p_weap_fire_rate = 0.125f;
+            static double p_shoot_time = 0.0;
             if (p_shooting && timing_getsec() >= p_shoot_time) {
                 p_shoot_time = timing_getsec() + p_weap_fire_rate;
                 entity_t* player = ent_by_index(ent_list, PLAYER_ENTITY_INDEX);
@@ -92,7 +92,7 @@ void ent_refresh(engine_t* eng, double dt)
                 rgba_t bullet_color = { 0xf5, 0xa4, 0x42, 0xff };
                 entity_t* bullet = ent_spawn(
                     ent_list,
-                    "basic_bullet",
+                    "bullet",
                     BASIC_BULLET_LIFETIME,
                     &bullet_org,
                     &bullet_size,
@@ -104,10 +104,10 @@ void ent_refresh(engine_t* eng, double dt)
 
             ent_euler_move(e, &p_accel, 0.035, dt);
             // screen bounds checking
-            // if (e->org.x > (float)engine->scr_bounds.w) { e->org.x = (float)engine->scr_bounds.w; }
-            // if (e->org.y > (float)engine->scr_bounds.h) { e->org.y = (float)engine->scr_bounds.h; }
-            // if (e->org.x < (float)engine->scr_bounds.x) { e->org.x = (float)engine->scr_bounds.x; }
-            // if (e->org.y < (float)engine->scr_bounds.y) { e->org.y = (float)engine->scr_bounds.y; }
+            if (e->org.x > (float)engine->scr_bounds.w) { e->org.x = (float)engine->scr_bounds.w; }
+            if (e->org.y > (float)engine->scr_bounds.h) { e->org.y = (float)engine->scr_bounds.h; }
+            if (e->org.x < (float)engine->scr_bounds.x) { e->org.x = (float)engine->scr_bounds.x; }
+            if (e->org.y < (float)engine->scr_bounds.y) { e->org.y = (float)engine->scr_bounds.y; }
             ent_bbox_update(e);
         }
 
@@ -118,7 +118,7 @@ void ent_refresh(engine_t* eng, double dt)
                 // vector between entity mouse origin and entity origin
                 vec2f_sub(&dist, &e->mouse_org, &e->org);
                 vec2f_norm(&dist);
-                vec2f_scale(&dist, 50000.f);
+                vec2f_scale(&dist, 25000.f);
                 // reflection: r = d-2(d*n)n where d*nd*n is the dot product, and nn must be normalized.
             }
             ent_euler_move(e, &dist, 0.0, dt);
@@ -137,12 +137,39 @@ void ent_refresh(engine_t* eng, double dt)
         }
 
         if (ent_has_caps(e, RENDERABLE)) {
-            draw_rect_solid(
-                engine->renderer,
-                (float)e->bbox.x, (float)e->bbox.y,
-                e->size.x, e->size.y,
-                e->color
-            );
+            if (!strcmp((const char*)e->name, "player") || !strcmp((const char*)e->name, "satellite")) {
+                draw_rect_solid(
+                    engine->renderer,
+                    (float)e->bbox.x, (float)e->bbox.y,
+                    e->size.x, e->size.y,
+                    e->color
+                );
+            }
+            if (!strcmp((const char*)e->name, "bullet")) {
+                game_resource_t* resource = engine->game_resources[0];
+                SDL_Rect dst = {
+                    e->bbox.x,
+                    e->bbox.y,
+                    resource->sprite->surface->clip_rect.w,
+                    resource->sprite->surface->clip_rect.h
+                };
+
+                // calculate angle of rotation between mouse and bullet origins
+                if (e->angle == 0.f) {
+                    vec2f_t bullet_diff;
+                    vec2f_sub(&bullet_diff, &e->mouse_org, &e->org);
+                    vec2f_norm(&bullet_diff);
+                    // e->angle = RAD_TO_DEG(atan2f(e->mouse_org.y - e->org.y, e->mouse_org.x - e->org.y));
+                    e->angle = RAD_TO_DEG(atan2f(bullet_diff.y, bullet_diff.x));
+                    printf("%f\n", e->angle);
+                }
+                SDL_RenderCopyEx(
+                    engine->renderer,
+                    resource->sprite->texture,
+                    NULL, &dst,
+                    e->angle, NULL, SDL_FLIP_NONE
+                );
+            }
         }
 
         //if (ent_hascaps(edx, COLLIDER) == true) {
@@ -209,6 +236,18 @@ entity_t* ent_by_index(entity_t* ent_list, int32_t idx)
     entity_t* e = &ent_list[idx];
     if (e == NULL) {
         printf("ent_by_index - NULL entity at index %d\n", idx);
+    }
+
+    return e;
+}
+
+entity_t* ent_by_name(entity_t* ent_list, const char* name)
+{
+    entity_t* e = NULL;
+    for (size_t edx = 0; edx < MAX_ENTITIES; edx++) {
+        e = &ent_list[edx];
+        if (!strcmp((const char*)e->name, name))
+            break;
     }
 
     return e;

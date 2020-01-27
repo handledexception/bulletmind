@@ -60,6 +60,7 @@ void ent_shutdown(entity_t* ent_list);
 
 entity_t* ent_new(entity_t* ent_list);
 void ent_free(entity_t* e);
+entity_t* ent_by_name(entity_t* ent_list, const char* name);
 entity_t* ent_by_index(entity_t* ent_list, int32_t idx);
 
 entity_t* ent_spawn(entity_t* ent_list, const char* name, double lifetime, vec2f_t* org, vec2i_t* size, rgba_t* color, int32_t caps);

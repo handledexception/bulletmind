@@ -121,7 +121,7 @@ inline float vec2f_norm(vec2f_t *a)
 // return the dot product of vectors a and b
 inline float vec2f_dot(vec2f_t *a, vec2f_t *b)
 {
-    return (a->x * b->x + a->y * b->y);
+    return (a->x * b->x) + (a->y * b->y);
 }
 
 // vector friction

@@ -16,6 +16,7 @@
         "sdl_render.h": "c",
         "c99defs.h": "c",
         "vector.h": "c",
-        "bitflags.h": "c"
+        "bitflags.h": "c",
+        "timing.h": "c"
     }
 }
