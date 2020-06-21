@@ -17,6 +17,7 @@
         "c99defs.h": "c",
         "vector.h": "c",
         "bitflags.h": "c",
-        "timing.h": "c"
+        "timing.h": "c",
+        "math.h": "c"
     }
 }
