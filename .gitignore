@@ -1,6 +1,5 @@
-/SDL2
+/deps
 /out
 /msvc
 cloc.bat
 cloc.exe
-history.txt
