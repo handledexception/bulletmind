@@ -1,5 +1,5 @@
-#ifndef H_COMMAND
-#define H_COMMAND
+#ifndef _H_COMMAND
+#define _H_COMMAND
 
 #include "c99defs.h"
 #include "system.h"

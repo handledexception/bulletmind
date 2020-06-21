@@ -1,5 +1,5 @@
-#ifndef H_TIMING
-#define H_TIMING
+#ifndef _H_TIMING
+#define _H_TIMING
 
 #include "c99defs.h"
 

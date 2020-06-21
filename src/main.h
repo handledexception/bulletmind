@@ -1,5 +1,5 @@
-#ifndef H_MAIN
-#define H_MAIN
+#ifndef _H_MAIN
+#define _H_MAIN
 
 #define NULL_INDEX -1
 #define TEMP_STRING_MAX 4096
@@ -13,8 +13,6 @@
 #define TARGET_FPS 60
 #define TARGET_FRAMETIME(x) 1.0/x
 
-#define ARRAY_SIZE(x) sizeof(x) / sizeof(x[0])
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#define MAX(a,b) (((a)>(b))?(a):(b))
+#define MAX_PATH 256
 
 #endif

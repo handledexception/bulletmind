@@ -1,5 +1,5 @@
-#ifndef H_INPUT
-#define H_INPUT
+#ifndef _H_INPUT
+#define _H_INPUT
 
 #include "c99defs.h"
 #include <stdlib.h>

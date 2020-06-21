@@ -1,5 +1,5 @@
-#ifndef H_RENDER
-#define H_RENDER
+#ifndef _H_RENDER
+#define _H_RENDER
 
 #include "vector.h"
 

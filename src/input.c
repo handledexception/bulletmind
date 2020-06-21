@@ -24,8 +24,7 @@ size_t sz_arraykeys = sizeof(key_t) * MAX_KEYS;
 static mbutton_t *array_mbuttons = NULL;
 size_t sz_arraymbuttons = sizeof(mbutton_t) * MAX_MBUTTONS;
 
-void inp_init()
-{
+void inp_init() {
     array_keys = (key_t *)malloc(sz_arraykeys);
     if (array_keys != NULL) { memset(array_keys, 0, sz_arraykeys); }
 
@@ -49,13 +48,11 @@ void inp_init()
     printf("inp_init OK\n");
 }
 
-uint32_t inp_refresh()
-{
+uint32_t inp_refresh() {
     return 0;
 }
 
-void inp_shutdown()
-{
+void inp_shutdown() {
     if (array_keys) {
         free(array_keys);
         array_keys = NULL;
@@ -69,8 +66,7 @@ void inp_shutdown()
     printf("inp_shutdown OK\n");
 }
 
-void inp_set_key_state(uint16_t key, uint8_t state)
-{
+void inp_set_key_state(uint16_t key, uint8_t state) {
     if (array_keys != NULL) {
         if (array_keys[key].state != state) {
             array_keys[key].state = state;
@@ -83,8 +79,7 @@ void inp_set_key_state(uint16_t key, uint8_t state)
     }
 }
 
-uint8_t	inp_get_key_state(uint16_t key)
-{
+uint8_t	inp_get_key_state(uint16_t key) {
     uint8_t state = 0;
     if (array_keys != NULL) {
         state = array_keys[key].state;
@@ -93,8 +88,7 @@ uint8_t	inp_get_key_state(uint16_t key)
     return state;
 }
 
-bool inp_set_key_bind(uint16_t key, int32_t cmd)
-{
+bool inp_set_key_bind(uint16_t key, int32_t cmd) {
     bool found_cmd = false;
     const char *cmd_name = NULL;
 
@@ -119,8 +113,7 @@ bool inp_set_key_bind(uint16_t key, int32_t cmd)
     return true;
 }
 
-bool inp_set_mouse_bind(uint8_t button, int32_t cmd)
-{
+bool inp_set_mouse_bind(uint8_t button, int32_t cmd) {
     bool found_cmd = false;
     const char *cmd_name = NULL;
 
@@ -144,8 +137,7 @@ bool inp_set_mouse_bind(uint8_t button, int32_t cmd)
     return true;
 }
 
-void inp_set_mouse_state(uint8_t button, uint8_t state)
-{
+void inp_set_mouse_state(uint8_t button, uint8_t state) {
     if (array_mbuttons != NULL) {
         if (array_mbuttons[button].state != state) {
             array_mbuttons[button].state = state;

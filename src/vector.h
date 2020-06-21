@@ -1,5 +1,5 @@
-#ifndef H_VECTOR
-#define H_VECTOR
+#ifndef _H_VECTOR
+#define _H_VECTOR
 
 #include "c99defs.h"
 #include <math.h>
@@ -128,7 +128,7 @@ inline float vec2f_dot(vec2f_t *a, vec2f_t *b)
 inline void vec2f_friction(vec2f_t *a, float friction)
 {
     float speed = vec2f_length(a);
-    float newspeed = speed - speed * friction;
+    float newspeed = speed - (speed * friction);
 
     if(newspeed > 0)
         newspeed /= speed;

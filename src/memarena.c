@@ -1,3 +1,4 @@
+#include "memalign.h"
 #include "memarena.h"
 
 #include <assert.h>
@@ -6,29 +7,6 @@ static size_t arena_allocated_bytes = 0;
 
 static uint8_t arena_buf[ARENA_TOTAL_BYTES];
 static arena_t mem_arena = {};
-
-bool is_power_of_two(uintptr_t x)
-{
-    return (x & (x - 1)) == 0;
-}
-
-uintptr_t align_forward(uintptr_t ptr, size_t align)
-{
-    uintptr_t p, a, modulo;
-
-    assert(is_power_of_two(align));
-    if (!is_power_of_two(align))
-        return 0;
-
-    p = ptr;
-    a = (uintptr_t)align;
-    modulo = p & (a - 1);
-
-    if (modulo != 0)
-        p += a - modulo;
-
-    return p;
-}
 
 void arena_init(arena_t* arena, void* backing_buffer, size_t sz_backing)
 {

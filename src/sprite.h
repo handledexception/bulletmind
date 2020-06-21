@@ -10,7 +10,7 @@ typedef enum {
     IMG_TYPE_BMP,
     IMG_TYPE_PNG,
     IMG_TYPE_JPEG,
-    IMG_TYPE_RAW
+    IMG_TYPE_RAW,
 } imgtype_t;
 
 typedef enum {

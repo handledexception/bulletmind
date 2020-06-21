@@ -3,44 +3,15 @@
 #include "input.h"
 #include "main.h"
 #include "memarena.h"
+#include "resource.h"
 #include "system.h"
+#include "utils.h"
 
 #include <SDL.h>
 
 #define SDL_FLAGS (SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER)
 
 engine_t* engine = NULL;
-
-void game_res_init(engine_t* eng, const char* assets_path)
-{
-    eng->game_resources = arena_alloc(&mem_arena, sizeof(game_resource_t*) * MAX_GAME_RESOURCES, DEFAULT_ALIGNMENT);
-
-    const char* assets_list[4] = {
-        "bullet",
-        "bullet_rgba.tga",
-        "font_7px",
-        "font_7px_rgba.tga",
-    };
-
-    int asset_num = 0;
-    for (int i = 0; i < 4; i+=2) {
-        const char* asset_name = assets_list[i];
-        const char* asset_filename = assets_list[i+1];
-            sprite_t* sprite = NULL;
-            const size_t sz_path = strlen(assets_path) + strlen(asset_filename) + 2;
-            char file_path[sz_path];
-            sprintf(file_path, "%s/%s", assets_path, asset_filename);
-
-            sprite_load(file_path, &sprite);
-            sprite_create_texture(engine->renderer, sprite);
-
-            game_resource_t* sprite_res = arena_alloc(&mem_arena, sizeof(game_resource_t), DEFAULT_ALIGNMENT);
-            sprintf(sprite_res->name, "%s", asset_name);
-            sprite_res->sprite = sprite;
-            eng->game_resources[asset_num] = sprite_res;
-            asset_num++;
-    }
-}
 
 bool sys_init(engine_t* eng)
 {
@@ -92,7 +63,7 @@ bool sys_init(engine_t* eng)
     //     CAMERA_HEIGHT
     // );
 
-    game_res_init(eng, "assets");
+    game_res_init(eng);
     inp_init();
     cmd_init();
     ent_init(&eng->ent_list, MAX_ENTITIES);

@@ -4,6 +4,7 @@
 #include "entity.h"
 #include "font.h"
 #include "render.h"
+#include "resource.h"
 #include "timing.h"
 #include "utils.h"
 
@@ -146,12 +147,13 @@ void ent_refresh(engine_t* eng, double dt)
                 );
             }
             if (!strcmp((const char*)e->name, "bullet")) {
-                game_resource_t* resource = engine->game_resources[0];
+                game_resource_t* resource = engine->game_resources[2];
+                sprite_t* sprite = (sprite_t*)resource->data;
                 SDL_Rect dst = {
                     e->bbox.x,
                     e->bbox.y,
-                    resource->sprite->surface->clip_rect.w,
-                    resource->sprite->surface->clip_rect.h
+                    sprite->surface->clip_rect.w,
+                    sprite->surface->clip_rect.h
                 };
 
                 // calculate angle of rotation between mouse and bullet origins
@@ -161,11 +163,11 @@ void ent_refresh(engine_t* eng, double dt)
                     vec2f_norm(&bullet_diff);
                     // e->angle = RAD_TO_DEG(atan2f(e->mouse_org.y - e->org.y, e->mouse_org.x - e->org.y));
                     e->angle = RAD_TO_DEG(atan2f(bullet_diff.y, bullet_diff.x));
-                    printf("%f\n", e->angle);
+                    // printf("%f\n", e->angle);
                 }
                 SDL_RenderCopyEx(
                     engine->renderer,
-                    resource->sprite->texture,
+                    sprite->texture,
                     NULL, &dst,
                     e->angle, NULL, SDL_FLIP_NONE
                 );

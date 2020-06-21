@@ -1,12 +1,11 @@
-#ifndef H_ENTITY
-#define H_ENTITY
+#ifndef _H_ENTITY
+#define _H_ENTITY
 
-#include "bitflags.h"
+#include "bitfield.h"
 #include "c99defs.h"
 #include "main.h"
 #include "vector.h"
 
-typedef struct game_resource_s game_resource_t;
 typedef struct engine_s engine_t;
 
 #define FOREVER 0.0
@@ -31,7 +30,7 @@ typedef enum {
     SATELLITE = 5,
     BULLET = 6,
     PLAYER = 7,
-    RENDERABLE = 8
+    RENDERABLE = 8,
 } entity_caps_t;
 
 typedef struct {
