@@ -1,0 +1,107 @@
+[meta]
+app = "http://www.aseprite.org/"
+version = "1.2.9"
+image = "ss_player.tga"
+format = "I8"
+scale = "1"
+frame_tags = []
+slices = []
+    [meta.size]
+    w = 80.0
+    h = 16.0
+
+    [[meta.layers]]
+    name = "Layer 1"
+    opacity = 255.0
+    blend_mode = "normal"
+
+[frames]
+    [frames."ss_player_00"]
+    rotated = false
+    trimmed = false
+    duration = 100.0
+        [frames."ss_player_00".frame]
+        x = 0.0
+        y = 0.0
+        w = 16.0
+        h = 16.0
+        [frames."ss_player_00".sprite_source_size]
+        x = 0.0
+        y = 0.0
+        w = 16.0
+        h = 16.0
+        [frames."ss_player_00".source_size]
+        w = 16.0
+        h = 16.0
+
+    [frames."ss_player_01"]
+    rotated = false
+    trimmed = false
+    duration = 100.0
+        [frames."ss_player_01".frame]
+        x = 16.0
+        y = 0.0
+        w = 16.0
+        h = 16.0
+        [frames."ss_player_01".sprite_source_size]
+        x = 0.0
+        y = 0.0
+        w = 16.0
+        h = 16.0
+        [frames."ss_player_01".source_size]
+        w = 16.0
+        h = 16.0
+
+    [frames."ss_player_02"]
+    rotated = false
+    trimmed = false
+    duration = 100.0
+        [frames."ss_player_02".frame]
+        x = 32.0
+        y = 0.0
+        w = 16.0
+        h = 16.0
+        [frames."ss_player_02".sprite_source_size]
+        x = 0.0
+        y = 0.0
+        w = 16.0
+        h = 16.0
+        [frames."ss_player_02".source_size]
+        w = 16.0
+        h = 16.0
+
+    [frames."ss_player_03"]
+    rotated = false
+    trimmed = false
+    duration = 100.0
+        [frames."ss_player_03".frame]
+        x = 48.0
+        y = 0.0
+        w = 16.0
+        h = 16.0
+        [frames."ss_player_03".sprite_source_size]
+        x = 0.0
+        y = 0.0
+        w = 16.0
+        h = 16.0
+        [frames."ss_player_03".source_size]
+        w = 16.0
+        h = 16.0
+
+    [frames."ss_player_04"]
+    rotated = false
+    trimmed = false
+    duration = 100.0
+        [frames."ss_player_04".frame]
+        x = 64.0
+        y = 0.0
+        w = 16.0
+        h = 16.0
+        [frames."ss_player_04".sprite_source_size]
+        x = 0.0
+        y = 0.0
+        w = 16.0
+        h = 16.0
+        [frames."ss_player_04".source_size]
+        w = 16.0
+        h = 16.0

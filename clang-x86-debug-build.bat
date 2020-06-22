@@ -26,6 +26,7 @@ clang --std=c11 -g -O0 -Wall -m32 ^
 .\src\resource.c ^
 .\src\system.c ^
 .\src\timing.c ^
+.\src\toml_config.c ^
 .\src\main.c ^
 .\src\memalign.c ^
 .\src\memarena.c ^
@@ -45,6 +46,7 @@ xcopy /Y %SDL_LIB_PATH_X86%\SDL2main.lib %BUILD_OUT_PATH%\
 ECHO.
 ECHO Copying assets...
 xcopy /Y %ASSETS_PATH%\ss_player.tga %BUILD_OUT_PATH%\assets\
+xcopy /Y %ASSETS_PATH%\ss_player.toml %BUILD_OUT_PATH%\assets\
 xcopy /Y %ASSETS_PATH%\font_7px.tga %BUILD_OUT_PATH%\assets\
 xcopy /Y %ASSETS_PATH%\font_7px_rgba.tga %BUILD_OUT_PATH%\assets\
 xcopy /Y %ASSETS_PATH%\bullet_ps.tga %BUILD_OUT_PATH%\assets\

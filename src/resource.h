@@ -7,6 +7,7 @@
 
 // forward decl
 typedef struct engine_s engine_t;
+typedef struct toml_table_t toml_table_t;
 
 typedef enum {
     ASSET_TYPE_FIRST = 0,

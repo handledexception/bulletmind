@@ -29,9 +29,14 @@ typedef struct sprite_s {
     bool has_alpha;
 } sprite_t;
 
+typedef struct sprite_sheet_frame_s {
+    sprite_t* sprite;
+    float duration;    
+} sprite_sheet_frame_t;
+
 bool sprite_load(const char* path, sprite_t** out);
 void sprite_create(uint8_t* data, uint32_t w, uint32_t h, uint32_t bpp, uint32_t stride, uint32_t format, sprite_t** out);
-void sprite_create_texture(SDL_Renderer* ren, sprite_t* img);
+bool sprite_create_texture(SDL_Renderer* ren, sprite_t* img);
 void sprite_shutdown(sprite_t* img);
 
 #endif

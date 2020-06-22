@@ -1,4 +1,5 @@
-/deps
+/deps/SDL2
+/deps/tomlc99
 /out
 /msvc
 cloc.bat

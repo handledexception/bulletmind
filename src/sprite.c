@@ -145,32 +145,41 @@ void sprite_create(uint8_t* data, uint32_t w, uint32_t h, uint32_t bpp, uint32_t
     *out = img;
 }
 
-void sprite_create_texture(SDL_Renderer* ren, sprite_t* img)
+bool sprite_create_texture(SDL_Renderer* ren, sprite_t* img)
 {
-    img->texture = SDL_CreateTexture(
-        (SDL_Renderer *)ren,
-        img->surface->format->format,
-        SDL_TEXTUREACCESS_STATIC,
-        img->surface->w,
-        img->surface->h
-    );
+    bool res = false;
 
-    SDL_SetTextureBlendMode(img->texture, img->has_alpha ? SDL_BLENDMODE_BLEND : SDL_BLENDMODE_NONE);
-
-    if (img->texture != NULL) {
-        SDL_UpdateTexture(
-            img->texture,
-            NULL,
-            img->surface->pixels,
-            img->surface->pitch
+    if (img != NULL) {
+        img->texture = SDL_CreateTexture(
+            (SDL_Renderer *)ren,
+            img->surface->format->format,
+            SDL_TEXTUREACCESS_STATIC,
+            img->surface->w,
+            img->surface->h
         );
-    }
-    else
-    {
-        SDL_DestroyTexture(img->texture);
-        img->texture = NULL;
+
+        if (img->texture != NULL) {
+            SDL_UpdateTexture(
+                img->texture,
+                NULL,
+                img->surface->pixels,
+                img->surface->pitch
+            );
+
+            SDL_SetTextureBlendMode(
+                img->texture,
+                img->has_alpha ? SDL_BLENDMODE_BLEND : SDL_BLENDMODE_NONE
+            );
+
+            res = true;
+        }
+        else {
+            SDL_DestroyTexture(img->texture);
+            img->texture = NULL;
+        }
     }
 
+    return res;
 }
 
 void sprite_shutdown(sprite_t* img)
