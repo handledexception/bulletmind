@@ -2,7 +2,7 @@
 #define _H_FONT
 
 #include "c99defs.h"
-#include "system.h"
+#include "engine.h"
 
 typedef struct SDL_Renderer SDL_Renderer;
 

@@ -16,6 +16,9 @@ ECHO.
 
 ECHO Building Bulletmind x86 in %BUILD_OUT_PATH%...
 clang --std=c11 -g -O0 -Wall -m32 ^
+-D BM_WIN32 ^
+-D BM_DEBUG_PRINT ^
+.\src\binary.c ^
 .\src\buffer.c ^
 .\src\command.c ^
 .\src\entity.c ^
@@ -24,7 +27,7 @@ clang --std=c11 -g -O0 -Wall -m32 ^
 .\src\input.c ^
 .\src\render.c ^
 .\src\resource.c ^
-.\src\system.c ^
+.\src\engine.c ^
 .\src\timing.c ^
 .\src\toml_config.c ^
 .\src\main.c ^

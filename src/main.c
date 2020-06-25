@@ -7,7 +7,11 @@ v0.1.122219a
 */
 
 #define _CRT_SECURE_NO_WARNINGS 1
-#define DEBUG_PRINT
+
+#define APP_NAME "bulletmind"
+#define APP_VER_MAJ 1
+#define APP_VER_MIN 0
+#define APP_VER_REV 0
 
 #include "main.h"
 #include "buffer.h"
@@ -17,8 +21,9 @@ v0.1.122219a
 #include "sprite.h"
 #include "input.h"
 #include "memarena.h"
-#include "system.h"
+#include "engine.h"
 #include "timing.h"
+#include "utils.h"
 #include "vector.h"
 
 #include <SDL.h>
@@ -29,7 +34,7 @@ void print_debug_info(engine_t* engine, double dt) {
         char time_buf[TEMP_STRING_MAX];
         _strtime(time_buf);
         font_print(engine, 10, 10,  1.5, "Time: %s", time_buf);
-        font_print(engine, 10, 30,  1.5, "Engine Time: %f", timing_enginetime());
+        font_print(engine, 10, 30,  1.5, "Engine Time: %f", eng_get_time());
         font_print(engine, 10, 50,  1.5, "Frame Time: %f", dt);
         font_print(engine, 10, 70,  1.5, "Frame Count: %d", engine->frame_count);
         font_print(engine, 10, 90,  1.5, "Active Ents: %d", active_ents);
@@ -52,7 +57,8 @@ int main(int argc, char** argv) {
     engine->scr_scale_y = (float)WINDOW_HEIGHT / (float)CAMERA_HEIGHT;
     engine->target_fps = 60.f;
     engine->debug = true;
-    if (!sys_init(engine)) {
+    const uint32_t app_version = pack_version(APP_VER_MAJ, APP_VER_MIN, APP_VER_REV);
+    if (!eng_init(APP_NAME, app_version, engine)) {
         printf("Something went wrong!\n");
         return -1;
     }
@@ -82,7 +88,7 @@ int main(int argc, char** argv) {
     // main loop
     double dt = 0.0;
     while(engine->state != ES_QUIT) {
-        double frame_start = timing_getsec();
+        double frame_start = timing_seconds();
 
         switch(engine->state) {
             case ES_STARTUP:
@@ -96,7 +102,7 @@ int main(int argc, char** argv) {
                 if (engine->debug)
                     print_debug_info(engine, dt);
 
-                sys_refresh(engine);
+                eng_refresh(engine);
                 cmd_refresh(engine);
                 ent_refresh(engine, dt);
                 // SDL_RenderCopyEx(engine->renderer, engine->game_resources[2]->sprite->texture, NULL, &engine->game_resources[1]->sprite->surface->clip_rect, 0.f, NULL, SDL_FLIP_NONE); // raw_sprite
@@ -106,7 +112,7 @@ int main(int argc, char** argv) {
         }
 
         do {
-            dt = timing_getsec() - frame_start;
+            dt = timing_seconds() - frame_start;
             if (dt > TARGET_FRAMETIME(5)) { dt = TARGET_FRAMETIME(5); }
         } while (dt < engine->target_frametime);
         //printf("%f\n", dt);
@@ -115,7 +121,7 @@ int main(int argc, char** argv) {
         engine->frame_count++;
     }
 
-    sys_shutdown(engine);
+    eng_shutdown(engine);
 
     engine = NULL;
     return 0;

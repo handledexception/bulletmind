@@ -4,7 +4,8 @@
 #include "main.h"
 #include "memarena.h"
 #include "resource.h"
-#include "system.h"
+#include "engine.h"
+#include "timing.h"
 #include "utils.h"
 
 #include <SDL.h>
@@ -13,15 +14,33 @@
 
 engine_t* engine = NULL;
 
-bool sys_init(engine_t* eng)
+static double engine_start_time;
+
+void eng_init_timing(void) {
+    engine_start_time = timing_seconds();
+}
+
+double eng_get_time(void) {
+    return timing_seconds() - engine_start_time;
+}
+
+bool eng_init(const char* name, int32_t version, engine_t* eng)
 {
-    double init_start = timing_getsec();
+    double init_start = timing_seconds();
+
     eng->frame_count = 0;
+
+    // build window title
+    char ver_str[12];
+    version_string(version, ver_str);
+    const size_t sz_win_title = (sizeof(uint8_t) * strlen(ver_str) + strlen(name)) + 2;
+    char window_title[sz_win_title];
+    sprintf(window_title, "%s v%s", name, ver_str);
 
     SDL_Init(SDL_FLAGS);
     eng->window = SDL_CreateWindow
     (
-        "bulletmind",
+        window_title,
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         eng->wnd_width, eng->wnd_height,
@@ -29,13 +48,13 @@ bool sys_init(engine_t* eng)
     );
 
     if(eng->window == NULL) {
-        printf("sys_window: %s\n", SDL_GetError());
+        printf("error creating engine window: %s\n", SDL_GetError());
         return false;
     }
 
     eng->renderer = SDL_CreateRenderer(eng->window, eng->adapter_index, SDL_RENDERER_ACCELERATED);
     if (eng->renderer == NULL) {
-        printf("sys_renderer: %s\n", SDL_GetError());
+        printf("error creating engine renderer: %s\n", SDL_GetError());
         return false;
     }
 
@@ -67,17 +86,17 @@ bool sys_init(engine_t* eng)
     inp_init();
     cmd_init();
     ent_init(&eng->ent_list, MAX_ENTITIES);
-    timing_init();
+    eng_init_timing();
 
     eng->target_frametime = TARGET_FRAMETIME(eng->target_fps);
     eng->state = ES_STARTUP;
 
-    printf("sys_init OK [%fms]\n", (timing_getsec() - init_start) * 1000.0);
+    printf("eng_init OK [%fms]\n", (timing_seconds() - init_start) * 1000.0);
 
     return true;
 }
 
-void sys_refresh(engine_t* eng)
+void eng_refresh(engine_t* eng)
 {
     SDL_Event e;
 
@@ -107,7 +126,7 @@ void sys_refresh(engine_t* eng)
     }
 }
 
-void sys_shutdown(engine_t* eng)
+void eng_shutdown(engine_t* eng)
 {
     ent_shutdown(eng->ent_list);
     cmd_shutdown();
@@ -123,5 +142,5 @@ void sys_shutdown(engine_t* eng)
     eng->window = NULL;
 
     SDL_Quit();
-    printf("sys_shutdown OK\n\nGoodbye!\n");
+    printf("eng_shutdown OK\n\nGoodbye!\n");
 }

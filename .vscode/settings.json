@@ -6,7 +6,7 @@
         "xstring": "c",
         "xutility": "c",
         "stdio.h": "c",
-        "system.h": "c",
+        "engine.h": "c",
         "sdl.h": "c",
         "entity.h": "c",
         "main.h": "c",

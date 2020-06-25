@@ -4,7 +4,6 @@
 #include "c99defs.h"
 #include "entity.h"
 #include "sprite.h"
-#include "timing.h"
 #include "vector.h"
 
 typedef struct SDL_Window SDL_Window;
@@ -47,10 +46,11 @@ typedef struct engine_s {
 
 extern engine_t* engine;
 
-bool sys_init(engine_t* eng);
-void sys_refresh(engine_t* eng);
-void sys_shutdown(engine_t* eng);
+bool eng_init(const char* name, int32_t version, engine_t* eng);
+void eng_refresh(engine_t* eng);
+void eng_shutdown(engine_t* eng);
 
-// void game_res_init(engine_t* eng, const char* assets_path);
+void eng_init_timing(void);
+double eng_get_time(void);
 
 #endif

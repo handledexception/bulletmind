@@ -2,7 +2,7 @@
 #define _H_COMMAND
 
 #include "c99defs.h"
-#include "system.h"
+#include "engine.h"
 
 uint32_t *array_cmds; // this doesn't need to be a pointer
 

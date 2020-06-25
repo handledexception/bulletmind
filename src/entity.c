@@ -60,7 +60,7 @@ void ent_refresh(engine_t* eng, double dt)
         p_shooting = false;
     }
     if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) {
-        printf("sys_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n");
+        printf("eng_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n");
     }
 
     active_ents = 0;
@@ -84,8 +84,8 @@ void ent_refresh(engine_t* eng, double dt)
             // player shooting
             float p_weap_fire_rate = 0.125f;
             static double p_shoot_time = 0.0;
-            if (p_shooting && timing_getsec() >= p_shoot_time) {
-                p_shoot_time = timing_getsec() + p_weap_fire_rate;
+            if (p_shooting && timing_seconds() >= p_shoot_time) {
+                p_shoot_time = timing_seconds() + p_weap_fire_rate;
                 entity_t* player = ent_by_index(ent_list, PLAYER_ENTITY_INDEX);
                 vec2f_t bullet_org = player->org;
                 vec2f_t mouse = { mouse_pos.x, mouse_pos.y };
@@ -287,7 +287,7 @@ entity_t* ent_spawn(
         e->angle = 0.f;
         e->bbox = bounding;
 
-        e->timestamp = timing_enginetime();
+        e->timestamp = eng_get_time();
         if (!lifetime)
             e->lifetime = lifetime;
         else
@@ -304,7 +304,7 @@ entity_t* ent_spawn(
 void ent_lifetime_update(entity_t* e)
 {
     // kill entities that have a fixed lifetime
-    if (e->lifetime > 0.0 && (timing_enginetime() >= e->lifetime)) {
+    if (e->lifetime > 0.0 && (eng_get_time() >= e->lifetime)) {
         printf("Entity %s lifetime expired\n", e->name);
         e->caps = 0;
     }
