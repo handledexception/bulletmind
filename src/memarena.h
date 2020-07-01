@@ -10,7 +10,7 @@
 #define DEFAULT_ALIGNMENT (2 * sizeof(void*))
 #endif
 
-#define ARENA_TOTAL_BYTES 8388608
+#define ARENA_TOTAL_BYTES 8388608 // 8MiB
 
 typedef struct arena_s {
     uint8_t* buffer;

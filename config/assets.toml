@@ -9,6 +9,11 @@ path = "assets/ss_player.toml"
 type = "sprite_sheet"
 
 [[assets]]
+name = "skelly"
+path = "assets/ss_skelly.toml"
+type = "sprite_sheet"
+
+[[assets]]
 name = "bullet"
 path = "assets/bullet_rgba.tga"
 type = "sprite"

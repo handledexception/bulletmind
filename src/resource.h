@@ -27,9 +27,8 @@ typedef struct game_resource_s {
 } game_resource_t;
 
 int game_res_init(engine_t* eng);
-game_resource_t* make_game_resource(const char* asset_name, const char* asset_path, asset_type_t asset_type);
+game_resource_t* make_game_resource(engine_t* eng, const char* asset_name, const char* asset_path, asset_type_t asset_type);
 asset_type_t asset_type_string_to_enum(const char* asset_type_str);
-const char* asset_type_enum_to_string(asset_type_t* asset_type);
-bool is_sprite(asset_type_t asset_type);
+const char* asset_type_enum_to_string(const asset_type_t asset_type);
 
 #endif

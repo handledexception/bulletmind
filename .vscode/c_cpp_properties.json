@@ -9,7 +9,7 @@
                 "${workspaceFolder}\\deps\\SDL2\\include"
             ],
             "defines": [
-                "BM_WIN32",
+                "BM_WINDOWS",
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE"

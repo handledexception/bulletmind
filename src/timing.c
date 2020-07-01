@@ -1,6 +1,6 @@
 #include "timing.h"
 
-#if defined(BM_WIN32)
+#if defined(BM_WINDOWS)
 #include <Windows.h>
 
 static LARGE_INTEGER clock_freq;
@@ -30,7 +30,7 @@ double timing_seconds(void) {
     return (double)((double)(qpc_value.QuadPart) / (double)(get_clock_freq()));
 }
 
-#endif // BM_WIN32
+#endif // BM_WINDOWS
 
 double timing_milliseconds(void) {
     return (double)((double)(timing_microseconds()) / 1000.0);

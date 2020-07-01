@@ -1,30 +1,40 @@
+#if defined(BM_WINDOWS)
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS 1
+#endif
+#endif
 
 #include "command.h"
 #include "entity.h"
 #include "font.h"
+#include "memarena.h"
 #include "render.h"
 #include "resource.h"
 #include "timing.h"
 #include "utils.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <math.h>
 
 #include <SDL.h>
 
+#define FOREVER 0.0
+#define BASIC_BULLET_LIFETIME 10.f
+#define PLAYER_ENTITY_INDEX 0
+#define SATELLITE_ENTITY_INDEX 1
+
+#define PLAYER_CAPS (1 << PLAYER | 1 << MOVER | 1 << COLLIDER | 1 << SHOOTER | 1 << RENDERABLE)
+#define SATELLITE_CAPS (1 << SATELLITE | 1 << MOVER | 1 << SHOOTER | 1 << COLLIDER | 1 << RENDERABLE)
+#define BULLET_CAPS (1 << BULLET | 1 << MOVER | 1 << COLLIDER | 1 << RENDERABLE)
+
 int32_t active_ents = 0; // extern
 int32_t last_entity = 0; // extern
 
-bool ent_init(entity_t** ent_list, int32_t num_ents)
-{
+bool ent_init(entity_t** ent_list, int32_t num_ents) {
     if (ent_list == NULL)
         return false;
 
     size_t sz_ent_list = sizeof(entity_t) * num_ents;
-    *ent_list = (entity_t*)malloc(sz_ent_list);
+    *ent_list = (entity_t*)arena_alloc(&mem_arena, sz_ent_list, DEFAULT_ALIGNMENT);
     memset(*ent_list, 0, sz_ent_list);
 
     printf("ent_init OK\n");
@@ -32,113 +42,86 @@ bool ent_init(entity_t** ent_list, int32_t num_ents)
     return true;
 }
 
-void ent_refresh(engine_t* eng, double dt)
-{
+void ent_refresh(engine_t* eng, double dt) {
     if (eng == NULL)
         return;
 
     entity_t* ent_list = eng->ent_list;
     vec2f_t mouse_pos = eng->mouse_pos;
 
-    vec2f_t p_accel = { 0 };
-    float p_speed = 800.f;
-    static bool p_shooting = false;
-    // Player entity movement
-    if (cmd_getstate(CMD_PLAYER_SPEED) == true) { p_speed *= 2.f; }
-    if (cmd_getstate(CMD_PLAYER_UP) == true) { p_accel.y = -p_speed; }
-    if (cmd_getstate(CMD_PLAYER_DOWN) == true) { p_accel.y = p_speed; }
-    if (cmd_getstate(CMD_PLAYER_LEFT) == true) { p_accel.x = -p_speed; }
-    if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { p_accel.x = p_speed; }
-
-    // Player entity shooting
-    if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) {
-        if (p_shooting == false) {
-            p_shooting = true;
-        }
-    }
-    else if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == false) {
-        p_shooting = false;
-    }
-    if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) {
-        printf("eng_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n");
-    }
-
     active_ents = 0;
     for (int32_t edx = 0; edx < MAX_ENTITIES; edx++) {
-
         entity_t* e = ent_by_index(ent_list, edx);
 
         if (e == NULL)
             continue;
 
-        if (ent_has_no_caps(e)) {
+        if (ent_has_no_caps(e))
             continue;
-        }
         else {
             active_ents += 1;
             ent_lifetime_update(e);
         }
 
-        // PLAYER
-        if (ent_has_caps(e, PLAYER)) {
-            // player shooting
-            float p_weap_fire_rate = 0.125f;
-            static double p_shoot_time = 0.0;
-            if (p_shooting && timing_seconds() >= p_shoot_time) {
-                p_shoot_time = timing_seconds() + p_weap_fire_rate;
+        if (ent_has_caps(e, MOVER)) {
+            if (!strcmp(e->name, "player"))
+                ent_move_player(e, eng, dt);
+            if (!strcmp(e->name, "satellite")) {
                 entity_t* player = ent_by_index(ent_list, PLAYER_ENTITY_INDEX);
-                vec2f_t bullet_org = player->org;
-                vec2f_t mouse = { mouse_pos.x, mouse_pos.y };
-                vec2i_t bullet_size = { 8, 8 };
-                rgba_t bullet_color = { 0xf5, 0xa4, 0x42, 0xff };
-                entity_t* bullet = ent_spawn(
-                    ent_list,
-                    "bullet",
-                    BASIC_BULLET_LIFETIME,
-                    &bullet_org,
-                    &bullet_size,
-                    &bullet_color,
-                    BULLET_CAPS
-                );
-                ent_set_mouse_org(bullet, &mouse);
+                ent_move_satellite(e, player, eng, dt);
             }
-
-            ent_euler_move(e, &p_accel, 0.035, dt);
-            // screen bounds checking
-            if (e->org.x > (float)engine->scr_bounds.w) { e->org.x = (float)engine->scr_bounds.w; }
-            if (e->org.y > (float)engine->scr_bounds.h) { e->org.y = (float)engine->scr_bounds.h; }
-            if (e->org.x < (float)engine->scr_bounds.x) { e->org.x = (float)engine->scr_bounds.x; }
-            if (e->org.y < (float)engine->scr_bounds.y) { e->org.y = (float)engine->scr_bounds.y; }
-            ent_bbox_update(e);
+            if (!strcmp(e->name, "bullet"))
+                ent_move_bullet(e, eng, dt);
         }
 
-        // BULLETS
-        if (ent_has_caps(e, BULLET)) {
-            static vec2f_t dist = { 0 };
-            if (e->vel.x == 0.0 && e->vel.y == 0.0) {
-                // vector between entity mouse origin and entity origin
-                vec2f_sub(&dist, &e->mouse_org, &e->org);
-                vec2f_norm(&dist);
-                vec2f_scale(&dist, 25000.f);
-                // reflection: r = d-2(d*n)n where d*nd*n is the dot product, and nn must be normalized.
+        if (ent_has_caps(e, SHOOTER)) {
+            if (!strcmp(e->name, "player")) {
+                static bool p_shooting = false;
+
+                // Player entity shooting
+                if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) {
+                    if (p_shooting == false) {
+                        p_shooting = true;
+                    }
+                }
+                else if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == false) {
+                    p_shooting = false;
+                }
+                if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) {
+                    printf("eng_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n");
+                }
+
+                // player shooting
+                float p_weap_fire_rate = 0.125f;
+                static double p_shoot_time = 0.0;
+                if (p_shooting && timing_seconds() >= p_shoot_time) {
+                    p_shoot_time = timing_seconds() + p_weap_fire_rate;
+                    entity_t* player = ent_by_index(ent_list, PLAYER_ENTITY_INDEX);
+                    vec2f_t bullet_org = player->org;
+                    vec2f_t mouse = { mouse_pos.x, mouse_pos.y };
+                    vec2i_t bullet_size = { 8, 8 };
+                    rgba_t bullet_color = { 0xf5, 0xa4, 0x42, 0xff };
+                    entity_t* bullet = ent_spawn(
+                        ent_list,
+                        "bullet",
+                        (double)BASIC_BULLET_LIFETIME,
+                        &bullet_org,
+                        &bullet_size,
+                        &bullet_color,
+                        BULLET_CAPS
+                    );
+                    ent_set_mouse_org(bullet, &mouse);
+                }
             }
-            ent_euler_move(e, &dist, 0.0, dt);
-            ent_bbox_update(e);
         }
 
-        // SATELLITE
-        if (ent_has_caps(e, SATELLITE)) {
-            vec2f_t dist = { 0 };
-            entity_t* player = ent_by_index(ent_list, PLAYER_ENTITY_INDEX);
-            vec2f_sub(&dist, &player->org, &e->org);
-            vec2f_norm(&dist);
-            vec2f_scale(&dist, 800.f);
-            ent_euler_move(e, &dist, 0.05, dt);
-            ent_bbox_update(e);
-        }
 
         if (ent_has_caps(e, RENDERABLE)) {
-            if (!strcmp((const char*)e->name, "player") || !strcmp((const char*)e->name, "satellite")) {
+            if (!strcmp(e->name, "player")) {
+                game_resource_t* resource = engine->game_resources[1];
+                sprite_sheet_t* ss_player = (sprite_sheet_t*)resource->data;
+            }
+            if (!strcmp(e->name, "satellite")) {
                 draw_rect_solid(
                     engine->renderer,
                     (float)e->bbox.x, (float)e->bbox.y,
@@ -146,8 +129,9 @@ void ent_refresh(engine_t* eng, double dt)
                     e->color
                 );
             }
-            if (!strcmp((const char*)e->name, "bullet")) {
-                game_resource_t* resource = engine->game_resources[2];
+            if (!strcmp(e->name, "bullet")) {
+                //TODO(paulh): Need a game_resource_t method for get_resource_by_name
+                game_resource_t* resource = engine->game_resources[3];
                 sprite_t* sprite = (sprite_t*)resource->data;
                 SDL_Rect dst = {
                     e->bbox.x,
@@ -174,36 +158,30 @@ void ent_refresh(engine_t* eng, double dt)
             }
         }
 
-        //if (ent_hascaps(edx, COLLIDER) == true) {
-        //	for (int32_t c = 0; c < MAX_ENTITIES; c++) {
-        //		if (c == edx) break;
-        //		if (ent_hascaps(c, COLLIDER) == true) {
-        //			entity_t* coll = ent_by_index(c);
-        //			float ex = e->org.x + e->bbox.w;
-        //			float ey = e->org.y + e->bbox.h;
-        //			if (ex >= coll->org.x) {
-        //				e->org.x = coll->org.x - e->bbox.w;
-        //			}
-        //			if (ey > coll->org.y) {
-        //				e->org.y = coll->org.y - e->bbox.h;
-        //			}
-        //		}
-        //	}
-        //}
+        // if (ent_has_caps(e, COLLIDER)) {
+        // 	for (int32_t c = 0; c < MAX_ENTITIES; c++) {
+        //         entity_t* collider = ent_by_index(ent_list, c);
+        // 		if (e == collider) break; // don't check against self
+        // 		if (ent_has_caps(collider, COLLIDER)) {
+        // 			float ex = e->org.x + e->bbox.w;
+        // 			float ey = e->org.y + e->bbox.h;
+        // 			if (ex >= collider->org.x) {
+        // 				e->org.x = collider->org.x - e->bbox.w;
+        // 			}
+        // 			if (ey > collider->org.y) {
+        // 				e->org.y = collider->org.y - e->bbox.h;
+        // 			}
+        // 		}
+        // 	}
+        // }
     }
 }
 
-void ent_shutdown(entity_t* ent_list)
-{
-    if (ent_list) {
-        free(ent_list);
-        ent_list = NULL;
-    }
+void ent_shutdown(entity_t* ent_list) {
     printf("ent_shutdown OK\n");
 }
 
-entity_t* ent_new(entity_t* ent_list)
-{
+entity_t* ent_new(entity_t* ent_list) {
     entity_t* e = NULL;
 
     // search entity list for first slot with no caps set
@@ -225,16 +203,7 @@ entity_t* ent_new(entity_t* ent_list)
     return e;
 }
 
-void ent_free(entity_t* e)
-{
-    if (e != NULL) {
-        free(e);
-        e = NULL;
-    }
-}
-
-entity_t* ent_by_index(entity_t* ent_list, int32_t idx)
-{
+entity_t* ent_by_index(entity_t* ent_list, int32_t idx) {
     entity_t* e = &ent_list[idx];
     if (e == NULL) {
         printf("ent_by_index - NULL entity at index %d\n", idx);
@@ -243,12 +212,11 @@ entity_t* ent_by_index(entity_t* ent_list, int32_t idx)
     return e;
 }
 
-entity_t* ent_by_name(entity_t* ent_list, const char* name)
-{
+entity_t* ent_by_name(entity_t* ent_list, const char* name) {
     entity_t* e = NULL;
     for (size_t edx = 0; edx < MAX_ENTITIES; edx++) {
         e = &ent_list[edx];
-        if (!strcmp((const char*)e->name, name))
+        if (!strcmp(e->name, name))
             break;
     }
 
@@ -277,8 +245,7 @@ entity_t* ent_spawn(
             (int32_t)org->y + half_size.y
         };
 
-        if (name != NULL && strlen(name) <= TEMP_STRING_MAX+1)
-            strcpy((char*)e->name, name);
+        ent_set_name(e, name);
 
         ent_set_caps(e, caps);
         e->org = *org;
@@ -301,8 +268,7 @@ entity_t* ent_spawn(
     return e;
 }
 
-void ent_lifetime_update(entity_t* e)
-{
+void ent_lifetime_update(entity_t* e) {
     // kill entities that have a fixed lifetime
     if (e->lifetime > 0.0 && (eng_get_time() >= e->lifetime)) {
         printf("Entity %s lifetime expired\n", e->name);
@@ -310,63 +276,57 @@ void ent_lifetime_update(entity_t* e)
     }
 }
 
-void ent_bbox_update(entity_t* e)
-{
+void ent_bbox_update(entity_t* e) {
     vec2f_t half_size = { e->size.x * 0.5f, e->size.y * 0.5f };
     e->bbox.x = e->org.x - half_size.x;
     e->bbox.y = e->org.y - half_size.y;
 }
 
-void ent_add_caps(entity_t* e, entity_caps_t caps)
-{
+void ent_set_name(entity_t* e, const char* name) {
+    if (name != NULL && strlen(name) <= ENT_NAME_MAX+1)
+        strcpy((char*)e->name, name);
+}
+
+void ent_add_caps(entity_t* e, entity_caps_t caps) {
     SET_FLAG(e->caps, caps);
 }
 
-void ent_remove_caps(entity_t* e, entity_caps_t caps)
-{
+void ent_remove_caps(entity_t* e, entity_caps_t caps) {
     CLEAR_FLAG(e->caps, caps);
 }
 
-void ent_set_caps(entity_t* e, int32_t cap_flags)
-{
+void ent_set_caps(entity_t* e, int32_t cap_flags) {
     e->caps = cap_flags;
 }
 
-bool ent_has_caps(entity_t* e, entity_caps_t caps)
-{
+bool ent_has_caps(entity_t* e, entity_caps_t caps) {
     return IS_FLAG_SET(e->caps, caps) != 0;
 }
 
-bool ent_has_no_caps(entity_t* e)
-{
+bool ent_has_no_caps(entity_t* e) {
     return (e->caps == 0);
 }
 
-void ent_set_pos(entity_t* e, vec2f_t *org)
-{
+void ent_set_pos(entity_t* e, vec2f_t *org) {
     e->org = *org;
 }
 
-void ent_set_vel(entity_t* e, vec2f_t *vel, float ang)
-{
+void ent_set_vel(entity_t* e, vec2f_t *vel, float ang) {
     e->vel = *vel;
     e->angle = atan(vec2f_dot(&e->org, &e->vel));
 }
 
-void ent_set_bbox(entity_t* e, rect_t *bbox)
-{
+void ent_set_bbox(entity_t* e, rect_t *bbox) {
     e->bbox = *bbox;
     e->org.x -= (e->bbox.w / 2);
     e->org.y -= (e->bbox.h / 2);
 }
 
-void ent_set_mouse_org(entity_t* e, vec2f_t* morg)
-{
+void ent_set_mouse_org(entity_t* e, vec2f_t* morg) {
     e->mouse_org = *morg;
 }
 
-void ent_euler_move(entity_t* e, vec2f_t *accel, float friction, double dt)
-{
+void ent_euler_move(entity_t* e, vec2f_t* accel, float friction, double dt) {
     vec2f_t delta = { 0.f, 0.f };
     vec2f_scale(accel, dt);
     vec2f_addequ(&e->vel, accel);
@@ -376,8 +336,7 @@ void ent_euler_move(entity_t* e, vec2f_t *accel, float friction, double dt)
     vec2f_addequ(&e->org, &delta);
 }
 
-bool ent_spawn_player(entity_t* ent_list)
-{
+bool ent_spawn_player_and_satellite(entity_t* ent_list) {
     // screen center
     vec2f_t player_org = { (float)(CAMERA_WIDTH * 0.5f), (float)(CAMERA_HEIGHT * 0.5f) };
     vec2i_t player_size = { 10, 10 };
@@ -397,10 +356,11 @@ bool ent_spawn_player(entity_t* ent_list)
     }
 
     // spawn satellite
-    vec2f_t sat_org = {};
+    vec2f_t sat_org = { 0.f, 0.f };
     vec2i_t sat_size = { 10, 10 };
     rgba_t sat_color = { 0x90, 0xf5, 0x42, 0xff };
-    vec2f_set(&sat_org, player_org.x + 64.f, player_org.y + 64.f);
+    float sat_offset = 64.f;
+    vec2f_setf(&sat_org, player_org.x + sat_offset, player_org.y + sat_offset);
     entity_t* satellite = ent_spawn(
         ent_list,
         "satellite",
@@ -417,3 +377,60 @@ bool ent_spawn_player(entity_t* ent_list)
 
     return true;
 }
+
+void ent_move_player(entity_t* player, engine_t* engine, double dt) {
+    // Player entity movement
+    vec2f_t p_accel = { 0 };
+    float p_speed = 800.f;
+    if (cmd_getstate(CMD_PLAYER_SPEED) == true) { p_speed *= 2.f; }
+    if (cmd_getstate(CMD_PLAYER_UP) == true) { p_accel.y = -p_speed; }
+    if (cmd_getstate(CMD_PLAYER_DOWN) == true) { p_accel.y = p_speed; }
+    if (cmd_getstate(CMD_PLAYER_LEFT) == true) { p_accel.x = -p_speed; }
+    if (cmd_getstate(CMD_PLAYER_RIGHT) == true) { p_accel.x = p_speed; }
+
+    ent_euler_move(player, &p_accel, 0.035, dt);
+    // screen bounds checking
+    if (player->org.x > (float)engine->scr_bounds.w) { player->org.x = (float)engine->scr_bounds.w; }
+    if (player->org.y > (float)engine->scr_bounds.h) { player->org.y = (float)engine->scr_bounds.h; }
+    if (player->org.x < (float)engine->scr_bounds.x) { player->org.x = (float)engine->scr_bounds.x; }
+    if (player->org.y < (float)engine->scr_bounds.y) { player->org.y = (float)engine->scr_bounds.y; }
+    ent_bbox_update(player);
+}
+
+void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* engine, double dt) {
+    // SATELLITE
+    vec2f_t dist = { 0 };
+    vec2f_sub(&dist, &player->org, &satellite->org);
+
+    const float orbit_dist = 64.f;
+    if (fabsf(dist.x) < orbit_dist && fabsf(dist.y) < orbit_dist) {
+        static float ang = 0.f;
+        dist.x += (dist.x + cos(ang) * orbit_dist);
+        dist.y += (dist.y + sin(ang) * orbit_dist);
+        ang += 0.1f;
+        if (ang > 360.f)
+            ang = 0.f;
+    }
+
+    vec2f_norm(&dist);
+    vec2f_scale(&dist, 800.f);
+    ent_euler_move(satellite, &dist, 0.05, dt);
+    ent_bbox_update(satellite);
+}
+
+void ent_move_bullet(entity_t* bullet, engine_t* engine, double dt) {
+    static vec2f_t dist = { 0 };
+    if (bullet->vel.x == 0.0 && bullet->vel.y == 0.0) {
+        // vector between entity mouse origin and entity origin
+        vec2f_sub(&dist, &bullet->mouse_org, &bullet->org);
+        vec2f_norm(&dist);
+        vec2f_scale(&dist, 25000.f);
+        // reflection: r = d-2(d*n)n where d*nd*n is the dot product, and nn must be normalized.
+    }
+    ent_euler_move(bullet, &dist, 0.0, dt);
+    ent_bbox_update(bullet);
+}
+
+#ifdef _CRT_SECURE_NO_WARNINGS
+#undef _CRT_SECURE_NO_WARNINGS
+#endif

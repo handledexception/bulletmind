@@ -29,10 +29,20 @@ typedef struct sprite_s {
     bool has_alpha;
 } sprite_t;
 
-typedef struct sprite_sheet_frame_s {
-    sprite_t* sprite;
-    float duration;    
-} sprite_sheet_frame_t;
+#define MAX_SPRITE_SHEET_FRAMES 32
+
+typedef struct ss_frame_s {
+    SDL_Rect bounds;
+    float duration;
+} ss_frame_t;
+
+typedef struct sprite_sheet_s {
+    int32_t width;
+    int32_t height;
+    sprite_t* backing_sprite;
+    size_t num_frames;
+    ss_frame_t* frames;
+} sprite_sheet_t;
 
 bool sprite_load(const char* path, sprite_t** out);
 void sprite_create(uint8_t* data, uint32_t w, uint32_t h, uint32_t bpp, uint32_t stride, uint32_t format, sprite_t** out);

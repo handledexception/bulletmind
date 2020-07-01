@@ -6,7 +6,11 @@ v0.1.122219a
 
 */
 
+#if defined(BM_WINDOWS)
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS 1
+#endif
+#endif
 
 #define APP_NAME "bulletmind"
 #define APP_VER_MAJ 1
@@ -44,6 +48,7 @@ void print_debug_info(engine_t* engine, double dt) {
 }
 
 int main(int argc, char** argv) {
+    // Allocate memory arena - 8MiB
     arena_init(&mem_arena, arena_buf, ARENA_TOTAL_BYTES);
 
     size_t sz_engine = sizeof(engine_t);
@@ -63,28 +68,6 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    // sprite_t* raw_sprite = NULL;
-    // const uint32_t w = 32;
-    // const uint32_t h = 32;
-    // const size_t pix_size = w * h * 3;
-    // uint8_t test_pattern[pix_size];
-    // const uint32_t pixel = 0xcc99ff;
-    // for (int idx = 0; idx < pix_size; idx+=3) {
-    //     test_pattern[idx] = (pixel>>16) & 0xff;
-    //     test_pattern[idx+1] = (pixel>>8) & 0xff;
-    //     test_pattern[idx+2] = pixel & 0xff;
-    // }
-
-    // sprite_create(test_pattern, w, h, 24, w * 3, SDL_PIXELFORMAT_RGB24, &raw_sprite);
-    // sprite_create_texture(engine->renderer, raw_sprite);
-    // raw_sprite->surface->clip_rect.x = 120;
-    // raw_sprite->surface->clip_rect.y = 120;
-
-    // game_resource_t* raw_sprite_res = arena_alloc(&mem_arena, sizeof(game_resource_t), DEFAULT_ALIGNMENT);
-    // sprintf(raw_sprite_res->name, "raw sprite");
-    // raw_sprite_res->sprite = raw_sprite;
-    // engine->game_resources[2] = raw_sprite_res;
-
     // main loop
     double dt = 0.0;
     while(engine->state != ES_QUIT) {
@@ -92,7 +75,7 @@ int main(int argc, char** argv) {
 
         switch(engine->state) {
             case ES_STARTUP:
-                ent_spawn_player(engine->ent_list);
+                ent_spawn_player_and_satellite(engine->ent_list);
                 engine->state = ES_PLAY;
                 break;
             case ES_PLAY:
@@ -105,7 +88,6 @@ int main(int argc, char** argv) {
                 eng_refresh(engine);
                 cmd_refresh(engine);
                 ent_refresh(engine, dt);
-                // SDL_RenderCopyEx(engine->renderer, engine->game_resources[2]->sprite->texture, NULL, &engine->game_resources[1]->sprite->surface->clip_rect, 0.f, NULL, SDL_FLIP_NONE); // raw_sprite
                 break;
             case ES_QUIT:
                 break;
@@ -126,3 +108,7 @@ int main(int argc, char** argv) {
     engine = NULL;
     return 0;
 }
+
+#ifdef _CRT_SECURE_NO_WARNINGS
+#undef _CRT_SECURE_NO_WARNINGS
+#endif

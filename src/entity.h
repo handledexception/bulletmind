@@ -8,19 +8,12 @@
 
 typedef struct engine_s engine_t;
 
-#define FOREVER 0.0
-
 #define MAX_ENTITIES 1024 // small max ents for debugging
 #define MASK_ENTITIES (MAX_ENTITIES - 1)
-#define MAX_ENTITY_CAPS 64
 
-#define PLAYER_ENTITY_INDEX 0
+#define MAX_ENTITY_CAPS 32
 
-#define PLAYER_CAPS (1 << PLAYER | 1 << MOVER | 1 << COLLIDER | 1 << SHOOTER | 1 << RENDERABLE)
-#define SATELLITE_CAPS (1 << SATELLITE | 1 << MOVER | 1 << SHOOTER | 1 << COLLIDER | 1 << RENDERABLE)
-#define BULLET_CAPS (1 << BULLET | 1 << MOVER | 1 << COLLIDER | 1 << RENDERABLE)
-
-#define BASIC_BULLET_LIFETIME 10.0
+#define ENT_NAME_MAX 4096
 
 typedef enum {
     MOVER = 1,
@@ -35,7 +28,7 @@ typedef enum {
 
 typedef struct {
     int32_t index;
-    int8_t name[TEMP_STRING_MAX];
+    char name[ENT_NAME_MAX];
     int32_t caps;
 
     vec2f_t org;
@@ -58,13 +51,14 @@ void ent_refresh(engine_t* eng, double dt);
 void ent_shutdown(entity_t* ent_list);
 
 entity_t* ent_new(entity_t* ent_list);
-void ent_free(entity_t* e);
 entity_t* ent_by_name(entity_t* ent_list, const char* name);
 entity_t* ent_by_index(entity_t* ent_list, int32_t idx);
 
 entity_t* ent_spawn(entity_t* ent_list, const char* name, double lifetime, vec2f_t* org, vec2i_t* size, rgba_t* color, int32_t caps);
 void ent_lifetime_update(entity_t* e);
 void ent_bbox_update(entity_t* e);
+
+void ent_set_name(entity_t* e, const char* name);
 
 void ent_add_caps(entity_t* e, entity_caps_t caps);
 void ent_remove_caps(entity_t* e, entity_caps_t caps);
@@ -78,6 +72,11 @@ void ent_set_bbox(entity_t* e, rect_t* bbox);
 void ent_set_mouse_org(entity_t* e, vec2f_t* morg);
 void ent_euler_move(entity_t* e, vec2f_t* accel, float friction, double dt);
 
-bool ent_spawn_player(entity_t* ent_list);
+bool ent_spawn_player_and_satellite(entity_t* ent_list);
+void ent_move_player(entity_t* player, engine_t* engine, double dt);
+
+void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* engine, double dt);
+
+void ent_move_bullet(entity_t* bullet, engine_t* engine, double dt);
 
 #endif

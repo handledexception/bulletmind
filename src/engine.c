@@ -24,8 +24,7 @@ double eng_get_time(void) {
     return timing_seconds() - engine_start_time;
 }
 
-bool eng_init(const char* name, int32_t version, engine_t* eng)
-{
+bool eng_init(const char* name, int32_t version, engine_t* eng) {
     double init_start = timing_seconds();
 
     eng->frame_count = 0;

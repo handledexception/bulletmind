@@ -1,4 +1,8 @@
+#if defined(BM_WINDOWS)
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS 1
+#endif
+#endif
 
 #include "sprite.h"
 #include "font.h"
@@ -49,3 +53,7 @@ void font_print(engine_t* eng, int32_t x, int32_t y, float scale, const char *st
         c++;
     }
 }
+
+#ifdef _CRT_SECURE_NO_WARNINGS
+#undef _CRT_SECURE_NO_WARNINGS
+#endif

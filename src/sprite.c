@@ -1,5 +1,7 @@
-#ifdef _MSC_VER
+#if defined(BM_WINDOWS)
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS 1
+#endif
 #endif
 
 #include "sprite.h"
@@ -196,3 +198,7 @@ void sprite_shutdown(sprite_t* img)
         printf("imagefile_shutdown: OK!\n");
     }
 }
+
+#ifdef _CRT_SECURE_NO_WARNINGS
+#undef _CRT_SECURE_NO_WARNINGS
+#endif
