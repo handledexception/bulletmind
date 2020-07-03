@@ -131,7 +131,7 @@ void ent_refresh(engine_t* eng, double dt) {
             }
             if (!strcmp(e->name, "bullet")) {
                 //TODO(paulh): Need a game_resource_t method for get_resource_by_name
-                game_resource_t* resource = engine->game_resources[3];
+                game_resource_t* resource = eng_get_resource(engine, "bullet");
                 sprite_t* sprite = (sprite_t*)resource->data;
                 SDL_Rect dst = {
                     e->bbox.x,
@@ -145,9 +145,7 @@ void ent_refresh(engine_t* eng, double dt) {
                     vec2f_t bullet_diff;
                     vec2f_sub(&bullet_diff, &e->mouse_org, &e->org);
                     vec2f_norm(&bullet_diff);
-                    // e->angle = RAD_TO_DEG(atan2f(e->mouse_org.y - e->org.y, e->mouse_org.x - e->org.y));
                     e->angle = RAD_TO_DEG(atan2f(bullet_diff.y, bullet_diff.x));
-                    // printf("%f\n", e->angle);
                 }
                 SDL_RenderCopyEx(
                     engine->renderer,

@@ -24,6 +24,18 @@ double eng_get_time(void) {
     return timing_seconds() - engine_start_time;
 }
 
+game_resource_t* eng_get_resource(engine_t* eng, const char* name) {
+    game_resource_t* rsrc = NULL;
+    for (size_t rdx = 0; rdx < MAX_GAME_RESOURCES; rdx++) {
+        if (!strcmp(eng->game_resources[rdx]->name, name)) {
+            rsrc = eng->game_resources[rdx];
+            break;
+        }
+    }
+
+    return rsrc;
+}
+
 bool eng_init(const char* name, int32_t version, engine_t* eng) {
     double init_start = timing_seconds();
 

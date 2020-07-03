@@ -37,8 +37,7 @@ void font_print(engine_t* eng, int32_t x, int32_t y, float scale, const char *st
     vsprintf(text, str, args);
     va_end(args);
 
-    //TODO(paulh): Need methods like "get_resource_by_name", etc.
-    game_resource_t* rsrc = eng->game_resources[0];
+    game_resource_t* rsrc = eng_get_resource(eng, "font_7px");
     sprite_t* font_sprite = (sprite_t*)(rsrc->data);
     while (text[c] != '\0') {
         if (text[c] >= FONT_BASE && text[c] < FONT_NULL) {

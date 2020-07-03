@@ -53,4 +53,6 @@ void eng_shutdown(engine_t* eng);
 void eng_init_timing(void);
 double eng_get_time(void);
 
+game_resource_t* eng_get_resource(engine_t* eng, const char* name);
+
 #endif
