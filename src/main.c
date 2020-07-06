@@ -61,7 +61,11 @@ int main(int argc, char** argv) {
     engine->scr_scale_x = (float)WINDOW_WIDTH / (float)CAMERA_WIDTH;
     engine->scr_scale_y = (float)WINDOW_HEIGHT / (float)CAMERA_HEIGHT;
     engine->target_fps = 60.f;
+#if defined(BM_DEBUG)
     engine->debug = true;
+#else
+    engine->debug = false;
+#endif
     const uint32_t app_version = pack_version(APP_VER_MAJ, APP_VER_MIN, APP_VER_REV);
     if (!eng_init(APP_NAME, app_version, engine)) {
         printf("Something went wrong!\n");

@@ -16,6 +16,7 @@ void cmd_init(void) {
     printf("cmd_init OK\n");
 }
 
+//TODO(paulh): Use the bitfield macros for this instead
 bool cmd_getstate(uint32_t cmd)
 {
     //bool triggeredcmd = (bit_check_uint32(*array_cmds, cmd) > 0) ? true : false;

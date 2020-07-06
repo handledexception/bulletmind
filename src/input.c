@@ -1,9 +1,10 @@
-//#include "bitwise.h"
 #include "command.h"
 #include "input.h"
+
+#include <SDL.h>
+
 #include <stdio.h>
 #include <string.h>
-#include <SDL.h>
 
 #define MAX_KEYS 285
 #define MAX_MBUTTONS 64

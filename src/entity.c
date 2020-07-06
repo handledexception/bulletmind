@@ -117,11 +117,11 @@ void ent_refresh(engine_t* eng, double dt) {
 
 
         if (ent_has_caps(e, RENDERABLE)) {
-            if (!strcmp(e->name, "player")) {
-                game_resource_t* resource = engine->game_resources[1];
-                sprite_sheet_t* ss_player = (sprite_sheet_t*)resource->data;
-            }
-            if (!strcmp(e->name, "satellite")) {
+            // if (!strcmp(e->name, "player")) {
+            //     game_resource_t* resource = engine->game_resources[1];
+            //     sprite_sheet_t* ss_player = (sprite_sheet_t*)resource->data;
+            // }
+            if (!strcmp(e->name, "player") || !strcmp(e->name, "satellite")) {
                 draw_rect_solid(
                     engine->renderer,
                     (float)e->bbox.x, (float)e->bbox.y,
@@ -396,23 +396,39 @@ void ent_move_player(entity_t* player, engine_t* engine, double dt) {
 }
 
 void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* engine, double dt) {
-    // SATELLITE
-    vec2f_t dist = { 0 };
+    vec2f_t dist = { 0.f, 0.f };
     vec2f_sub(&dist, &player->org, &satellite->org);
 
     const float orbit_dist = 64.f;
-    if (fabsf(dist.x) < orbit_dist && fabsf(dist.y) < orbit_dist) {
-        static float ang = 0.f;
-        dist.x += (dist.x + cos(ang) * orbit_dist);
-        dist.y += (dist.y + sin(ang) * orbit_dist);
-        ang += 0.1f;
-        if (ang > 360.f)
+    const bool is_orbiting = (fabsf(dist.x) < orbit_dist && fabsf(dist.y) < orbit_dist);
+
+    static float ang = 0.f;
+    static vec2f_t orbit = { 0.f, 0.f };
+    vec2f_t orbit2 = { 0.f, 0.f };
+    if (!is_orbiting) {
+        vec2f_norm(&dist);
+        vec2f_scale(&dist, 800.f);
+        ent_euler_move(satellite, &dist, 0.05f, dt);
+    }
+    else {
+        orbit.x = (player->org.x + cos(ang) * orbit_dist);
+        orbit.y = (player->org.y + sin(ang) * orbit_dist);
+        ang += DEG_TO_RAD(1.f);
+        if (ang > DEG_TO_RAD(360.f))
             ang = 0.f;
+
+        orbit2.x = (player->org.x + cos(ang) * orbit_dist);
+        orbit2.y = (player->org.y + sin(ang) * orbit_dist);
+
+        vec2f_subequ(&orbit, &orbit2);
+
+        vec2f_norm(&orbit);
+        vec2f_scale(&orbit, 320.f);
+        ent_euler_move(satellite, &orbit, 0.025f, dt);
     }
 
-    vec2f_norm(&dist);
-    vec2f_scale(&dist, 800.f);
-    ent_euler_move(satellite, &dist, 0.05, dt);
+    font_print(engine, 10, 160, 1.5, "SAT xy (%.2f, %.2f) Angle %.2f", orbit.x, orbit.y, ang);
+
     ent_bbox_update(satellite);
 }
 
