@@ -399,35 +399,40 @@ void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* engine,
     vec2f_t dist = { 0.f, 0.f };
     vec2f_sub(&dist, &player->org, &satellite->org);
 
-    const float orbit_dist = 64.f;
-    const bool is_orbiting = (fabsf(dist.x) < orbit_dist && fabsf(dist.y) < orbit_dist);
+    const float orbit_dist = 32.f;
+    const float orbit_thresh = 64.f;
+    const bool is_orbiting = (fabsf(dist.x) < orbit_thresh || fabsf(dist.y) < orbit_thresh);
 
-    static float ang = 0.f;
-    static vec2f_t orbit = { 0.f, 0.f };
-    vec2f_t orbit2 = { 0.f, 0.f };
-    if (!is_orbiting) {
-        vec2f_norm(&dist);
-        vec2f_scale(&dist, 800.f);
-        ent_euler_move(satellite, &dist, 0.05f, dt);
+    static float orbit_angle = 0.f;
+    vec2f_t orbit_ring = { 0.f, 0.f };
+    vec2f_t orbit_vec = { 0.f, 0.f };
+
+    float satellite_speed = 800.f;
+    if (is_orbiting) {
+        satellite_speed = 1200.f;
+        float px = player->org.x;
+        float py = player->org.y;
+        orbit_ring.x = (px + cos(orbit_angle) * orbit_dist);
+        orbit_ring.y = (py + sin(orbit_angle) * orbit_dist);
+        vec2f_sub(&orbit_vec, &player->org, &orbit_ring);
+
+        orbit_angle += DEG_TO_RAD((float)(dt * 360.f));
+        // orbit_angle += DEG_TO_RAD(2.5f);
+        // if (orbit_angle > DEG_TO_RAD(360.f))
+        //     orbit_angle = 0.f;
+
+        vec2f_subequ(&dist, &orbit_vec);
+        
+        uint8_t r,g,b,a;
+        SDL_GetRenderDrawColor(engine->renderer, &r, &g, &b, &a);
+        SDL_SetRenderDrawColor(engine->renderer, 0xff, 0xaa, 0x00, 0xff);
+        SDL_RenderDrawLine(engine->renderer, player->org.x, player->org.y, satellite->org.x, satellite->org.y);
+        SDL_SetRenderDrawColor(engine->renderer, r, g, b, a);
     }
-    else {
-        orbit.x = (player->org.x + cos(ang) * orbit_dist);
-        orbit.y = (player->org.y + sin(ang) * orbit_dist);
-        ang += DEG_TO_RAD(1.f);
-        if (ang > DEG_TO_RAD(360.f))
-            ang = 0.f;
 
-        orbit2.x = (player->org.x + cos(ang) * orbit_dist);
-        orbit2.y = (player->org.y + sin(ang) * orbit_dist);
-
-        vec2f_subequ(&orbit, &orbit2);
-
-        vec2f_norm(&orbit);
-        vec2f_scale(&orbit, 320.f);
-        ent_euler_move(satellite, &orbit, 0.025f, dt);
-    }
-
-    font_print(engine, 10, 160, 1.5, "SAT xy (%.2f, %.2f) Angle %.2f", orbit.x, orbit.y, ang);
+    vec2f_norm(&dist);
+    vec2f_scale(&dist, satellite_speed);
+    ent_euler_move(satellite, &dist, 0.05f, dt);
 
     ent_bbox_update(satellite);
 }
