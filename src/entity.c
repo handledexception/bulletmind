@@ -396,44 +396,50 @@ void ent_move_player(entity_t* player, engine_t* engine, double dt) {
 }
 
 void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* engine, double dt) {
+    static float sat_speed = 750.f;
     vec2f_t dist = { 0.f, 0.f };
     vec2f_sub(&dist, &player->org, &satellite->org);
 
-    const float orbit_dist = 32.f;
+    const float orbit_dist = 48.f;
     const float orbit_thresh = 64.f;
     const bool is_orbiting = (fabsf(dist.x) < orbit_thresh || fabsf(dist.y) < orbit_thresh);
-
+    
     static float orbit_angle = 0.f;
-    vec2f_t orbit_ring = { 0.f, 0.f };
-    vec2f_t orbit_vec = { 0.f, 0.f };
-
-    float satellite_speed = 800.f;
     if (is_orbiting) {
-        satellite_speed = 1200.f;
+        sat_speed = 350.f;
+        vec2f_t orbit_ring = { 0.f, 0.f };
+        vec2f_t orbit_vec = { 0.f, 0.f };
         float px = player->org.x;
         float py = player->org.y;
+
         orbit_ring.x = (px + cos(orbit_angle) * orbit_dist);
         orbit_ring.y = (py + sin(orbit_angle) * orbit_dist);
         vec2f_sub(&orbit_vec, &player->org, &orbit_ring);
 
-        orbit_angle += DEG_TO_RAD((float)(dt * 360.f));
-        // orbit_angle += DEG_TO_RAD(2.5f);
-        // if (orbit_angle > DEG_TO_RAD(360.f))
-        //     orbit_angle = 0.f;
-
-        vec2f_subequ(&dist, &orbit_vec);
+        // orbit_angle += DEG_TO_RAD((float)(dt * 360.f));
+        orbit_angle += DEG_TO_RAD(3.0f);
+        if (orbit_angle > DEG_TO_RAD(360.f))
+            orbit_angle = 0.f;
         
-        uint8_t r,g,b,a;
-        SDL_GetRenderDrawColor(engine->renderer, &r, &g, &b, &a);
-        SDL_SetRenderDrawColor(engine->renderer, 0xff, 0xaa, 0x00, 0xff);
-        SDL_RenderDrawLine(engine->renderer, player->org.x, player->org.y, satellite->org.x, satellite->org.y);
-        SDL_SetRenderDrawColor(engine->renderer, r, g, b, a);
+        vec2f_norm(&dist);
+        vec2f_scale(&dist, sat_speed);
+        vec2f_norm(&orbit_vec);
+        vec2f_scale(&orbit_vec, 800.f);
+        vec2f_subequ(&dist, &orbit_vec);
+
+        // uint8_t r,g,b,a;
+        // SDL_GetRenderDrawColor(engine->renderer, &r, &g, &b, &a);
+        // SDL_SetRenderDrawColor(engine->renderer, 0xff, 0xaa, 0x00, 0xff);
+        // SDL_RenderDrawLine(engine->renderer, player->org.x, player->org.y, satellite->org.x, satellite->org.y);
+        // SDL_SetRenderDrawColor(engine->renderer, r, g, b, a);
+    }
+    else {
+        sat_speed = 750.f;
+        vec2f_norm(&dist);
+        vec2f_scale(&dist, sat_speed);
     }
 
-    vec2f_norm(&dist);
-    vec2f_scale(&dist, satellite_speed);
     ent_euler_move(satellite, &dist, 0.05f, dt);
-
     ent_bbox_update(satellite);
 }
 
