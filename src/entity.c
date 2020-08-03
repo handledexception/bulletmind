@@ -320,8 +320,8 @@ void ent_set_bbox(entity_t* e, rect_t *bbox) {
     e->org.y -= (e->bbox.h / 2);
 }
 
-void ent_set_mouse_org(entity_t* e, vec2f_t* morg) {
-    e->mouse_org = *morg;
+void ent_set_mouse_org(entity_t* e, vec2f_t* m_org) {
+    e->mouse_org = *m_org;
 }
 
 void ent_euler_move(entity_t* e, vec2f_t* accel, float friction, double dt) {

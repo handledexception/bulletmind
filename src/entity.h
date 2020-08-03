@@ -69,7 +69,7 @@ bool ent_has_no_caps(entity_t* e);
 void ent_set_pos(entity_t* e, vec2f_t* org);
 void ent_set_vel(entity_t* e, vec2f_t *vel, float ang);
 void ent_set_bbox(entity_t* e, rect_t* bbox);
-void ent_set_mouse_org(entity_t* e, vec2f_t* morg);
+void ent_set_mouse_org(entity_t* e, vec2f_t* m_org);
 void ent_euler_move(entity_t* e, vec2f_t* accel, float friction, double dt);
 
 bool ent_spawn_player_and_satellite(entity_t* ent_list);
