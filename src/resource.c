@@ -134,6 +134,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name, const
             //TODO(paulh): need a filesystem path string processor to get base dir of path
             sprite_t* sprite = NULL;
             sprite_load(sprite_path, &sprite);
+            sprite_create_texture(eng->renderer, sprite);
 
             sprite_sheet->backing_sprite = sprite;
             sprite_sheet->width = sheet_width;

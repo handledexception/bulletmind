@@ -121,7 +121,13 @@ void ent_refresh(engine_t* eng, double dt) {
             //     game_resource_t* resource = engine->game_resources[1];
             //     sprite_sheet_t* ss_player = (sprite_sheet_t*)resource->data;
             // }
-            if (!strcmp(e->name, "player") || !strcmp(e->name, "satellite")) {
+            if (!strcmp(e->name, "player")) {
+                game_resource_t* resource = eng_get_resource(engine, "player");
+                sprite_sheet_t* sprite_sheet = (sprite_sheet_t*)resource->data;
+                
+                draw_sprite_sheet(engine->renderer, sprite_sheet, &e->bbox, e->angle, false);
+            }
+            if (!strcmp(e->name, "satellite")) {
                 draw_rect_solid(
                     engine->renderer,
                     (float)e->bbox.x, (float)e->bbox.y,
@@ -403,7 +409,7 @@ void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* engine,
     const float orbit_dist = 48.f;
     const float orbit_thresh = 64.f;
     const bool is_orbiting = (fabsf(dist.x) < orbit_thresh || fabsf(dist.y) < orbit_thresh);
-    
+
     static float orbit_angle = 0.f;
     if (is_orbiting) {
         sat_speed = 350.f;
@@ -420,7 +426,7 @@ void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* engine,
         orbit_angle += DEG_TO_RAD(3.0f);
         if (orbit_angle > DEG_TO_RAD(360.f))
             orbit_angle = 0.f;
-        
+
         vec2f_norm(&dist);
         vec2f_scale(&dist, sat_speed);
         vec2f_norm(&orbit_vec);

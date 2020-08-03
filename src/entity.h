@@ -26,7 +26,7 @@ typedef enum {
     RENDERABLE = 8,
 } entity_caps_t;
 
-typedef struct {
+typedef struct entity_s {
     int32_t index;
     char name[ENT_NAME_MAX];
     int32_t caps;
