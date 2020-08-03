@@ -117,14 +117,12 @@ void ent_refresh(engine_t* eng, double dt) {
 
 
         if (ent_has_caps(e, RENDERABLE)) {
-            // if (!strcmp(e->name, "player")) {
-            //     game_resource_t* resource = engine->game_resources[1];
-            //     sprite_sheet_t* ss_player = (sprite_sheet_t*)resource->data;
-            // }
             if (!strcmp(e->name, "player")) {
                 game_resource_t* resource = eng_get_resource(engine, "player");
                 sprite_sheet_t* sprite_sheet = (sprite_sheet_t*)resource->data;
                 
+                //TODO: implement sprite flipping based on player keyb/mouse input
+                //TODO: implement frame timing (hold frame for X milliseconds before incrementing)
                 draw_sprite_sheet(engine->renderer, sprite_sheet, &e->bbox, e->angle, false);
             }
             if (!strcmp(e->name, "satellite")) {
