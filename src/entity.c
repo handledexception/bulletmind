@@ -121,9 +121,17 @@ void ent_refresh(engine_t* eng, double dt) {
                 game_resource_t* resource = eng_get_resource(engine, "player");
                 sprite_sheet_t* sprite_sheet = (sprite_sheet_t*)resource->data;
                 
-                //TODO: implement sprite flipping based on player keyb/mouse input
                 //TODO: implement frame timing (hold frame for X milliseconds before incrementing)
-                draw_sprite_sheet(engine->renderer, sprite_sheet, &e->bbox, e->angle, false);
+
+                // Flip sprite on X axis depending on mouse pos
+                vec2f_t player_to_mouse = { 0.f, 0.f };
+                vec2f_sub(&player_to_mouse, &e->org, &mouse_pos);
+                vec2f_norm(&player_to_mouse);
+                bool flip = false;
+                if (player_to_mouse.x > 0.f)
+                    flip = true;
+                
+                draw_sprite_sheet(engine->renderer, sprite_sheet, &e->bbox, e->angle, flip);
             }
             if (!strcmp(e->name, "satellite")) {
                 draw_rect_solid(
