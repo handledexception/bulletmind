@@ -132,7 +132,13 @@ void ent_refresh(engine_t* eng, double dt) {
                 if (player_to_mouse.x > 0.f)
                     flip = true;
                 
-                draw_sprite_sheet(engine->renderer, sprite_sheet, &e->bbox, e->angle, flip);
+                draw_sprite_sheet(
+                    engine->renderer,
+                    sprite_sheet,
+                    &e->bbox,
+                    e->angle,
+                    flip
+                );
             }
             if (!strcmp(e->name, "satellite")) {
                 draw_rect_solid(

@@ -114,16 +114,19 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name, const
         // NOTE: Sprite sheet configs originated from Aseprite JSON massaged into a TOML file
         if (read_toml_config(asset_path, &nfo)) {
             // Read sprite sheet metadata
-            toml_array_t* frames = toml_array_in(nfo, "frames");
-            const size_t num_frames = (size_t)toml_array_nelem(frames);
-
             toml_table_t* meta = toml_table_in(nfo, "meta");
             char* sprite_path = NULL;
             int32_t sheet_width = 0;
             int32_t sheet_height = 0;
+            int32_t frame_scale_factor = 1;
             read_table_string(meta, "path", &sprite_path);
             read_table_int32(meta, "width", &sheet_width);
             read_table_int32(meta, "height", &sheet_height);
+            read_table_int32(meta, "scale", &frame_scale_factor);
+
+            // Read sprite sheet frames info
+            toml_array_t* frames = toml_array_in(nfo, "frames");
+            const size_t num_frames = (size_t)toml_array_nelem(frames);
 
             sprite_sheet_t* sprite_sheet = arena_alloc(
                 &mem_arena,
@@ -135,13 +138,15 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name, const
             sprite_t* sprite = NULL;
             sprite_load(sprite_path, &sprite);
             sprite_create_texture(eng->renderer, sprite);
+            sprite->scaling = frame_scale_factor;
 
-            sprite_sheet->backing_sprite = sprite;
             sprite_sheet->width = sheet_width;
             sprite_sheet->height = sheet_height;
+            sprite_sheet->backing_sprite = sprite;
             sprite_sheet->num_frames = num_frames;
             sprite_sheet->frames = (ss_frame_t*)arena_alloc(&mem_arena, sizeof(ss_frame_t) * num_frames, DEFAULT_ALIGNMENT);
 
+            // Load frame array from sprite sheet asset file
             for (size_t i = 0; i < num_frames; i++) {
                 ss_frame_t* ss_frame = &sprite_sheet->frames[i];
                 toml_table_t* frame_nfo = toml_table_at(frames, i);

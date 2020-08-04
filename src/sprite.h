@@ -26,6 +26,7 @@ typedef struct sprite_s {
     imgtype_t type;
     SDL_Surface* surface;
     SDL_Texture* texture;
+    int32_t scaling;
     bool has_alpha;
 } sprite_t;
 

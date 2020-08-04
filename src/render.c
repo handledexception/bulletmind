@@ -19,8 +19,8 @@ void draw_sprite_sheet(SDL_Renderer* rend, sprite_sheet_t* sprite_sheet, SDL_Rec
     SDL_Rect dst = {
         bbox->x,
         bbox->y,
-        current_frame->bounds.w,
-        current_frame->bounds.h,
+        current_frame->bounds.w * backing_sprite->scaling,
+        current_frame->bounds.h * backing_sprite->scaling,
     };
 
     SDL_RendererFlip sprite_flip = SDL_FLIP_NONE;
