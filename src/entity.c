@@ -122,6 +122,7 @@ void ent_refresh(engine_t* eng, double dt) {
                 sprite_sheet_t* sprite_sheet = (sprite_sheet_t*)resource->data;
                 
                 //TODO: implement frame timing (hold frame for X milliseconds before incrementing)
+                //TODO: scale frames iteration by player movement speed (simulate running)
 
                 // Flip sprite on X axis depending on mouse pos
                 vec2f_t player_to_mouse = { 0.f, 0.f };

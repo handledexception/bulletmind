@@ -49,6 +49,7 @@ xcopy /Y %SDL_LIB_PATH_X86%\SDL2main.lib %BUILD_OUT_PATH%\
 ECHO.
 ECHO Copying assets...
 xcopy /Y %ASSETS_PATH%\ss_player.tga %BUILD_OUT_PATH%\assets\
+xcopy /Y %ASSETS_PATH%\ss_player_rgba.tga %BUILD_OUT_PATH%\assets\
 xcopy /Y %ASSETS_PATH%\ss_player.toml %BUILD_OUT_PATH%\assets\
 xcopy /Y %ASSETS_PATH%\ss_skelly.tga %BUILD_OUT_PATH%\assets\
 xcopy /Y %ASSETS_PATH%\ss_skelly.toml %BUILD_OUT_PATH%\assets\
