@@ -28,7 +28,7 @@ clang --std=c11 -g -O0 -Wall -m32 ^
 .\src\render.c ^
 .\src\resource.c ^
 .\src\engine.c ^
-.\src\timing.c ^
+.\src\performance.c ^
 .\src\toml_config.c ^
 .\src\main.c ^
 .\src\memalign.c ^

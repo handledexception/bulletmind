@@ -5,7 +5,7 @@
 #include "memarena.h"
 #include "resource.h"
 #include "engine.h"
-#include "timing.h"
+#include "performance.h"
 #include "utils.h"
 
 #include <SDL.h>
@@ -17,11 +17,11 @@ engine_t* engine = NULL;
 static double engine_start_time;
 
 void eng_init_timing(void) {
-    engine_start_time = timing_seconds();
+    engine_start_time = perf_seconds();
 }
 
 double eng_get_time(void) {
-    return timing_seconds() - engine_start_time;
+    return perf_seconds() - engine_start_time;
 }
 
 game_resource_t* eng_get_resource(engine_t* eng, const char* name) {
@@ -37,7 +37,7 @@ game_resource_t* eng_get_resource(engine_t* eng, const char* name) {
 }
 
 bool eng_init(const char* name, int32_t version, engine_t* eng) {
-    double init_start = timing_seconds();
+    double init_start = perf_seconds();
 
     eng->frame_count = 0;
 
@@ -102,7 +102,7 @@ bool eng_init(const char* name, int32_t version, engine_t* eng) {
     eng->target_frametime = TARGET_FRAMETIME(eng->target_fps);
     eng->state = ES_STARTUP;
 
-    printf("eng_init OK [%fms]\n", (timing_seconds() - init_start) * 1000.0);
+    printf("eng_init OK [%fms]\n", (perf_seconds() - init_start) * 1000.0);
 
     return true;
 }

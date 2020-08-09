@@ -1,4 +1,4 @@
-#include "timing.h"
+#include "performance.h"
 
 #if defined(BM_WINDOWS)
 #include <Windows.h>
@@ -10,7 +10,7 @@ static inline uint64_t get_clock_freq(void) {
     return clock_freq.QuadPart;
 }
 
-uint64_t timing_microseconds(void) {
+uint64_t perf_microseconds(void) {
     LARGE_INTEGER qpc_value;
     qpc_value.QuadPart = 0LL;
 
@@ -21,7 +21,7 @@ uint64_t timing_microseconds(void) {
     return qpc_value.QuadPart;
 }
 
-double timing_seconds(void) {
+double perf_seconds(void) {
     LARGE_INTEGER qpc_value;
     qpc_value.QuadPart = 0LL;
 
@@ -32,6 +32,6 @@ double timing_seconds(void) {
 
 #endif // BM_WINDOWS
 
-double timing_milliseconds(void) {
-    return (double)((double)(timing_microseconds()) / 1000.0);
+double perf_milliseconds(void) {
+    return (double)((double)(perf_microseconds()) / 1000.0);
 }

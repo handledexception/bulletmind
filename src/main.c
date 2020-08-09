@@ -26,7 +26,7 @@ v0.1.122219a
 #include "input.h"
 #include "memarena.h"
 #include "engine.h"
-#include "timing.h"
+#include "performance.h"
 #include "utils.h"
 #include "vector.h"
 
@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
     // main loop
     double dt = 0.0;
     while(engine->state != ES_QUIT) {
-        double frame_start = timing_seconds();
+        double frame_start = perf_seconds();
 
         switch(engine->state) {
             case ES_STARTUP:
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
         }
 
         do {
-            dt = timing_seconds() - frame_start;
+            dt = perf_seconds() - frame_start;
             if (dt > TARGET_FRAMETIME(5)) { dt = TARGET_FRAMETIME(5); }
         } while (dt < engine->target_frametime);
         //printf("%f\n", dt);

@@ -10,7 +10,7 @@
 #include "memarena.h"
 #include "render.h"
 #include "resource.h"
-#include "timing.h"
+#include "performance.h"
 #include "utils.h"
 
 #include <math.h>
@@ -94,8 +94,8 @@ void ent_refresh(engine_t* eng, double dt) {
                 // player shooting
                 float p_weap_fire_rate = 0.125f;
                 static double p_shoot_time = 0.0;
-                if (p_shooting && timing_seconds() >= p_shoot_time) {
-                    p_shoot_time = timing_seconds() + p_weap_fire_rate;
+                if (p_shooting && perf_seconds() >= p_shoot_time) {
+                    p_shoot_time = perf_seconds() + p_weap_fire_rate;
                     entity_t* player = ent_by_index(ent_list, PLAYER_ENTITY_INDEX);
                     vec2f_t bullet_org = player->org;
                     vec2f_t mouse = { mouse_pos.x, mouse_pos.y };
