@@ -92,7 +92,7 @@ void ent_refresh(engine_t* eng, double dt) {
                 }
 
                 // player shooting
-                float p_weap_fire_rate = 0.125f;
+                float p_weap_fire_rate = 0.100f;
                 static double p_shoot_time = 0.0;
                 if (p_shooting && perf_seconds() >= p_shoot_time) {
                     p_shoot_time = perf_seconds() + p_weap_fire_rate;
@@ -115,12 +115,11 @@ void ent_refresh(engine_t* eng, double dt) {
             }
         }
 
-
         if (ent_has_caps(e, RENDERABLE)) {
             if (!strcmp(e->name, "player")) {
                 game_resource_t* resource = eng_get_resource(engine, "player");
                 sprite_sheet_t* sprite_sheet = (sprite_sheet_t*)resource->data;
-                
+
                 //TODO: implement frame timing (hold frame for X milliseconds before incrementing)
                 //TODO: scale frames iteration by player movement speed (simulate running)
 
@@ -131,11 +130,20 @@ void ent_refresh(engine_t* eng, double dt) {
                 bool flip = false;
                 if (player_to_mouse.x > 0.f)
                     flip = true;
+
+                double frame_scale = 1.0;
+                vec2f_t vel_tmp = {0.f, 0.f};
+                vec2f_set(&vel_tmp, &e->vel);
+                vec2f_fabsf(&vel_tmp);
+                frame_scale = MAX(vel_tmp.x, vel_tmp.y);
                 
+                // printf("frame scale %f, %f, %f | ", frame_scale, vel_tmp.x, vel_tmp.y);
+
                 draw_sprite_sheet(
                     engine->renderer,
                     sprite_sheet,
                     &e->bbox,
+                    frame_scale,
                     e->angle,
                     flip
                 );
@@ -251,27 +259,27 @@ entity_t* ent_spawn(
 {
     entity_t* e = ent_new(ent_list);
     if (e != NULL) {
-        vec2i_t half_size = {
-            size->x >> 1,
-            size->y >> 1
+        const vec2i_t half_size = {
+            (int32_t)(size->x / 2),
+            (int32_t)(size->y / 2)
         };
-        rect_t bounding = {
+        const rect_t bounding = {
             (int32_t)org->x - half_size.x,
             (int32_t)org->y - half_size.y,
             (int32_t)org->x + half_size.x,
-            (int32_t)org->y + half_size.y
+            (int32_t)org->y + half_size.y,
         };
 
         ent_set_name(e, name);
-
         ent_set_caps(e, caps);
+
         e->org = *org;
         e->size = *size;
         e->color = *color;
         e->angle = 0.f;
         e->bbox = bounding;
-
         e->timestamp = eng_get_time();
+
         if (!lifetime)
             e->lifetime = lifetime;
         else
@@ -354,10 +362,14 @@ void ent_euler_move(entity_t* e, vec2f_t* accel, float friction, double dt) {
 }
 
 bool ent_spawn_player_and_satellite(entity_t* ent_list) {
-    // screen center
-    vec2f_t player_org = { (float)(CAMERA_WIDTH * 0.5f), (float)(CAMERA_HEIGHT * 0.5f) };
-    vec2i_t player_size = { 10, 10 };
+    // center on screen
+    vec2f_t player_org = {
+        (float)(CAMERA_WIDTH * 0.5f),
+        (float)(CAMERA_HEIGHT * 0.5f)
+    };
+    vec2i_t player_size = { 16, 16 };
     rgba_t player_color = { 0x0, 0x0, 0xff, 0xff };
+
     entity_t* player = ent_spawn(
         ent_list,
         "player",
@@ -374,9 +386,9 @@ bool ent_spawn_player_and_satellite(entity_t* ent_list) {
 
     // spawn satellite
     vec2f_t sat_org = { 0.f, 0.f };
-    vec2i_t sat_size = { 10, 10 };
+    vec2i_t sat_size = { 16, 16 };
     rgba_t sat_color = { 0x90, 0xf5, 0x42, 0xff };
-    float sat_offset = 64.f;
+    float sat_offset = 512.f;
     vec2f_setf(&sat_org, player_org.x + sat_offset, player_org.y + sat_offset);
     entity_t* satellite = ent_spawn(
         ent_list,

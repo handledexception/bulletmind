@@ -10,23 +10,33 @@ typedef struct {
 } rect_t;
 
 typedef struct vec2i {
-    int32_t x, y;
+    int32_t x;
+    int32_t y;
 } vec2i_t;
 
 typedef struct vec2f {
-    float x, y;
+    float x;
+    float y;
 } vec2f_t;
 
 typedef struct vec3f {
-    float x, y, z;
+    float x;
+    float y;
+    float z;
 } vec3f_t;
 
 typedef struct vec4f {
-    float x, y, z, w;
+    float x;
+    float y;
+    float z;
+    float w;
 } vec4f_t;
 
 typedef struct rgba {
-    float r, g, b, a;
+    float r;
+    float g;
+    float b;
+    float a;
 } rgba_t;
 
 inline void vec2f_set(vec2f_t* dst, vec2f_t* value) {
@@ -72,6 +82,11 @@ inline void vec2f_mul(vec2f_t* a, vec2f_t* b) {
 inline void vec2f_sqr(vec2f_t* a) {
     a->x *= a->x;
     a->y *= a->y;
+}
+
+inline void vec2f_fabsf(vec2f_t* a) {
+    a->x = fabsf(a->x);
+    a->y = fabsf(a->y);
 }
 
 // add float to vec2f

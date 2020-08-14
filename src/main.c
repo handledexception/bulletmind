@@ -43,7 +43,8 @@ void print_debug_info(engine_t* engine, double dt) {
         font_print(engine, 10, 70,  1.5, "Frame Count: %d", engine->frame_count);
         font_print(engine, 10, 90,  1.5, "Active Ents: %d", active_ents);
         font_print(engine, 10, 110, 1.5, "Mouse X,Y (%.2f, %.2f)", engine->mouse_pos.x, engine->mouse_pos.y);
-        font_print(engine, 10, 130, 1.5, "Player X,Y (%.2f, %.2f)", player_ent->org.x, player_ent->org.y);
+        font_print(engine, 10, 130, 1.5, "Player Origin (%.2f, %.2f)", player_ent->org.x, player_ent->org.y);
+        font_print(engine, 10, 150, 1.5, "Player Velocity (%.2f, %.2f)", player_ent->vel.x, player_ent->vel.y);
     }
 }
 
