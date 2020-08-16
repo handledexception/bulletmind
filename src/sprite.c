@@ -47,7 +47,6 @@ bool sprite_load(const char* path, sprite_t** out)
     if (strcmp(file_ext, "tga") == 0) {
         img = (sprite_t*)arena_alloc(&mem_arena, sizeof(sprite_t), DEFAULT_ALIGNMENT);
         img->type = IMG_TYPE_TARGA;
-
         fptr = fopen(path, "rb");
         fseek(fptr, 0 , SEEK_END);
         fsize = ftell(fptr);
@@ -159,7 +158,6 @@ bool sprite_create_texture(SDL_Renderer* ren, sprite_t* img)
             img->surface->w,
             img->surface->h
         );
-
         if (img->texture != NULL) {
             SDL_UpdateTexture(
                 img->texture,

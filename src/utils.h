@@ -13,18 +13,18 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
-inline const char* file_extension(const char* filename) {
+static inline const char* file_extension(const char* filename) {
     const char* dot = strrchr(filename, '.');
     if (!dot || dot == filename)
         return "";
     return dot + 1;
 }
 
-inline uint32_t pack_version(uint8_t maj, uint8_t min, uint8_t rev) {
+static inline uint32_t pack_version(uint8_t maj, uint8_t min, uint8_t rev) {
     return (uint32_t)((maj << 16) + (min << 8) + rev);
 }
 
-inline void version_string(const uint32_t version, char* ver_str) {
+static inline void version_string(const uint32_t version, char* ver_str) {
     char str_tmp[12];
     const uint8_t ver_maj = (version & 0xff0000) >> 16;
     const uint8_t ver_min = (version & 0xff00) >> 8;

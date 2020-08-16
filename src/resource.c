@@ -25,7 +25,6 @@ int game_res_init(engine_t* eng) {
 
     if (!read_toml_config(kAssetsToml, &conf))
         return 1;
-
     asset_list = toml_array_in(conf, "assets");
     if (asset_list == NULL)
         return 1;
@@ -85,7 +84,6 @@ int game_res_init(engine_t* eng) {
 
 game_resource_t* make_game_resource(engine_t* eng, const char* asset_name, const char* asset_path, asset_type_t asset_type) {
     game_resource_t* resource = NULL;
-
     const size_t sz_path = strlen(asset_path) + 1;
     assert(sz_path <= MAX_PATH);
     if (sz_path > MAX_PATH)

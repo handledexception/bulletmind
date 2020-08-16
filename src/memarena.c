@@ -4,11 +4,7 @@
 #include <assert.h>
 
 static size_t arena_allocated_bytes = 0;
-
-static uint8_t arena_buf[ARENA_TOTAL_BYTES];
-static arena_t mem_arena = {
-    NULL, 0, 0, 0
-};
+arena_t mem_arena;
 
 void arena_init(arena_t* arena, void* backing_buffer, size_t sz_backing)
 {
@@ -45,8 +41,8 @@ void* arena_alloc(arena_t* arena, size_t size, size_t align)
         printf("arena_alloc - %zu bytes | Usage: %zu/%zu bytes | %zu bytes free.\n",
             arena->curr_offset - arena->prev_offset,
             arena_allocated_bytes,
-            ARENA_TOTAL_BYTES,
-            ARENA_TOTAL_BYTES - arena_allocated_bytes
+            (size_t)ARENA_TOTAL_BYTES,
+            (size_t)(ARENA_TOTAL_BYTES - arena_allocated_bytes)
         );
 #endif
         return ptr;

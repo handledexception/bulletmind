@@ -19,8 +19,7 @@ typedef struct arena_s {
     size_t curr_offset;
 } arena_t;
 
-uint8_t arena_buf[ARENA_TOTAL_BYTES];
-arena_t mem_arena;
+extern arena_t mem_arena;
 
 void arena_init(arena_t* arena, void* backing_buffer, size_t sz_backing);
 void arena_free_all(arena_t* arena);

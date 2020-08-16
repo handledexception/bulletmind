@@ -2,5 +2,6 @@
 /deps/tomlc99
 /out
 /msvc
+/src/*.o
 cloc.bat
 cloc.exe

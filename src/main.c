@@ -32,11 +32,22 @@ v0.1.122219a
 
 #include <SDL.h>
 
+#include <time.h>
+
+static uint8_t arena_buf[ARENA_TOTAL_BYTES];
+
 void print_debug_info(engine_t* engine, double dt) {
     if (engine) {
         entity_t* player_ent = ent_by_name(engine->ent_list, "player");
         char time_buf[TEMP_STRING_MAX];
+#ifdef BM_WINDOWS
         _strtime(time_buf);
+#endif
+#ifdef BM_LINUX
+        time_t t = time(NULL);
+        struct tm* tm = localtime(&t);
+        strftime(time_buf, sizeof(time_buf), "%c", tm);
+#endif
         font_print(engine, 10, 10,  1.5, "Time: %s", time_buf);
         font_print(engine, 10, 30,  1.5, "Engine Time: %f", eng_get_time());
         font_print(engine, 10, 50,  1.5, "Frame Time: %f", dt);
