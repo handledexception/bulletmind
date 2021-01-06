@@ -1,0 +1,27 @@
+{
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    "files.associations": {
+        "iosfwd": "c",
+        "string.h": "c",
+        "vector": "c",
+        "xstring": "c",
+        "xutility": "c",
+        "stdio.h": "c",
+        "engine.h": "c",
+        "sdl.h": "c",
+        "entity.h": "c",
+        "main.h": "c",
+        "font.h": "c",
+        "command.h": "c",
+        "render.h": "c",
+        "sdl_render.h": "c",
+        "c99defs.h": "c",
+        "vector.h": "c",
+        "bitflags.h": "c",
+        "performance.h": "c",
+        "math.h": "c",
+        "limits": "cpp",
+        "*.tcc": "cpp"
+    }
+}
