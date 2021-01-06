@@ -1,5 +1,5 @@
 Bulletmind
-(c) 2019 Paul Hindt
+(c) 2019-2020 Paul Hindt
 
 WIP 2D game using written in C11.
 
