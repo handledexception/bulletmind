@@ -1,0 +1,19 @@
+[[assets]]
+name = "font_7px"
+path = "assets/font_7px_rgba.tga"
+type = "sprite_font"
+
+[[assets]]
+name = "player"
+path = "assets/ss_player.toml"
+type = "sprite_sheet"
+
+[[assets]]
+name = "skelly"
+path = "assets/ss_skelly.toml"
+type = "sprite_sheet"
+
+[[assets]]
+name = "bullet"
+path = "assets/bullet_rgba.tga"
+type = "sprite"
