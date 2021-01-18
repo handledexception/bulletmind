@@ -88,14 +88,14 @@ void ent_refresh(engine_t* eng, const f64 dt)
 				static bool p_shooting = false;
 
 				// Player entity shooting
-				if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == true) {
+				if (cmd_getstate(kCommandPlayerPrimaryFire) == true) {
 					if (p_shooting == false) {
 						p_shooting = true;
 					}
-				} else if (cmd_getstate(CMD_PLAYER_PRIMARY_FIRE) == false) {
+				} else if (cmd_getstate(kCommandPlayerPrimaryFire) == false) {
 					p_shooting = false;
 				}
-				if (cmd_getstate(CMD_PLAYER_ALTERNATE_FIRE) == true) {
+				if (cmd_getstate(kCommandPlayerAltFire) == true) {
 					printf("eng_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n");
 				}
 
@@ -394,19 +394,19 @@ void ent_move_player(entity_t* player, engine_t* engine, f64 dt)
 	// Player entity movement
 	vec2f_t p_accel = {0};
 	f32 p_speed = 800.f;
-	if (cmd_getstate(CMD_PLAYER_SPEED) == true) {
+	if (cmd_getstate(kCommandPlayerSpeed) == true) {
 		p_speed *= 2.f;
 	}
-	if (cmd_getstate(CMD_PLAYER_UP) == true) {
+	if (cmd_getstate(kCommandPlayerUp) == true) {
 		p_accel.y = -p_speed;
 	}
-	if (cmd_getstate(CMD_PLAYER_DOWN) == true) {
+	if (cmd_getstate(kCommandPlayerDown) == true) {
 		p_accel.y = p_speed;
 	}
-	if (cmd_getstate(CMD_PLAYER_LEFT) == true) {
+	if (cmd_getstate(kCommandPlayerLeft) == true) {
 		p_accel.x = -p_speed;
 	}
-	if (cmd_getstate(CMD_PLAYER_RIGHT) == true) {
+	if (cmd_getstate(kCommandPlayerRight) == true) {
 		p_accel.x = p_speed;
 	}
 

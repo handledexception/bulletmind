@@ -1,4 +1,3 @@
-#include "command.h"
 #include "input.h"
 
 #include <SDL.h>
@@ -11,12 +10,12 @@
 
 typedef struct {
 	u8 state;
-	i32 cmd;
+	command_t cmd;
 } key_t;
 
 typedef struct {
 	u8 state;
-	i32 cmd;
+	command_t cmd;
 } mbutton_t;
 
 static key_t* array_keys = NULL;
@@ -37,19 +36,19 @@ void inp_init()
 		memset(array_mbuttons, 0, sz_arraymbuttons);
 	}
 
-	inp_set_key_bind(SDL_SCANCODE_ESCAPE, CMD_QUIT);
-	inp_set_key_bind(SDL_SCANCODE_W, CMD_PLAYER_UP);
-	inp_set_key_bind(SDL_SCANCODE_S, CMD_PLAYER_DOWN);
-	inp_set_key_bind(SDL_SCANCODE_A, CMD_PLAYER_LEFT);
-	inp_set_key_bind(SDL_SCANCODE_D, CMD_PLAYER_RIGHT);
-	inp_set_key_bind(SDL_SCANCODE_LSHIFT, CMD_PLAYER_SPEED);
-	inp_set_key_bind(SDL_SCANCODE_F5, CMD_SET_FPS_60);
-	inp_set_key_bind(SDL_SCANCODE_F6, CMD_SET_FPS_10);
-	inp_set_key_bind(SDL_SCANCODE_F1, CMD_SET_DEBUG);
+	inp_set_key_bind(SDL_SCANCODE_ESCAPE, kCommandQuit);
+	inp_set_key_bind(SDL_SCANCODE_W, kCommandPlayerUp);
+	inp_set_key_bind(SDL_SCANCODE_S, kCommandPlayerDown);
+	inp_set_key_bind(SDL_SCANCODE_A, kCommandPlayerLeft);
+	inp_set_key_bind(SDL_SCANCODE_D, kCommandPlayerRight);
+	inp_set_key_bind(SDL_SCANCODE_LSHIFT, kCommandPlayerSpeed);
+	inp_set_key_bind(SDL_SCANCODE_F5, kCommandSetFpsHigh);
+	inp_set_key_bind(SDL_SCANCODE_F6, kCommandSetFpsLow);
+	inp_set_key_bind(SDL_SCANCODE_F1, kCommandDebugMode);
 	//inp_set_key_bind(SDL_SCANCODE_X, 0x7f); // fail case for testing
 
-	inp_set_mouse_bind(SDL_BUTTON_LEFT, CMD_PLAYER_PRIMARY_FIRE);
-	inp_set_mouse_bind(SDL_BUTTON_RIGHT, CMD_PLAYER_ALTERNATE_FIRE);
+	inp_set_mouse_bind(SDL_BUTTON_LEFT, kCommandPlayerPrimaryFire);
+	inp_set_mouse_bind(SDL_BUTTON_RIGHT, kCommandPlayerAltFire);
 
 	printf("inp_init OK\n");
 }
@@ -81,14 +80,12 @@ void inp_set_key_state(u16 key, u8 state)
 			array_keys[key].state = state;
 		}
 
-		i32 cmd = (array_keys[key].state > 0) ? array_keys[key].cmd : -array_keys[key].cmd;
-		if (cmd > 0) {
-			*array_cmds |= cmd;
-		}
-		if (cmd < 0) {
-			*array_cmds &= ~(-cmd);
-		}
-		//printf("inp_set_key_state - [key:state:cmd] %d : %d : %d\n", key, state, cmd);
+		const command_t cmd = array_keys[key].cmd;
+
+		const bool cmd_active = (array_keys[key].state > 0);
+
+		if (cmd < kCommandUnknown)
+			kActiveCommands[cmd] = cmd_active;
 	}
 }
 
@@ -102,17 +99,14 @@ u8 inp_get_key_state(u16 key)
 	return state;
 }
 
-bool inp_set_key_bind(u16 key, i32 cmd)
+bool inp_set_key_bind(u16 key, command_t cmd)
 {
 	bool found_cmd = false;
 	const char* cmd_name = NULL;
 
-	for (u32 i = 0; i < COMMAND_COUNT; i++) {
-		if (COMMAND_LIST[i] == cmd) {
-			cmd_name = COMMAND_NAMES[i];
-			found_cmd = true;
-		}
-	}
+	cmd_name = cmd_type_to_string(cmd);
+	if (cmd < kCommandUnknown)
+		found_cmd = true;
 
 	if (!found_cmd) {
 		printf("inp_set_key_bind - error binding Key \"%s\", unknown Command ID \"%d\"!\n",
@@ -130,17 +124,14 @@ bool inp_set_key_bind(u16 key, i32 cmd)
 	return true;
 }
 
-bool inp_set_mouse_bind(u8 button, i32 cmd)
+bool inp_set_mouse_bind(u8 button, command_t cmd)
 {
 	bool found_cmd = false;
 	const char* cmd_name = NULL;
 
-	for (u32 i = 0; i < COMMAND_COUNT; i++) {
-		if (COMMAND_LIST[i] == cmd) {
-			cmd_name = COMMAND_NAMES[i];
-			found_cmd = true;
-		}
-	}
+	cmd_name = cmd_type_to_string(cmd);
+	if (cmd < kCommandUnknown)
+		found_cmd = true;
 
 	if (!found_cmd) {
 		printf("inp_set_mouse_bind - error binding Button \"%d\", unknown Command ID \"%d\"!\n",
@@ -157,21 +148,29 @@ bool inp_set_mouse_bind(u8 button, i32 cmd)
 	return true;
 }
 
+u8 inp_get_mouse_state(u16 button)
+{
+	u8 state = 0;
+	if (array_mbuttons != NULL) {
+		state = array_mbuttons[button].state;
+	}
+
+	return state;
+}
+
 void inp_set_mouse_state(u8 button, u8 state)
 {
 	if (array_mbuttons != NULL) {
 		if (array_mbuttons[button].state != state) {
 			array_mbuttons[button].state = state;
 		}
-	}
+		const command_t cmd = array_mbuttons[button].cmd;
 
-	i32 cmd = (array_mbuttons[button].state > 0) ? array_mbuttons[button].cmd
-						     : -array_mbuttons[button].cmd;
-	if (cmd > 0) {
-		*array_cmds |= cmd;
+		const bool cmd_active = (array_mbuttons[button].state > 0);
+				
+		if (cmd < kCommandUnknown)
+			kActiveCommands[cmd] = cmd_active;
+
+		printf("inp_set_mouse_state - [button:state:cmd] %d : %d : %d\n", button, state, cmd);
 	}
-	if (cmd < 0) {
-		*array_cmds &= ~cmd;
-	}
-	//printf("inp_set_mouse_state - [button:state:cmd] %d : %d : %d\n", button, state, cmd);
 }

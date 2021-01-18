@@ -12,7 +12,7 @@
 
 #include <SDL.h>
 
-#define SDL_FLAGS (SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER)
+#define SDL_FLAGS (SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER)
 
 engine_t* engine = NULL;
 
@@ -74,6 +74,18 @@ bool eng_init(const char* name, i32 version, engine_t* eng)
 	eng->scr_bounds = scr;
 	// SDL_RenderSetViewport(eng->renderer, (SDL_Rect*)&eng->scr_bounds);
 	SDL_RenderSetLogicalSize(eng->renderer, eng->scr_width, eng->scr_height);
+
+	// SDL_Joystick* joy = SDL_JoystickOpen(0);
+	// const char* joy_name = SDL_JoystickName(joy);
+	// printf("%s\n", joy_name);
+
+	const int num_joysticks = SDL_NumJoysticks();
+	SDL_GameController* game_control = SDL_GameControllerOpen(0);
+	const char* game_control_name = SDL_GameControllerName(game_control);
+	u16 ctrl_vendor = SDL_GameControllerGetVendor(game_control);
+	u16 ctrl_product_ver = SDL_GameControllerGetProductVersion(game_control);
+	printf("%s\n", game_control_name);
+	SDL_GameControllerClose(game_control);
 	// SDL_RenderSetIntegerScale(eng->renderer, true);
 
 	// eng->scr_surface = SDL_CreateRGBSurface(

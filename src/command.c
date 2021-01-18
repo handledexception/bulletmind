@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "command.h"
 #include "entity.h"
 #include "main.h"
@@ -10,25 +12,18 @@ entity_t* entities;
 
 void cmd_init(void)
 {
-	//todo(paulh): this is all nonsense, just make array_cmds a regular uint32
-	array_cmds = (u32*)malloc(sizeof(u32));
-	if (array_cmds != NULL) {
-		memset(array_cmds, 0, sizeof(u32));
-	}
-	*array_cmds = 0;
+	for (size_t cdx = 0; cdx < kCommandCount; cdx++)
+		kActiveCommands[(command_t)cdx] = false;
 	printf("cmd_init OK\n");
 }
 
 //TODO(paulh): Use the bitfield macros for this instead
-bool cmd_getstate(u32 cmd)
+bool cmd_getstate(const command_t cmd)
 {
-	//bool triggeredcmd = (bit_check_uint32(*array_cmds, cmd) > 0) ? true : false;
-	bool triggeredcmd = (*array_cmds & cmd);
-	//printf("triggered: %d\n", triggeredcmd);
-	return triggeredcmd;
+	return kActiveCommands[cmd];
 }
 
-void cmd_toggle_bool(u32 cmd, bool* value)
+void cmd_toggle_bool(const command_t cmd, bool* value)
 {
 	static bool toggled = false;
 	if (cmd_getstate(cmd) == true) {
@@ -50,26 +45,66 @@ void cmd_toggle_bool(u32 cmd, bool* value)
 void cmd_refresh(engine_t* eng)
 {
 	// static bool toggled = false;
-	if (cmd_getstate(CMD_QUIT) == true) {
+	if (cmd_getstate(kCommandQuit) == true) {
 		eng->state = ES_QUIT;
 	}
 
-	cmd_toggle_bool(CMD_SET_DEBUG, &eng->debug);
+	cmd_toggle_bool(kCommandDebugMode, &eng->debug);
 
-	if (cmd_getstate(CMD_SET_FPS_60) == true) {
+	if (cmd_getstate(kCommandSetFpsHigh) == true) {
 		eng->target_frametime = TARGET_FRAMETIME(60);
 	}
-	if (cmd_getstate(CMD_SET_FPS_10) == true) {
+	if (cmd_getstate(kCommandSetFpsLow) == true) {
 		eng->target_frametime = TARGET_FRAMETIME(10);
 	}
 }
 
 void cmd_shutdown(void)
 {
-	if (array_cmds) {
-		free(array_cmds);
-		array_cmds = NULL;
+	printf("cmd_shutdown OK\n");
+}
+
+const char* cmd_type_to_string(const command_t cmd)
+{
+	static char buffer[4096];
+
+	switch(cmd) {
+	case kCommandPlayerUp:
+		strcpy(&buffer[0], "Player Move Up");
+		break;
+	case kCommandPlayerDown:
+		strcpy(&buffer[0], "Player Move Down");
+		break;
+	case kCommandPlayerLeft:
+		strcpy(&buffer[0], "Player Move Left");
+		break;
+	case kCommandPlayerRight:
+		strcpy(&buffer[0], "Player Move Right");
+		break;
+	case kCommandPlayerSpeed:
+		strcpy(&buffer[0], "Player Speed");
+		break;
+	case kCommandPlayerPrimaryFire:
+		strcpy(&buffer[0], "Player Primary Fire");
+		break;
+	case kCommandPlayerAltFire:
+		strcpy(&buffer[0], "Player Alternate Fire");
+		break;
+	case kCommandSetFpsHigh:
+		strcpy(&buffer[0], "High FPS");
+		break;
+	case kCommandSetFpsLow:
+		strcpy(&buffer[0], "Low FPS");
+		break;
+	case kCommandQuit:
+		strcpy(&buffer[0], "Quit Game");
+		break;
+	case kCommandDebugMode:
+		strcpy(&buffer[0], "Set Debug Mode");
+		break;
+	case kCommandUnknown:
+		break;
 	}
 
-	printf("cmd_shutdown OK\n");
+	return buffer;
 }
