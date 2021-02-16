@@ -148,6 +148,24 @@ void eng_refresh(engine_t* eng)
 			//printf("Mouse Button %d UP\n", SDL_BUTTON(e.button.button));
 			inp_set_mouse_button_state(&eng->inputs->mouse, e.button.button, e.button.state);
 			break;
+		case SDL_CONTROLLERAXISMOTION:
+			printf("Controller Axis Motion - Axis: %d | Value: %d\n", e.caxis.axis, e.caxis.value);
+			break;
+		case SDL_CONTROLLERBUTTONDOWN:
+			printf("Controller Button Down - Button: %d\n", e.cbutton.button);
+			break;
+		case SDL_CONTROLLERBUTTONUP:
+			printf("Controller Button Up - Button: %d\n", e.cbutton.button);
+			break;
+		case SDL_CONTROLLERDEVICEADDED:
+			printf("Controller Device Added\n");
+			break;
+		case SDL_CONTROLLERDEVICEREMOVED:
+			printf("Controller Device Removed\n");
+			break;
+		case SDL_CONTROLLERDEVICEREMAPPED:
+			printf("Controller Device Remapped\n");
+			break;
 		}
 	}
 }
