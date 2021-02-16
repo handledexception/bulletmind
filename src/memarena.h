@@ -1,5 +1,4 @@
-#ifndef _H_MEM_ARENA
-#define _H_MEM_ARENA
+#pragma once
 
 #include "c99defs.h"
 #include "types.h"
@@ -21,10 +20,8 @@ typedef struct arena_s {
 } arena_t;
 
 u8 arena_buf[ARENA_TOTAL_BYTES];
-arena_t mem_arena;
+arena_t g_mem_arena;
 
 void arena_init(arena_t* arena, void* backing_buffer, size_t sz_backing);
 void arena_free_all(arena_t* arena);
 void* arena_alloc(arena_t* arena, size_t size, size_t align);
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef _H_SYSTEM
-#define _H_SYSTEM
+#pragma once
 
 #include "c99defs.h"
 #include "types.h"
@@ -11,6 +10,8 @@ typedef struct SDL_Window SDL_Window;
 typedef struct SDL_Renderer SDL_Renderer;
 typedef struct SDL_Surface SDL_Surface;
 typedef struct SDL_Texture SDL_Texture;
+
+typedef struct input_state_s input_state_t;
 
 typedef struct game_resource_s game_resource_t;
 
@@ -32,7 +33,6 @@ typedef struct engine_s {
 	i32 scr_width, scr_height;
 	f32 scr_scale_x, scr_scale_y;
 	rect_t scr_bounds;
-	vec2f_t mouse_pos;
 
 	f32 target_fps;
 	f64 target_frametime;
@@ -43,6 +43,8 @@ typedef struct engine_s {
 
 	entity_t* ent_list;
 	game_resource_t** game_resources;
+
+	input_state_t* inputs;
 } engine_t;
 
 extern engine_t* engine;
@@ -55,5 +57,3 @@ void eng_init_timing(void);
 f64 eng_get_time(void);
 
 game_resource_t* eng_get_resource(engine_t* eng, const char* name);
-
-#endif

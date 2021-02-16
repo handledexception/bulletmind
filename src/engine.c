@@ -63,8 +63,7 @@ bool eng_init(const char* name, i32 version, engine_t* eng)
 		return false;
 	}
 
-	eng->renderer =
-		SDL_CreateRenderer(eng->window, eng->adapter_index, SDL_RENDERER_ACCELERATED);
+	eng->renderer = SDL_CreateRenderer(eng->window, eng->adapter_index, SDL_RENDERER_ACCELERATED);
 	if (eng->renderer == NULL) {
 		printf("error creating engine renderer: %s\n", SDL_GetError());
 		return false;
@@ -75,17 +74,6 @@ bool eng_init(const char* name, i32 version, engine_t* eng)
 	// SDL_RenderSetViewport(eng->renderer, (SDL_Rect*)&eng->scr_bounds);
 	SDL_RenderSetLogicalSize(eng->renderer, eng->scr_width, eng->scr_height);
 
-	// SDL_Joystick* joy = SDL_JoystickOpen(0);
-	// const char* joy_name = SDL_JoystickName(joy);
-	// printf("%s\n", joy_name);
-
-	const int num_joysticks = SDL_NumJoysticks();
-	SDL_GameController* game_control = SDL_GameControllerOpen(0);
-	const char* game_control_name = SDL_GameControllerName(game_control);
-	u16 ctrl_vendor = SDL_GameControllerGetVendor(game_control);
-	u16 ctrl_product_ver = SDL_GameControllerGetProductVersion(game_control);
-	printf("%s\n", game_control_name);
-	SDL_GameControllerClose(game_control);
 	// SDL_RenderSetIntegerScale(eng->renderer, true);
 
 	// eng->scr_surface = SDL_CreateRGBSurface(
@@ -106,8 +94,11 @@ bool eng_init(const char* name, i32 version, engine_t* eng)
 	//     CAMERA_HEIGHT
 	// );
 
+	eng->inputs = (input_state_t*)arena_alloc(&g_mem_arena, sizeof(input_state_t), DEFAULT_ALIGNMENT);
+	memset(eng->inputs, 0, sizeof(input_state_t));
+
+	inp_init(eng->inputs);
 	game_res_init(eng);
-	inp_init();
 	cmd_init();
 	ent_init(&eng->ent_list, MAX_ENTITIES);
 	eng_init_timing();
@@ -123,29 +114,39 @@ bool eng_init(const char* name, i32 version, engine_t* eng)
 
 void eng_refresh(engine_t* eng)
 {
-	SDL_Event e;
-
-	int mx, my;
+	int mx = 0;
+	int my = 0;
 	SDL_GetMouseState(&mx, &my);
-	eng->mouse_pos.x = (f32)mx;
-	eng->mouse_pos.y = (f32)my;
-	eng->mouse_pos.x /= eng->scr_scale_x;
-	eng->mouse_pos.y /= eng->scr_scale_y;
+	f32 fmx = (f32)mx;
+	f32 fmy = (f32)my;
+	fmx /= eng->scr_scale_x;
+	fmy /= eng->scr_scale_y;
 
+	vec2i_t mouse_window_pos;
+	mouse_window_pos.x = (i32)fmx;
+	mouse_window_pos.y = (i32)fmy;
+
+	vec2i_t mouse_screen_pos;
+	SDL_GetGlobalMouseState(&mouse_screen_pos.x, &mouse_screen_pos.y);
+
+	inp_set_mouse_pos(&eng->inputs->mouse, mouse_screen_pos, mouse_window_pos);
+
+	SDL_Event e;
 	while (SDL_PollEvent(&e)) {
 		switch (e.type) {
 		case SDL_KEYDOWN:
-			inp_set_key_state(e.key.keysym.scancode, KEY_DOWN);
+			inp_set_key_state(&eng->inputs->key[0], e.key.keysym.scancode, KEY_DOWN);
 			break;
 		case SDL_KEYUP:
-			inp_set_key_state(e.key.keysym.scancode, KEY_UP);
+			inp_set_key_state(&eng->inputs->key[0], e.key.keysym.scancode, KEY_UP);
 			break;
 		case SDL_MOUSEBUTTONDOWN:
-			//printf("%d\n", SDL_BUTTON(e.button.button));
-			inp_set_mouse_state((e.button.button), e.button.state);
+			//printf("Mouse Button %d DOWN\n", SDL_BUTTON(e.button.button));
+			inp_set_mouse_button_state(&eng->inputs->mouse, e.button.button, e.button.state);
 			break;
 		case SDL_MOUSEBUTTONUP:
-			inp_set_mouse_state((e.button.button), e.button.state);
+			//printf("Mouse Button %d UP\n", SDL_BUTTON(e.button.button));
+			inp_set_mouse_button_state(&eng->inputs->mouse, e.button.button, e.button.state);
 			break;
 		}
 	}
@@ -155,7 +156,7 @@ void eng_shutdown(engine_t* eng)
 {
 	ent_shutdown(eng->ent_list);
 	cmd_shutdown();
-	inp_shutdown();
+	inp_shutdown(eng->inputs);
 
 	// SDL_FreeSurface(eng->scr_surface);
 	// SDL_DestroyTexture(eng->scr_texture);

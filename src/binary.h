@@ -1,5 +1,4 @@
-#ifndef _H_BINARY
-#define _H_BINARY
+#pragma once
 
 #include "c99defs.h"
 #include "types.h"
@@ -24,5 +23,3 @@ bool bin_stream_write(stream_t* stream, u8* data, const size_t size, size_t* byt
 // void binary_writer_write_i16(stream_t* stream, const i16 value);
 // void binary_writer_write_i32(stream_t* stream, const i32 value);
 // void binary_writer_write_i64(stream_t* stream, const i64 value);
-
-#endif

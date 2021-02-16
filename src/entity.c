@@ -7,6 +7,7 @@
 #include "command.h"
 #include "entity.h"
 #include "font.h"
+#include "input.h"
 #include "math-defs.h"
 #include "memarena.h"
 #include "render.h"
@@ -42,7 +43,7 @@ bool ent_init(entity_t** ent_list, const i32 num_ents)
 		return false;
 
 	const size_t sz_ent_list = sizeof(entity_t) * num_ents;
-	*ent_list = (entity_t*)arena_alloc(&mem_arena, sz_ent_list, DEFAULT_ALIGNMENT);
+	*ent_list = (entity_t*)arena_alloc(&g_mem_arena, sz_ent_list, DEFAULT_ALIGNMENT);
 	memset(*ent_list, 0, sz_ent_list);
 
 	printf("ent_init OK\n");
@@ -56,7 +57,9 @@ void ent_refresh(engine_t* eng, const f64 dt)
 		return;
 
 	entity_t* ent_list = eng->ent_list;
-	const vec2f_t mouse_pos = eng->mouse_pos;
+	vec2f_t mouse_pos = { 0.f, 0.f };
+	mouse_pos.x = (f32)eng->inputs->mouse.window_pos.x;
+	mouse_pos.y = (f32)eng->inputs->mouse.window_pos.y;
 
 	active_ents = 0;
 	for (i32 edx = 0; edx < MAX_ENTITIES; edx++) {
@@ -107,14 +110,14 @@ void ent_refresh(engine_t* eng, const f64 dt)
 					entity_t* player =
 						ent_by_index(ent_list, PLAYER_ENTITY_INDEX);
 					vec2f_t bullet_org = player->org;
-					vec2f_t mouse = {mouse_pos.x, mouse_pos.y};
+					// vec2f_t mouse = {mouse_pos.x, mouse_pos.y};
 					const vec2i_t bullet_size = {8, 8};
 					const rgba_t bullet_color = {0xf5, 0xa4, 0x42, 0xff};
 					entity_t* bullet = ent_spawn(ent_list, "bullet", bullet_org,
 								     bullet_size, &bullet_color,
 								     kBulletCaps,
 								     (f64)BASIC_BULLET_LIFETIME);
-					ent_set_mouse_org(bullet, mouse);
+					ent_set_mouse_org(bullet, mouse_pos);
 				}
 			}
 		}

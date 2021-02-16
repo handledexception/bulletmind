@@ -45,22 +45,22 @@ void print_debug_info(engine_t* engine, f64 dt)
 		font_print(engine, 10, 50, 1.5, "Frame Time: %f", dt);
 		font_print(engine, 10, 70, 1.5, "Frame Count: %d", engine->frame_count);
 		font_print(engine, 10, 90, 1.5, "Active Ents: %d", active_ents);
-		font_print(engine, 10, 110, 1.5, "Mouse X,Y (%.2f, %.2f)", engine->mouse_pos.x,
-			   engine->mouse_pos.y);
+		font_print(engine, 10, 110, 1.5, "Mouse X,Y (%d, %d)", engine->inputs->mouse.window_pos.x,
+			engine->inputs->mouse.window_pos.y);
 		font_print(engine, 10, 130, 1.5, "Player Origin (%.2f, %.2f)", player_ent->org.x,
-			   player_ent->org.y);
+			player_ent->org.y);
 		font_print(engine, 10, 150, 1.5, "Player Velocity (%.2f, %.2f)", player_ent->vel.x,
-			   player_ent->vel.y);
+			player_ent->vel.y);
 	}
 }
 
 int main(int argc, char** argv)
 {
 	// Allocate memory arena - 8MiB
-	arena_init(&mem_arena, arena_buf, ARENA_TOTAL_BYTES);
+	arena_init(&g_mem_arena, arena_buf, ARENA_TOTAL_BYTES);
 
 	size_t sz_engine = sizeof(engine_t);
-	engine = (engine_t*)arena_alloc(&mem_arena, sz_engine, DEFAULT_ALIGNMENT);
+	engine = (engine_t*)arena_alloc(&g_mem_arena, sz_engine, DEFAULT_ALIGNMENT);
 	engine->adapter_index = -1; // SDL default to first available
 	engine->wnd_width = WINDOW_WIDTH;
 	engine->wnd_height = WINDOW_HEIGHT;

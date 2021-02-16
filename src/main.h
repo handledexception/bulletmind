@@ -1,5 +1,4 @@
-#ifndef _H_MAIN
-#define _H_MAIN
+#pragma once
 
 #define NULL_INDEX -1
 #define TEMP_STRING_MAX 4096
@@ -14,5 +13,3 @@
 #define TARGET_FRAMETIME(x) 1.0 / x
 
 #define MAX_PATH 256
-
-#endif

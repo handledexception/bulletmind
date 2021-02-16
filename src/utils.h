@@ -1,5 +1,4 @@
-#ifndef _H_UTILS
-#define _H_UTILS
+#pragma once
 
 #include "c99defs.h"
 #include "types.h"
@@ -37,5 +36,3 @@ inline void version_string(const u32 version, char* ver_str)
 #define ENUM_CASE_RETURN_STR(enum_name) \
 	case (enum_name):               \
 		return #enum_name;
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef _H_IMGFILE
-#define _H_IMGFILE
+#pragma once
 
 #include "c99defs.h"
 #include "types.h"
@@ -50,5 +49,3 @@ bool sprite_load(const char* path, sprite_t** out);
 void sprite_create(u8* data, u32 w, u32 h, u32 bpp, u32 stride, u32 format, sprite_t** out);
 bool sprite_create_texture(SDL_Renderer* ren, sprite_t* img);
 void sprite_shutdown(sprite_t* img);
-
-#endif

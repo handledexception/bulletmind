@@ -1,5 +1,4 @@
-#ifndef _H_BUFFER
-#define _H_BUFFER
+#pragma once
 
 #include "c99defs.h"
 #include "types.h"
@@ -15,5 +14,3 @@ buffer_t* buffer_aligned_new(size_t size, size_t alignment);
 void buffer_delete(buffer_t* buf);
 void buffer_setdata(buffer_t* buf, void* data, size_t size);
 u8 buffer_resize(buffer_t* buf, size_t size);
-
-#endif

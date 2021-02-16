@@ -1,5 +1,4 @@
-#ifndef _H_C99DEFS
-#define _H_C99DEFS
+#pragma once
 
 #if defined(_MSC_VER)
 #define inline __inline
@@ -10,5 +9,3 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-
-#endif

@@ -6,7 +6,7 @@
 static size_t arena_allocated_bytes = 0;
 
 static u8 arena_buf[ARENA_TOTAL_BYTES];
-static arena_t mem_arena = {NULL, 0, 0, 0};
+static arena_t g_mem_arena = {NULL, 0, 0, 0};
 
 void arena_init(arena_t* arena, void* backing_buffer, size_t sz_backing)
 {
@@ -40,9 +40,9 @@ void* arena_alloc(arena_t* arena, size_t size, size_t align)
 		arena_allocated_bytes = arena->curr_offset;
 
 #if defined(BM_DEBUG)
-		printf("arena_alloc - %zu bytes | Usage: %zu/%zu bytes | %zu bytes free.\n",
+		printf("arena_alloc - this: %zu bytes | used: %zu bytes | remain: %zu bytes | arena size: %zu bytes\n",
 		       arena->curr_offset - arena->prev_offset, arena_allocated_bytes,
-		       ARENA_TOTAL_BYTES, ARENA_TOTAL_BYTES - arena_allocated_bytes);
+		       ARENA_TOTAL_BYTES - arena_allocated_bytes, ARENA_TOTAL_BYTES);
 #endif
 		return ptr;
 	} else {

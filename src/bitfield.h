@@ -1,5 +1,4 @@
-#ifndef _H_BITFLAGS
-#define _H_BITFLAGS
+#pragma once
 
 #define SET_FLAG(flags, bit_idx) flags |= (1 << bit_idx)
 #define CLEAR_FLAG(flags, bit_idx) flags &= ~(1 << bit_idx)
@@ -26,5 +25,3 @@ inline const char* byte_to_bin(u8 x)
 
 	return b;
 }
-
-#endif

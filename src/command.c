@@ -12,7 +12,7 @@ entity_t* entities;
 
 void cmd_init(void)
 {
-	for (size_t cdx = 0; cdx < kCommandCount; cdx++)
+	for (size_t cdx = (size_t)kCommandFirst; cdx < (size_t)kCommandMax; cdx++)
 		kActiveCommands[(command_t)cdx] = false;
 	printf("cmd_init OK\n");
 }
@@ -69,6 +69,8 @@ const char* cmd_type_to_string(const command_t cmd)
 	static char buffer[4096];
 
 	switch(cmd) {
+	case kCommandNone:
+		break;
 	case kCommandPlayerUp:
 		strcpy(&buffer[0], "Player Move Up");
 		break;
@@ -102,7 +104,7 @@ const char* cmd_type_to_string(const command_t cmd)
 	case kCommandDebugMode:
 		strcpy(&buffer[0], "Set Debug Mode");
 		break;
-	case kCommandUnknown:
+	case kCommandMax:
 		break;
 	}
 

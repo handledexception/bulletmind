@@ -1,5 +1,4 @@
-#ifndef _H_RESOURCE
-#define _H_RESOURCE
+#pragma once
 
 #include "c99defs.h"
 #include "types.h"
@@ -32,5 +31,3 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name, const
 				    asset_type_t asset_type);
 asset_type_t asset_type_string_to_enum(const char* asset_type_str);
 const char* asset_type_enum_to_string(const asset_type_t asset_type);
-
-#endif

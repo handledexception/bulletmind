@@ -38,7 +38,7 @@ int game_res_init(engine_t* eng)
 	}
 
 	eng->game_resources =
-		arena_alloc(&mem_arena, sizeof(game_resource_t*) * num_assets, DEFAULT_ALIGNMENT);
+		arena_alloc(&g_mem_arena, sizeof(game_resource_t*) * num_assets, DEFAULT_ALIGNMENT);
 
 	// Load the assets into game resource objects
 	bool attr_ok = false;
@@ -98,7 +98,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name, const
 		    sprite_create_texture(eng->renderer, sprite)) {
 
 			resource =
-				arena_alloc(&mem_arena, sizeof(game_resource_t), DEFAULT_ALIGNMENT);
+				arena_alloc(&g_mem_arena, sizeof(game_resource_t), DEFAULT_ALIGNMENT);
 
 			sprintf(resource->name, "%s", asset_name);
 			sprintf(resource->path, "%s", asset_path);
@@ -125,7 +125,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name, const
 			const size_t num_frames = (size_t)toml_array_nelem(frames);
 
 			sprite_sheet_t* sprite_sheet =
-				arena_alloc(&mem_arena, sizeof(sprite_sheet_t), DEFAULT_ALIGNMENT);
+				arena_alloc(&g_mem_arena, sizeof(sprite_sheet_t), DEFAULT_ALIGNMENT);
 
 			//TODO(paulh): need a filesystem path string processor to get base dir of path
 			sprite_t* sprite = NULL;
@@ -138,7 +138,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name, const
 			sprite_sheet->backing_sprite = sprite;
 			sprite_sheet->num_frames = num_frames;
 			sprite_sheet->frames = (ss_frame_t*)arena_alloc(
-				&mem_arena, sizeof(ss_frame_t) * num_frames, DEFAULT_ALIGNMENT);
+				&g_mem_arena, sizeof(ss_frame_t) * num_frames, DEFAULT_ALIGNMENT);
 
 			// Load frame array from sprite sheet asset file
 			for (size_t i = 0; i < num_frames; i++) {
@@ -164,7 +164,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name, const
 			}
 
 			resource =
-				arena_alloc(&mem_arena, sizeof(game_resource_t), DEFAULT_ALIGNMENT);
+				arena_alloc(&g_mem_arena, sizeof(game_resource_t), DEFAULT_ALIGNMENT);
 
 			sprintf(resource->name, "%s", asset_name);
 			sprintf(resource->path, "%s", asset_path);
