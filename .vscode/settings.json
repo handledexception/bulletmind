@@ -23,6 +23,9 @@
         "math.h": "c",
         "limits": "cpp",
         "*.tcc": "cpp",
-        "cstddef": "c"
+        "cstddef": "c",
+        "type_traits": "cpp",
+        "xmemory": "cpp",
+        "platform.h": "c"
     }
 }

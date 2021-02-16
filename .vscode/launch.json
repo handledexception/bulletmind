@@ -13,7 +13,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}\\out\\windows\\clang-x86-debug",
             "environment": [],
-            "externalConsole": true
+            "console": "integratedTerminal"
         }
     ]
 }
