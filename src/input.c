@@ -38,9 +38,64 @@ bool inp_init(input_state_t* inputs)
 	return result;
 }
 
-u32 inp_refresh(input_state_t* inputs)
+void inp_refresh_mouse(mouse_t* mouse, f32 scale_x, f32 scale_y)
 {
-	return 0;
+	int mx = 0;
+	int my = 0;
+	SDL_GetMouseState(&mx, &my);
+	f32 fmx = (f32)mx;
+	f32 fmy = (f32)my;
+	fmx /= scale_x;
+	fmy /= scale_y;
+
+	vec2i_t mouse_window_pos;
+	mouse_window_pos.x = (i32)fmx;
+	mouse_window_pos.y = (i32)fmy;
+
+	vec2i_t mouse_screen_pos;
+	SDL_GetGlobalMouseState(&mouse_screen_pos.x, &mouse_screen_pos.y);
+
+	inp_set_mouse_pos(mouse, mouse_screen_pos, mouse_window_pos);
+}
+
+void inp_refresh_pressed(input_state_t* inputs, const SDL_Event* evt)
+{
+	if (evt) {
+		switch (evt->type) {
+		case SDL_KEYDOWN:
+			inp_set_key_state(&inputs->key[0], evt->key.keysym.scancode, KEY_DOWN);
+			break;
+		case SDL_KEYUP:
+			inp_set_key_state(&inputs->key[0], evt->key.keysym.scancode, KEY_UP);
+			break;
+		case SDL_MOUSEBUTTONDOWN:
+			//printf("Mouse Button %d DOWN\n", SDL_BUTTON(evt->button.button));
+			inp_set_mouse_button_state(&inputs->mouse, evt->button.button, evt->button.state);
+			break;
+		case SDL_MOUSEBUTTONUP:
+			//printf("Mouse Button %d UP\n", SDL_BUTTON(evt->button.button));
+			inp_set_mouse_button_state(&inputs->mouse, evt->button.button, evt->button.state);
+			break;
+		case SDL_CONTROLLERAXISMOTION:
+			printf("Controller Axis Motion - Axis: %d | Value: %d\n", evt->caxis.axis, evt->caxis.value);
+			break;
+		case SDL_CONTROLLERBUTTONDOWN:
+			printf("Controller Button Down - Button: %d\n", evt->cbutton.button);
+			break;
+		case SDL_CONTROLLERBUTTONUP:
+			printf("Controller Button Up - Button: %d\n", evt->cbutton.button);
+			break;
+		case SDL_CONTROLLERDEVICEADDED:
+			printf("Controller Device Added\n");
+			break;
+		case SDL_CONTROLLERDEVICEREMOVED:
+			printf("Controller Device Removed\n");
+			break;
+		case SDL_CONTROLLERDEVICEREMAPPED:
+			printf("Controller Device Remapped\n");
+			break;
+		}
+	}
 }
 
 void inp_shutdown(input_state_t* inputs)

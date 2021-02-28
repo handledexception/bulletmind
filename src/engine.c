@@ -114,59 +114,11 @@ bool eng_init(const char* name, i32 version, engine_t* eng)
 
 void eng_refresh(engine_t* eng)
 {
-	int mx = 0;
-	int my = 0;
-	SDL_GetMouseState(&mx, &my);
-	f32 fmx = (f32)mx;
-	f32 fmy = (f32)my;
-	fmx /= eng->scr_scale_x;
-	fmy /= eng->scr_scale_y;
+	inp_refresh_mouse(&eng->inputs->mouse, eng->scr_scale_x, eng->scr_scale_y);
 
-	vec2i_t mouse_window_pos;
-	mouse_window_pos.x = (i32)fmx;
-	mouse_window_pos.y = (i32)fmy;
-
-	vec2i_t mouse_screen_pos;
-	SDL_GetGlobalMouseState(&mouse_screen_pos.x, &mouse_screen_pos.y);
-
-	inp_set_mouse_pos(&eng->inputs->mouse, mouse_screen_pos, mouse_window_pos);
-
-	SDL_Event e;
-	while (SDL_PollEvent(&e)) {
-		switch (e.type) {
-		case SDL_KEYDOWN:
-			inp_set_key_state(&eng->inputs->key[0], e.key.keysym.scancode, KEY_DOWN);
-			break;
-		case SDL_KEYUP:
-			inp_set_key_state(&eng->inputs->key[0], e.key.keysym.scancode, KEY_UP);
-			break;
-		case SDL_MOUSEBUTTONDOWN:
-			//printf("Mouse Button %d DOWN\n", SDL_BUTTON(e.button.button));
-			inp_set_mouse_button_state(&eng->inputs->mouse, e.button.button, e.button.state);
-			break;
-		case SDL_MOUSEBUTTONUP:
-			//printf("Mouse Button %d UP\n", SDL_BUTTON(e.button.button));
-			inp_set_mouse_button_state(&eng->inputs->mouse, e.button.button, e.button.state);
-			break;
-		case SDL_CONTROLLERAXISMOTION:
-			printf("Controller Axis Motion - Axis: %d | Value: %d\n", e.caxis.axis, e.caxis.value);
-			break;
-		case SDL_CONTROLLERBUTTONDOWN:
-			printf("Controller Button Down - Button: %d\n", e.cbutton.button);
-			break;
-		case SDL_CONTROLLERBUTTONUP:
-			printf("Controller Button Up - Button: %d\n", e.cbutton.button);
-			break;
-		case SDL_CONTROLLERDEVICEADDED:
-			printf("Controller Device Added\n");
-			break;
-		case SDL_CONTROLLERDEVICEREMOVED:
-			printf("Controller Device Removed\n");
-			break;
-		case SDL_CONTROLLERDEVICEREMAPPED:
-			printf("Controller Device Remapped\n");
-			break;
-		}
+	SDL_Event event;
+	while (SDL_PollEvent(&event)) {
+		inp_refresh_pressed(eng->inputs, &event);
 	}
 }
 

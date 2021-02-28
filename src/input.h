@@ -7,8 +7,8 @@
 
 #include <SDL.h>
 
-#define KEY_DOWN 1
-#define KEY_UP 0
+#define KEY_DOWN true
+#define KEY_UP false
 
 static const i32 kMaxGamepads = 8;
 static const i32 kMaxGamepadButtons = SDL_CONTROLLER_BUTTON_MAX;
@@ -87,6 +87,14 @@ typedef struct mouse_s {
     mbutton_t buttons[kMaxMouseButtons];    // array of mouse buttons
 } mouse_t;
 
+typedef struct virtual_button {
+    const char* name;                       // display name
+    u8 state;                               // 0 = up/released, 1 = down/pressed
+    mbutton_t* mouse_button;
+    key_t* keyboard_key;
+    gamepad_button_t* gamepad_button;
+};
+
 typedef struct input_state_s {
     gamepad_t gamepad[kMaxGamepads];        // array of gamepad states
     key_t key[kMaxKeyboardKeys];            // array of keyboard key states
@@ -94,7 +102,8 @@ typedef struct input_state_s {
 } input_state_t;
 
 bool inp_init(input_state_t* inputs);
-u32 inp_refresh(input_state_t* inputs);
+void inp_refresh_mouse(mouse_t* mouse, f32 scale_x, f32 scale_y);
+void inp_refresh_pressed(input_state_t* inputs, const SDL_Event* evt);
 void inp_shutdown(input_state_t* inputs);
 
 bool inp_init_keyboard(input_state_t* inputs);

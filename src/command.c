@@ -66,7 +66,7 @@ void cmd_shutdown(void)
 
 const char* cmd_type_to_string(const command_t cmd)
 {
-	static char buffer[4096];
+	static char buffer[256];
 
 	switch(cmd) {
 	case kCommandNone:
