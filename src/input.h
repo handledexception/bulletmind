@@ -40,7 +40,28 @@ typedef enum {
     kGamepadAxisMax = 6
 } gamepad_axis_kind_t;
 
+typedef enum {
+    kGamepadeButtonNone = -1,
+    kGamepadButtonA = 0,
+    kGamepadButtonB = 1,
+    kGamepadButtonX = 2,
+    kGamepadButtonY = 3,
+    kGamepadButtonBack = 4,
+    kGamepadButtonGuide = 5,
+    kGamepadButtonStart = 6,
+    kGamepadButtonLeftStick = 7,
+    kGamepadButtonRightStick = 8,
+    kGamepadButtonLeftShoulder = 9,
+    kGamepadButtonRightShoulder = 10,
+    kGamepadButtonDPadUp = 11,
+    kGamepadButtonDPadDown = 12,
+    kGamepadButtonDPadLeft = 13,
+    kGamepadButtonDPadRight = 14,
+    kGamepadButtonMax = 15
+} gamepad_button_kind_t;
+
 typedef struct gamepad_axis_s {
+    i32 index;
     const char* name;
     i16 value;
     u64 timestamp;
@@ -51,6 +72,7 @@ typedef struct gamepad_button_s {
     i32 index;
     const char* name;
     const char* alt_name;
+    gamepad_button_kind_t kind;
     u8 state;
     u64 timestamp;
 } gamepad_button_t;
@@ -117,11 +139,16 @@ void inp_set_mouse_pos(mouse_t* mouse, const vec2i_t scr, const vec2i_t wnd);
 void inp_set_mouse_button_state(mouse_t* mouse, u16 button, u8 state);
 u8 inp_get_mouse_button_state(mouse_t* mouse, u16 button);
 
+// Gamepad deadzone
+// https://www.gamasutra.com/blogs/JoshSutphin/20130416/190541/Doing_Thumbstick_Dead_Zones_Right.php
+gamepad_button_kind_t inp_gamepad_button_kind_from_sdl(const SDL_GameControllerButton button);
 gamepad_axis_kind_t inp_gamepad_axis_kind_from_sdl(const SDL_GameControllerAxis axis);
-bool inp_get_gamepad_axes(gamepad_t* gamepad);
-
-void inp_set_gamepad_button_state(gamepad_t* gamepad, u16 button, u8 state);
-u8 inp_get_gamepad_button_state(gamepad_t* gamepad, u16 button);
+bool inp_enumerate_gamepad_buttons(gamepad_t* gamepad);
+bool inp_enumerate_gamepad_axes(gamepad_t* gamepad);
+void inp_set_gamepad_button_state(gamepad_t* gamepad, gamepad_button_kind_t button, u8 state);
+u8 inp_get_gamepad_button_state(gamepad_t* gamepad, gamepad_button_kind_t button);
+void inp_set_gamepad_axis_value(gamepad_t* gamepad, gamepad_axis_kind_t axis, u16 value);
+i16 inp_get_gamepad_axis_value(gamepad_t* gamepad, gamepad_axis_kind_t axis);
 
 bool inp_bind_virtual_key(input_state_t* inputs, command_t cmd, u16 scancode);
 bool inp_bind_virtual_mouse_button(input_state_t* inputs, command_t cmd, u16 mouse_button);

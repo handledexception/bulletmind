@@ -51,6 +51,11 @@ void print_debug_info(engine_t* engine, f64 dt)
 			player_ent->org.y);
 		font_print(engine, 10, 150, 1.5, "Player Velocity (%.2f, %.2f)", player_ent->vel.x,
 			player_ent->vel.y);
+		font_print(engine, 10, 170, 1.5, "Left Stick (%d, %d) | Right Stick (%d, %d}",
+			engine->inputs->gamepads[0].axes[0].value,
+			engine->inputs->gamepads[0].axes[1].value,
+			engine->inputs->gamepads[0].axes[2].value,
+			engine->inputs->gamepads[0].axes[3].value);
 	}
 }
 
@@ -82,15 +87,15 @@ int main(int argc, char** argv)
 
 	// main loop
 	f64 dt = 0.0;
-	while (engine->state != ES_QUIT) {
+	while (engine->state != kEngineStateQuit) {
 		u64 frame_start_ns = os_get_time_ns();
 
 		switch (engine->state) {
-		case ES_STARTUP:
+		case kEngineStateStartup:
 			ent_spawn_player_and_satellite(engine->ent_list);
-			engine->state = ES_PLAY;
+			engine->state = kEngineStatePlay;
 			break;
-		case ES_PLAY:
+		case kEngineStatePlay:
 			SDL_SetRenderDrawColor(engine->renderer, 0x20, 0x20, 0x20, 0xFF);
 			SDL_RenderClear(engine->renderer);
 
@@ -101,7 +106,7 @@ int main(int argc, char** argv)
 			cmd_refresh(engine);
 			ent_refresh(engine, dt);
 			break;
-		case ES_QUIT:
+		case kEngineStateQuit:
 			break;
 		}
 

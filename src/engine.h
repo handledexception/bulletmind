@@ -16,9 +16,9 @@ typedef struct input_state_s input_state_t;
 typedef struct game_resource_s game_resource_t;
 
 typedef enum {
-	ES_STARTUP,
-	ES_PLAY,
-	ES_QUIT,
+	kEngineStateStartup,
+	kEngineStatePlay,
+	kEngineStateQuit,
 } engine_state_t;
 
 typedef struct engine_s {

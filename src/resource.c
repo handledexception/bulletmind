@@ -92,7 +92,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name, const
 		return NULL;
 
 	// Sprite types (sprite, sprite sheet, sprite font)
-	if (asset_type == ASSET_TYPE_SPRITE || asset_type == ASSET_TYPE_SPRITE_FONT) {
+	if (asset_type == kAssetTypeSprite || asset_type == kAssetTypeSpriteFont) {
 		sprite_t* sprite = NULL;
 		if (sprite_load(asset_path, &sprite) &&
 		    sprite_create_texture(eng->renderer, sprite)) {
@@ -105,7 +105,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name, const
 			resource->type = asset_type;
 			resource->data = sprite;
 		}
-	} else if (asset_type == ASSET_TYPE_SPRITE_SHEET) {
+	} else if (asset_type == kAssetTypeSpriteSheet) {
 		toml_table_t* nfo = NULL;
 		// NOTE: Sprite sheet configs originated from Aseprite JSON massaged into a TOML file
 		if (read_toml_config(asset_path, &nfo)) {
@@ -180,13 +180,13 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name, const
 asset_type_t asset_type_string_to_enum(const char* asset_type_str)
 {
 	if (!strcmp(asset_type_str, "sprite_sheet"))
-		return ASSET_TYPE_SPRITE_SHEET;
+		return kAssetTypeSpriteSheet;
 	if (!strcmp(asset_type_str, "sprite_font"))
-		return ASSET_TYPE_SPRITE_FONT;
+		return kAssetTypeSpriteFont;
 	if (!strcmp(asset_type_str, "sprite"))
-		return ASSET_TYPE_SPRITE;
+		return kAssetTypeSprite;
 	if (!strcmp(asset_type_str, "audio_clip"))
-		return ASSET_TYPE_AUDIO_CLIP;
+		return kAssetTypeAudioClip;
 	return ASSET_TYPE_UNKNOWN;
 }
 

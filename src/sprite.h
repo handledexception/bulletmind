@@ -24,6 +24,7 @@ typedef enum {
 typedef struct sprite_s {
 	u8* data;
 	imgtype_t type;
+	pix_fmt_t pix_fmt;
 	SDL_Surface* surface;
 	SDL_Texture* texture;
 	i32 scaling;

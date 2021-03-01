@@ -63,7 +63,7 @@ void cmd_refresh(engine_t* eng)
 {
 	// static bool toggled = false;
 	if (cmd_get_state(eng->inputs, kCommandQuit) == true) {
-		eng->state = ES_QUIT;
+		eng->state = kEngineStateQuit;
 	}
 
 	cmd_toggle_bool(eng->inputs, kCommandDebugMode, &eng->debug);

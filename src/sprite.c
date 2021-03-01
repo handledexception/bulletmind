@@ -34,9 +34,9 @@ typedef struct tga_header_s {
 
 bool sprite_load(const char* path, sprite_t** out)
 {
-	FILE* fptr = NULL;
+	FILE* file_ptr = NULL;
 	size_t fsize = 0;
-	u8* fbuf = NULL;
+	u8* file_buf = NULL;
 	sprite_t* img = NULL;
 
 	if (path == NULL || out == NULL)
@@ -48,30 +48,30 @@ bool sprite_load(const char* path, sprite_t** out)
 		img = (sprite_t*)arena_alloc(&g_mem_arena, sizeof(sprite_t), DEFAULT_ALIGNMENT);
 		img->type = IMG_TYPE_TARGA;
 
-		fptr = fopen(path, "rb");
-		fseek(fptr, 0, SEEK_END);
-		fsize = ftell(fptr);
-		fseek(fptr, 0, SEEK_SET);
-		fbuf = (u8*)malloc(fsize);
-		if (fptr == NULL) {
+		file_ptr = fopen(path, "rb");
+		fseek(file_ptr, 0, SEEK_END);
+		fsize = ftell(file_ptr);
+		fseek(file_ptr, 0, SEEK_SET);
+		file_buf = (u8*)malloc(fsize);
+		if (file_ptr == NULL) {
 			printf("sprite_load - file %s has no data!\n", path);
 			return false;
-		} else if (fread(fbuf, sizeof(u8), fsize, fptr) != fsize) {
+		} else if (fread(file_buf, sizeof(u8), fsize, file_ptr) != fsize) {
 			printf("sprite_load - could not read to end of file %s\n", path);
-			free(fbuf);
-			fbuf = NULL;
+			free(file_buf);
+			file_buf = NULL;
 			return false;
 		}
 
-		tga_header_t* header = (tga_header_t*)fbuf;
+		tga_header_t* header = (tga_header_t*)file_buf;
 		size_t tga_header_size = sizeof(*header);
 		// make sure we have a valid minimal TGA header and raw unmapped RGB data
 		if (tga_header_size != 18 || header->color_map_type > 0 ||
 		    header->image_type != 2) {
 			printf("sprite_load - Incorrect TGA header size! (%zu bytes) Should be 18 bytes.\n",
 			       tga_header_size);
-			free(fbuf);
-			fbuf = NULL;
+			free(file_buf);
+			file_buf = NULL;
 			return false;
 		}
 
@@ -86,7 +86,7 @@ bool sprite_load(const char* path, sprite_t** out)
 		printf("sprite_load - %s, %dx%d %d bytes per pixel\n", path, width, height,
 		       bytes_per_pixel);
 
-		u8* tga_pixels = fbuf + tga_header_size;
+		u8* tga_pixels = file_buf + tga_header_size;
 
 		// origin bit 1 = upper-left origin pixel
 		if ((header->desc >> 5) & 1) {
@@ -103,17 +103,19 @@ bool sprite_load(const char* path, sprite_t** out)
 		u32 pix_fmt = SDL_PIXELFORMAT_BGR24;
 		if (bytes_per_pixel == 3) {
 			pix_fmt = SDL_PIXELFORMAT_BGR24;
+			img->pix_fmt = BGR24;
 			img->has_alpha = false;
 		} else if (bytes_per_pixel == 4) {
 			pix_fmt = SDL_PIXELFORMAT_BGRA32;
+			img->pix_fmt = BGRA32;
 			img->has_alpha = true;
 		}
 
 		img->surface = SDL_CreateRGBSurfaceWithFormatFrom(img->data, width, height,
 								  header->bpp, stride, pix_fmt);
 
-		free(fbuf);
-		fclose(fptr);
+		free(file_buf);
+		fclose(file_ptr);
 
 		*out = img;
 	} else {

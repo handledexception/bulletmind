@@ -12,7 +12,11 @@
 
 #include <SDL.h>
 
-#define SDL_FLAGS (SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER)
+#define SDL_FLAGS ( \
+	SDL_INIT_VIDEO | SDL_INIT_EVENTS | \
+	SDL_INIT_TIMER | \
+	SDL_INIT_GAMECONTROLLER \
+)
 
 engine_t* engine = NULL;
 
@@ -104,7 +108,7 @@ bool eng_init(const char* name, i32 version, engine_t* eng)
 	eng_init_timing();
 
 	eng->target_frametime = TARGET_FRAMETIME(eng->target_fps);
-	eng->state = ES_STARTUP;
+	eng->state = kEngineStateStartup;
 
 	f64 init_end_msec = nsec_to_msec_f64(os_get_time_ns() - init_start);
 	printf("eng_init OK [%fms]\n", init_end_msec);

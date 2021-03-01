@@ -20,25 +20,25 @@
 #include <SDL.h>
 
 #define FOREVER 0.0
-#define BASIC_BULLET_LIFETIME 10.f
-#define PLAYER_ENTITY_INDEX 0
-#define SATELLITE_ENTITY_INDEX 1
+#define BASIC_kEntityBullet_LIFETIME 10.f
+#define kEntityPlayer_ENTITY_INDEX 0
+#define kEntitySatellite_ENTITY_INDEX 1
 
 static const i32 kPlayerCaps = (
-	1 << PLAYER | 1 << MOVER |
-	1 << COLLIDER |	1 << SHOOTER |
-	1 << RENDERABLE
+	1 << kEntityPlayer | 1 << kEntityMover |
+	1 << kEntityCollider |	1 << kEntityShooter |
+	1 << kEntityRenderable
 );
 
 static const i32 kSatelliteCaps = (
-	1 << SATELLITE | 1 << MOVER |
-	1 << SHOOTER | 1 << COLLIDER |
-	1 << RENDERABLE
+	1 << kEntitySatellite | 1 << kEntityMover |
+	1 << kEntityShooter | 1 << kEntityCollider |
+	1 << kEntityRenderable
 );
 
 static const i32 kBulletCaps = (
-	1 << BULLET | 1 << MOVER |
-	1 << COLLIDER | 1 << RENDERABLE
+	1 << kEntityBullet | 1 << kEntityMover |
+	1 << kEntityCollider | 1 << kEntityRenderable
 );
 
 i32 gActiveEntities = 0; // extern
@@ -84,18 +84,18 @@ void ent_refresh(engine_t* eng, const f64 dt)
 			ent_lifetime_update(e);
 		}
 
-		if (ent_has_caps(e, MOVER)) {
+		if (ent_has_caps(e, kEntityMover)) {
 			if (!strcmp(e->name, "player"))
 				ent_move_player(e, eng, dt);
 			if (!strcmp(e->name, "satellite")) {
-				entity_t* player = ent_by_index(ent_list, PLAYER_ENTITY_INDEX);
+				entity_t* player = ent_by_index(ent_list, kEntityPlayer_ENTITY_INDEX);
 				ent_move_satellite(e, player, eng, dt);
 			}
 			if (!strcmp(e->name, "bullet"))
 				ent_move_bullet(e, eng, dt);
 		}
 
-		if (ent_has_caps(e, SHOOTER)) {
+		if (ent_has_caps(e, kEntityShooter)) {
 			if (!strcmp(e->name, "player")) {
 				static bool p_shooting = false;
 
@@ -108,7 +108,7 @@ void ent_refresh(engine_t* eng, const f64 dt)
 					p_shooting = false;
 				}
 				if (cmd_get_state(eng->inputs, kCommandPlayerAltFire) == true) {
-					printf("eng_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n");
+					printf("eng_refresh - CMD_kEntityPlayer_ALTERNATE_FIRE triggered!\n");
 				}
 
 				// player shooting
@@ -117,7 +117,7 @@ void ent_refresh(engine_t* eng, const f64 dt)
 				if (p_shooting && os_get_time_sec() >= p_shoot_time) {
 					p_shoot_time = os_get_time_sec() + p_weap_fire_rate;
 					entity_t* player =
-						ent_by_index(ent_list, PLAYER_ENTITY_INDEX);
+						ent_by_index(ent_list, kEntityPlayer_ENTITY_INDEX);
 					vec2f_t bullet_org = player->org;
 					// vec2f_t mouse = {mouse_pos.x, mouse_pos.y};
 					const vec2i_t bullet_size = {8, 8};
@@ -125,13 +125,13 @@ void ent_refresh(engine_t* eng, const f64 dt)
 					entity_t* bullet = ent_spawn(ent_list, "bullet", bullet_org,
 								     bullet_size, &bullet_color,
 								     kBulletCaps,
-								     (f64)BASIC_BULLET_LIFETIME);
+								     (f64)BASIC_kEntityBullet_LIFETIME);
 					ent_set_mouse_org(bullet, mouse_pos);
 				}
 			}
 		}
 
-		if (ent_has_caps(e, RENDERABLE)) {
+		if (ent_has_caps(e, kEntityRenderable)) {
 			if (!strcmp(e->name, "player")) {
 				game_resource_t* resource = eng_get_resource(engine, "player");
 				sprite_sheet_t* sprite_sheet = (sprite_sheet_t*)resource->data;
@@ -182,11 +182,11 @@ void ent_refresh(engine_t* eng, const f64 dt)
 			}
 		}
 
-		// if (ent_has_caps(e, COLLIDER)) {
+		// if (ent_has_caps(e, kEntityCollider)) {
 		// 	for (i32 c = 0; c < MAX_ENTITIES; c++) {
 		//         entity_t* collider = ent_by_index(ent_list, c);
 		// 		if (e == collider) break; // don't check against self
-		// 		if (ent_has_caps(collider, COLLIDER)) {
+		// 		if (ent_has_caps(collider, kEntityCollider)) {
 		// 			f32 ex = e->org.x + e->bbox.w;
 		// 			f32 ey = e->org.y + e->bbox.h;
 		// 			if (ex >= collider->org.x) {

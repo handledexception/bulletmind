@@ -16,14 +16,14 @@ typedef struct engine_s engine_t;
 #define ENT_NAME_MAX 4096
 
 typedef enum {
-	MOVER = 1,
-	SHOOTER = 2,
-	DESTROYABLE = 3,
-	COLLIDER = 4,
-	SATELLITE = 5,
-	BULLET = 6,
-	PLAYER = 7,
-	RENDERABLE = 8,
+	kEntityMover = 1,
+	kEntityShooter = 2,
+	kEntityDestroyable = 3,
+	kEntityCollider = 4,
+	kEntitySatellite = 5,
+	kEntityBullet = 6,
+	kEntityPlayer = 7,
+	kEntityRenderable = 8,
 } entity_caps_t;
 
 typedef struct entity_s {

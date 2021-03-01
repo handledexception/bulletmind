@@ -11,10 +11,10 @@ typedef struct toml_table_t toml_table_t;
 
 typedef enum {
 	ASSET_TYPE_FIRST = 0,
-	ASSET_TYPE_SPRITE = ASSET_TYPE_FIRST,
-	ASSET_TYPE_SPRITE_SHEET,
-	ASSET_TYPE_SPRITE_FONT,
-	ASSET_TYPE_AUDIO_CLIP,
+	kAssetTypeSprite = ASSET_TYPE_FIRST,
+	kAssetTypeSpriteSheet,
+	kAssetTypeSpriteFont,
+	kAssetTypeAudioClip,
 	ASSET_TYPE_LAST,
 	ASSET_TYPE_UNKNOWN = ASSET_TYPE_LAST,
 } asset_type_t;
