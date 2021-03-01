@@ -24,16 +24,25 @@
 #define PLAYER_ENTITY_INDEX 0
 #define SATELLITE_ENTITY_INDEX 1
 
-static const i32 kPlayerCaps =
-	(1 << PLAYER | 1 << MOVER | 1 << COLLIDER | 1 << SHOOTER | 1 << RENDERABLE);
+static const i32 kPlayerCaps = (
+	1 << PLAYER | 1 << MOVER |
+	1 << COLLIDER |	1 << SHOOTER |
+	1 << RENDERABLE
+);
 
-static const i32 kSatelliteCaps =
-	(1 << SATELLITE | 1 << MOVER | 1 << SHOOTER | 1 << COLLIDER | 1 << RENDERABLE);
+static const i32 kSatelliteCaps = (
+	1 << SATELLITE | 1 << MOVER |
+	1 << SHOOTER | 1 << COLLIDER |
+	1 << RENDERABLE
+);
 
-static const i32 kBulletCaps = (1 << BULLET | 1 << MOVER | 1 << COLLIDER | 1 << RENDERABLE);
+static const i32 kBulletCaps = (
+	1 << BULLET | 1 << MOVER |
+	1 << COLLIDER | 1 << RENDERABLE
+);
 
-i32 active_ents = 0; // extern
-i32 last_entity = 0; // extern
+i32 gActiveEntities = 0; // extern
+i32 gLastEntity = 0; // extern
 
 static const f32 kBulletSpeedMultiplier = 24000.f;
 
@@ -61,7 +70,7 @@ void ent_refresh(engine_t* eng, const f64 dt)
 	mouse_pos.x = (f32)eng->inputs->mouse.window_pos.x;
 	mouse_pos.y = (f32)eng->inputs->mouse.window_pos.y;
 
-	active_ents = 0;
+	gActiveEntities = 0;
 	for (i32 edx = 0; edx < MAX_ENTITIES; edx++) {
 		entity_t* e = ent_by_index(ent_list, edx);
 
@@ -71,7 +80,7 @@ void ent_refresh(engine_t* eng, const f64 dt)
 		if (ent_has_no_caps(e))
 			continue;
 		else {
-			active_ents += 1;
+			gActiveEntities += 1;
 			ent_lifetime_update(e);
 		}
 
@@ -91,14 +100,14 @@ void ent_refresh(engine_t* eng, const f64 dt)
 				static bool p_shooting = false;
 
 				// Player entity shooting
-				if (cmd_getstate(kCommandPlayerPrimaryFire) == true) {
+				if (cmd_get_state(eng->inputs, kCommandPlayerPrimaryFire) == true) {
 					if (p_shooting == false) {
 						p_shooting = true;
 					}
-				} else if (cmd_getstate(kCommandPlayerPrimaryFire) == false) {
+				} else if (cmd_get_state(eng->inputs, kCommandPlayerPrimaryFire) == false) {
 					p_shooting = false;
 				}
-				if (cmd_getstate(kCommandPlayerAltFire) == true) {
+				if (cmd_get_state(eng->inputs, kCommandPlayerAltFire) == true) {
 					printf("eng_refresh - CMD_PLAYER_ALTERNATE_FIRE triggered!\n");
 				}
 
@@ -392,45 +401,45 @@ bool ent_spawn_player_and_satellite(entity_t* ent_list)
 	return true;
 }
 
-void ent_move_player(entity_t* player, engine_t* engine, f64 dt)
+void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 {
 	// Player entity movement
 	vec2f_t p_accel = {0};
 	f32 p_speed = 800.f;
-	if (cmd_getstate(kCommandPlayerSpeed) == true) {
+	if (cmd_get_state(eng->inputs, kCommandPlayerSpeed) == true) {
 		p_speed *= 2.f;
 	}
-	if (cmd_getstate(kCommandPlayerUp) == true) {
+	if (cmd_get_state(eng->inputs, kCommandPlayerUp) == true) {
 		p_accel.y = -p_speed;
 	}
-	if (cmd_getstate(kCommandPlayerDown) == true) {
+	if (cmd_get_state(eng->inputs, kCommandPlayerDown) == true) {
 		p_accel.y = p_speed;
 	}
-	if (cmd_getstate(kCommandPlayerLeft) == true) {
+	if (cmd_get_state(eng->inputs, kCommandPlayerLeft) == true) {
 		p_accel.x = -p_speed;
 	}
-	if (cmd_getstate(kCommandPlayerRight) == true) {
+	if (cmd_get_state(eng->inputs, kCommandPlayerRight) == true) {
 		p_accel.x = p_speed;
 	}
 
 	ent_euler_move(player, p_accel, 0.035, dt);
 	// screen bounds checking
-	if (player->org.x > (f32)engine->scr_bounds.w) {
-		player->org.x = (f32)engine->scr_bounds.w;
+	if (player->org.x > (f32)eng->scr_bounds.w) {
+		player->org.x = (f32)eng->scr_bounds.w;
 	}
-	if (player->org.y > (f32)engine->scr_bounds.h) {
-		player->org.y = (f32)engine->scr_bounds.h;
+	if (player->org.y > (f32)eng->scr_bounds.h) {
+		player->org.y = (f32)eng->scr_bounds.h;
 	}
-	if (player->org.x < (f32)engine->scr_bounds.x) {
-		player->org.x = (f32)engine->scr_bounds.x;
+	if (player->org.x < (f32)eng->scr_bounds.x) {
+		player->org.x = (f32)eng->scr_bounds.x;
 	}
-	if (player->org.y < (f32)engine->scr_bounds.y) {
-		player->org.y = (f32)engine->scr_bounds.y;
+	if (player->org.y < (f32)eng->scr_bounds.y) {
+		player->org.y = (f32)eng->scr_bounds.y;
 	}
 	ent_bbox_update(player);
 }
 
-void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* engine, f64 dt)
+void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* eng, f64 dt)
 {
 	static f32 sat_speed = 750.f;
 	vec2f_t dist = {0.f, 0.f};
@@ -477,7 +486,7 @@ void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* engine,
 	ent_bbox_update(satellite);
 }
 
-void ent_move_bullet(entity_t* bullet, engine_t* engine, f64 dt)
+void ent_move_bullet(entity_t* bullet, engine_t* eng, f64 dt)
 {
 	vec2f_t dist = {0.f, 0.f};
 	// vector between entity mouse origin and entity origin

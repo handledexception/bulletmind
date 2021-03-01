@@ -18,20 +18,18 @@ bool inp_init(input_state_t* inputs)
 
 	inp_init_mouse(inputs);
 
-	inp_set_key_bind(&inputs->key[0], SDL_SCANCODE_ESCAPE, kCommandQuit);
-	inp_set_key_bind(&inputs->key[0], SDL_SCANCODE_W, kCommandPlayerUp);
-	inp_set_key_bind(&inputs->key[0], SDL_SCANCODE_S, kCommandPlayerDown);
-	inp_set_key_bind(&inputs->key[0], SDL_SCANCODE_A, kCommandPlayerLeft);
-	inp_set_key_bind(&inputs->key[0], SDL_SCANCODE_D, kCommandPlayerRight);
-	inp_set_key_bind(&inputs->key[0], SDL_SCANCODE_LSHIFT, kCommandPlayerSpeed);
-	inp_set_key_bind(&inputs->key[0], SDL_SCANCODE_F5, kCommandSetFpsHigh);
-	inp_set_key_bind(&inputs->key[0], SDL_SCANCODE_F6, kCommandSetFpsLow);
-	inp_set_key_bind(&inputs->key[0], SDL_SCANCODE_F1, kCommandDebugMode);
-	//inp_set_key_bind(SDL_SCANCODE_X, 0x7f); // fail case for testing
-
-	inp_set_mouse_button_bind(&inputs->mouse, SDL_BUTTON_LEFT, kCommandPlayerPrimaryFire);
-	// inp_set_mouse_button_bind(&inputs->mouse, SDL_BUTTON_MIDDLE, kCommandPlayerAltFire);
-	inp_set_mouse_button_bind(&inputs->mouse, SDL_BUTTON_RIGHT, kCommandPlayerAltFire);
+	inp_bind_virtual_key(inputs, kCommandQuit, kScancodeEscape);
+	inp_bind_virtual_key(inputs, kCommandPlayerUp, kScancodeW);
+	inp_bind_virtual_key(inputs, kCommandPlayerDown, kScancodeS);
+	inp_bind_virtual_key(inputs, kCommandPlayerLeft, kScancodeA);
+	inp_bind_virtual_key(inputs, kCommandPlayerRight, kScancodeD);
+	inp_bind_virtual_key(inputs, kCommandPlayerSpeed, kScancodeLeftShift);
+	inp_bind_virtual_key(inputs, kCommandSetFpsHigh, kScancodeF5);
+	inp_bind_virtual_key(inputs, kCommandSetFpsLow, kScancodeF6);
+	inp_bind_virtual_key(inputs, kCommandDebugMode, kScancodeF1);
+	inp_bind_virtual_key(inputs, kCommandPlayerPrimaryFire, kScancodeSpace);
+	inp_bind_virtual_mouse_button(inputs, kCommandPlayerPrimaryFire, SDL_BUTTON_LEFT);
+	inp_bind_virtual_mouse_button(inputs, kCommandPlayerAltFire, SDL_BUTTON_RIGHT);
 
 	printf("inp_init OK\n");
 
@@ -63,10 +61,10 @@ void inp_refresh_pressed(input_state_t* inputs, const SDL_Event* evt)
 	if (evt) {
 		switch (evt->type) {
 		case SDL_KEYDOWN:
-			inp_set_key_state(&inputs->key[0], evt->key.keysym.scancode, KEY_DOWN);
+			inp_set_key_state(&inputs->keys[0], evt->key.keysym.scancode, KEY_DOWN);
 			break;
 		case SDL_KEYUP:
-			inp_set_key_state(&inputs->key[0], evt->key.keysym.scancode, KEY_UP);
+			inp_set_key_state(&inputs->keys[0], evt->key.keysym.scancode, KEY_UP);
 			break;
 		case SDL_MOUSEBUTTONDOWN:
 			//printf("Mouse Button %d DOWN\n", SDL_BUTTON(evt->button.button));
@@ -105,11 +103,22 @@ void inp_shutdown(input_state_t* inputs)
 
 bool inp_init_keyboard(input_state_t* inputs)
 {
+	for (size_t i = kScancodeUnknown; i < kScancodeMax; i++) {
+		inputs->keys[i].scancode = (u16)i;
+		inputs->keys[i].state = 0;
+		inputs->keys[i].timestamp = 0ULL;
+	}
+
 	return true;
 }
 
-bool inp_init_mouse(input_state_t* mouse)
+bool inp_init_mouse(input_state_t* inputs)
 {
+	inputs->mouse.buttons[SDL_BUTTON_LEFT].button = SDL_BUTTON_LEFT;
+	inputs->mouse.buttons[SDL_BUTTON_MIDDLE].button = SDL_BUTTON_MIDDLE;
+	inputs->mouse.buttons[SDL_BUTTON_RIGHT].button = SDL_BUTTON_RIGHT;
+	inputs->mouse.buttons[SDL_BUTTON_X1].button = SDL_BUTTON_X1;
+	inputs->mouse.buttons[SDL_BUTTON_X2].button = SDL_BUTTON_X2;
 	return true;
 }
 
@@ -142,7 +151,7 @@ bool inp_init_gamepads(input_state_t* inputs)
 
 		gamepad_err = inp_get_gamepad_axes(&gamepad);
 
-		inputs->gamepad[gdx] = gamepad;
+		inputs->gamepads[gdx] = gamepad;
 
 		printf("Gamepad %s connected | Product ID: %d | Vendor ID: %d | Version: %d\n",
 			gamepad.name, gamepad.product_id, gamepad.vendor_id, gamepad.version);
@@ -158,12 +167,7 @@ void inp_set_key_state(key_t* keys, u16 scancode, u8 state)
 			keys[scancode].state = state;
 		}
 
-		const command_t cmd = keys[scancode].cmd;
-
-		const bool cmd_active = (keys[scancode].state > 0);
-
-		if (cmd < kCommandMax)
-			kActiveCommands[cmd] = cmd_active;
+		keys[scancode].timestamp = os_get_time_ns();
 	}
 }
 
@@ -173,33 +177,6 @@ u8 inp_get_key_state(key_t* keys, u16 scancode)
 	if (keys)
 		state = keys[scancode].state;
 	return state;
-}
-
-bool inp_set_key_bind(key_t* keys, u16 scancode, command_t cmd)
-{
-	bool found_cmd = false;
-	const char* cmd_name = NULL;
-
-	cmd_name = cmd_type_to_string(cmd);
-	if (cmd < kCommandMax)
-		found_cmd = true;
-
-	if (!found_cmd) {
-		printf("inp_set_key_bind - error binding Key \"%s\", unknown Command ID \"%d\"!\n",
-		       SDL_GetScancodeName(scancode), cmd);
-		return false;
-	}
-
-	if (keys) {
-		key_t* key = &keys[scancode];
-		key->cmd = cmd;
-		key->scancode = scancode;
-		//printf("scancode = %d\n", key);
-		printf("inp_set_key_bind - successfully bound Key \"%s\" to Command \"%s\"\n",
-		       SDL_GetScancodeName(scancode), cmd_name);
-	}
-
-	return true;
 }
 
 void inp_set_mouse_pos(mouse_t* mouse, const vec2i_t scr, const vec2i_t wnd)
@@ -219,14 +196,7 @@ void inp_set_mouse_button_state(mouse_t* mouse, u16 button, u8 state)
 			mouse->buttons[button].state = state;
 		}
 
-		const command_t cmd = mouse->buttons[button].cmd;
-
-		const bool cmd_active = (mouse->buttons[button].state > 0);
-
-		if (cmd < kCommandMax)
-			kActiveCommands[cmd] = cmd_active;
-
-		printf("inp_set_mouse_state - [button:state:cmd] %d : %d : %d\n", button, state, cmd);
+		mouse->buttons[button].timestamp = os_get_time_ns();
 	}
 }
 
@@ -236,32 +206,6 @@ u8 inp_get_mouse_button_state(mouse_t* mouse, u16 button)
 	if (mouse && mouse->buttons[button].button == button)
 		state = mouse->buttons[button].state;
 	return state;
-}
-
-bool inp_set_mouse_button_bind(mouse_t* mouse, u8 button, command_t cmd)
-{
-	bool found_cmd = false;
-	const char* cmd_name = NULL;
-
-	cmd_name = cmd_type_to_string(cmd);
-	if (cmd < kCommandMax)
-		found_cmd = true;
-
-	if (!found_cmd) {
-		printf("inp_set_mouse_bind - error binding Button \"%d\", unknown Command ID \"%d\"!\n",
-		       button, cmd);
-		return false;
-	}
-
-	if (mouse) {
-		mbutton_t* mbutton = &mouse->buttons[button];
-		mbutton->cmd = cmd;
-		mbutton->button = button;
-		printf("inp_set_mouse_bind - successfully bound Button \"%d\" to Command \"%s\"\n",
-		       button, cmd_name);
-	}
-
-	return true;
 }
 
 gamepad_axis_kind_t inp_gamepad_axis_kind_from_sdl(const SDL_GameControllerAxis axis)
@@ -323,4 +267,40 @@ bool inp_get_gamepad_axes(gamepad_t* gamepad)
 	}
 
 	return axis_err;
+}
+
+bool inp_bind_virtual_key(input_state_t* inputs, command_t cmd, u16 scancode)
+{
+	if (cmd < kMaxVirtualButtons) {
+		inputs->buttons[cmd].state = 0;
+		inputs->buttons[cmd].keyboard_key = &inputs->keys[scancode];
+		printf("Command %s bound to key %d\n", cmd_get_name(cmd), scancode);
+		return true;
+	}
+
+	return false;
+}
+
+bool inp_bind_virtual_mouse_button(input_state_t* inputs, command_t cmd, u16 mouse_button)
+{
+	if (cmd < kMaxVirtualButtons) {
+		inputs->buttons[cmd].state = 0;
+		inputs->buttons[cmd].mouse_button = &inputs->mouse.buttons[mouse_button];
+		printf("Command %s bound to mouse button %d\n", cmd_get_name(cmd), mouse_button);
+		return true;
+	}
+
+	return false;
+}
+
+bool inp_bind_virtual_gamepad_button(input_state_t* inputs, command_t cmd, u32 gamepad, u32 gamepad_button)
+{
+	if (cmd < kMaxVirtualButtons) {
+		inputs->buttons[cmd].state = 0;
+		inputs->buttons[cmd].gamepad_button = &inputs->gamepads[gamepad].buttons[gamepad_button];
+		printf("Command %s bound to gamepad %d/button %d\n", cmd_get_name(cmd), gamepad, gamepad_button);
+		return true;
+	}
+
+	return false;
 }

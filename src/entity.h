@@ -43,8 +43,8 @@ typedef struct entity_s {
 	f64 lifetime;
 } entity_t;
 
-extern i32 active_ents;
-extern i32 last_entity;
+extern i32 gActiveEntities;
+extern i32 gLastEntity;
 
 bool ent_init(entity_t** ent_list, const i32 num_ents);
 void ent_refresh(engine_t* eng, const f64 dt);
@@ -74,8 +74,8 @@ void ent_set_mouse_org(entity_t* e, const vec2f_t m_org);
 void ent_euler_move(entity_t* e, const vec2f_t accel, const f32 friction, const f64 dt);
 
 bool ent_spawn_player_and_satellite(entity_t* ent_list);
-void ent_move_player(entity_t* player, engine_t* engine, const f64 dt);
+void ent_move_player(entity_t* player, engine_t* eng, const f64 dt);
 
-void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* engine, const f64 dt);
+void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* eng, const f64 dt);
 
-void ent_move_bullet(entity_t* bullet, engine_t* engine, const f64 dt);
+void ent_move_bullet(entity_t* bullet, engine_t* eng, const f64 dt);

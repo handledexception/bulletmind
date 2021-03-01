@@ -44,7 +44,7 @@ void print_debug_info(engine_t* engine, f64 dt)
 		font_print(engine, 10, 30, 1.5, "Engine Time: %f", eng_get_time());
 		font_print(engine, 10, 50, 1.5, "Frame Time: %f", dt);
 		font_print(engine, 10, 70, 1.5, "Frame Count: %d", engine->frame_count);
-		font_print(engine, 10, 90, 1.5, "Active Ents: %d", active_ents);
+		font_print(engine, 10, 90, 1.5, "Active Ents: %d", gActiveEntities);
 		font_print(engine, 10, 110, 1.5, "Mouse X,Y (%d, %d)", engine->inputs->mouse.window_pos.x,
 			engine->inputs->mouse.window_pos.y);
 		font_print(engine, 10, 130, 1.5, "Player Origin (%.2f, %.2f)", player_ent->org.x,
