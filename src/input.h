@@ -141,6 +141,7 @@ u8 inp_get_mouse_button_state(mouse_t* mouse, u16 button);
 
 // Gamepad deadzone
 // https://www.gamasutra.com/blogs/JoshSutphin/20130416/190541/Doing_Thumbstick_Dead_Zones_Right.php
+const char* inp_gamepad_button_kind_to_string(gamepad_button_kind_t kind);
 gamepad_button_kind_t inp_gamepad_button_kind_from_sdl(const SDL_GameControllerButton button);
 gamepad_axis_kind_t inp_gamepad_axis_kind_from_sdl(const SDL_GameControllerAxis axis);
 bool inp_enumerate_gamepad_buttons(gamepad_t* gamepad);

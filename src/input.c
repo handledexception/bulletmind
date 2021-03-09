@@ -238,6 +238,46 @@ u8 inp_get_mouse_button_state(mouse_t* mouse, u16 button)
 	return state;
 }
 
+const char* inp_gamepad_button_kind_to_string(gamepad_button_kind_t kind)
+{
+	switch (kind) {
+	default:
+    case kGamepadeButtonNone:
+    case kGamepadButtonMax:
+		return "None";
+    case kGamepadButtonA:
+		return "A";
+    case kGamepadButtonB:
+		return "B";
+    case kGamepadButtonX:
+		return "X";
+    case kGamepadButtonY:
+		return "Y";
+    case kGamepadButtonBack:
+		return "Back";
+    case kGamepadButtonGuide:
+		return "Guide";
+    case kGamepadButtonStart:
+		return "Start";
+    case kGamepadButtonLeftStick:
+		return "LS";
+    case kGamepadButtonRightStick:
+		return "RS";
+    case kGamepadButtonLeftShoulder:
+		return "Right Shoulder";
+    case kGamepadButtonRightShoulder:
+		return "Left Shoulder";
+    case kGamepadButtonDPadUp:
+		return "D-Pad Up";
+    case kGamepadButtonDPadDown:
+		return "D-Pad Down";
+    case kGamepadButtonDPadLeft:
+		return "D-Pad Left";
+    case kGamepadButtonDPadRight:
+		return "D-Pad Right";
+	}
+}
+
 gamepad_button_kind_t inp_gamepad_button_kind_from_sdl(const SDL_GameControllerButton button)
 {
 	gamepad_button_kind_t kind = kGamepadeButtonNone;
@@ -454,7 +494,10 @@ bool inp_bind_virtual_gamepad_button(input_state_t* inputs, command_t cmd, u32 g
 	if (cmd < kMaxVirtualButtons && button < kMaxGamepadButtons) {
 		inputs->buttons[cmd].state = 0;
 		inputs->buttons[cmd].gamepad_button = &inputs->gamepads[gamepad].buttons[button];
-		printf("Command %s bound to gamepad %d/button %d\n", cmd_get_name(cmd), gamepad, button);
+
+		printf("Command %s bound to gamepad %d/button %d (%s)\n",
+			cmd_get_name(cmd), gamepad, button, inputs->gamepads[gamepad].buttons[button].name);
+
 		return true;
 	}
 

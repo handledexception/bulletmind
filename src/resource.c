@@ -27,6 +27,8 @@ int game_res_init(engine_t* eng)
 	if (!read_toml_config(kAssetsToml, &conf))
 		return 1;
 
+	printf("Opened game resources config: %s\n", kAssetsToml);
+
 	asset_list = toml_array_in(conf, "assets");
 	if (asset_list == NULL)
 		return 1;
@@ -105,7 +107,8 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name, const
 			resource->type = asset_type;
 			resource->data = sprite;
 		}
-	} else if (asset_type == kAssetTypeSpriteSheet) {
+	}
+	else if (asset_type == kAssetTypeSpriteSheet) {
 		toml_table_t* nfo = NULL;
 		// NOTE: Sprite sheet configs originated from Aseprite JSON massaged into a TOML file
 		if (read_toml_config(asset_path, &nfo)) {
@@ -171,7 +174,8 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name, const
 			resource->type = asset_type;
 			resource->data = sprite_sheet;
 		}
-	} else
+	}
+	else
 		printf("Unknown asset type %d!\n", (int)asset_type);
 
 	return resource;
