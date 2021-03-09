@@ -28,6 +28,11 @@ bool inp_init(input_state_t* inputs)
 	inp_bind_virtual_key(inputs, kCommandSetFpsLow, kScancodeF6);
 	inp_bind_virtual_key(inputs, kCommandDebugMode, kScancodeF1);
 	inp_bind_virtual_key(inputs, kCommandPlayerPrimaryFire, kScancodeSpace);
+	inp_bind_virtual_gamepad_button(inputs, kCommandPlayerUp, 0, kGamepadButtonDPadUp);
+	inp_bind_virtual_gamepad_button(inputs, kCommandPlayerDown, 0, kGamepadButtonDPadDown);
+	inp_bind_virtual_gamepad_button(inputs, kCommandPlayerLeft, 0, kGamepadButtonDPadLeft);
+	inp_bind_virtual_gamepad_button(inputs, kCommandPlayerRight, 0, kGamepadButtonDPadRight);
+	inp_bind_virtual_gamepad_button(inputs, kCommandPlayerPrimaryFire, 0, kGamepadButtonRightShoulder);
 	inp_bind_virtual_mouse_button(inputs, kCommandPlayerPrimaryFire, SDL_BUTTON_LEFT);
 	inp_bind_virtual_mouse_button(inputs, kCommandPlayerAltFire, SDL_BUTTON_RIGHT);
 
@@ -444,12 +449,12 @@ bool inp_bind_virtual_mouse_button(input_state_t* inputs, command_t cmd, u16 mou
 	return false;
 }
 
-bool inp_bind_virtual_gamepad_button(input_state_t* inputs, command_t cmd, u32 gamepad, u32 gamepad_button)
+bool inp_bind_virtual_gamepad_button(input_state_t* inputs, command_t cmd, u32 gamepad, gamepad_button_kind_t button)
 {
-	if (cmd < kMaxVirtualButtons && gamepad_button < kMaxGamepadButtons) {
+	if (cmd < kMaxVirtualButtons && button < kMaxGamepadButtons) {
 		inputs->buttons[cmd].state = 0;
-		inputs->buttons[cmd].gamepad_button = &inputs->gamepads[gamepad].buttons[gamepad_button];
-		printf("Command %s bound to gamepad %d/button %d\n", cmd_get_name(cmd), gamepad, gamepad_button);
+		inputs->buttons[cmd].gamepad_button = &inputs->gamepads[gamepad].buttons[button];
+		printf("Command %s bound to gamepad %d/button %d\n", cmd_get_name(cmd), gamepad, button);
 		return true;
 	}
 

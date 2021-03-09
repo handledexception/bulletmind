@@ -108,7 +108,7 @@ void ent_refresh(engine_t* eng, const f64 dt)
 					p_shooting = false;
 				}
 				if (cmd_get_state(eng->inputs, kCommandPlayerAltFire) == true) {
-					printf("eng_refresh - CMD_kEntityPlayer_ALTERNATE_FIRE triggered!\n");
+					printf("eng_refresh - kCommandPlayerAltFire triggered!\n");
 				}
 
 				// player shooting

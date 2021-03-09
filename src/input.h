@@ -152,4 +152,4 @@ i16 inp_get_gamepad_axis_value(gamepad_t* gamepad, gamepad_axis_kind_t axis);
 
 bool inp_bind_virtual_key(input_state_t* inputs, command_t cmd, u16 scancode);
 bool inp_bind_virtual_mouse_button(input_state_t* inputs, command_t cmd, u16 mouse_button);
-bool inp_bind_virtual_gamepad_button(input_state_t* inputs, command_t cmd, u32 gamepad, u32 gamepad_button);
+bool inp_bind_virtual_gamepad_button(input_state_t* inputs, command_t cmd, u32 gamepad, gamepad_button_kind_t button);

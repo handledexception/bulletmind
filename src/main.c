@@ -1,10 +1,6 @@
-/*
-
-bulletmind
-(c) 2019-2020 Paul Hindt
-v0.1.122220a
-
-*/
+// bulletmind
+// (c) 2019-2021 Paul Hindt
+// v0.03012021-alpha
 
 #if defined(BM_WINDOWS)
 #ifndef _CRT_SECURE_NO_WARNINGS
@@ -16,6 +12,7 @@ v0.1.122220a
 #define APP_VER_MAJ 1
 #define APP_VER_MIN 0
 #define APP_VER_REV 0
+#define APP_VER_KIND "dev"
 
 #include "main.h"
 #include "buffer.h"
