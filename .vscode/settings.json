@@ -26,6 +26,7 @@
         "cstddef": "c",
         "type_traits": "cpp",
         "xmemory": "cpp",
-        "platform.h": "c"
+        "platform.h": "c",
+        "sdl_mixer.h": "c"
     }
 }

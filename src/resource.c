@@ -198,7 +198,8 @@ game_resource_t *make_game_resource(engine_t *eng, const char *asset_name,
 		}
 	}
 	else if (asset_type == kAssetTypeAudioClip) {
-
+		//TODO SDL_Mixer
+		printf("TODO Load WAV file game assets");
 	}
 	else
 		printf("Unknown asset type %d!\n", (int)asset_type);
