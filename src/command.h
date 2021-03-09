@@ -26,8 +26,8 @@ typedef enum {
 // bool kActiveCommands[kCommandMax];
 
 void cmd_init(void);
-bool cmd_get_state(input_state_t* inputs, const command_t cmd);
-void cmd_toggle_bool(input_state_t* inputs, const command_t cmd, bool* value);
-void cmd_refresh(engine_t* engine);
+bool cmd_get_state(input_state_t *inputs, const command_t cmd);
+void cmd_toggle_bool(input_state_t *inputs, const command_t cmd, bool *value);
+void cmd_refresh(engine_t *engine);
 void cmd_shutdown(void);
-const char* cmd_get_name(const command_t cmd);
+const char *cmd_get_name(const command_t cmd);

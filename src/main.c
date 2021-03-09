@@ -31,38 +31,44 @@
 
 #include <SDL.h>
 
-void print_debug_info(engine_t* engine, f64 dt)
+void print_debug_info(engine_t *engine, f64 dt)
 {
 	if (engine) {
-		entity_t* player_ent = ent_by_name(engine->ent_list, "player");
+		entity_t *player_ent = ent_by_name(engine->ent_list, "player");
 		char time_buf[TEMP_STRING_MAX];
 		_strtime(time_buf);
 		font_print(engine, 10, 10, 1.5, "Time: %s", time_buf);
-		font_print(engine, 10, 30, 1.5, "Engine Time: %f", eng_get_time());
+		font_print(engine, 10, 30, 1.5, "Engine Time: %f",
+			   eng_get_time());
 		font_print(engine, 10, 50, 1.5, "Frame Time: %f", dt);
-		font_print(engine, 10, 70, 1.5, "Frame Count: %d", engine->frame_count);
-		font_print(engine, 10, 90, 1.5, "Active Ents: %d", gActiveEntities);
-		font_print(engine, 10, 110, 1.5, "Mouse X,Y (%d, %d)", engine->inputs->mouse.window_pos.x,
-			engine->inputs->mouse.window_pos.y);
-		font_print(engine, 10, 130, 1.5, "Player Origin (%.2f, %.2f)", player_ent->org.x,
-			player_ent->org.y);
-		font_print(engine, 10, 150, 1.5, "Player Velocity (%.2f, %.2f)", player_ent->vel.x,
-			player_ent->vel.y);
-		font_print(engine, 10, 170, 1.5, "Left Stick (%d, %d) | Right Stick (%d, %d}",
-			engine->inputs->gamepads[0].axes[0].value,
-			engine->inputs->gamepads[0].axes[1].value,
-			engine->inputs->gamepads[0].axes[2].value,
-			engine->inputs->gamepads[0].axes[3].value);
+		font_print(engine, 10, 70, 1.5, "Frame Count: %d",
+			   engine->frame_count);
+		font_print(engine, 10, 90, 1.5, "Active Ents: %d",
+			   gActiveEntities);
+		font_print(engine, 10, 110, 1.5, "Mouse X,Y (%d, %d)",
+			   engine->inputs->mouse.window_pos.x,
+			   engine->inputs->mouse.window_pos.y);
+		font_print(engine, 10, 130, 1.5, "Player Origin (%.2f, %.2f)",
+			   player_ent->org.x, player_ent->org.y);
+		font_print(engine, 10, 150, 1.5, "Player Velocity (%.2f, %.2f)",
+			   player_ent->vel.x, player_ent->vel.y);
+		font_print(engine, 10, 170, 1.5,
+			   "Left Stick (%d, %d) | Right Stick (%d, %d}",
+			   engine->inputs->gamepads[0].axes[0].value,
+			   engine->inputs->gamepads[0].axes[1].value,
+			   engine->inputs->gamepads[0].axes[2].value,
+			   engine->inputs->gamepads[0].axes[3].value);
 	}
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
 	// Allocate memory arena - 8MiB
 	arena_init(&g_mem_arena, arena_buf, ARENA_TOTAL_BYTES);
 
 	size_t sz_engine = sizeof(engine_t);
-	engine = (engine_t*)arena_alloc(&g_mem_arena, sz_engine, DEFAULT_ALIGNMENT);
+	engine = (engine_t *)arena_alloc(&g_mem_arena, sz_engine,
+					 DEFAULT_ALIGNMENT);
 	engine->adapter_index = -1; // SDL default to first available
 	engine->wnd_width = WINDOW_WIDTH;
 	engine->wnd_height = WINDOW_HEIGHT;
@@ -76,7 +82,8 @@ int main(int argc, char** argv)
 #else
 	engine->debug = false;
 #endif
-	const u32 app_version = pack_version(APP_VER_MAJ, APP_VER_MIN, APP_VER_REV);
+	const u32 app_version =
+		pack_version(APP_VER_MAJ, APP_VER_MIN, APP_VER_REV);
 	if (!eng_init(APP_NAME, app_version, engine)) {
 		printf("Something went wrong!\n");
 		return -1;
@@ -93,7 +100,8 @@ int main(int argc, char** argv)
 			engine->state = kEngineStatePlay;
 			break;
 		case kEngineStatePlay:
-			SDL_SetRenderDrawColor(engine->renderer, 0x20, 0x20, 0x20, 0xFF);
+			SDL_SetRenderDrawColor(engine->renderer, 0x20, 0x20,
+					       0x20, 0xFF);
 			SDL_RenderClear(engine->renderer);
 
 			if (engine->debug)

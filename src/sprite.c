@@ -32,38 +32,41 @@ typedef struct tga_header_s {
 	u8 desc; // bits 3-0 = alpha channel depth, bits 5-4 img direction
 } tga_header_t;
 
-bool sprite_load(const char* path, sprite_t** out)
+bool sprite_load(const char *path, sprite_t **out)
 {
-	FILE* file_ptr = NULL;
+	FILE *file_ptr = NULL;
 	size_t fsize = 0;
-	u8* file_buf = NULL;
-	sprite_t* img = NULL;
+	u8 *file_buf = NULL;
+	sprite_t *img = NULL;
 
 	if (path == NULL || out == NULL)
 		return false;
 
 	// absolute most janky file extension comparison
-	const char* file_ext = file_extension(path);
+	const char *file_ext = file_extension(path);
 	if (strcmp(file_ext, "tga") == 0) {
-		img = (sprite_t*)arena_alloc(&g_mem_arena, sizeof(sprite_t), DEFAULT_ALIGNMENT);
+		img = (sprite_t *)arena_alloc(&g_mem_arena, sizeof(sprite_t),
+					      DEFAULT_ALIGNMENT);
 		img->type = IMG_TYPE_TARGA;
 
 		file_ptr = fopen(path, "rb");
 		fseek(file_ptr, 0, SEEK_END);
 		fsize = ftell(file_ptr);
 		fseek(file_ptr, 0, SEEK_SET);
-		file_buf = (u8*)malloc(fsize);
+		file_buf = (u8 *)malloc(fsize);
 		if (file_ptr == NULL) {
 			printf("sprite_load - file %s has no data!\n", path);
 			return false;
-		} else if (fread(file_buf, sizeof(u8), fsize, file_ptr) != fsize) {
-			printf("sprite_load - could not read to end of file %s\n", path);
+		} else if (fread(file_buf, sizeof(u8), fsize, file_ptr) !=
+			   fsize) {
+			printf("sprite_load - could not read to end of file %s\n",
+			       path);
 			free(file_buf);
 			file_buf = NULL;
 			return false;
 		}
 
-		tga_header_t* header = (tga_header_t*)file_buf;
+		tga_header_t *header = (tga_header_t *)file_buf;
 		size_t tga_header_size = sizeof(*header);
 		// make sure we have a valid minimal TGA header and raw unmapped RGB data
 		if (tga_header_size != 18 || header->color_map_type > 0 ||
@@ -81,12 +84,13 @@ bool sprite_load(const char* path, sprite_t** out)
 		i32 stride = width * bytes_per_pixel;
 		size_t pixel_size = width * height * bytes_per_pixel;
 
-		img->data = (u8*)arena_alloc(&g_mem_arena, pixel_size, DEFAULT_ALIGNMENT);
+		img->data = (u8 *)arena_alloc(&g_mem_arena, pixel_size,
+					      DEFAULT_ALIGNMENT);
 
-		printf("sprite_load - %s, %dx%d %d bytes per pixel\n", path, width, height,
-		       bytes_per_pixel);
+		printf("sprite_load - %s, %dx%d %d bytes per pixel\n", path,
+		       width, height, bytes_per_pixel);
 
-		u8* tga_pixels = file_buf + tga_header_size;
+		u8 *tga_pixels = file_buf + tga_header_size;
 
 		// origin bit 1 = upper-left origin pixel
 		if ((header->desc >> 5) & 1) {
@@ -96,7 +100,8 @@ bool sprite_load(const char* path, sprite_t** out)
 		else {
 			for (i32 c = 0; c < height; c++) {
 				memcpy(img->data + stride * c,
-				       tga_pixels + stride * (height - (c + 1)), stride);
+				       tga_pixels + stride * (height - (c + 1)),
+				       stride);
 			}
 		}
 
@@ -111,8 +116,8 @@ bool sprite_load(const char* path, sprite_t** out)
 			img->has_alpha = true;
 		}
 
-		img->surface = SDL_CreateRGBSurfaceWithFormatFrom(img->data, width, height,
-								  header->bpp, stride, pix_fmt);
+		img->surface = SDL_CreateRGBSurfaceWithFormatFrom(
+			img->data, width, height, header->bpp, stride, pix_fmt);
 
 		free(file_buf);
 		fclose(file_ptr);
@@ -125,33 +130,42 @@ bool sprite_load(const char* path, sprite_t** out)
 	return true;
 }
 
-void sprite_create(u8* data, u32 w, u32 h, u32 bpp, u32 stride, u32 format, sprite_t** out)
+void sprite_create(u8 *data, u32 w, u32 h, u32 bpp, u32 stride, u32 format,
+		   sprite_t **out)
 {
-	sprite_t* img = (sprite_t*)arena_alloc(&g_mem_arena, sizeof(sprite_t), DEFAULT_ALIGNMENT);
+	sprite_t *img = (sprite_t *)arena_alloc(&g_mem_arena, sizeof(sprite_t),
+						DEFAULT_ALIGNMENT);
 	img->type = IMG_TYPE_RAW;
 	size_t pixel_size = w * h * (bpp / 8);
-	img->data = (u8*)arena_alloc(&g_mem_arena, pixel_size, DEFAULT_ALIGNMENT);
+	img->data =
+		(u8 *)arena_alloc(&g_mem_arena, pixel_size, DEFAULT_ALIGNMENT);
 	memcpy(img->data, data, pixel_size);
-	img->surface = SDL_CreateRGBSurfaceWithFormatFrom(img->data, w, h, bpp, stride, format);
+	img->surface = SDL_CreateRGBSurfaceWithFormatFrom(img->data, w, h, bpp,
+							  stride, format);
 
 	*out = img;
 }
 
-bool sprite_create_texture(SDL_Renderer* ren, sprite_t* img)
+bool sprite_create_texture(SDL_Renderer *ren, sprite_t *img)
 {
 	bool res = false;
 
 	if (img != NULL) {
-		img->texture = SDL_CreateTexture((SDL_Renderer*)ren, img->surface->format->format,
-						 SDL_TEXTUREACCESS_STATIC, img->surface->w,
+		img->texture = SDL_CreateTexture((SDL_Renderer *)ren,
+						 img->surface->format->format,
+						 SDL_TEXTUREACCESS_STATIC,
+						 img->surface->w,
 						 img->surface->h);
 
 		if (img->texture != NULL) {
-			SDL_UpdateTexture(img->texture, NULL, img->surface->pixels,
+			SDL_UpdateTexture(img->texture, NULL,
+					  img->surface->pixels,
 					  img->surface->pitch);
 
-			SDL_SetTextureBlendMode(img->texture, img->has_alpha ? SDL_BLENDMODE_BLEND
-									     : SDL_BLENDMODE_NONE);
+			SDL_SetTextureBlendMode(img->texture,
+						img->has_alpha
+							? SDL_BLENDMODE_BLEND
+							: SDL_BLENDMODE_NONE);
 
 			res = true;
 		} else {
@@ -163,7 +177,7 @@ bool sprite_create_texture(SDL_Renderer* ren, sprite_t* img)
 	return res;
 }
 
-void sprite_shutdown(sprite_t* img)
+void sprite_shutdown(sprite_t *img)
 {
 	if (img != NULL) {
 		if (img->surface != NULL) {

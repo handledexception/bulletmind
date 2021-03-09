@@ -5,9 +5,9 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
-inline const char* file_extension(const char* filename)
+inline const char *file_extension(const char *filename)
 {
-	const char* dot = strrchr(filename, '.');
+	const char *dot = strrchr(filename, '.');
 	if (!dot || dot == filename)
 		return "";
 	return dot + 1;
@@ -18,7 +18,7 @@ inline u32 pack_version(u8 maj, u8 min, u8 rev)
 	return (u32)((maj << 16) + (min << 8) + rev);
 }
 
-inline void version_string(const u32 version, char* ver_str)
+inline void version_string(const u32 version, char *ver_str)
 {
 	char str_tmp[12];
 	const u8 ver_maj = (version & 0xff0000) >> 16;

@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-entity_t* entities;
+entity_t *entities;
 
 void cmd_init(void)
 {
@@ -19,12 +19,12 @@ void cmd_init(void)
 }
 
 //TODO(paulh): Use the bitfield macros for this instead
-bool cmd_get_state(input_state_t* inputs, const command_t cmd)
+bool cmd_get_state(input_state_t *inputs, const command_t cmd)
 {
-	virtual_button_t* vb = &inputs->buttons[cmd];
-	key_t* key = vb->keyboard_key;
-	gamepad_button_t* gb = vb->gamepad_button;
-	mouse_button_t* mb = vb->mouse_button;
+	virtual_button_t *vb = &inputs->buttons[cmd];
+	key_t *key = vb->keyboard_key;
+	gamepad_button_t *gb = vb->gamepad_button;
+	mouse_button_t *mb = vb->mouse_button;
 	u8 key_state = 0;
 	u8 mouse_button_state = 0;
 	u8 gamepad_button_state = 0;
@@ -40,7 +40,7 @@ bool cmd_get_state(input_state_t* inputs, const command_t cmd)
 	// return kActiveCommands[cmd];
 }
 
-void cmd_toggle_bool(input_state_t* inputs, const command_t cmd, bool* value)
+void cmd_toggle_bool(input_state_t *inputs, const command_t cmd, bool *value)
 {
 	static bool toggled = false;
 	if (cmd_get_state(inputs, cmd) == true) {
@@ -59,7 +59,7 @@ void cmd_toggle_bool(input_state_t* inputs, const command_t cmd, bool* value)
 	}
 }
 
-void cmd_refresh(engine_t* eng)
+void cmd_refresh(engine_t *eng)
 {
 	// static bool toggled = false;
 	if (cmd_get_state(eng->inputs, kCommandQuit) == true) {
@@ -81,11 +81,11 @@ void cmd_shutdown(void)
 	printf("cmd_shutdown OK\n");
 }
 
-const char* cmd_get_name(const command_t cmd)
+const char *cmd_get_name(const command_t cmd)
 {
 	static char buffer[256];
 
-	switch(cmd) {
+	switch (cmd) {
 	case kCommandNone:
 		break;
 	case kCommandPlayerUp:

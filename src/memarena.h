@@ -7,13 +7,13 @@
 // https://www.gingerbill.org/article/2019/02/08/memory-allocation-strategies-002/
 
 #ifndef DEFAULT_ALIGNMENT
-#define DEFAULT_ALIGNMENT (2 * sizeof(void*))
+#define DEFAULT_ALIGNMENT (2 * sizeof(void *))
 #endif
 
 #define ARENA_TOTAL_BYTES 8388608 // 8MiB
 
 typedef struct arena_s {
-	u8* buffer;
+	u8 *buffer;
 	size_t sz_buffer;
 	size_t prev_offset;
 	size_t curr_offset;
@@ -22,6 +22,6 @@ typedef struct arena_s {
 u8 arena_buf[ARENA_TOTAL_BYTES];
 arena_t g_mem_arena;
 
-void arena_init(arena_t* arena, void* backing_buffer, size_t sz_backing);
-void arena_free_all(arena_t* arena);
-void* arena_alloc(arena_t* arena, size_t size, size_t align);
+void arena_init(arena_t *arena, void *backing_buffer, size_t sz_backing);
+void arena_free_all(arena_t *arena);
+void *arena_alloc(arena_t *arena, size_t size, size_t align);

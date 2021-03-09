@@ -24,8 +24,8 @@ typedef enum {
 typedef struct engine_s {
 	i32 adapter_index;
 
-	SDL_Window* window;
-	SDL_Renderer* renderer;
+	SDL_Window *window;
+	SDL_Renderer *renderer;
 	// SDL_Surface* scr_surface;
 	// SDL_Texture* scr_texture;
 
@@ -41,19 +41,19 @@ typedef struct engine_s {
 	engine_state_t state;
 	bool debug;
 
-	entity_t* ent_list;
-	game_resource_t** game_resources;
+	entity_t *ent_list;
+	game_resource_t **game_resources;
 
-	input_state_t* inputs;
+	input_state_t *inputs;
 } engine_t;
 
-extern engine_t* engine;
+extern engine_t *engine;
 
-bool eng_init(const char* name, i32 version, engine_t* eng);
-void eng_refresh(engine_t* eng);
-void eng_shutdown(engine_t* eng);
+bool eng_init(const char *name, i32 version, engine_t *eng);
+void eng_refresh(engine_t *eng);
+void eng_shutdown(engine_t *eng);
 
 void eng_init_timing(void);
 f64 eng_get_time(void);
 
-game_resource_t* eng_get_resource(engine_t* eng, const char* name);
+game_resource_t *eng_get_resource(engine_t *eng, const char *name);
