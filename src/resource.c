@@ -10,6 +10,8 @@
 #include "toml_config.h"
 #include "utils.h"
 
+#include "platform/platform.h"
+
 #include <assert.h>
 
 //TODO(paulh): Need to add some string utils like concatenation!
@@ -38,6 +40,8 @@ int game_res_init(engine_t *eng)
 		printf("Too many assets specified in config %s\n", kAssetsToml);
 		return 1;
 	}
+
+	printf("Found %d assets in game resources config.", num_assets);
 
 	eng->game_resources = arena_alloc(
 		&g_mem_arena, sizeof(game_resource_t *) * num_assets,
@@ -69,11 +73,18 @@ int game_res_init(engine_t *eng)
 			continue;
 		}
 
+		if (!os_file_exists(asset_path)) {
+			printf("Game resource file not found: %s\n", asset_path);
+			continue;
+		}
+
 		const asset_type_t asset_type =
-			asset_type_string_to_enum(asset_type_str);
+			asset_type_from_string(asset_type_str);
 
 		eng->game_resources[asset_idx] = make_game_resource(
 			eng, asset_name, asset_path, asset_type);
+
+		printf("Loaded game resource: %s (%s)\n", asset_name, asset_type_to_string(asset_type));
 
 		num_assets_loaded += 1;
 	}
@@ -185,13 +196,17 @@ game_resource_t *make_game_resource(engine_t *eng, const char *asset_name,
 			resource->type = asset_type;
 			resource->data = sprite_sheet;
 		}
-	} else
+	}
+	else if (asset_type == kAssetTypeAudioClip) {
+
+	}
+	else
 		printf("Unknown asset type %d!\n", (int)asset_type);
 
 	return resource;
 }
 
-asset_type_t asset_type_string_to_enum(const char *asset_type_str)
+asset_type_t asset_type_from_string(const char *asset_type_str)
 {
 	if (!strcmp(asset_type_str, "sprite_sheet"))
 		return kAssetTypeSpriteSheet;
@@ -201,7 +216,24 @@ asset_type_t asset_type_string_to_enum(const char *asset_type_str)
 		return kAssetTypeSprite;
 	if (!strcmp(asset_type_str, "audio_clip"))
 		return kAssetTypeAudioClip;
-	return ASSET_TYPE_UNKNOWN;
+	return kAssetTypeMax;
+}
+
+const char* asset_type_to_string(asset_type_t type)
+{
+	switch (type) {
+	case kAssetTypeSpriteSheet:
+		return "Sprite Sheet";
+	case kAssetTypeSpriteFont:
+		return "Sprite Font";
+	case kAssetTypeSprite:
+		return "Sprite";
+	case kAssetTypeAudioClip:
+		return "Audio Clip";
+	case kAssetTypeMax:
+		return NULL;
+	}
+	return NULL;
 }
 
 #ifdef _CRT_SECURE_NO_WARNINGS

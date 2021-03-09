@@ -18,11 +18,27 @@ ECHO Building platform library x86 in %BUILD_OUT_PATH%...
 clang --std=c11 -g -O0 -Wall -m32 ^
 -D BM_WINDOWS ^
 -D BM_DEBUG ^
--c .\src\platform\platform-win32.c ^
+-c .\src\platform\platform.c ^
 -I.\src ^
 -o %BUILD_OUT_PATH%\platform.o
 
-llvm-ar -crv %BUILD_OUT_PATH%\platform.lib %BUILD_OUT_PATH%\platform.o
+ECHO Building platform library x86 in %BUILD_OUT_PATH%...
+clang --std=c11 -g -O0 -Wall -m32 ^
+-D BM_WINDOWS ^
+-D BM_DEBUG ^
+-c .\src\platform\platform-win32.c ^
+-I.\src ^
+-o %BUILD_OUT_PATH%\platform-win32.o
+
+ECHO Building platform library x86 in %BUILD_OUT_PATH%...
+clang --std=c11 -g -O0 -Wall -m32 ^
+-D BM_WINDOWS ^
+-D BM_DEBUG ^
+-c .\src\platform\utf8.c ^
+-I.\src ^
+-o %BUILD_OUT_PATH%\utf8.o
+
+llvm-ar -crv %BUILD_OUT_PATH%\platform.lib %BUILD_OUT_PATH%\platform.o %BUILD_OUT_PATH%\platform-win32.o %BUILD_OUT_PATH%\utf8.o
 
 ECHO Building Bulletmind x86 in %BUILD_OUT_PATH%...
 clang --std=c11 -g -O0 -Wall -m32 ^

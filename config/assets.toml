@@ -17,3 +17,8 @@ type = "sprite_sheet"
 name = "bullet"
 path = "assets/bullet_rgba.tga"
 type = "sprite"
+
+[[assets]]
+name = "snd_primary_fire"
+path = "assets/primary_fire.wav"
+type = "audio_clip"
