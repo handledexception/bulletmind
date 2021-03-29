@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "audio.h"
 #include "command.h"
 #include "font.h"
 #include "input.h"
@@ -120,6 +121,7 @@ bool eng_init(const char *name, i32 version, engine_t *eng)
 		&g_mem_arena, sizeof(input_state_t), DEFAULT_ALIGNMENT);
 	memset(eng->inputs, 0, sizeof(input_state_t));
 
+	audio_init(BM_NUM_AUDIO_CHANNELS, BM_AUDIO_SAMPLE_RATE, BM_AUDIO_CHUNK_SIZE);
 	inp_init(eng->inputs);
 	game_res_init(eng);
 	cmd_init();
@@ -151,6 +153,7 @@ void eng_shutdown(engine_t *eng)
 	ent_shutdown(eng->ent_list);
 	cmd_shutdown();
 	inp_shutdown(eng->inputs);
+	audio_shutdown();
 
 	// SDL_FreeSurface(eng->scr_surface);
 	// SDL_DestroyTexture(eng->scr_texture);

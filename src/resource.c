@@ -20,6 +20,7 @@
 #endif
 #endif
 
+#include "audio.h"
 #include "resource.h"
 #include "memarena.h"
 #include "engine.h"
@@ -90,7 +91,8 @@ int game_res_init(engine_t *eng)
 		}
 
 		if (!os_file_exists(asset_path)) {
-			printf("Game resource file not found: %s\n", asset_path);
+			printf("Game resource file not found: %s\n",
+			       asset_path);
 			continue;
 		}
 
@@ -100,15 +102,20 @@ int game_res_init(engine_t *eng)
 		eng->game_resources[asset_idx] = make_game_resource(
 			eng, asset_name, asset_path, asset_type);
 
-		printf("Loaded game resource: %s (%s)\n", asset_name, asset_type_to_string(asset_type));
+		printf("Loaded game resource: %s (%s)\n", asset_name,
+		       asset_type_to_string(asset_type));
 
 		num_assets_loaded += 1;
 	}
 
 	if (num_assets_loaded != num_assets) {
-		printf("Error loading all %zu assets!", num_assets);
+		printf("Error loading assets! %zu/%zu assets loaded.\n",
+		       num_assets_loaded, num_assets);
 		return 1;
 	}
+
+	printf("Successfully loaded %zu/%zu assets.\n", num_assets_loaded,
+	       num_assets);
 
 	return 0;
 }
@@ -212,12 +219,20 @@ game_resource_t *make_game_resource(engine_t *eng, const char *asset_name,
 			resource->type = asset_type;
 			resource->data = sprite_sheet;
 		}
-	}
-	else if (asset_type == kAssetTypeAudioClip) {
+	} else if (asset_type == kAssetTypeAudioClip) {
 		//TODO SDL_Mixer
-		printf("TODO Load WAV file game assets");
-	}
-	else
+		audio_chunk_t* audio_chunk = NULL;
+		if (audio_load_wav(asset_path, &audio_chunk)) {
+			resource = arena_alloc(&g_mem_arena,
+				sizeof(game_resource_t),
+				DEFAULT_ALIGNMENT);
+			
+			sprintf(resource->name, "%s", asset_name);
+			sprintf(resource->path, "%s", asset_path);
+			resource->type = asset_type;
+			resource->data = (void*)audio_chunk;
+		}
+	} else
 		printf("Unknown asset type %d!\n", (int)asset_type);
 
 	return resource;
@@ -236,7 +251,7 @@ asset_type_t asset_type_from_string(const char *asset_type_str)
 	return kAssetTypeMax;
 }
 
-const char* asset_type_to_string(asset_type_t type)
+const char *asset_type_to_string(asset_type_t type)
 {
 	switch (type) {
 	case kAssetTypeSpriteSheet:

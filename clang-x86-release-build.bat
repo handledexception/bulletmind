@@ -1,6 +1,6 @@
 @echo off
 
-SET CFLAGS=--std=c11 -O1 -Wall -m32
+SET CFLAGS=--std=c11 -O2 -Wall -m32
 SET BUILD_OUT_PATH=.\out\windows\clang-x86-release
 SET SDL_LIB_PATH_X86=.\deps\SDL2\lib\x86
 SET ASSETS_PATH=.\assets
@@ -18,11 +18,23 @@ ECHO.
 ECHO Building platform library x86 in %BUILD_OUT_PATH%...
 clang %CFLAGS% ^
 -D BM_WINDOWS ^
--c .\src\platform\platform-win32.c ^
+-c .\src\platform\platform.c ^
 -I.\src ^
 -o %BUILD_OUT_PATH%\platform.o
 
-llvm-ar -crv %BUILD_OUT_PATH%\platform.lib %BUILD_OUT_PATH%\platform.o
+clang %CFLAGS% ^
+-D BM_WINDOWS ^
+-c .\src\platform\platform-win32.c ^
+-I.\src ^
+-o %BUILD_OUT_PATH%\platform-win32.o
+
+clang %CFLAGS% ^
+-D BM_WINDOWS ^
+-c .\src\platform\utf8.c ^
+-I.\src ^
+-o %BUILD_OUT_PATH%\utf8.o
+
+llvm-ar -crv %BUILD_OUT_PATH%\platform.lib %BUILD_OUT_PATH%\platform.o %BUILD_OUT_PATH%\platform-win32.o %BUILD_OUT_PATH%\utf8.o
 
 ECHO Building Bulletmind x86 in %BUILD_OUT_PATH%...
 clang %CFLAGS% ^

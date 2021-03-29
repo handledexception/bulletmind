@@ -20,6 +20,7 @@
 #endif
 #endif
 
+#include "audio.h"
 #include "command.h"
 #include "entity.h"
 #include "font.h"
@@ -34,6 +35,7 @@
 #include "time/time_convert.h"
 
 #include <SDL.h>
+#include <SDL_mixer.h>
 
 #define FOREVER 0.0
 #define BASIC_kEntityBullet_LIFETIME 10.f
@@ -151,6 +153,11 @@ void ent_refresh(engine_t *eng, const f64 dt)
 						kBulletCaps,
 						(f64)BASIC_kEntityBullet_LIFETIME);
 					ent_set_mouse_org(bullet, mouse_pos);
+
+					game_resource_t* source_res = eng_get_resource(engine, "snd_primary_fire");
+					audio_chunk_t* sound_chunk = (audio_chunk_t*)source_res->data;
+					sound_chunk->volume = 63;
+					Mix_PlayChannel(-1, (Mix_Chunk*)sound_chunk, 0);
 				}
 			}
 		}
