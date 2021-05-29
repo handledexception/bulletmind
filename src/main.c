@@ -39,6 +39,7 @@
 #include "input.h"
 #include "memarena.h"
 #include "engine.h"
+#include "resource.h"
 #include "utils.h"
 #include "vector.h"
 
@@ -46,6 +47,54 @@
 #include "time/time_convert.h"
 
 #include <SDL.h>
+
+#define WORLD_TILES_WIDTH 64
+#define WORLD_TILES_HEIGHT 64
+#define TILE_WIDTH 16
+#define TILE_HEIGHT 16
+static u8 *world_map = NULL;
+
+void generate_tilemap()
+{
+	world_map = (u8*)malloc(WORLD_TILES_WIDTH * WORLD_TILES_HEIGHT);
+	for (size_t i = 0; i < WORLD_TILES_WIDTH * WORLD_TILES_HEIGHT; i++) {
+		world_map[i] = rand() % 3;
+	}
+}
+
+sprite_t* world_map_tile_index(engine_t* engine, i32 x, i32 y, i32 cam_x, i32 cam_y)
+{
+	i32 index = x + (y * TILE_WIDTH);
+	sprite_t* tile = NULL;
+	switch (world_map[index]) {
+	case 0:
+		game_resource_t *resource = eng_get_resource(engine, "tiled_wall_16x16");
+		tile = (sprite_t *)resource->data;
+		break;
+	case 1:
+		game_resource_t *resource = eng_get_resource(engine, "tiled_wall_16x16");
+		tile = (sprite_t *)resource->data;
+		break;
+	case 2:
+		game_resource_t *resource = eng_get_resource(engine, "tiled_wall_16x16");
+		tile = (sprite_t *)resource->data;
+		break;
+	}
+
+	tile->surface->clip_rect.x = x * TILE_WIDTH - cam_x;
+	tile->surface->clip_rect.y = y * TILE_HEIGHT - cam_y;
+
+	return tile;
+}
+
+void update_tilemap(engine_t* engine, i32 cam_x, i32 cam_y)
+{
+	for (i32 y = 0; y < WORLD_TILES_HEIGHT; y++) {
+		for (i32 x = 0; x < WORLD_TILES_WIDTH; x++) {
+			sprite_t* tile = world_map_tile_index(engine, x, y, cam_x, cam_y);
+		}
+	}
+}
 
 void print_debug_info(engine_t *engine, f64 dt)
 {

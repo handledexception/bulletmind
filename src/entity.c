@@ -156,7 +156,7 @@ void ent_refresh(engine_t *eng, const f64 dt)
 
 					game_resource_t* source_res = eng_get_resource(engine, "snd_primary_fire");
 					audio_chunk_t* sound_chunk = (audio_chunk_t*)source_res->data;
-					sound_chunk->volume = 63;
+					sound_chunk->volume = 12;
 					Mix_PlayChannel(-1, (Mix_Chunk*)sound_chunk, 0);
 				}
 			}
