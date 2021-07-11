@@ -18,7 +18,7 @@
 
 #include "platform/platform.h"
 // #include "platform/win-version.h"
-#include "time/time_convert.h"
+#include "core/time_convert.h"
 
 static LARGE_INTEGER clock_freq;
 static bool clock_initialized = false;

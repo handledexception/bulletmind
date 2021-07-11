@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Paul Hindt <phindt@gmail.com>
+ * Copyright (c) 2021 Paul Hindt
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,10 +16,10 @@
 
 #include "render.h"
 #include "sprite.h"
-#include "vector.h"
+#include "math/vec2.h"
 
 #include "platform/platform.h"
-#include "time/time_convert.h"
+#include "core/time_convert.h"
 
 void draw_rect_solid(SDL_Renderer *rend, i32 x, i32 y, i32 w, i32 h,
 		     rgba_t rgba)

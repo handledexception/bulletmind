@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Paul Hindt <phindt@gmail.com>
+ * Copyright (c) 2021 Paul Hindt
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,8 +16,8 @@
 
 #pragma once
 
-#include "c99defs.h"
-#include "types.h"
+#include "core/c99defs.h"
+#include "core/types.h"
 #include "engine.h"
 
 typedef struct input_state_s input_state_t;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.h"
+#include "core/types.h"
 
 #define BM_NUM_AUDIO_CHANNELS 2
 #define BM_AUDIO_SAMPLE_RATE 48000

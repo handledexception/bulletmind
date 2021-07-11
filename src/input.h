@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Paul Hindt <phindt@gmail.com>
+ * Copyright (c) 2021 Paul Hindt
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -18,9 +18,9 @@
 
 #include "scancodes.h"
 
-#include "c99defs.h"
+#include "core/c99defs.h"
 #include "command.h"
-#include "vector.h"
+#include "math/vec2.h"
 #include <stdlib.h>
 
 #include <SDL.h>

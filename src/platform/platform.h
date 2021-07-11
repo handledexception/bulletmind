@@ -16,8 +16,8 @@
 
 #pragma once
 
-#include "c99defs.h"
-#include "types.h"
+#include "core/c99defs.h"
+#include "core/types.h"
 #include "platform/export.h"
 
 #ifdef __cplusplus
