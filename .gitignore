@@ -2,5 +2,6 @@
 /deps/tomlc99
 /out
 /msvc
+/ninja*
 cloc.bat
 cloc.exe
