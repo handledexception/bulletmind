@@ -28,7 +28,8 @@
         "xmemory": "cpp",
         "platform.h": "c",
         "sdl_mixer.h": "c",
-        "memalign.h": "c"
+        "memalign.h": "c",
+        "bitfield.h": "c"
     },
     "cmake.configureOnOpen": false
 }

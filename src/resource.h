@@ -29,7 +29,8 @@ typedef enum {
 	kAssetTypeSprite,
 	kAssetTypeSpriteSheet,
 	kAssetTypeSpriteFont,
-	kAssetTypeAudioClip,
+	kAssetTypeSoundEffect,
+	kAssetTypeMusic,
 	kAssetTypeMax
 } asset_type_t;
 

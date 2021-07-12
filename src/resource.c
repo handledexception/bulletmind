@@ -226,10 +226,9 @@ game_resource_t *make_game_resource(engine_t *eng, const char *asset_name,
 			resource->type = asset_type;
 			resource->data = sprite_sheet;
 		}
-	} else if (asset_type == kAssetTypeAudioClip) {
-		//TODO SDL_Mixer
+	} else if (asset_type == kAssetTypeSoundEffect || asset_type == kAssetTypeMusic) {
 		audio_chunk_t *audio_chunk = NULL;
-		if (audio_load_wav(asset_path, &audio_chunk)) {
+		if (audio_load_sound(asset_path, &audio_chunk)) {
 			resource = arena_alloc(&g_mem_arena,
 					       sizeof(game_resource_t),
 					       DEFAULT_ALIGNMENT);
@@ -254,8 +253,10 @@ asset_type_t asset_type_from_string(const char *asset_type_str)
 		return kAssetTypeSpriteFont;
 	if (!strcmp(asset_type_str, "sprite"))
 		return kAssetTypeSprite;
-	if (!strcmp(asset_type_str, "audio_clip"))
-		return kAssetTypeAudioClip;
+	if (!strcmp(asset_type_str, "sfx"))
+		return kAssetTypeSoundEffect;
+	if (!strcmp(asset_type_str, "music"))
+		return kAssetTypeMusic;
 	return kAssetTypeMax;
 }
 
@@ -268,8 +269,10 @@ const char *asset_type_to_string(asset_type_t type)
 		return "Sprite Font";
 	case kAssetTypeSprite:
 		return "Sprite";
-	case kAssetTypeAudioClip:
-		return "Audio Clip";
+	case kAssetTypeSoundEffect:
+		return "Sound Effect";
+	case kAssetTypeMusic:
+		return "Music";
 	case kAssetTypeMax:
 		return NULL;
 	}

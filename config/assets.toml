@@ -26,9 +26,9 @@ type = "sprite"
 [[assets]]
 name = "snd_primary_fire"
 path = "assets/primary_fire.wav"
-type = "audio_clip"
+type = "sfx"
 
 [[assets]]
 name = "theme_music"
 path = "assets/theme.ogg"
-type = "audio_clip"
+type = "music"

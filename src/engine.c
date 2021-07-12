@@ -30,6 +30,7 @@
 #include "platform/platform.h"
 
 #include <SDL.h>
+#include <SDL_mixer.h>
 
 #define SDL_FLAGS                                            \
 	(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER | \
@@ -125,6 +126,10 @@ bool eng_init(const char *name, i32 version, engine_t *eng)
 		&g_mem_arena, sizeof(input_state_t), DEFAULT_ALIGNMENT);
 	memset(eng->inputs, 0, sizeof(input_state_t));
 
+	eng->audio = (audio_state_t *)arena_alloc(
+		&g_mem_arena, sizeof(audio_state_t), DEFAULT_ALIGNMENT);
+	memset(eng->audio, 0, sizeof(audio_state_t));
+
 	if (!audio_init(BM_NUM_AUDIO_CHANNELS, BM_AUDIO_SAMPLE_RATE,
 			BM_AUDIO_CHUNK_SIZE))
 		return false;
@@ -179,4 +184,37 @@ void eng_shutdown(engine_t *eng)
 	SDL_Quit();
 
 	logger(LOG_INFO, "eng_shutdown OK\n\nGoodbye!\n");
+}
+
+void eng_play_sound(engine_t* eng, const char* name, i32 volume)
+{
+	game_resource_t *resource = eng_get_resource(engine, name);
+	if (resource != NULL) {
+		audio_chunk_t *sound_chunk = (audio_chunk_t *)resource->data;
+
+		if (resource->type == kAssetTypeSoundEffect) {
+			sound_chunk->volume = volume;
+			
+			Mix_PlayChannel(
+				-1, (Mix_Chunk *)sound_chunk,
+				0);
+		}
+		else if (resource->type == kAssetTypeMusic) {
+			if (eng->audio->music == NULL) {
+				eng->audio->music = (Mix_Music*)Mix_LoadMUS(resource->path);
+			}
+			if (!eng->audio->music_playing) {
+				Mix_VolumeMusic(volume);
+				Mix_FadeInMusic(eng->audio->music, 0, 250);
+				eng->audio->music_volume = volume;
+				eng->audio->music_playing = true;
+			}
+		}		
+	}
+}
+
+void eng_stop_music(engine_t* eng)
+{
+	if (eng->audio && eng->audio->music_playing)
+		Mix_HaltMusic();
 }

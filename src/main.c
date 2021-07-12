@@ -136,6 +136,7 @@ int main(int argc, char **argv)
 	size_t sz_engine = sizeof(engine_t);
 	engine = (engine_t *)arena_alloc(&g_mem_arena, sz_engine,
 					 DEFAULT_ALIGNMENT);
+	memset(engine, 0, sizeof(engine_t));  
 	engine->adapter_index = -1; // SDL default to first available
 	engine->wnd_width = WINDOW_WIDTH;
 	engine->wnd_height = WINDOW_HEIGHT;
@@ -160,12 +161,13 @@ int main(int argc, char **argv)
 
 	// main loop
 	f64 dt = 0.0;
-	while (engine->state != kEngineStateQuit) {
+	while (engine->state != kEngineStateShutdown) {
 		u64 frame_start_ns = os_get_time_ns();
 
 		switch (engine->state) {
 		case kEngineStateStartup:
 			ent_spawn_player_and_satellite(engine->ent_list);
+			eng_play_sound(engine, "theme_music", DEFAULT_MUSIC_VOLUME);
 			engine->state = kEngineStatePlay;
 			break;
 		case kEngineStatePlay:
@@ -178,7 +180,10 @@ int main(int argc, char **argv)
 
 			eng_refresh(engine, dt);
 			break;
+		default:
 		case kEngineStateQuit:
+			eng_stop_music(engine);
+			engine->state = kEngineStateShutdown;
 			break;
 		}
 

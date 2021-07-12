@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "core/bitfield.h"
 #include "core/c99defs.h"
 #include "core/types.h"
 #include "main.h"
@@ -32,15 +31,15 @@ typedef struct engine_s engine_t;
 #define ENT_NAME_MAX 4096
 
 typedef enum {
-	kEntityMover = 1,
-	kEntityShooter = 2,
-	kEntityDestroyable = 3,
-	kEntityCollider = 4,
-	kEntitySatellite = 5,
-	kEntityBullet = 6,
-	kEntityPlayer = 7,
-	kEntityRenderable = 8,
-	kEntityEnemy = 9
+	kEntityMover = 1 << 0,
+	kEntityShooter = 1 << 1,
+	kEntityDestroyable = 1 << 2,
+	kEntityCollider = 1 << 3,
+	kEntitySatellite = 1 << 4,
+	kEntityBullet = 1 << 5,
+	kEntityPlayer = 1 << 6,
+	kEntityRenderable = 1 << 7,
+	kEntityEnemy = 1 << 9
 } entity_caps_t;
 
 typedef struct entity_s {

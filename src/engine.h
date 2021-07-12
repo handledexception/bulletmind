@@ -33,13 +33,18 @@ typedef struct input_state_s input_state_t;
 
 typedef struct game_resource_s game_resource_t;
 
+typedef struct audio_state_s audio_state_t;
+
 typedef enum {
 	kEngineStateStartup,
 	kEngineStatePlay,
 	kEngineStateQuit,
+	kEngineStateShutdown
 } engine_state_t;
 
 #define MAX_SPAWN_TIMERS 1024
+#define DEFAULT_SFX_VOLUME 12
+#define DEFAULT_MUSIC_VOLUME 25
 
 typedef struct engine_s {
 	i32 adapter_index;
@@ -66,6 +71,8 @@ typedef struct engine_s {
 	game_resource_t **game_resources;
 
 	input_state_t *inputs;
+
+	audio_state_t* audio;
 } engine_t;
 
 extern engine_t *engine;
@@ -78,3 +85,6 @@ void eng_init_timing(void);
 f64 eng_get_time(void);
 
 game_resource_t *eng_get_resource(engine_t *eng, const char *name);
+
+void eng_play_sound(engine_t* eng, const char* name, i32 volume);
+void eng_stop_music(engine_t* eng);

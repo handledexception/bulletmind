@@ -40,26 +40,19 @@
 #include "platform/platform.h"
 
 #include <SDL.h>
-#include <SDL_mixer.h>
 
 #define FOREVER 0.0
 #define BASIC_BULLET_LIFETIME 10.f
 #define PLAYER_ENTITY_INDEX 0
 #define SATELLITE_ENTITY_INDEX 1
 
-static const i32 kPlayerCaps =
-	(1 << kEntityPlayer | 1 << kEntityMover | 1 << kEntityCollider |
-	 1 << kEntityShooter | 1 << kEntityRenderable);
+static const i32 kPlayerCaps = (kEntityPlayer | kEntityMover | kEntityCollider | kEntityShooter | kEntityRenderable);
 
-static const i32 kSatelliteCaps =
-	(1 << kEntitySatellite | 1 << kEntityMover | 1 << kEntityShooter |
-	 1 << kEntityCollider | 1 << kEntityRenderable);
+static const i32 kSatelliteCaps = (kEntitySatellite | kEntityMover | kEntityShooter | kEntityCollider | kEntityRenderable);
 
-static const i32 kBulletCaps = (1 << kEntityBullet | 1 << kEntityMover |
-				1 << kEntityCollider | 1 << kEntityRenderable);
+static const i32 kBulletCaps = (kEntityBullet | kEntityMover | kEntityCollider | kEntityRenderable);
 
-static const i32 kEnemyCaps = (1 << kEntityEnemy | 1 << kEntityMover |
-			       1 << kEntityCollider | 1 << kEntityRenderable);
+static const i32 kEnemyCaps = (kEntityEnemy | kEntityMover | kEntityCollider | kEntityRenderable);
 
 i32 gActiveEntities = 0; // extern
 i32 gLastEntity = 0;     // extern
@@ -169,17 +162,7 @@ void ent_refresh(engine_t *eng, const f64 dt)
 						(f64)BASIC_BULLET_LIFETIME);
 					ent_set_mouse_org(bullet, mouse_pos);
 
-					game_resource_t *source_res =
-						eng_get_resource(
-							engine,
-							"snd_primary_fire");
-					audio_chunk_t *sound_chunk =
-						(audio_chunk_t *)
-							source_res->data;
-					sound_chunk->volume = 12;
-					Mix_PlayChannel(
-						-1, (Mix_Chunk *)sound_chunk,
-						0);
+					eng_play_sound(engine, "snd_primary_fire", DEFAULT_SFX_VOLUME);
 				}
 			}
 		}
@@ -385,12 +368,12 @@ void ent_set_name(entity_t *e, const char *name)
 
 void ent_add_caps(entity_t *e, const entity_caps_t caps)
 {
-	SET_FLAG(e->caps, caps);
+	e->caps |= caps;
 }
 
 void ent_remove_caps(entity_t *e, const entity_caps_t caps)
 {
-	CLEAR_FLAG(e->caps, caps);
+	e->caps &= ~caps;
 }
 
 void ent_set_caps(entity_t *e, const i32 cap_flags)
@@ -400,7 +383,7 @@ void ent_set_caps(entity_t *e, const i32 cap_flags)
 
 bool ent_has_caps(entity_t *e, const entity_caps_t caps)
 {
-	return IS_FLAG_SET(e->caps, caps) != 0;
+	return e->caps & caps;
 }
 
 bool ent_has_no_caps(entity_t *e)
@@ -539,7 +522,7 @@ void ent_move_player(entity_t *player, engine_t *eng, f64 dt)
 void ent_move_satellite(entity_t *satellite, entity_t *player, engine_t *eng,
 			f64 dt)
 {
-	static f32 sat_speed = 750.f;
+	static f32 sat_speed = 1000.f;
 	vec2f_t dist = {0.f, 0.f};
 	vec2f_sub(&dist, player->org, satellite->org);
 	vec2f_norm(&dist, dist);
@@ -551,7 +534,7 @@ void ent_move_satellite(entity_t *satellite, entity_t *player, engine_t *eng,
 
 	static f32 orbit_angle = 0.f;
 	if (is_orbiting) {
-		sat_speed = 350.f;
+		sat_speed = 450.f;
 		vec2f_t orbit_ring = {0.f, 0.f};
 		vec2f_t orbit_vec = {0.f, 0.f};
 		f32 px = player->org.x;
@@ -577,7 +560,7 @@ void ent_move_satellite(entity_t *satellite, entity_t *player, engine_t *eng,
 		// SDL_RenderDrawLine(engine->renderer, player->org.x, player->org.y, satellite->org.x, satellite->org.y);
 		// SDL_SetRenderDrawColor(engine->renderer, r, g, b, a);
 	} else {
-		sat_speed = 750.f;
+		sat_speed = 1000.f;
 		vec2f_mulf(&dist, dist, sat_speed);
 	}
 

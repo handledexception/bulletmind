@@ -15,10 +15,11 @@ bool audio_init(i32 num_channels, i32 sample_rate, i32 chunk_size)
 	logger(LOG_INFO,
 	       "Initialized audio: Channels: %d | Sample rate %d | Chunk Size: %d",
 	       num_channels, sample_rate, chunk_size);
+
 	return true;
 }
 
-bool audio_load_wav(const char *path, audio_chunk_t **data)
+bool audio_load_sound(const char *path, audio_chunk_t **data)
 {
 	audio_chunk_t *chunk = (audio_chunk_t *)arena_alloc(
 		&g_mem_arena, sizeof(audio_chunk_t), DEFAULT_ALIGNMENT);

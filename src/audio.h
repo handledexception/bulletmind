@@ -13,6 +13,13 @@ typedef struct audio_chunk_s {
 	u8 volume; /* Per-sample volume, 0-128 */
 } audio_chunk_t;
 
+typedef struct audio_state_s {
+	void* sfx;
+	void* music;
+	bool music_playing;
+	u8 music_volume;
+} audio_state_t;
+
 bool audio_init(i32 num_channels, i32 sample_rate, i32 chunk_size);
-bool audio_load_wav(const char *path, audio_chunk_t **data);
+bool audio_load_sound(const char *path, audio_chunk_t **data);
 void audio_shutdown();
