@@ -16,16 +16,18 @@
 
 #include "audio.h"
 #include "command.h"
+#include "engine.h"
 #include "font.h"
 #include "input.h"
 #include "main.h"
-#include "core/memarena.h"
 #include "resource.h"
-#include "engine.h"
+
+#include "core/logger.h"
+#include "core/mem_arena.h"
+#include "core/time_convert.h"
 #include "core/utils.h"
 
 #include "platform/platform.h"
-#include "core/time_convert.h"
 
 #include <SDL.h>
 
@@ -80,14 +82,14 @@ bool eng_init(const char *name, i32 version, engine_t *eng)
 				       eng->wnd_height, SDL_WINDOW_SHOWN);
 
 	if (eng->window == NULL) {
-		printf("error creating engine window: %s\n", SDL_GetError());
+		logger(LOG_ERROR, "error creating engine window: %s\n", SDL_GetError());
 		return false;
 	}
 
 	eng->renderer = SDL_CreateRenderer(eng->window, eng->adapter_index,
 					   SDL_RENDERER_ACCELERATED);
 	if (eng->renderer == NULL) {
-		printf("error creating engine renderer: %s\n", SDL_GetError());
+		logger(LOG_ERROR, "error creating engine renderer: %s\n", SDL_GetError());
 		return false;
 	}
 
@@ -121,23 +123,27 @@ bool eng_init(const char *name, i32 version, engine_t *eng)
 		&g_mem_arena, sizeof(input_state_t), DEFAULT_ALIGNMENT);
 	memset(eng->inputs, 0, sizeof(input_state_t));
 
-	audio_init(BM_NUM_AUDIO_CHANNELS, BM_AUDIO_SAMPLE_RATE, BM_AUDIO_CHUNK_SIZE);
-	inp_init(eng->inputs);
-	game_res_init(eng);
-	cmd_init();
-	ent_init(&eng->ent_list, MAX_ENTITIES);
+	if (!audio_init(BM_NUM_AUDIO_CHANNELS, BM_AUDIO_SAMPLE_RATE, BM_AUDIO_CHUNK_SIZE))
+		return false;
+	if (!inp_init(eng->inputs))
+		return false;
+	if (!game_res_init(eng))
+		return false;
+	// cmd_init();
+	if (!ent_init(&eng->ent_list, MAX_ENTITIES))
+		return false;
 	eng_init_timing();
 
 	eng->target_frametime = TARGET_FRAMETIME(eng->target_fps);
 	eng->state = kEngineStateStartup;
 
 	f64 init_end_msec = nsec_to_msec_f64(os_get_time_ns() - init_start);
-	printf("eng_init OK [%fms]\n", init_end_msec);
+	logger(LOG_INFO, "eng_init OK [%fms]\n", init_end_msec);
 
 	return true;
 }
 
-void eng_refresh(engine_t *eng)
+void eng_refresh(engine_t *eng, f64 dt)
 {
 	inp_refresh_mouse(&eng->inputs->mouse, eng->scr_scale_x,
 			  eng->scr_scale_y);
@@ -146,6 +152,9 @@ void eng_refresh(engine_t *eng)
 	while (SDL_PollEvent(&event)) {
 		inp_refresh_pressed(eng->inputs, &event);
 	}
+
+	cmd_refresh(engine);
+	ent_refresh(engine, dt);
 }
 
 void eng_shutdown(engine_t *eng)
@@ -165,5 +174,6 @@ void eng_shutdown(engine_t *eng)
 	eng->window = NULL;
 
 	SDL_Quit();
-	printf("eng_shutdown OK\n\nGoodbye!\n");
+
+	logger(LOG_INFO, "eng_shutdown OK\n\nGoodbye!\n");
 }

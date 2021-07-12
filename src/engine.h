@@ -16,10 +16,12 @@
 
 #pragma once
 
-#include "core/c99defs.h"
-#include "core/types.h"
 #include "entity.h"
 #include "sprite.h"
+
+#include "core/c99defs.h"
+#include "core/types.h"
+
 #include "math/vec2.h"
 
 typedef struct SDL_Window SDL_Window;
@@ -66,7 +68,7 @@ typedef struct engine_s {
 extern engine_t *engine;
 
 bool eng_init(const char *name, i32 version, engine_t *eng);
-void eng_refresh(engine_t *eng);
+void eng_refresh(engine_t *eng, f64 dt);
 void eng_shutdown(engine_t *eng);
 
 void eng_init_timing(void);

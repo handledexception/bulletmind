@@ -14,7 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "core/memalign.h"
+#include "core/mem_align.h"
 
 #include <assert.h>
 #include <malloc.h>

@@ -56,8 +56,8 @@ clang %CFLAGS% ^
 .\src\engine.c ^
 .\src\toml_config.c ^
 .\src\main.c ^
-.\src\memalign.c ^
-.\src\memarena.c ^
+.\src\mem_align.c ^
+.\src\mem_arena.c ^
 .\deps\tomlc99\toml.c ^
 -I.\src -I.\deps\tomlc99 -I.\deps\SDL2\include ^
 -L.\deps\SDL2\lib\x86 ^
@@ -83,5 +83,6 @@ xcopy /Y %ASSETS_PATH%\font_7px_rgba.tga %BUILD_OUT_PATH%\assets\
 xcopy /Y %ASSETS_PATH%\bullet_ps.tga %BUILD_OUT_PATH%\assets\
 xcopy /Y %ASSETS_PATH%\bullet_rgba.tga %BUILD_OUT_PATH%\assets\
 xcopy /Y %ASSETS_PATH%\primary_fire.wav %BUILD_OUT_PATH%\assets\
+xcopy /Y %ASSETS_PATH%\tiled_wall_16x16.tga %BUILD_OUT_PATH%\assets\
 xcopy /Y %CONFIG_PATH%\assets.toml %BUILD_OUT_PATH%\config\
 ECHO.

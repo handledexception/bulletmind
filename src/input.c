@@ -15,7 +15,10 @@
  */
 
 #include "input.h"
-#include "core/memarena.h"
+
+#include "core/logger.h"
+#include "core/mem_arena.h"
+
 #include "platform/platform.h"
 
 #include <stdio.h>
@@ -23,16 +26,29 @@
 
 bool inp_init(input_state_t *inputs)
 {
-	bool result = false;
-
 	if (!inputs)
 		return false;
+	
+	bool ok = inp_init_gamepads(inputs);
+	if (!ok) {
+		logger(LOG_ERROR, "Error initializing gamepads!");
+		return false;
+	}
+	logger(LOG_INFO, "Initialized gamepads OK");
 
-	inp_init_gamepads(inputs);
+	ok = inp_init_keyboard(inputs);
+	if (!ok) {
+		logger(LOG_ERROR, "Error initializing keyboard!");
+		return ok;
+	}
+	logger(LOG_INFO, "Initialized keyboard OK");
 
-	inp_init_keyboard(inputs);
-
-	inp_init_mouse(inputs);
+	ok = inp_init_mouse(inputs);
+	if (!ok) {
+		logger(LOG_ERROR, "Error initializing mouse!");
+		return ok;
+	}
+	logger(LOG_INFO, "Initialized mouse OK");
 
 	inp_bind_virtual_key(inputs, kCommandQuit, kScancodeEscape);
 	inp_bind_virtual_key(inputs, kCommandPlayerUp, kScancodeW);
@@ -59,9 +75,9 @@ bool inp_init(input_state_t *inputs)
 	inp_bind_virtual_mouse_button(inputs, kCommandPlayerAltFire,
 				      SDL_BUTTON_RIGHT);
 
-	printf("inp_init OK\n");
+	logger(LOG_INFO, "inp_init OK\n");
 
-	return result;
+	return true;
 }
 
 void inp_refresh_mouse(mouse_t *mouse, f32 scale_x, f32 scale_y)
@@ -146,13 +162,13 @@ void inp_refresh_pressed(input_state_t *inputs, const SDL_Event *evt)
 			//printf("Controller Button Up - Button: %d\n", evt->cbutton.button);
 			break;
 		case SDL_CONTROLLERDEVICEADDED:
-			printf("Controller Device Added\n");
+			logger(LOG_DEBUG, "Controller Device Added\n");
 			break;
 		case SDL_CONTROLLERDEVICEREMOVED:
-			printf("Controller Device Removed\n");
+			logger(LOG_DEBUG, "Controller Device Removed\n");
 			break;
 		case SDL_CONTROLLERDEVICEREMAPPED:
-			printf("Controller Device Remapped\n");
+			logger(LOG_DEBUG, "Controller Device Remapped\n");
 			break;
 		}
 	}
@@ -160,7 +176,7 @@ void inp_refresh_pressed(input_state_t *inputs, const SDL_Event *evt)
 
 void inp_shutdown(input_state_t *inputs)
 {
-	printf("inp_shutdown OK\n");
+	logger(LOG_INFO, "inp_shutdown OK\n");
 }
 
 bool inp_init_keyboard(input_state_t *inputs)
@@ -196,7 +212,7 @@ bool inp_init_gamepads(input_state_t *inputs)
 		if (gc == NULL) {
 			const char *sdl_err = SDL_GetError();
 			if (sdl_err != NULL && sdl_err[0] != '\0')
-				printf("SDL_GameControllerOpen error: %s\n",
+				logger(LOG_ERROR, "SDL_GameControllerOpen error: %s\n",
 				       sdl_err);
 			gamepad_err = true;
 			continue;
@@ -218,12 +234,12 @@ bool inp_init_gamepads(input_state_t *inputs)
 
 		inputs->gamepads[gdx] = gamepad;
 
-		printf("Gamepad %s connected | Product ID: %d | Vendor ID: %d | Version: %d\n",
+		logger(LOG_INFO, "Gamepad %s connected | Product ID: %d | Vendor ID: %d | Version: %d\n",
 		       gamepad.name, gamepad.product_id, gamepad.vendor_id,
 		       gamepad.version);
 	}
 
-	return gamepad_err;
+	return !gamepad_err;
 }
 
 void inp_set_key_state(key_t *keys, u16 scancode, u8 state)
@@ -434,7 +450,7 @@ bool inp_enumerate_gamepad_buttons(gamepad_t *gamepad)
 		gamepad->buttons[kind].name = button_name;
 		gamepad->buttons[kind].timestamp = os_get_time_ns();
 
-		printf("Enumerated gamepad button %s\n", button_name);
+		logger(LOG_INFO, "Enumerated gamepad button %s\n", button_name);
 	}
 
 	return btn_err;
@@ -458,7 +474,7 @@ bool inp_enumerate_gamepad_axes(gamepad_t *gamepad)
 		if (axis_value == 0) {
 			const char *err = SDL_GetError();
 			if (err != NULL && err[0] != '\0') {
-				printf("SDL_GameControllerGetAxis error: %s\n",
+				logger(LOG_INFO, "SDL_GameControllerGetAxis error: %s\n",
 				       err);
 				axis_err = true;
 			}
@@ -472,7 +488,7 @@ bool inp_enumerate_gamepad_axes(gamepad_t *gamepad)
 		gamepad->axes[kind].kind = kind;
 		gamepad->axes[kind].timestamp = os_get_time_ns();
 
-		printf("Enumerated gamepad axis %s\n", axis_name);
+		logger(LOG_INFO, "Enumerated gamepad axis %s\n", axis_name);
 	}
 
 	return axis_err;
@@ -514,7 +530,7 @@ bool inp_bind_virtual_key(input_state_t *inputs, command_t cmd, u16 scancode)
 	if (cmd < kMaxVirtualButtons && scancode < kScancodeMax) {
 		inputs->buttons[cmd].state = 0;
 		inputs->buttons[cmd].keyboard_key = &inputs->keys[scancode];
-		printf("Command %s bound to key %d\n", cmd_get_name(cmd),
+		logger(LOG_INFO, "Command %s bound to key %d\n", cmd_get_name(cmd),
 		       scancode);
 		return true;
 	}
@@ -529,7 +545,7 @@ bool inp_bind_virtual_mouse_button(input_state_t *inputs, command_t cmd,
 		inputs->buttons[cmd].state = 0;
 		inputs->buttons[cmd].mouse_button =
 			&inputs->mouse.buttons[mouse_button];
-		printf("Command %s bound to mouse button %d\n",
+		logger(LOG_INFO, "Command %s bound to mouse button %d\n",
 		       cmd_get_name(cmd), mouse_button);
 		return true;
 	}
@@ -545,7 +561,7 @@ bool inp_bind_virtual_gamepad_button(input_state_t *inputs, command_t cmd,
 		inputs->buttons[cmd].gamepad_button =
 			&inputs->gamepads[gamepad].buttons[button];
 
-		printf("Command %s bound to gamepad %d/button %d (%s)\n",
+		logger(LOG_INFO, "Command %s bound to gamepad %d/button %d (%s)\n",
 		       cmd_get_name(cmd), gamepad, button,
 		       inputs->gamepads[gamepad].buttons[button].name);
 

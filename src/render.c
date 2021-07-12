@@ -16,10 +16,12 @@
 
 #include "render.h"
 #include "sprite.h"
+
+#include "core/time_convert.h"
+
 #include "math/vec2.h"
 
 #include "platform/platform.h"
-#include "core/time_convert.h"
 
 void draw_rect_solid(SDL_Renderer *rend, i32 x, i32 y, i32 w, i32 h,
 		     rgba_t rgba)

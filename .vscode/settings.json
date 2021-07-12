@@ -27,6 +27,7 @@
         "type_traits": "cpp",
         "xmemory": "cpp",
         "platform.h": "c",
-        "sdl_mixer.h": "c"
+        "sdl_mixer.h": "c",
+        "memalign.h": "c"
     }
 }

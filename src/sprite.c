@@ -21,7 +21,7 @@
 #endif
 
 #include "sprite.h"
-#include "core/memarena.h"
+#include "core/mem_arena.h"
 #include "core/utils.h"
 
 #include <stdio.h>

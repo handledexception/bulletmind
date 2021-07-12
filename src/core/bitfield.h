@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include "core/types.h"
+
 #define SET_FLAG(flags, bit_idx) flags |= (1 << bit_idx)
 #define CLEAR_FLAG(flags, bit_idx) flags &= ~(1 << bit_idx)
 #define TOGGLE_FLAG(flags, bit_idx) flags ^= (1 << bit_idx)
@@ -30,7 +32,7 @@ inline const char *byte_to_bin(u8 x)
 	char *p = b;
 	for (z = 128; z > 0; z >>= 1) {
 		u8 result = (x & z);
-		printf("(%d & %d) = %d\n", x, z, result);
+		// printf("(%d & %d) = %d\n", x, z, result);
 		*p++ = result ? '1' : '0';
 		/* if ((x & z) > 0) {
             *p++ = '1';

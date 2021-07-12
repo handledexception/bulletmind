@@ -16,11 +16,13 @@
 
 #pragma once
 
-#include "scancodes.h"
+#include "command.h"
 
 #include "core/c99defs.h"
-#include "command.h"
+#include "core/scancodes.h"
+
 #include "math/vec2.h"
+
 #include <stdlib.h>
 
 #include <SDL.h>

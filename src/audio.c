@@ -1,5 +1,7 @@
 #include "audio.h"
-#include "core/memarena.h"
+
+#include "core/logger.h"
+#include "core/mem_arena.h"
 
 #include <stdio.h>
 
@@ -9,7 +11,7 @@ bool audio_init(i32 num_channels, i32 sample_rate, i32 chunk_size)
 {
     if (Mix_OpenAudio(sample_rate, MIX_DEFAULT_FORMAT, num_channels, chunk_size) == -1)
         return false;
-    printf("Initialized audio: Channels: %d | Sample rate %d | Chunk Size: %d", num_channels, sample_rate, chunk_size);
+    logger(LOG_INFO, "Initialized audio: Channels: %d | Sample rate %d | Chunk Size: %d", num_channels, sample_rate, chunk_size);
     return true;
 }
 

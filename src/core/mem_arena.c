@@ -13,9 +13,9 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
-#include "core/memarena.h"
-#include "core/memalign.h"
+#include "core/logger.h"
+#include "core/mem_arena.h"
+#include "core/mem_align.h"
 
 #include <assert.h>
 
@@ -56,15 +56,15 @@ void *arena_alloc(arena_t *arena, size_t size, size_t align)
 		arena_allocated_bytes = arena->curr_offset;
 
 #if defined(BM_DEBUG)
-		printf("arena_alloc - this: %zu bytes | used: %zu bytes | remain: %zu bytes | arena size: %zu bytes\n",
-		       arena->curr_offset - arena->prev_offset,
-		       arena_allocated_bytes,
-		       ARENA_TOTAL_BYTES - arena_allocated_bytes,
-		       ARENA_TOTAL_BYTES);
+		// logger(LOG_DEBUG, "arena_alloc - this: %zu bytes | used: %zu bytes | remain: %zu bytes | arena size: %zu bytes\n",
+		//        arena->curr_offset - arena->prev_offset,
+		//        arena_allocated_bytes,
+		//        ARENA_TOTAL_BYTES - arena_allocated_bytes,
+		//        ARENA_TOTAL_BYTES);
 #endif
 		return ptr;
 	} else {
-		printf("Out of arena memory!\n");
+		logger(LOG_ERROR, "Out of arena memory!\n");
 	}
 
 	return NULL;

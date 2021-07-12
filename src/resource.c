@@ -21,10 +21,12 @@
 #endif
 
 #include "audio.h"
-#include "resource.h"
-#include "core/memarena.h"
 #include "engine.h"
+#include "resource.h"
 #include "toml_config.h"
+
+#include "core/logger.h"
+#include "core/mem_arena.h"
 #include "core/utils.h"
 
 #include "platform/platform.h"
@@ -35,30 +37,30 @@
 static const char *kAssetsToml = "config/assets.toml";
 
 //TODO(paulh): Need to add logging!
-int game_res_init(engine_t *eng)
+bool game_res_init(engine_t *eng)
 {
 	toml_table_t *conf = NULL;
 	toml_array_t *asset_list = NULL;
 
 	if (eng == NULL)
-		return 1;
+		return false;
 
 	if (!read_toml_config(kAssetsToml, &conf))
-		return 1;
+		return false;
 
-	printf("Opened game resources config: %s\n", kAssetsToml);
+	logger(LOG_INFO, "Opened game resources config: %s\n", kAssetsToml);
 
 	asset_list = toml_array_in(conf, "assets");
 	if (asset_list == NULL)
-		return 1;
+		return false;
 
 	const size_t num_assets = toml_array_nelem(asset_list);
 	if (num_assets > MAX_GAME_RESOURCES) {
-		printf("Too many assets specified in config %s\n", kAssetsToml);
-		return 1;
+		logger(LOG_ERROR, "Too many assets specified in config %s\n", kAssetsToml);
+		return false;
 	}
 
-	printf("Found %d assets in game resources config.", num_assets);
+	logger(LOG_INFO, "Found %d assets in game resources config.", num_assets);
 
 	eng->game_resources = arena_alloc(
 		&g_mem_arena, sizeof(game_resource_t *) * num_assets,
@@ -70,8 +72,8 @@ int game_res_init(engine_t *eng)
 	for (size_t asset_idx = 0; asset_idx < num_assets; asset_idx++) {
 		toml_table_t *asset = toml_table_at(asset_list, asset_idx);
 		if (asset == NULL) {
-			printf("Error reading asset config %zu\n", asset_idx);
-			continue;
+			logger(LOG_ERROR, "Error reading asset config %zu\n", asset_idx);
+			return false;
 		}
 
 		char *asset_name = NULL;
@@ -86,14 +88,14 @@ int game_res_init(engine_t *eng)
 						    &asset_type_str);
 
 		if (!attr_ok) {
-			printf("Error reading attributes from TOML!\n");
-			continue;
+			logger(LOG_ERROR, "Error reading attributes from TOML!\n");
+			return false;
 		}
 
 		if (!os_file_exists(asset_path)) {
-			printf("Game resource file not found: %s\n",
+			logger(LOG_ERROR, "Game resource file not found: %s\n",
 			       asset_path);
-			continue;
+			return false;
 		}
 
 		const asset_type_t asset_type =
@@ -102,22 +104,22 @@ int game_res_init(engine_t *eng)
 		eng->game_resources[asset_idx] = make_game_resource(
 			eng, asset_name, asset_path, asset_type);
 
-		printf("Loaded game resource: %s (%s)\n", asset_name,
+		logger(LOG_INFO, "Loaded game resource: %s (%s)\n", asset_name,
 		       asset_type_to_string(asset_type));
 
 		num_assets_loaded += 1;
 	}
 
 	if (num_assets_loaded != num_assets) {
-		printf("Error loading assets! %zu/%zu assets loaded.\n",
+		logger(LOG_ERROR, "Error loading assets! %zu/%zu assets loaded.\n",
 		       num_assets_loaded, num_assets);
-		return 1;
+		return false;
 	}
 
-	printf("Successfully loaded %zu/%zu assets.\n", num_assets_loaded,
+	logger(LOG_INFO, "Successfully loaded %zu/%zu assets.\n", num_assets_loaded,
 	       num_assets);
 
-	return 0;
+	return true;
 }
 
 game_resource_t *make_game_resource(engine_t *eng, const char *asset_name,
@@ -233,7 +235,7 @@ game_resource_t *make_game_resource(engine_t *eng, const char *asset_name,
 			resource->data = (void*)audio_chunk;
 		}
 	} else
-		printf("Unknown asset type %d!\n", (int)asset_type);
+		logger(LOG_WARNING, "Unknown asset type %d!\n", (int)asset_type);
 
 	return resource;
 }

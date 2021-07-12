@@ -39,6 +39,7 @@ llvm-ar -crv %BUILD_OUT_PATH%\platform.lib %BUILD_OUT_PATH%\platform.o %BUILD_OU
 ECHO Building Bulletmind x86 in %BUILD_OUT_PATH%...
 clang %CFLAGS% ^
 -D BM_WINDOWS ^
+.\src\audio.c ^
 .\src\binary.c ^
 .\src\buffer.c ^
 .\src\command.c ^
@@ -51,13 +52,13 @@ clang %CFLAGS% ^
 .\src\engine.c ^
 .\src\toml_config.c ^
 .\src\main.c ^
-.\src\memalign.c ^
-.\src\memarena.c ^
+.\src\mem_align.c ^
+.\src\mem_arena.c ^
 .\deps\tomlc99\toml.c ^
 -I.\src -I.\deps\tomlc99 -I.\deps\SDL2\include ^
 -L.\deps\SDL2\lib\x86 ^
 -l%BUILD_OUT_PATH%\platform ^
--lkernel32 -lSDL2main -lSDL2 ^
+-lkernel32 -lSDL2main -lSDL2 -lSDL2_mixer ^
 -Xlinker /SUBSYSTEM:console ^
 -o %BUILD_OUT_PATH%\bmind.exe
 ECHO.
@@ -67,6 +68,7 @@ ECHO Copying dependencies...
 xcopy /Y %SDL_LIB_PATH_X86%\SDL2.lib %BUILD_OUT_PATH%\
 xcopy /Y %SDL_LIB_PATH_X86%\SDL2.dll %BUILD_OUT_PATH%\
 xcopy /Y %SDL_LIB_PATH_X86%\SDL2main.lib %BUILD_OUT_PATH%\
+xcopy /Y %SDL_LIB_PATH_X86%\SDL2_mixer.dll %BUILD_OUT_PATH%\
 ECHO.
 ECHO Copying assets...
 xcopy /Y %ASSETS_PATH%\ss_player.tga %BUILD_OUT_PATH%\assets\
@@ -78,5 +80,7 @@ xcopy /Y %ASSETS_PATH%\font_7px.tga %BUILD_OUT_PATH%\assets\
 xcopy /Y %ASSETS_PATH%\font_7px_rgba.tga %BUILD_OUT_PATH%\assets\
 xcopy /Y %ASSETS_PATH%\bullet_ps.tga %BUILD_OUT_PATH%\assets\
 xcopy /Y %ASSETS_PATH%\bullet_rgba.tga %BUILD_OUT_PATH%\assets\
+xcopy /Y %ASSETS_PATH%\primary_fire.wav %BUILD_OUT_PATH%\assets\
+xcopy /Y %ASSETS_PATH%\tiled_wall_16x16.tga %BUILD_OUT_PATH%\assets\
 xcopy /Y %CONFIG_PATH%\assets.toml %BUILD_OUT_PATH%\config\
 ECHO.

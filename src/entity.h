@@ -40,6 +40,7 @@ typedef enum {
 	kEntityBullet = 6,
 	kEntityPlayer = 7,
 	kEntityRenderable = 8,
+	kEntityEnemy = 9
 } entity_caps_t;
 
 typedef struct entity_s {
@@ -92,6 +93,7 @@ void ent_euler_move(entity_t *e, const vec2f_t accel, const f32 friction,
 		    const f64 dt);
 
 bool ent_spawn_player_and_satellite(entity_t *ent_list);
+bool ent_spawn_enemy(entity_t* ent_list);
 void ent_move_player(entity_t *player, engine_t *eng, const f64 dt);
 
 void ent_move_satellite(entity_t *satellite, entity_t *player, engine_t *eng,

@@ -15,7 +15,7 @@
  */
 
 #include "core/buffer.h"
-#include "core/memalign.h"
+#include "core/mem_align.h"
 
 buffer_t *buffer_new(size_t size)
 {

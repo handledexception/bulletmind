@@ -40,7 +40,7 @@ typedef struct game_resource_s {
 	void *data;
 } game_resource_t;
 
-int game_res_init(engine_t *eng);
+bool game_res_init(engine_t *eng);
 game_resource_t *make_game_resource(engine_t *eng, const char *asset_name,
 				    const char *asset_path,
 				    asset_type_t asset_type);

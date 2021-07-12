@@ -4,23 +4,35 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Clean Build (clang-x86-debug)",
+            "label": "Clean Build",
             "type": "shell",
             "group": "build",
             "windows": {
-                "command": "del /Q ${workspaceFolder}\\out\\windows\\clang-x86-debug\\*",
+                "command": "rmdir /s /q ${workspaceFolder}\\ninja",
             }
         },
         {
-            "label": "Build All (clang-x86-debug)",
+            "label": "CMake Generate Debug",
+            "type": "shell",
+            "group": "build",
+            "dependsOn": "Clean Build",
+            "windows": {
+                "command": "${workspaceFolder}\\cmake-debug-x86.bat"
+            }
+        },
+        {
+            "label": "ninja build debug",
             "type": "shell",
             "group":{
                 "kind": "build",
                 "isDefault": true
             },
-            "dependsOn": "Clean Build (clang-x86-debug)",
             "windows": {
-                "command": "${workspaceFolder}\\clang-x86-debug-build.bat"
+                "command": "ninja",
+                "args": [ "-f", "build.ninja" ]
+            },
+            "options": {
+                "cwd": "${workspaceFolder}\\ninja-debug-x86"
             }
         }
     ]

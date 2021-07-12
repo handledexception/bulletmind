@@ -2,8 +2,8 @@ project (bulletmind)
 
 cmake_minimum_required(VERSION 3.18)
 
-option(BM_BUILD_32BIT "build bulletmind as 32-bit" OFF)
-option(BM_BUILD_64BIT "build bulletmind as 64-bit" ON)
+option(BM_BUILD_32BIT "build bulletmind as 32-bit" ON)
+option(BM_BUILD_64BIT "build bulletmind as 64-bit" OFF)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -30,9 +30,11 @@ set(BM_CORE_HEADERS
     src/core/bitfield.h
     src/core/buffer.h
     src/core/c99defs.h
-    src/core/memalign.h
-    src/core/memarena.h
+    src/core/logger.h
+    src/core/mem_align.h
+    src/core/mem_arena.h
     src/core/rect.h
+    src/core/scancodes.h
     src/core/time_convert.h
     src/core/types.h
     src/core/utils.h)
@@ -40,8 +42,9 @@ set(BM_CORE_HEADERS
 set(BM_CORE_SOURCES
     src/core/binary.c
     src/core/buffer.c
-    src/core/memalign.c
-    src/core/memarena.c)
+    src/core/logger.c
+    src/core/mem_align.c
+    src/core/mem_arena.c)
 
 set(BM_MATH_HEADERS
     src/math/math-defs.h
@@ -67,7 +70,6 @@ set(BM_GAME_HEADERS
     src/main.h
     src/render.h
     src/resource.h
-    src/scancodes.h
     src/sprite.h
     src/toml_config.h)
 

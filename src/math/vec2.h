@@ -139,11 +139,6 @@ static inline void vec2f_friction(vec2f_t *dst, const vec2f_t a, f32 friction)
 	vec2f_mulf(dst, a, new_speed);
 }
 
-typedef struct {
-	i32 x, y;
-	i32 w, h;
-} rect_t;
-
 typedef struct rgba {
 	f32 r;
 	f32 g;

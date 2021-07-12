@@ -25,22 +25,27 @@
 #include "entity.h"
 #include "font.h"
 #include "input.h"
-#include "math/math-defs.h"
-#include "core/memarena.h"
 #include "render.h"
 #include "resource.h"
+
+#include "core/logger.h"
+#include "core/mem_arena.h"
+#include "core/random.h"
+#include "core/rect.h"
+#include "core/time_convert.h"
 #include "core/utils.h"
 
+#include "math/math-defs.h"
+
 #include "platform/platform.h"
-#include "core/time_convert.h"
 
 #include <SDL.h>
 #include <SDL_mixer.h>
 
 #define FOREVER 0.0
-#define BASIC_kEntityBullet_LIFETIME 10.f
-#define kEntityPlayer_ENTITY_INDEX 0
-#define kEntitySatellite_ENTITY_INDEX 1
+#define BASIC_BULLET_LIFETIME 10.f
+#define PLAYER_ENTITY_INDEX 0
+#define SATELLITE_ENTITY_INDEX 1
 
 static const i32 kPlayerCaps =
 	(1 << kEntityPlayer | 1 << kEntityMover | 1 << kEntityCollider |
@@ -51,6 +56,9 @@ static const i32 kSatelliteCaps =
 	 1 << kEntityCollider | 1 << kEntityRenderable);
 
 static const i32 kBulletCaps = (1 << kEntityBullet | 1 << kEntityMover |
+				1 << kEntityCollider | 1 << kEntityRenderable);
+
+static const i32 kEnemyCaps = (1 << kEntityEnemy | 1 << kEntityMover | 
 				1 << kEntityCollider | 1 << kEntityRenderable);
 
 i32 gActiveEntities = 0; // extern
@@ -68,7 +76,7 @@ bool ent_init(entity_t **ent_list, const i32 num_ents)
 					    DEFAULT_ALIGNMENT);
 	memset(*ent_list, 0, sz_ent_list);
 
-	printf("ent_init OK\n");
+	logger(LOG_INFO, "ent_init OK\n");
 
 	return true;
 }
@@ -82,6 +90,8 @@ void ent_refresh(engine_t *eng, const f64 dt)
 	vec2f_t mouse_pos = {0.f, 0.f};
 	mouse_pos.x = (f32)eng->inputs->mouse.window_pos.x;
 	mouse_pos.y = (f32)eng->inputs->mouse.window_pos.y;
+
+	ent_spawn_enemy(ent_list);
 
 	gActiveEntities = 0;
 	for (i32 edx = 0; edx < MAX_ENTITIES; edx++) {
@@ -102,7 +112,7 @@ void ent_refresh(engine_t *eng, const f64 dt)
 				ent_move_player(e, eng, dt);
 			if (!strcmp(e->name, "satellite")) {
 				entity_t *player = ent_by_index(
-					ent_list, kEntityPlayer_ENTITY_INDEX);
+					ent_list, PLAYER_ENTITY_INDEX);
 				ent_move_satellite(e, player, eng, dt);
 			}
 			if (!strcmp(e->name, "bullet"))
@@ -129,7 +139,7 @@ void ent_refresh(engine_t *eng, const f64 dt)
 				if (cmd_get_state(eng->inputs,
 						  kCommandPlayerAltFire) ==
 				    true) {
-					printf("eng_refresh - kCommandPlayerAltFire triggered!\n");
+					logger(LOG_INFO, "eng_refresh - kCommandPlayerAltFire triggered!\n");
 				}
 
 				// player shooting
@@ -141,7 +151,7 @@ void ent_refresh(engine_t *eng, const f64 dt)
 						       p_weap_fire_rate;
 					entity_t *player = ent_by_index(
 						ent_list,
-						kEntityPlayer_ENTITY_INDEX);
+						PLAYER_ENTITY_INDEX);
 					vec2f_t bullet_org = player->org;
 					// vec2f_t mouse = {mouse_pos.x, mouse_pos.y};
 					const vec2i_t bullet_size = {8, 8};
@@ -151,7 +161,7 @@ void ent_refresh(engine_t *eng, const f64 dt)
 						ent_list, "bullet", bullet_org,
 						bullet_size, &bullet_color,
 						kBulletCaps,
-						(f64)BASIC_kEntityBullet_LIFETIME);
+						(f64)BASIC_BULLET_LIFETIME);
 					ent_set_mouse_org(bullet, mouse_pos);
 
 					game_resource_t* source_res = eng_get_resource(engine, "snd_primary_fire");
@@ -192,12 +202,12 @@ void ent_refresh(engine_t *eng, const f64 dt)
 						  sprite_sheet, &e->bbox,
 						  frame_scale, e->angle, flip);
 			}
-			if (!strcmp(e->name, "satellite")) {
+			else if (!strcmp(e->name, "satellite")) {
 				draw_rect_solid(engine->renderer,
 						(f32)e->bbox.x, (f32)e->bbox.y,
 						e->size.x, e->size.y, e->color);
 			}
-			if (!strcmp(e->name, "bullet")) {
+			else if (!strcmp(e->name, "bullet")) {
 				//TODO(paulh): Need a game_resource_t method for get_resource_by_name
 				game_resource_t *resource =
 					eng_get_resource(engine, "bullet");
@@ -220,6 +230,11 @@ void ent_refresh(engine_t *eng, const f64 dt)
 				SDL_RenderCopyEx(engine->renderer,
 						 sprite->texture, NULL, &dst,
 						 e->angle, NULL, SDL_FLIP_NONE);
+			}
+			else {
+				draw_rect_solid(engine->renderer,
+					(f32)e->bbox.x, (f32)e->bbox.y,
+					e->size.x, e->size.y, e->color);
 			}
 		}
 
@@ -244,7 +259,7 @@ void ent_refresh(engine_t *eng, const f64 dt)
 
 void ent_shutdown(entity_t *ent_list)
 {
-	printf("ent_shutdown OK\n");
+	logger(LOG_INFO, "ent_shutdown OK\n");
 }
 
 entity_t *ent_new(entity_t *ent_list)
@@ -255,12 +270,12 @@ entity_t *ent_new(entity_t *ent_list)
 	for (i32 edx = 0; edx < MAX_ENTITIES; edx++) {
 		e = ent_by_index(ent_list, edx);
 		if (e == NULL) {
-			printf("Entity slot %d is NULL!\n", edx);
+			logger(LOG_WARNING, "Entity slot %d is NULL!\n", edx);
 			continue;
 		}
 
 		if (ent_has_no_caps(e)) {
-			printf("ent_new: found empty slot %d for entity\n",
+			logger(LOG_INFO, "ent_new: found empty slot %d for entity\n",
 			       edx);
 			memset(e, 0, sizeof(entity_t));
 			e->index = edx;
@@ -275,7 +290,7 @@ entity_t *ent_by_index(entity_t *ent_list, const i32 idx)
 {
 	entity_t *e = &ent_list[idx];
 	if (e == NULL) {
-		printf("ent_by_index - NULL entity at index %d\n", idx);
+		logger(LOG_WARNING, "ent_by_index - NULL entity at index %d\n", idx);
 	}
 
 	return e;
@@ -323,10 +338,10 @@ entity_t *ent_spawn(entity_t *ent_list, const char *name, const vec2f_t org,
 		else
 			e->lifetime = e->timestamp + lifetime;
 
-		printf("ent_spawn: (%f) \"%s\" with caps %d\n", e->timestamp,
-		       e->name, caps);
+		logger(LOG_INFO, "ent_spawn: (%f) \"%s\" with caps %d\n",
+			e->timestamp, e->name, caps);
 	} else
-		printf("ent_spawn: no slots found to spawn entity %s\n", name);
+		logger(LOG_WARNING, "ent_spawn: no slots found to spawn entity %s\n", name);
 
 	return e;
 }
@@ -335,7 +350,7 @@ void ent_lifetime_update(entity_t *e)
 {
 	// kill entities that have a fixed lifetime
 	if (e->lifetime > 0.0 && (eng_get_time() >= e->lifetime)) {
-		printf("Entity %s lifetime expired\n", e->name);
+		logger(LOG_INFO, "Entity %s lifetime expired\n", e->name);
 		e->caps = 0;
 	}
 }
@@ -429,7 +444,7 @@ bool ent_spawn_player_and_satellite(entity_t *ent_list)
 				     player_size, &player_color, kPlayerCaps,
 				     FOREVER);
 	if (player == NULL) {
-		printf("ent_init - failed to initialize player entity!\n");
+		logger(LOG_ERROR, "ent_init - failed to initialize player entity!\n");
 		return false;
 	}
 
@@ -444,7 +459,21 @@ bool ent_spawn_player_and_satellite(entity_t *ent_list)
 					sat_size, &sat_color, kSatelliteCaps,
 					FOREVER);
 	if (satellite == NULL) {
-		printf("ent_init - failed to initialize satellite entity!\n");
+		logger(LOG_ERROR, "ent_init - failed to initialize satellite entity!\n");
+		return false;
+	}
+
+	return true;
+}
+
+bool ent_spawn_enemy(entity_t* ent_list)
+{
+	vec2f_t org = { (f32)gen_random(0, CAMERA_WIDTH, 1), (f32)gen_random(0, CAMERA_HEIGHT, 3) };
+	vec2i_t size = { 16, 16 };
+	rgba_t color = { 0xf0, 0x36, 0x00, 0xff };
+	entity_t* enemy = ent_spawn(ent_list, "enemy", org, size, &color, kEnemyCaps, FOREVER);
+	if (enemy == NULL) {
+		logger(LOG_ERROR, "ent_init - failed to spawn enemy!");
 		return false;
 	}
 
