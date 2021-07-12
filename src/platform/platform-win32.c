@@ -63,7 +63,7 @@ f64 os_get_time_msec(void)
 	return nsec_to_msec_f64(os_get_time_ns());
 }
 
-bool os_file_exists(const char* path)
+bool os_file_exists(const char *path)
 {
 	WIN32_FIND_DATAW wfd;
 	HANDLE hFind;

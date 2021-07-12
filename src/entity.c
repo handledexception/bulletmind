@@ -58,8 +58,8 @@ static const i32 kSatelliteCaps =
 static const i32 kBulletCaps = (1 << kEntityBullet | 1 << kEntityMover |
 				1 << kEntityCollider | 1 << kEntityRenderable);
 
-static const i32 kEnemyCaps = (1 << kEntityEnemy | 1 << kEntityMover | 
-				1 << kEntityCollider | 1 << kEntityRenderable);
+static const i32 kEnemyCaps = (1 << kEntityEnemy | 1 << kEntityMover |
+			       1 << kEntityCollider | 1 << kEntityRenderable);
 
 i32 gActiveEntities = 0; // extern
 i32 gLastEntity = 0;     // extern
@@ -139,7 +139,8 @@ void ent_refresh(engine_t *eng, const f64 dt)
 				if (cmd_get_state(eng->inputs,
 						  kCommandPlayerAltFire) ==
 				    true) {
-					logger(LOG_INFO, "eng_refresh - kCommandPlayerAltFire triggered!\n");
+					logger(LOG_INFO,
+					       "eng_refresh - kCommandPlayerAltFire triggered!\n");
 				}
 
 				// player shooting
@@ -150,8 +151,7 @@ void ent_refresh(engine_t *eng, const f64 dt)
 					p_shoot_time = os_get_time_sec() +
 						       p_weap_fire_rate;
 					entity_t *player = ent_by_index(
-						ent_list,
-						PLAYER_ENTITY_INDEX);
+						ent_list, PLAYER_ENTITY_INDEX);
 					vec2f_t bullet_org = player->org;
 					// vec2f_t mouse = {mouse_pos.x, mouse_pos.y};
 					const vec2i_t bullet_size = {8, 8};
@@ -164,10 +164,17 @@ void ent_refresh(engine_t *eng, const f64 dt)
 						(f64)BASIC_BULLET_LIFETIME);
 					ent_set_mouse_org(bullet, mouse_pos);
 
-					game_resource_t* source_res = eng_get_resource(engine, "snd_primary_fire");
-					audio_chunk_t* sound_chunk = (audio_chunk_t*)source_res->data;
+					game_resource_t *source_res =
+						eng_get_resource(
+							engine,
+							"snd_primary_fire");
+					audio_chunk_t *sound_chunk =
+						(audio_chunk_t *)
+							source_res->data;
 					sound_chunk->volume = 12;
-					Mix_PlayChannel(-1, (Mix_Chunk*)sound_chunk, 0);
+					Mix_PlayChannel(
+						-1, (Mix_Chunk *)sound_chunk,
+						0);
 				}
 			}
 		}
@@ -201,13 +208,11 @@ void ent_refresh(engine_t *eng, const f64 dt)
 				draw_sprite_sheet(engine->renderer,
 						  sprite_sheet, &e->bbox,
 						  frame_scale, e->angle, flip);
-			}
-			else if (!strcmp(e->name, "satellite")) {
+			} else if (!strcmp(e->name, "satellite")) {
 				draw_rect_solid(engine->renderer,
 						(f32)e->bbox.x, (f32)e->bbox.y,
 						e->size.x, e->size.y, e->color);
-			}
-			else if (!strcmp(e->name, "bullet")) {
+			} else if (!strcmp(e->name, "bullet")) {
 				//TODO(paulh): Need a game_resource_t method for get_resource_by_name
 				game_resource_t *resource =
 					eng_get_resource(engine, "bullet");
@@ -230,11 +235,10 @@ void ent_refresh(engine_t *eng, const f64 dt)
 				SDL_RenderCopyEx(engine->renderer,
 						 sprite->texture, NULL, &dst,
 						 e->angle, NULL, SDL_FLIP_NONE);
-			}
-			else {
+			} else {
 				draw_rect_solid(engine->renderer,
-					(f32)e->bbox.x, (f32)e->bbox.y,
-					e->size.x, e->size.y, e->color);
+						(f32)e->bbox.x, (f32)e->bbox.y,
+						e->size.x, e->size.y, e->color);
 			}
 		}
 
@@ -275,7 +279,8 @@ entity_t *ent_new(entity_t *ent_list)
 		}
 
 		if (ent_has_no_caps(e)) {
-			logger(LOG_INFO, "ent_new: found empty slot %d for entity\n",
+			logger(LOG_INFO,
+			       "ent_new: found empty slot %d for entity\n",
 			       edx);
 			memset(e, 0, sizeof(entity_t));
 			e->index = edx;
@@ -290,7 +295,8 @@ entity_t *ent_by_index(entity_t *ent_list, const i32 idx)
 {
 	entity_t *e = &ent_list[idx];
 	if (e == NULL) {
-		logger(LOG_WARNING, "ent_by_index - NULL entity at index %d\n", idx);
+		logger(LOG_WARNING, "ent_by_index - NULL entity at index %d\n",
+		       idx);
 	}
 
 	return e;
@@ -339,9 +345,10 @@ entity_t *ent_spawn(entity_t *ent_list, const char *name, const vec2f_t org,
 			e->lifetime = e->timestamp + lifetime;
 
 		logger(LOG_INFO, "ent_spawn: (%f) \"%s\" with caps %d\n",
-			e->timestamp, e->name, caps);
+		       e->timestamp, e->name, caps);
 	} else
-		logger(LOG_WARNING, "ent_spawn: no slots found to spawn entity %s\n", name);
+		logger(LOG_WARNING,
+		       "ent_spawn: no slots found to spawn entity %s\n", name);
 
 	return e;
 }
@@ -444,7 +451,8 @@ bool ent_spawn_player_and_satellite(entity_t *ent_list)
 				     player_size, &player_color, kPlayerCaps,
 				     FOREVER);
 	if (player == NULL) {
-		logger(LOG_ERROR, "ent_init - failed to initialize player entity!\n");
+		logger(LOG_ERROR,
+		       "ent_init - failed to initialize player entity!\n");
 		return false;
 	}
 
@@ -459,19 +467,22 @@ bool ent_spawn_player_and_satellite(entity_t *ent_list)
 					sat_size, &sat_color, kSatelliteCaps,
 					FOREVER);
 	if (satellite == NULL) {
-		logger(LOG_ERROR, "ent_init - failed to initialize satellite entity!\n");
+		logger(LOG_ERROR,
+		       "ent_init - failed to initialize satellite entity!\n");
 		return false;
 	}
 
 	return true;
 }
 
-bool ent_spawn_enemy(entity_t* ent_list)
+bool ent_spawn_enemy(entity_t *ent_list)
 {
-	vec2f_t org = { (f32)gen_random(0, CAMERA_WIDTH, 1), (f32)gen_random(0, CAMERA_HEIGHT, 3) };
-	vec2i_t size = { 16, 16 };
-	rgba_t color = { 0xf0, 0x36, 0x00, 0xff };
-	entity_t* enemy = ent_spawn(ent_list, "enemy", org, size, &color, kEnemyCaps, FOREVER);
+	vec2f_t org = {(f32)gen_random(0, CAMERA_WIDTH, 1),
+		       (f32)gen_random(0, CAMERA_HEIGHT, 3)};
+	vec2i_t size = {16, 16};
+	rgba_t color = {0xf0, 0x36, 0x00, 0xff};
+	entity_t *enemy = ent_spawn(ent_list, "enemy", org, size, &color,
+				    kEnemyCaps, FOREVER);
 	if (enemy == NULL) {
 		logger(LOG_ERROR, "ent_init - failed to spawn enemy!");
 		return false;

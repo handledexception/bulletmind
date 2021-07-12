@@ -82,14 +82,16 @@ bool eng_init(const char *name, i32 version, engine_t *eng)
 				       eng->wnd_height, SDL_WINDOW_SHOWN);
 
 	if (eng->window == NULL) {
-		logger(LOG_ERROR, "error creating engine window: %s\n", SDL_GetError());
+		logger(LOG_ERROR, "error creating engine window: %s\n",
+		       SDL_GetError());
 		return false;
 	}
 
 	eng->renderer = SDL_CreateRenderer(eng->window, eng->adapter_index,
 					   SDL_RENDERER_ACCELERATED);
 	if (eng->renderer == NULL) {
-		logger(LOG_ERROR, "error creating engine renderer: %s\n", SDL_GetError());
+		logger(LOG_ERROR, "error creating engine renderer: %s\n",
+		       SDL_GetError());
 		return false;
 	}
 
@@ -123,7 +125,8 @@ bool eng_init(const char *name, i32 version, engine_t *eng)
 		&g_mem_arena, sizeof(input_state_t), DEFAULT_ALIGNMENT);
 	memset(eng->inputs, 0, sizeof(input_state_t));
 
-	if (!audio_init(BM_NUM_AUDIO_CHANNELS, BM_AUDIO_SAMPLE_RATE, BM_AUDIO_CHUNK_SIZE))
+	if (!audio_init(BM_NUM_AUDIO_CHANNELS, BM_AUDIO_SAMPLE_RATE,
+			BM_AUDIO_CHUNK_SIZE))
 		return false;
 	if (!inp_init(eng->inputs))
 		return false;

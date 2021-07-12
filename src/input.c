@@ -28,7 +28,7 @@ bool inp_init(input_state_t *inputs)
 {
 	if (!inputs)
 		return false;
-	
+
 	bool ok = inp_init_gamepads(inputs);
 	if (!ok) {
 		logger(LOG_ERROR, "Error initializing gamepads!");
@@ -212,7 +212,8 @@ bool inp_init_gamepads(input_state_t *inputs)
 		if (gc == NULL) {
 			const char *sdl_err = SDL_GetError();
 			if (sdl_err != NULL && sdl_err[0] != '\0')
-				logger(LOG_ERROR, "SDL_GameControllerOpen error: %s\n",
+				logger(LOG_ERROR,
+				       "SDL_GameControllerOpen error: %s\n",
 				       sdl_err);
 			gamepad_err = true;
 			continue;
@@ -234,7 +235,8 @@ bool inp_init_gamepads(input_state_t *inputs)
 
 		inputs->gamepads[gdx] = gamepad;
 
-		logger(LOG_INFO, "Gamepad %s connected | Product ID: %d | Vendor ID: %d | Version: %d\n",
+		logger(LOG_INFO,
+		       "Gamepad %s connected | Product ID: %d | Vendor ID: %d | Version: %d\n",
 		       gamepad.name, gamepad.product_id, gamepad.vendor_id,
 		       gamepad.version);
 	}
@@ -474,7 +476,8 @@ bool inp_enumerate_gamepad_axes(gamepad_t *gamepad)
 		if (axis_value == 0) {
 			const char *err = SDL_GetError();
 			if (err != NULL && err[0] != '\0') {
-				logger(LOG_INFO, "SDL_GameControllerGetAxis error: %s\n",
+				logger(LOG_INFO,
+				       "SDL_GameControllerGetAxis error: %s\n",
 				       err);
 				axis_err = true;
 			}
@@ -530,8 +533,8 @@ bool inp_bind_virtual_key(input_state_t *inputs, command_t cmd, u16 scancode)
 	if (cmd < kMaxVirtualButtons && scancode < kScancodeMax) {
 		inputs->buttons[cmd].state = 0;
 		inputs->buttons[cmd].keyboard_key = &inputs->keys[scancode];
-		logger(LOG_INFO, "Command %s bound to key %d\n", cmd_get_name(cmd),
-		       scancode);
+		logger(LOG_INFO, "Command %s bound to key %d\n",
+		       cmd_get_name(cmd), scancode);
 		return true;
 	}
 
@@ -561,7 +564,8 @@ bool inp_bind_virtual_gamepad_button(input_state_t *inputs, command_t cmd,
 		inputs->buttons[cmd].gamepad_button =
 			&inputs->gamepads[gamepad].buttons[button];
 
-		logger(LOG_INFO, "Command %s bound to gamepad %d/button %d (%s)\n",
+		logger(LOG_INFO,
+		       "Command %s bound to gamepad %d/button %d (%s)\n",
 		       cmd_get_name(cmd), gamepad, button,
 		       inputs->gamepads[gamepad].buttons[button].name);
 

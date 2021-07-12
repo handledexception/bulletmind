@@ -56,11 +56,13 @@ bool game_res_init(engine_t *eng)
 
 	const size_t num_assets = toml_array_nelem(asset_list);
 	if (num_assets > MAX_GAME_RESOURCES) {
-		logger(LOG_ERROR, "Too many assets specified in config %s\n", kAssetsToml);
+		logger(LOG_ERROR, "Too many assets specified in config %s\n",
+		       kAssetsToml);
 		return false;
 	}
 
-	logger(LOG_INFO, "Found %d assets in game resources config.", num_assets);
+	logger(LOG_INFO, "Found %d assets in game resources config.",
+	       num_assets);
 
 	eng->game_resources = arena_alloc(
 		&g_mem_arena, sizeof(game_resource_t *) * num_assets,
@@ -72,7 +74,8 @@ bool game_res_init(engine_t *eng)
 	for (size_t asset_idx = 0; asset_idx < num_assets; asset_idx++) {
 		toml_table_t *asset = toml_table_at(asset_list, asset_idx);
 		if (asset == NULL) {
-			logger(LOG_ERROR, "Error reading asset config %zu\n", asset_idx);
+			logger(LOG_ERROR, "Error reading asset config %zu\n",
+			       asset_idx);
 			return false;
 		}
 
@@ -88,7 +91,8 @@ bool game_res_init(engine_t *eng)
 						    &asset_type_str);
 
 		if (!attr_ok) {
-			logger(LOG_ERROR, "Error reading attributes from TOML!\n");
+			logger(LOG_ERROR,
+			       "Error reading attributes from TOML!\n");
 			return false;
 		}
 
@@ -111,13 +115,14 @@ bool game_res_init(engine_t *eng)
 	}
 
 	if (num_assets_loaded != num_assets) {
-		logger(LOG_ERROR, "Error loading assets! %zu/%zu assets loaded.\n",
+		logger(LOG_ERROR,
+		       "Error loading assets! %zu/%zu assets loaded.\n",
 		       num_assets_loaded, num_assets);
 		return false;
 	}
 
-	logger(LOG_INFO, "Successfully loaded %zu/%zu assets.\n", num_assets_loaded,
-	       num_assets);
+	logger(LOG_INFO, "Successfully loaded %zu/%zu assets.\n",
+	       num_assets_loaded, num_assets);
 
 	return true;
 }
@@ -223,19 +228,20 @@ game_resource_t *make_game_resource(engine_t *eng, const char *asset_name,
 		}
 	} else if (asset_type == kAssetTypeAudioClip) {
 		//TODO SDL_Mixer
-		audio_chunk_t* audio_chunk = NULL;
+		audio_chunk_t *audio_chunk = NULL;
 		if (audio_load_wav(asset_path, &audio_chunk)) {
 			resource = arena_alloc(&g_mem_arena,
-				sizeof(game_resource_t),
-				DEFAULT_ALIGNMENT);
-			
+					       sizeof(game_resource_t),
+					       DEFAULT_ALIGNMENT);
+
 			sprintf(resource->name, "%s", asset_name);
 			sprintf(resource->path, "%s", asset_path);
 			resource->type = asset_type;
-			resource->data = (void*)audio_chunk;
+			resource->data = (void *)audio_chunk;
 		}
 	} else
-		logger(LOG_WARNING, "Unknown asset type %d!\n", (int)asset_type);
+		logger(LOG_WARNING, "Unknown asset type %d!\n",
+		       (int)asset_type);
 
 	return resource;
 }
