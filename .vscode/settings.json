@@ -29,5 +29,6 @@
         "platform.h": "c",
         "sdl_mixer.h": "c",
         "memalign.h": "c"
-    }
+    },
+    "cmake.configureOnOpen": false
 }

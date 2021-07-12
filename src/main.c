@@ -144,6 +144,8 @@ int main(int argc, char **argv)
 	engine->scr_scale_x = (f32)WINDOW_WIDTH / (f32)CAMERA_WIDTH;
 	engine->scr_scale_y = (f32)WINDOW_HEIGHT / (f32)CAMERA_HEIGHT;
 	engine->target_fps = 60.f;
+	for (size_t i = 0; i < MAX_SPAWN_TIMERS; i++)
+		engine->spawn_timer[i] = 0.0;
 #if defined(BM_DEBUG)
 	engine->debug = true;
 #else

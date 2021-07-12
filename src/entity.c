@@ -91,7 +91,12 @@ void ent_refresh(engine_t *eng, const f64 dt)
 	mouse_pos.x = (f32)eng->inputs->mouse.window_pos.x;
 	mouse_pos.y = (f32)eng->inputs->mouse.window_pos.y;
 
-	ent_spawn_enemy(ent_list);
+	if (eng->spawn_timer[0] == 0.0)
+		eng->spawn_timer[0] = eng_get_time() + 2.0;
+	if (eng_get_time() >= eng->spawn_timer[0]) {
+		ent_spawn_enemy(ent_list);
+		eng->spawn_timer[0] = 0.0;
+	}
 
 	gActiveEntities = 0;
 	for (i32 edx = 0; edx < MAX_ENTITIES; edx++) {
@@ -259,6 +264,8 @@ void ent_refresh(engine_t *eng, const f64 dt)
 		// 	}
 		// }
 	}
+
+	// logger(LOG_INFO, "engine time: %f", eng_get_time());
 }
 
 void ent_shutdown(entity_t *ent_list)

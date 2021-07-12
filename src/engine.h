@@ -39,6 +39,8 @@ typedef enum {
 	kEngineStateQuit,
 } engine_state_t;
 
+#define MAX_SPAWN_TIMERS 1024
+
 typedef struct engine_s {
 	i32 adapter_index;
 
@@ -55,6 +57,7 @@ typedef struct engine_s {
 	f32 target_fps;
 	f64 target_frametime;
 	i32 frame_count;
+	f64 spawn_timer[MAX_SPAWN_TIMERS];
 
 	engine_state_t state;
 	bool debug;
