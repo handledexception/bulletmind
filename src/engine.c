@@ -38,16 +38,21 @@
 
 engine_t *engine = NULL;
 
-static f64 engine_start_time;
+static u64 engine_start_ticks = 0ULL;
 
-void eng_init_timing(void)
+void eng_init_time(void)
 {
-	engine_start_time = os_get_time_sec();
+	engine_start_ticks = os_get_time_ns();
 }
 
-f64 eng_get_time(void)
+u64 eng_get_time_ns(void)
 {
-	return os_get_time_sec() - engine_start_time;
+	return os_get_time_ns() - engine_start_ticks;
+}
+
+f64 eng_get_time_sec(void)
+{
+	return nsec_to_sec_f64(eng_get_time_ns());
 }
 
 game_resource_t *eng_get_resource(engine_t *eng, const char *name)
@@ -140,7 +145,7 @@ bool eng_init(const char *name, i32 version, engine_t *eng)
 	// cmd_init();
 	if (!ent_init(&eng->ent_list, MAX_ENTITIES))
 		return false;
-	eng_init_timing();
+	eng_init_time();
 
 	eng->target_frametime = TARGET_FRAMETIME(eng->target_fps);
 	eng->state = kEngineStateStartup;

@@ -31,3 +31,4 @@ typedef float f32;
 typedef double f64;
 
 #include "core/rect.h"
+#include "core/video.h"

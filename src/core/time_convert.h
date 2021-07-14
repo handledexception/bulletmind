@@ -23,6 +23,11 @@ static inline u64 sec_to_msec_u64(f64 sec)
 	return (u64)(sec * 1000.0);
 }
 
+static inline u64 sec_to_nsec_u64(f64 sec)
+{
+	return (u64)(sec * 1e+9);
+}
+
 static inline f64 nsec_to_sec_f64(const u64 nanos)
 {
 	return (f64)((f64)nanos / (f64)1000000000ULL);

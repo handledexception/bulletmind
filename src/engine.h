@@ -81,8 +81,9 @@ bool eng_init(const char *name, i32 version, engine_t *eng);
 void eng_refresh(engine_t *eng, f64 dt);
 void eng_shutdown(engine_t *eng);
 
-void eng_init_timing(void);
-f64 eng_get_time(void);
+void eng_init_time(void);
+u64 eng_get_time_ns(void);
+f64 eng_get_time_sec(void);
 
 game_resource_t *eng_get_resource(engine_t *eng, const char *name);
 

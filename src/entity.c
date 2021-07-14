@@ -84,9 +84,16 @@ void ent_refresh(engine_t *eng, const f64 dt)
 	mouse_pos.x = (f32)eng->inputs->mouse.window_pos.x;
 	mouse_pos.y = (f32)eng->inputs->mouse.window_pos.y;
 
+	// static u64 future = 0;
+	// if (future == 0)
+	// 	future = eng_get_time_ns() + sec_to_nsec_u64(2.0);
+	// if (eng_get_time_ns() - future <= 0) {
+	// 	future = 0;
+	// 	ent_spawn_enemy(ent_list);
+	// }
 	if (eng->spawn_timer[0] == 0.0)
-		eng->spawn_timer[0] = eng_get_time() + 2.0;
-	if (eng_get_time() >= eng->spawn_timer[0]) {
+		eng->spawn_timer[0] = eng_get_time_sec() + 2.0;
+	if (eng_get_time_sec() >= eng->spawn_timer[0]) {
 		ent_spawn_enemy(ent_list);
 		eng->spawn_timer[0] = 0.0;
 	}
@@ -248,7 +255,7 @@ void ent_refresh(engine_t *eng, const f64 dt)
 		// }
 	}
 
-	// logger(LOG_INFO, "engine time: %f", eng_get_time());
+	// logger(LOG_INFO, "engine time: %f", eng_get_time_sec());
 }
 
 void ent_shutdown(entity_t *ent_list)
@@ -327,7 +334,7 @@ entity_t *ent_spawn(entity_t *ent_list, const char *name, const vec2f_t org,
 		e->color = *color;
 		e->angle = 0.f;
 		e->bbox = bounding;
-		e->timestamp = eng_get_time();
+		e->timestamp = eng_get_time_sec();
 
 		if (!lifetime)
 			e->lifetime = lifetime;
@@ -346,7 +353,7 @@ entity_t *ent_spawn(entity_t *ent_list, const char *name, const vec2f_t org,
 void ent_lifetime_update(entity_t *e)
 {
 	// kill entities that have a fixed lifetime
-	if (e->lifetime > 0.0 && (eng_get_time() >= e->lifetime)) {
+	if (e->lifetime > 0.0 && (eng_get_time_sec() >= e->lifetime)) {
 		logger(LOG_INFO, "Entity %s lifetime expired\n", e->name);
 		e->caps = 0;
 	}
