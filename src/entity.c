@@ -115,13 +115,20 @@ void ent_refresh(engine_t *eng, const f64 dt)
 		if (ent_has_caps(e, kEntityMover)) {
 			if (!strcmp(e->name, "player"))
 				ent_move_player(e, eng, dt);
-			if (!strcmp(e->name, "satellite")) {
+			else if (!strcmp(e->name, "satellite")) {
 				entity_t *player = ent_by_index(
 					ent_list, PLAYER_ENTITY_INDEX);
 				ent_move_satellite(e, player, eng, dt);
 			}
-			if (!strcmp(e->name, "bullet"))
+			else if (!strcmp(e->name, "bullet")) {
 				ent_move_bullet(e, eng, dt);
+			}
+			
+			if (ent_has_caps(e, kEntityEnemy)) {
+				entity_t* player = ent_by_index(
+					ent_list, PLAYER_ENTITY_INDEX);
+				ent_move_enemy(e, player, eng, dt);
+			}
 		}
 
 		if (ent_has_caps(e, kEntityShooter)) {
@@ -587,6 +594,19 @@ void ent_move_bullet(entity_t *bullet, engine_t *eng, f64 dt)
 	// reflection: r = d-2(d*n)n where d*nd*n is the dot product, and nn must be normalized.
 	ent_euler_move(bullet, dist, 0.0, dt);
 	ent_bbox_update(bullet);
+}
+
+void ent_move_enemy(entity_t* enemy, entity_t* player, engine_t* eng, f64 dt)
+{
+	vec2f_t dist = {0.f, 0.f};
+
+	// if (enemy->vel.x == 0.f && enemy->vel.y == 0.f) {
+		vec2f_sub(&dist, player->org, enemy->org);
+		vec2f_norm(&dist, dist);
+		vec2f_mulf(&dist, dist, 150.f);
+	// }
+	ent_euler_move(enemy, dist, 0.0, dt);
+	ent_bbox_update(enemy);
 }
 
 #ifdef _CRT_SECURE_NO_WARNINGS

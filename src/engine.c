@@ -210,7 +210,7 @@ void eng_play_sound(engine_t* eng, const char* name, i32 volume)
 			}
 			if (!eng->audio->music_playing) {
 				Mix_VolumeMusic(volume);
-				Mix_FadeInMusic(eng->audio->music, 0, 250);
+				Mix_FadeInMusic(eng->audio->music, -1, 250);
 				eng->audio->music_volume = volume;
 				eng->audio->music_playing = true;
 			}

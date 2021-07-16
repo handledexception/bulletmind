@@ -53,10 +53,10 @@
 #define TILE_HEIGHT 16
 static u8 *world_map = NULL;
 
-void generate_tilemap()
+void generate_tilemap(u32 width, u32 height)
 {
-	world_map = (u8 *)malloc(WORLD_TILES_WIDTH * WORLD_TILES_HEIGHT);
-	for (size_t i = 0; i < WORLD_TILES_WIDTH * WORLD_TILES_HEIGHT; i++) {
+	world_map = (u8 *)malloc(width * height);
+	for (size_t i = 0; i < width * width; i++) {
 		world_map[i] = rand() % 3;
 	}
 }
@@ -94,6 +94,11 @@ void update_tilemap(engine_t *engine, i32 cam_x, i32 cam_y)
 		for (i32 x = 0; x < WORLD_TILES_WIDTH; x++) {
 			sprite_t *tile = world_map_tile_index(engine, x, y,
 							      cam_x, cam_y);
+			SDL_RenderCopyEx(
+				engine->renderer,
+				tile->texture,
+				&tile->surface->clip_rect, NULL, 0.0,
+				NULL, SDL_FLIP_NONE);
 		}
 	}
 }
@@ -130,13 +135,15 @@ void print_debug_info(engine_t *engine, f64 dt)
 
 int main(int argc, char **argv)
 {
+	generate_tilemap(WORLD_TILES_WIDTH, WORLD_TILES_HEIGHT);
+
 	// Allocate memory arena - 8MiB
 	arena_init(&g_mem_arena, arena_buf, ARENA_TOTAL_BYTES);
 
 	size_t sz_engine = sizeof(engine_t);
 	engine = (engine_t *)arena_alloc(&g_mem_arena, sz_engine,
 					 DEFAULT_ALIGNMENT);
-	memset(engine, 0, sizeof(engine_t));  
+	memset(engine, 0, sizeof(engine_t));
 	engine->adapter_index = -1; // SDL default to first available
 	engine->wnd_width = WINDOW_WIDTH;
 	engine->wnd_height = WINDOW_HEIGHT;
@@ -175,10 +182,13 @@ int main(int argc, char **argv)
 					       0x20, 0xFF);
 			SDL_RenderClear(engine->renderer);
 
+			update_tilemap(engine, 0, 0);
+
 			if (engine->debug)
 				print_debug_info(engine, dt);
-
+			
 			eng_refresh(engine, dt);
+
 			break;
 		default:
 		case kEngineStateQuit:

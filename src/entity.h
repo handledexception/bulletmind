@@ -99,3 +99,5 @@ void ent_move_satellite(entity_t *satellite, entity_t *player, engine_t *eng,
 			const f64 dt);
 
 void ent_move_bullet(entity_t *bullet, engine_t *eng, const f64 dt);
+
+void ent_move_enemy(entity_t* enemy, entity_t* player, engine_t* eng, f64 dt);
