@@ -47,8 +47,8 @@
 
 #include <SDL.h>
 
-#define WORLD_TILES_WIDTH 64
-#define WORLD_TILES_HEIGHT 64
+#define WORLD_TILES_WIDTH 256
+#define WORLD_TILES_HEIGHT 256
 #define TILE_WIDTH 16
 #define TILE_HEIGHT 16
 static u8 *world_map = NULL;
@@ -57,7 +57,7 @@ void generate_tilemap(u32 width, u32 height)
 {
 	world_map = (u8 *)malloc(width * height);
 	for (size_t i = 0; i < width * width; i++) {
-		world_map[i] = rand() % 3;
+		world_map[i] = rand() % 4;
 	}
 }
 
@@ -73,11 +73,15 @@ sprite_t *world_map_tile_index(engine_t *engine, i32 x, i32 y, i32 cam_x,
 		tile = (sprite_t *)resource->data;
 		break;
 	case 1:
-		resource = eng_get_resource(engine, "tiled_wall_16x16");
+		resource = eng_get_resource(engine, "machines_floor_16x16");
 		tile = (sprite_t *)resource->data;
 		break;
 	case 2:
-		resource = eng_get_resource(engine, "tiled_wall_16x16");
+		resource = eng_get_resource(engine, "shadowy_wall_16x16");
+		tile = (sprite_t *)resource->data;
+		break;
+	case 3:
+		resource = eng_get_resource(engine, "grass_dirt_block");
 		tile = (sprite_t *)resource->data;
 		break;
 	}
@@ -94,10 +98,16 @@ void update_tilemap(engine_t *engine, i32 cam_x, i32 cam_y)
 		for (i32 x = 0; x < WORLD_TILES_WIDTH; x++) {
 			sprite_t *tile = world_map_tile_index(engine, x, y,
 							      cam_x, cam_y);
+
+			SDL_Rect* clip_rect = &tile->surface->clip_rect;
+			clip_rect->w = 16;
+			clip_rect->h = 16;
 			SDL_RenderCopyEx(
 				engine->renderer,
 				tile->texture,
-				&tile->surface->clip_rect, NULL, 0.0,
+				NULL,
+				&tile->surface->clip_rect,
+				0.0,
 				NULL, SDL_FLIP_NONE);
 		}
 	}
@@ -178,11 +188,12 @@ int main(int argc, char **argv)
 			engine->state = kEngineStatePlay;
 			break;
 		case kEngineStatePlay:
-			SDL_SetRenderDrawColor(engine->renderer, 0x20, 0x20,
-					       0x20, 0xFF);
+			SDL_SetRenderDrawColor(engine->renderer, 0x20, 0x20, 0x20, 0xFF);
 			SDL_RenderClear(engine->renderer);
 
-			update_tilemap(engine, 0, 0);
+			vec2f_t cam = { 0.f, 0.f };
+			entity_t* player = ent_by_index(engine->ent_list, 0);
+			update_tilemap(engine, (u32)player->org.x, (u32)player->org.y);
 
 			if (engine->debug)
 				print_debug_info(engine, dt);

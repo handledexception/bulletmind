@@ -23,6 +23,11 @@
 
 typedef struct engine_s engine_t;
 
+#define FOREVER 0.0
+#define BASIC_BULLET_LIFETIME 10.f
+#define PLAYER_ENTITY_INDEX 0
+#define SATELLITE_ENTITY_INDEX 1
+
 #define MAX_ENTITIES 1024 // small max ents for debugging
 #define MASK_ENTITIES (MAX_ENTITIES - 1)
 

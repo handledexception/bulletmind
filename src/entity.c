@@ -41,11 +41,6 @@
 
 #include <SDL.h>
 
-#define FOREVER 0.0
-#define BASIC_BULLET_LIFETIME 10.f
-#define PLAYER_ENTITY_INDEX 0
-#define SATELLITE_ENTITY_INDEX 1
-
 static const i32 kPlayerCaps = (kEntityPlayer | kEntityMover | kEntityCollider | kEntityShooter | kEntityRenderable);
 
 static const i32 kSatelliteCaps = (kEntitySatellite | kEntityMover | kEntityShooter | kEntityCollider | kEntityRenderable);

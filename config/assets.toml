@@ -24,6 +24,21 @@ path = "assets/tiled_wall_16x16.tga"
 type = "sprite"
 
 [[assets]]
+name = "machines_floor_16x16"
+path = "assets/machines_floor_16x16.tga"
+type = "sprite"
+
+[[assets]]
+name = "shadowy_wall_16x16"
+path = "assets/shadowy_wall_16x16.tga"
+type = "sprite"
+
+[[assets]]
+name = "grass_dirt_block"
+path = "assets/grass_dirt_block.tga"
+type = "sprite"
+
+[[assets]]
 name = "snd_primary_fire"
 path = "assets/primary_fire.wav"
 type = "sfx"
