@@ -19,6 +19,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define MAX_PATH 256
+#define TEMP_STRING_MAX 4096
+
 typedef char i8;
 typedef unsigned char u8;
 typedef short i16;

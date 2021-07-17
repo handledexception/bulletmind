@@ -17,7 +17,7 @@
 #include "platform/platform.h"
 #include "platform/utf8.h"
 
-size_t os_utf8_to_wcs(const char *str, size_t len, wchar_t *dst,
+size_t os_utf8_to_wcs(const char* str, size_t len, wchar_t* dst,
 		      size_t dst_size)
 {
 	size_t in_len;
@@ -43,7 +43,7 @@ size_t os_utf8_to_wcs(const char *str, size_t len, wchar_t *dst,
 	return out_len;
 }
 
-size_t os_utf8_to_wcs_ptr(const char *str, size_t len, wchar_t **pstr)
+size_t os_utf8_to_wcs_ptr(const char* str, size_t len, wchar_t** pstr)
 {
 	if (str) {
 		size_t out_len = os_utf8_to_wcs(str, len, NULL, 0);

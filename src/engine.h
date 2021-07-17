@@ -17,6 +17,7 @@
 #pragma once
 
 #include "entity.h"
+#include "font.h"
 #include "sprite.h"
 
 #include "core/c99defs.h"
@@ -49,15 +50,14 @@ typedef enum {
 typedef struct engine_s {
 	i32 adapter_index;
 
-	SDL_Window *window;
-	SDL_Renderer *renderer;
+	SDL_Window* window;
+	SDL_Renderer* renderer;
 	// SDL_Surface* scr_surface;
 	// SDL_Texture* scr_texture;
 
-	i32 wnd_width, wnd_height;
-	i32 scr_width, scr_height;
-	f32 scr_scale_x, scr_scale_y;
-	rect_t scr_bounds;
+	rect_t window_bounds;
+	rect_t camera_bounds;
+	vec2f_t render_scale;
 
 	f32 target_fps;
 	f64 target_frametime;
@@ -67,25 +67,26 @@ typedef struct engine_s {
 	engine_state_t state;
 	bool debug;
 
-	entity_t *ent_list;
-	game_resource_t **game_resources;
+	entity_t* ent_list;
+	game_resource_t** game_resources;
+	font_t font;
 
-	input_state_t *inputs;
+	input_state_t* inputs;
 
 	audio_state_t* audio;
 } engine_t;
 
-extern engine_t *engine;
+extern engine_t* engine;
 
-bool eng_init(const char *name, i32 version, engine_t *eng);
-void eng_refresh(engine_t *eng, f64 dt);
-void eng_shutdown(engine_t *eng);
+bool eng_init(const char* name, i32 version, engine_t* eng);
+void eng_refresh(engine_t* eng, f64 dt);
+void eng_shutdown(engine_t* eng);
 
 void eng_init_time(void);
 u64 eng_get_time_ns(void);
 f64 eng_get_time_sec(void);
 
-game_resource_t *eng_get_resource(engine_t *eng, const char *name);
+game_resource_t* eng_get_resource(engine_t* eng, const char* name);
 
 void eng_play_sound(engine_t* eng, const char* name, i32 volume);
 void eng_stop_music(engine_t* eng);

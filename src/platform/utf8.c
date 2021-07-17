@@ -22,13 +22,13 @@
 
 #include <Windows.h>
 
-static inline bool has_utf8_bom(const char *in_char)
+static inline bool has_utf8_bom(const char* in_char)
 {
-	uint8_t *in = (uint8_t *)in_char;
+	uint8_t* in = (uint8_t*)in_char;
 	return (in && in[0] == 0xef && in[1] == 0xbb && in[2] == 0xbf);
 }
 
-size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
+size_t utf8_to_wchar(const char* in, size_t insize, wchar_t* out,
 		     size_t outsize, int flags)
 {
 	int i_insize = (int)insize;
@@ -51,7 +51,7 @@ size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
 	return (ret > 0) ? (size_t)ret : 0;
 }
 
-size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out,
+size_t wchar_to_utf8(const wchar_t* in, size_t insize, char* out,
 		     size_t outsize, int flags)
 {
 	int i_insize = (int)insize;
@@ -130,7 +130,7 @@ static int utf8_forbidden(unsigned char octet)
  *	   not prepare buffer in advance (\0 terminate) but after calling this
  *	   function.
  */
-size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
+size_t utf8_to_wchar(const char* in, size_t insize, wchar_t* out,
 		     size_t outsize, int flags)
 {
 	unsigned char *p, *lim;
@@ -141,8 +141,8 @@ size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
 		return 0;
 
 	total = 0;
-	p = (unsigned char *)in;
-	lim = (insize != 0) ? (p + insize) : (unsigned char *)-1;
+	p = (unsigned char*)in;
+	lim = (insize != 0) ? (p + insize) : (unsigned char*)-1;
 	wlim = out == NULL ? NULL : out + outsize;
 
 	for (; p < lim; p += n) {
@@ -259,7 +259,7 @@ size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
  *	If UCS-4 string contains zero symbols, they will be translated
  *	as regular symbols.
  */
-size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out,
+size_t wchar_to_utf8(const wchar_t* in, size_t insize, char* out,
 		     size_t outsize, int flags)
 {
 	wchar_t *w, *wlim, ch = 0;
@@ -269,9 +269,9 @@ size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out,
 	if (in == NULL || (outsize == 0 && out != NULL))
 		return 0;
 
-	w = (wchar_t *)in;
-	wlim = (insize != 0) ? (w + insize) : (wchar_t *)-1;
-	p = (unsigned char *)out;
+	w = (wchar_t*)in;
+	wlim = (insize != 0) ? (w + insize) : (wchar_t*)-1;
+	p = (unsigned char*)out;
 	lim = out == NULL ? NULL : p + outsize;
 	total = 0;
 
@@ -315,7 +315,7 @@ size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out,
 			return 0; /* no space left */
 
 		ch = *w;
-		oc = (unsigned char *)&ch;
+		oc = (unsigned char*)&ch;
 		switch (n) {
 		case 1:
 			*p = oc[0];

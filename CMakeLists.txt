@@ -67,7 +67,6 @@ set(BM_GAME_HEADERS
     src/entity.h
     src/font.h
     src/input.h
-    src/main.h
     src/render.h
     src/resource.h
     src/sprite.h
@@ -88,7 +87,8 @@ set(BM_GAME_SOURCES
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_definitions(
-        -DBM_WINDOWS)
+        -DBM_WINDOWS
+        -D_CRT_SECURE_NO_WARNINGS)
 
     set(BM_PLATFORM_SOURCES
         ${BM_PLATFORM_SOURCES}

@@ -3,10 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static void *g_log_param = NULL;
+static void* g_log_param = NULL;
 
-static void default_log_handler(enum LOG_LEVEL level, const char *fmt,
-				va_list args, void *param)
+static void default_log_handler(enum LOG_LEVEL level, const char* fmt,
+				va_list args, void* param)
 {
 	(void)param;
 
@@ -34,12 +34,12 @@ static void default_log_handler(enum LOG_LEVEL level, const char *fmt,
 
 static log_handler_t g_log_handler = default_log_handler;
 
-void log_va(enum LOG_LEVEL level, const char *fmt, va_list args)
+void log_va(enum LOG_LEVEL level, const char* fmt, va_list args)
 {
 	g_log_handler(level, fmt, args, g_log_param);
 }
 
-void logger(enum LOG_LEVEL level, const char *fmt, ...)
+void logger(enum LOG_LEVEL level, const char* fmt, ...)
 {
 	va_list args;
 

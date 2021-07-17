@@ -63,11 +63,11 @@ f64 os_get_time_msec(void)
 	return nsec_to_msec_f64(os_get_time_ns());
 }
 
-bool os_file_exists(const char *path)
+bool os_file_exists(const char* path)
 {
 	WIN32_FIND_DATAW wfd;
 	HANDLE hFind;
-	wchar_t *path_utf16;
+	wchar_t* path_utf16;
 
 	if (!os_utf8_to_wcs_ptr(path, 0, &path_utf16))
 		return false;

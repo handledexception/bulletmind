@@ -18,8 +18,16 @@
 
 #include "core/c99defs.h"
 #include "core/types.h"
-#include "engine.h"
+
+typedef struct engine_s engine_t;
+typedef struct game_resource_s game_resource_t;
+typedef struct sprite_s sprite_t;
 
 typedef struct SDL_Renderer SDL_Renderer;
 
-void font_print(engine_t *eng, i32 x, i32 y, f32 scale, const char *str, ...);
+typedef struct font_s {
+	game_resource_t* rsrc;
+	sprite_t* sprite;
+} font_t;
+
+void font_print(engine_t* eng, i32 x, i32 y, f32 scale, const char* str, ...);

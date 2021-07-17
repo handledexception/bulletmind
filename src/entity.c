@@ -14,12 +14,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#if defined(BM_WINDOWS)
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS 1
-#endif
-#endif
-
 #include "audio.h"
 #include "command.h"
 #include "entity.h"
@@ -41,27 +35,32 @@
 
 #include <SDL.h>
 
-static const i32 kPlayerCaps = (kEntityPlayer | kEntityMover | kEntityCollider | kEntityShooter | kEntityRenderable);
+static const i32 kPlayerCaps = (kEntityPlayer | kEntityMover | kEntityCollider |
+				kEntityShooter | kEntityRenderable);
 
-static const i32 kSatelliteCaps = (kEntitySatellite | kEntityMover | kEntityShooter | kEntityCollider | kEntityRenderable);
+static const i32 kSatelliteCaps =
+	(kEntitySatellite | kEntityMover | kEntityShooter | kEntityCollider |
+	 kEntityRenderable);
 
-static const i32 kBulletCaps = (kEntityBullet | kEntityMover | kEntityCollider | kEntityRenderable);
+static const i32 kBulletCaps =
+	(kEntityBullet | kEntityMover | kEntityCollider | kEntityRenderable);
 
-static const i32 kEnemyCaps = (kEntityEnemy | kEntityMover | kEntityCollider | kEntityRenderable);
+static const i32 kEnemyCaps =
+	(kEntityEnemy | kEntityMover | kEntityCollider | kEntityRenderable);
 
 i32 gActiveEntities = 0; // extern
 i32 gLastEntity = 0;     // extern
 
 static const f32 kBulletSpeedMultiplier = 24000.f;
 
-bool ent_init(entity_t **ent_list, const i32 num_ents)
+bool ent_init(entity_t** ent_list, const i32 num_ents)
 {
 	if (ent_list == NULL)
 		return false;
 
 	const size_t sz_ent_list = sizeof(entity_t) * num_ents;
-	*ent_list = (entity_t *)arena_alloc(&g_mem_arena, sz_ent_list,
-					    DEFAULT_ALIGNMENT);
+	*ent_list = (entity_t*)arena_alloc(&g_mem_arena, sz_ent_list,
+					   DEFAULT_ALIGNMENT);
 	memset(*ent_list, 0, sz_ent_list);
 
 	logger(LOG_INFO, "ent_init OK\n");
@@ -69,33 +68,26 @@ bool ent_init(entity_t **ent_list, const i32 num_ents)
 	return true;
 }
 
-void ent_refresh(engine_t *eng, const f64 dt)
+void ent_refresh(engine_t* eng, const f64 dt)
 {
 	if (eng == NULL)
 		return;
 
-	entity_t *ent_list = eng->ent_list;
+	entity_t* ent_list = eng->ent_list;
 	vec2f_t mouse_pos = {0.f, 0.f};
 	mouse_pos.x = (f32)eng->inputs->mouse.window_pos.x;
 	mouse_pos.y = (f32)eng->inputs->mouse.window_pos.y;
 
-	// static u64 future = 0;
-	// if (future == 0)
-	// 	future = eng_get_time_ns() + sec_to_nsec_u64(2.0);
-	// if (eng_get_time_ns() - future <= 0) {
-	// 	future = 0;
-	// 	ent_spawn_enemy(ent_list);
-	// }
 	if (eng->spawn_timer[0] == 0.0)
 		eng->spawn_timer[0] = eng_get_time_sec() + 2.0;
 	if (eng_get_time_sec() >= eng->spawn_timer[0]) {
-		ent_spawn_enemy(ent_list);
+		ent_spawn_enemy(ent_list, eng->camera_bounds.w, eng->camera_bounds.h);
 		eng->spawn_timer[0] = 0.0;
 	}
 
 	gActiveEntities = 0;
 	for (i32 edx = 0; edx < MAX_ENTITIES; edx++) {
-		entity_t *e = ent_by_index(ent_list, edx);
+		entity_t* e = ent_by_index(ent_list, edx);
 
 		if (e == NULL)
 			continue;
@@ -111,14 +103,13 @@ void ent_refresh(engine_t *eng, const f64 dt)
 			if (!strcmp(e->name, "player"))
 				ent_move_player(e, eng, dt);
 			else if (!strcmp(e->name, "satellite")) {
-				entity_t *player = ent_by_index(
+				entity_t* player = ent_by_index(
 					ent_list, PLAYER_ENTITY_INDEX);
 				ent_move_satellite(e, player, eng, dt);
-			}
-			else if (!strcmp(e->name, "bullet")) {
+			} else if (!strcmp(e->name, "bullet")) {
 				ent_move_bullet(e, eng, dt);
 			}
-			
+
 			if (ent_has_caps(e, kEntityEnemy)) {
 				entity_t* player = ent_by_index(
 					ent_list, PLAYER_ENTITY_INDEX);
@@ -157,31 +148,33 @@ void ent_refresh(engine_t *eng, const f64 dt)
 				    os_get_time_sec() >= p_shoot_time) {
 					p_shoot_time = os_get_time_sec() +
 						       p_weap_fire_rate;
-					entity_t *player = ent_by_index(
+					entity_t* player = ent_by_index(
 						ent_list, PLAYER_ENTITY_INDEX);
 					vec2f_t bullet_org = player->org;
 					// vec2f_t mouse = {mouse_pos.x, mouse_pos.y};
 					const vec2i_t bullet_size = {8, 8};
 					const rgba_t bullet_color = {
 						0xf5, 0xa4, 0x42, 0xff};
-					entity_t *bullet = ent_spawn(
+					entity_t* bullet = ent_spawn(
 						ent_list, "bullet", bullet_org,
 						bullet_size, &bullet_color,
 						kBulletCaps,
 						(f64)BASIC_BULLET_LIFETIME);
 					ent_set_mouse_org(bullet, mouse_pos);
 
-					eng_play_sound(engine, "snd_primary_fire", DEFAULT_SFX_VOLUME);
+					eng_play_sound(engine,
+						       "snd_primary_fire",
+						       DEFAULT_SFX_VOLUME);
 				}
 			}
 		}
 
 		if (ent_has_caps(e, kEntityRenderable)) {
 			if (!strcmp(e->name, "player")) {
-				game_resource_t *resource =
+				game_resource_t* resource =
 					eng_get_resource(engine, "player");
-				sprite_sheet_t *sprite_sheet =
-					(sprite_sheet_t *)resource->data;
+				sprite_sheet_t* sprite_sheet =
+					(sprite_sheet_t*)resource->data;
 
 				//TODO: implement frame timing (hold frame for X milliseconds before incrementing)
 				//TODO: scale frames iteration by player movement speed (simulate running)
@@ -211,9 +204,9 @@ void ent_refresh(engine_t *eng, const f64 dt)
 						e->size.x, e->size.y, e->color);
 			} else if (!strcmp(e->name, "bullet")) {
 				//TODO(paulh): Need a game_resource_t method for get_resource_by_name
-				game_resource_t *resource =
+				game_resource_t* resource =
 					eng_get_resource(engine, "bullet");
-				sprite_t *sprite = (sprite_t *)resource->data;
+				sprite_t* sprite = (sprite_t*)resource->data;
 				SDL_Rect dst = {e->bbox.x, e->bbox.y,
 						sprite->surface->clip_rect.w,
 						sprite->surface->clip_rect.h};
@@ -260,14 +253,14 @@ void ent_refresh(engine_t *eng, const f64 dt)
 	// logger(LOG_INFO, "engine time: %f", eng_get_time_sec());
 }
 
-void ent_shutdown(entity_t *ent_list)
+void ent_shutdown(entity_t* ent_list)
 {
 	logger(LOG_INFO, "ent_shutdown OK\n");
 }
 
-entity_t *ent_new(entity_t *ent_list)
+entity_t* ent_new(entity_t* ent_list)
 {
-	entity_t *e = NULL;
+	entity_t* e = NULL;
 
 	// search entity list for first slot with no caps set
 	for (i32 edx = 0; edx < MAX_ENTITIES; edx++) {
@@ -290,9 +283,9 @@ entity_t *ent_new(entity_t *ent_list)
 	return e;
 }
 
-entity_t *ent_by_index(entity_t *ent_list, const i32 idx)
+entity_t* ent_by_index(entity_t* ent_list, const i32 idx)
 {
-	entity_t *e = &ent_list[idx];
+	entity_t* e = &ent_list[idx];
 	if (e == NULL) {
 		logger(LOG_WARNING, "ent_by_index - NULL entity at index %d\n",
 		       idx);
@@ -301,9 +294,9 @@ entity_t *ent_by_index(entity_t *ent_list, const i32 idx)
 	return e;
 }
 
-entity_t *ent_by_name(entity_t *ent_list, const char *name)
+entity_t* ent_by_name(entity_t* ent_list, const char* name)
 {
-	entity_t *e = NULL;
+	entity_t* e = NULL;
 	for (size_t edx = 0; edx < MAX_ENTITIES; edx++) {
 		e = &ent_list[edx];
 		if (!strcmp(e->name, name))
@@ -313,11 +306,11 @@ entity_t *ent_by_name(entity_t *ent_list, const char *name)
 	return e;
 }
 
-entity_t *ent_spawn(entity_t *ent_list, const char *name, const vec2f_t org,
-		    const vec2i_t size, const rgba_t *color, const i32 caps,
+entity_t* ent_spawn(entity_t* ent_list, const char* name, const vec2f_t org,
+		    const vec2i_t size, const rgba_t* color, const i32 caps,
 		    f64 lifetime)
 {
-	entity_t *e = ent_new(ent_list);
+	entity_t* e = ent_new(ent_list);
 	if (e != NULL) {
 		const vec2i_t half_size = {(i32)(size.x / 2),
 					   (i32)(size.y / 2)};
@@ -352,7 +345,7 @@ entity_t *ent_spawn(entity_t *ent_list, const char *name, const vec2f_t org,
 	return e;
 }
 
-void ent_lifetime_update(entity_t *e)
+void ent_lifetime_update(entity_t* e)
 {
 	// kill entities that have a fixed lifetime
 	if (e->lifetime > 0.0 && (eng_get_time_sec() >= e->lifetime)) {
@@ -361,57 +354,63 @@ void ent_lifetime_update(entity_t *e)
 	}
 }
 
-void ent_bbox_update(entity_t *e)
+// update the bounding box constraints based on changes in entity origin
+void ent_bbox_update(entity_t* e)
 {
 	vec2f_t half_size = {0.f, 0.f};
 	vec2f_set(&half_size, (f32)(e->size.x) * 0.5f, (f32)(e->size.y) * 0.5f);
-	e->bbox.x = e->org.x - half_size.x;
-	e->bbox.y = e->org.y - half_size.y;
+	e->bbox.x = (i32)(e->org.x - half_size.x);
+	e->bbox.y = (i32)(e->org.y - half_size.y);
 }
 
-void ent_set_name(entity_t *e, const char *name)
+void eng_centerpoint(entity_t* e, vec2f_t* p)
 {
-	if (name != NULL && strlen(name) <= ENT_NAME_MAX + 1)
-		strcpy((char *)e->name, name);
+	
 }
 
-void ent_add_caps(entity_t *e, const entity_caps_t caps)
+void ent_set_name(entity_t* e, const char* name)
+{
+	if (name != NULL && strlen(name) <= TEMP_STRING_MAX + 1)
+		strcpy((char*)e->name, name);
+}
+
+void ent_add_caps(entity_t* e, const entity_caps_t caps)
 {
 	e->caps |= caps;
 }
 
-void ent_remove_caps(entity_t *e, const entity_caps_t caps)
+void ent_remove_caps(entity_t* e, const entity_caps_t caps)
 {
 	e->caps &= ~caps;
 }
 
-void ent_set_caps(entity_t *e, const i32 cap_flags)
+void ent_set_caps(entity_t* e, const i32 cap_flags)
 {
 	e->caps = cap_flags;
 }
 
-bool ent_has_caps(entity_t *e, const entity_caps_t caps)
+bool ent_has_caps(entity_t* e, const entity_caps_t caps)
 {
 	return e->caps & caps;
 }
 
-bool ent_has_no_caps(entity_t *e)
+bool ent_has_no_caps(entity_t* e)
 {
 	return (e->caps == 0);
 }
 
-void ent_set_pos(entity_t *e, const vec2f_t org)
+void ent_set_pos(entity_t* e, const vec2f_t org)
 {
 	vec2f_copy(&e->org, org);
 }
 
-void ent_set_vel(entity_t *e, const vec2f_t vel, const f32 ang)
+void ent_set_vel(entity_t* e, const vec2f_t vel, const f32 ang)
 {
 	vec2f_copy(&e->vel, vel);
 	e->angle = atan(vec2f_dot(e->org, e->vel));
 }
 
-void ent_set_bbox(entity_t *e, const rect_t *bbox)
+void ent_set_bbox(entity_t* e, const rect_t* bbox)
 {
 	e->bbox = *bbox;
 	const vec2i_t bbox_half_size = {e->bbox.w / 2, e->bbox.h / 2};
@@ -419,12 +418,12 @@ void ent_set_bbox(entity_t *e, const rect_t *bbox)
 	e->org.y -= (f32)bbox_half_size.y;
 }
 
-void ent_set_mouse_org(entity_t *e, const vec2f_t m_org)
+void ent_set_mouse_org(entity_t* e, const vec2f_t m_org)
 {
 	vec2f_copy(&e->mouse_org, m_org);
 }
 
-void ent_euler_move(entity_t *e, const vec2f_t accel, const f32 friction,
+void ent_euler_move(entity_t* e, const vec2f_t accel, const f32 friction,
 		    const f64 dt)
 {
 	vec2f_t delta = {0.f, 0.f};
@@ -438,15 +437,17 @@ void ent_euler_move(entity_t *e, const vec2f_t accel, const f32 friction,
 	vec2f_add(&e->org, e->org, delta);
 }
 
-bool ent_spawn_player_and_satellite(entity_t *ent_list)
+bool ent_spawn_player_and_satellite(entity_t* ent_list, i32 cam_width, i32 cam_height)
 {
 	// center on screen
-	vec2f_t player_org = {(f32)(CAMERA_WIDTH * 0.5f),
-			      (f32)(CAMERA_HEIGHT * 0.5f)};
+	vec2f_t player_org = {
+		(f32)(cam_width * 0.5f),
+		(f32)(cam_height * 0.5f)
+	};
 	vec2i_t player_size = {16, 16};
 	rgba_t player_color = {0x0, 0x0, 0xff, 0xff};
 
-	entity_t *player = ent_spawn(ent_list, "player", player_org,
+	entity_t* player = ent_spawn(ent_list, "player", player_org,
 				     player_size, &player_color, kPlayerCaps,
 				     FOREVER);
 	if (player == NULL) {
@@ -462,7 +463,7 @@ bool ent_spawn_player_and_satellite(entity_t *ent_list)
 	f32 sat_offset = 512.f;
 	vec2f_set(&sat_org, player_org.x + sat_offset,
 		  player_org.y + sat_offset);
-	entity_t *satellite = ent_spawn(ent_list, "satellite", sat_org,
+	entity_t* satellite = ent_spawn(ent_list, "satellite", sat_org,
 					sat_size, &sat_color, kSatelliteCaps,
 					FOREVER);
 	if (satellite == NULL) {
@@ -474,13 +475,15 @@ bool ent_spawn_player_and_satellite(entity_t *ent_list)
 	return true;
 }
 
-bool ent_spawn_enemy(entity_t *ent_list)
+bool ent_spawn_enemy(entity_t* ent_list, i32 cam_width, i32 cam_height)
 {
-	vec2f_t org = {(f32)gen_random(0, CAMERA_WIDTH, 1),
-		       (f32)gen_random(0, CAMERA_HEIGHT, 3)};
+	vec2f_t org = {
+		(f32)gen_random(0, cam_width, 1),
+		(f32)gen_random(0, cam_height, 3)
+	};
 	vec2i_t size = {16, 16};
 	rgba_t color = {0xf0, 0x36, 0x00, 0xff};
-	entity_t *enemy = ent_spawn(ent_list, "enemy", org, size, &color,
+	entity_t* enemy = ent_spawn(ent_list, "enemy", org, size, &color,
 				    kEnemyCaps, FOREVER);
 	if (enemy == NULL) {
 		logger(LOG_ERROR, "ent_init - failed to spawn enemy!");
@@ -490,7 +493,7 @@ bool ent_spawn_enemy(entity_t *ent_list)
 	return true;
 }
 
-void ent_move_player(entity_t *player, engine_t *eng, f64 dt)
+void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 {
 	// Player entity movement
 	vec2f_t p_accel = {0};
@@ -513,22 +516,22 @@ void ent_move_player(entity_t *player, engine_t *eng, f64 dt)
 
 	ent_euler_move(player, p_accel, 0.035, dt);
 	// screen bounds checking
-	if (player->org.x > (f32)eng->scr_bounds.w) {
-		player->org.x = (f32)eng->scr_bounds.w;
+	if (player->org.x > (f32)eng->camera_bounds.w) {
+		player->org.x = (f32)eng->camera_bounds.w;
 	}
-	if (player->org.y > (f32)eng->scr_bounds.h) {
-		player->org.y = (f32)eng->scr_bounds.h;
+	if (player->org.y > (f32)eng->camera_bounds.h) {
+		player->org.y = (f32)eng->camera_bounds.h;
 	}
-	if (player->org.x < (f32)eng->scr_bounds.x) {
-		player->org.x = (f32)eng->scr_bounds.x;
+	if (player->org.x < (f32)eng->camera_bounds.x) {
+		player->org.x = (f32)eng->camera_bounds.x;
 	}
-	if (player->org.y < (f32)eng->scr_bounds.y) {
-		player->org.y = (f32)eng->scr_bounds.y;
+	if (player->org.y < (f32)eng->camera_bounds.y) {
+		player->org.y = (f32)eng->camera_bounds.y;
 	}
 	ent_bbox_update(player);
 }
 
-void ent_move_satellite(entity_t *satellite, entity_t *player, engine_t *eng,
+void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* eng,
 			f64 dt)
 {
 	static f32 sat_speed = 1000.f;
@@ -577,7 +580,7 @@ void ent_move_satellite(entity_t *satellite, entity_t *player, engine_t *eng,
 	ent_bbox_update(satellite);
 }
 
-void ent_move_bullet(entity_t *bullet, engine_t *eng, f64 dt)
+void ent_move_bullet(entity_t* bullet, engine_t* eng, f64 dt)
 {
 	vec2f_t dist = {0.f, 0.f};
 	// vector between entity mouse origin and entity origin
@@ -596,14 +599,10 @@ void ent_move_enemy(entity_t* enemy, entity_t* player, engine_t* eng, f64 dt)
 	vec2f_t dist = {0.f, 0.f};
 
 	// if (enemy->vel.x == 0.f && enemy->vel.y == 0.f) {
-		vec2f_sub(&dist, player->org, enemy->org);
-		vec2f_norm(&dist, dist);
-		vec2f_mulf(&dist, dist, 150.f);
+	vec2f_sub(&dist, player->org, enemy->org);
+	vec2f_norm(&dist, dist);
+	vec2f_mulf(&dist, dist, 150.f);
 	// }
 	ent_euler_move(enemy, dist, 0.0, dt);
 	ent_bbox_update(enemy);
 }
-
-#ifdef _CRT_SECURE_NO_WARNINGS
-#undef _CRT_SECURE_NO_WARNINGS
-#endif

@@ -14,33 +14,33 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define _CRT_SECURE_NO_WARNINGS
+#include "core/logger.h"
+#include "core/video.h"
 
 #include "command.h"
 #include "entity.h"
 #include "input.h"
-#include "main.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-entity_t *entities;
+entity_t* entities;
 
 void cmd_init(void)
 {
 	// for (size_t cdx = (size_t)kCommandFirst; cdx < (size_t)kCommandMax; cdx++)
 	// 	kActiveCommands[(command_t)cdx] = false;
-	printf("cmd_init OK\n");
+	logger(LOG_INFO, "cmd_init OK\n");
 }
 
 //TODO(paulh): Use the bitfield macros for this instead
-bool cmd_get_state(input_state_t *inputs, const command_t cmd)
+bool cmd_get_state(input_state_t* inputs, const command_t cmd)
 {
-	virtual_button_t *vb = &inputs->buttons[cmd];
-	key_t *key = vb->keyboard_key;
-	gamepad_button_t *gb = vb->gamepad_button;
-	mouse_button_t *mb = vb->mouse_button;
+	virtual_button_t* vb = &inputs->buttons[cmd];
+	key_t* key = vb->keyboard_key;
+	gamepad_button_t* gb = vb->gamepad_button;
+	mouse_button_t* mb = vb->mouse_button;
 	u8 key_state = 0;
 	u8 mouse_button_state = 0;
 	u8 gamepad_button_state = 0;
@@ -56,7 +56,7 @@ bool cmd_get_state(input_state_t *inputs, const command_t cmd)
 	// return kActiveCommands[cmd];
 }
 
-void cmd_toggle_bool(input_state_t *inputs, const command_t cmd, bool *value)
+void cmd_toggle_bool(input_state_t* inputs, const command_t cmd, bool* value)
 {
 	static bool toggled = false;
 	if (cmd_get_state(inputs, cmd) == true) {
@@ -75,7 +75,7 @@ void cmd_toggle_bool(input_state_t *inputs, const command_t cmd, bool *value)
 	}
 }
 
-void cmd_refresh(engine_t *eng)
+void cmd_refresh(engine_t* eng)
 {
 	// static bool toggled = false;
 	if (cmd_get_state(eng->inputs, kCommandQuit) == true) {
@@ -85,19 +85,19 @@ void cmd_refresh(engine_t *eng)
 	cmd_toggle_bool(eng->inputs, kCommandDebugMode, &eng->debug);
 
 	if (cmd_get_state(eng->inputs, kCommandSetFpsHigh) == true) {
-		eng->target_frametime = TARGET_FRAMETIME(60);
+		eng->target_frametime = FRAME_TIME(eng->target_fps);
 	}
 	if (cmd_get_state(eng->inputs, kCommandSetFpsLow) == true) {
-		eng->target_frametime = TARGET_FRAMETIME(10);
+		eng->target_frametime = FRAME_TIME(10);
 	}
 }
 
 void cmd_shutdown(void)
 {
-	printf("cmd_shutdown OK\n");
+	logger(LOG_INFO, "cmd_shutdown OK\n");
 }
 
-const char *cmd_get_name(const command_t cmd)
+const char* cmd_get_name(const command_t cmd)
 {
 	static char buffer[256];
 

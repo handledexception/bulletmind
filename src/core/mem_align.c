@@ -47,25 +47,25 @@ uintptr_t align_forward(uintptr_t ptr, size_t align)
 }
 
 //https://codeyarns.github.io/tech/2017-02-28-aligned-memory-allocation.html
-void *aligned_malloc(size_t size, size_t alignment)
+void* aligned_malloc(size_t size, size_t alignment)
 {
 #ifdef ALIGNED_MALLOC
 	return _aligned_malloc(size, alignment);
 #else
-	const size_t alloc_size = size + (alignment - 1) + sizeof(void *);
-	void *block = malloc(alloc_size);
+	const size_t alloc_size = size + (alignment - 1) + sizeof(void*);
+	void* block = malloc(alloc_size);
 	uintptr_t ptr = align_forward((uintptr_t)block, alignment);
-	return (void *)ptr;
+	return (void*)ptr;
 #endif
 }
 
-void aligned_free(void *ptr)
+void aligned_free(void* ptr)
 {
 #ifdef ALIGNED_MALLOC
 	_aligned_free(ptr);
 #else
-	void *p1 = ((
-		void **)ptr)[-1]; // get the pointer to the buffer we allocated
+	void* p1 =
+		((void**)ptr)[-1]; // get the pointer to the buffer we allocated
 	free(p1);
 #endif
 }

@@ -14,12 +14,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#if defined(BM_WINDOWS)
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS 1
-#endif
-#endif
-
 #include "sprite.h"
 #include "core/mem_arena.h"
 #include "core/utils.h"
@@ -48,28 +42,28 @@ typedef struct tga_header_s {
 	u8 desc; // bits 3-0 = alpha channel depth, bits 5-4 img direction
 } tga_header_t;
 
-bool sprite_load(const char *path, sprite_t **out)
+bool sprite_load(const char* path, sprite_t** out)
 {
-	FILE *file_ptr = NULL;
+	FILE* file_ptr = NULL;
 	size_t fsize = 0;
-	u8 *file_buf = NULL;
-	sprite_t *img = NULL;
+	u8* file_buf = NULL;
+	sprite_t* img = NULL;
 
 	if (path == NULL || out == NULL)
 		return false;
 
 	// absolute most janky file extension comparison
-	const char *file_ext = file_extension(path);
+	const char* file_ext = file_extension(path);
 	if (strcmp(file_ext, "tga") == 0) {
-		img = (sprite_t *)arena_alloc(&g_mem_arena, sizeof(sprite_t),
-					      DEFAULT_ALIGNMENT);
+		img = (sprite_t*)arena_alloc(&g_mem_arena, sizeof(sprite_t),
+					     DEFAULT_ALIGNMENT);
 		img->type = IMG_TYPE_TARGA;
 
 		file_ptr = fopen(path, "rb");
 		fseek(file_ptr, 0, SEEK_END);
 		fsize = ftell(file_ptr);
 		fseek(file_ptr, 0, SEEK_SET);
-		file_buf = (u8 *)malloc(fsize);
+		file_buf = (u8*)malloc(fsize);
 		if (file_ptr == NULL) {
 			printf("sprite_load - file %s has no data!\n", path);
 			return false;
@@ -82,7 +76,7 @@ bool sprite_load(const char *path, sprite_t **out)
 			return false;
 		}
 
-		tga_header_t *header = (tga_header_t *)file_buf;
+		tga_header_t* header = (tga_header_t*)file_buf;
 		size_t tga_header_size = sizeof(*header);
 		// make sure we have a valid minimal TGA header and raw unmapped RGB data
 		if (tga_header_size != 18 || header->color_map_type > 0 ||
@@ -100,13 +94,13 @@ bool sprite_load(const char *path, sprite_t **out)
 		i32 stride = width * bytes_per_pixel;
 		size_t pixel_size = width * height * bytes_per_pixel;
 
-		img->data = (u8 *)arena_alloc(&g_mem_arena, pixel_size,
-					      DEFAULT_ALIGNMENT);
+		img->data = (u8*)arena_alloc(&g_mem_arena, pixel_size,
+					     DEFAULT_ALIGNMENT);
 
 		printf("sprite_load - %s, %dx%d %d bytes per pixel\n", path,
 		       width, height, bytes_per_pixel);
 
-		u8 *tga_pixels = file_buf + tga_header_size;
+		u8* tga_pixels = file_buf + tga_header_size;
 
 		// origin bit 1 = upper-left origin pixel
 		if ((header->desc >> 5) & 1) {
@@ -146,15 +140,15 @@ bool sprite_load(const char *path, sprite_t **out)
 	return true;
 }
 
-void sprite_create(u8 *data, u32 w, u32 h, u32 bpp, u32 stride, u32 format,
-		   sprite_t **out)
+void sprite_create(u8* data, u32 w, u32 h, u32 bpp, u32 stride, u32 format,
+		   sprite_t** out)
 {
-	sprite_t *img = (sprite_t *)arena_alloc(&g_mem_arena, sizeof(sprite_t),
-						DEFAULT_ALIGNMENT);
+	sprite_t* img = (sprite_t*)arena_alloc(&g_mem_arena, sizeof(sprite_t),
+					       DEFAULT_ALIGNMENT);
 	img->type = IMG_TYPE_RAW;
 	size_t pixel_size = w * h * (bpp / 8);
 	img->data =
-		(u8 *)arena_alloc(&g_mem_arena, pixel_size, DEFAULT_ALIGNMENT);
+		(u8*)arena_alloc(&g_mem_arena, pixel_size, DEFAULT_ALIGNMENT);
 	memcpy(img->data, data, pixel_size);
 	img->surface = SDL_CreateRGBSurfaceWithFormatFrom(img->data, w, h, bpp,
 							  stride, format);
@@ -162,12 +156,12 @@ void sprite_create(u8 *data, u32 w, u32 h, u32 bpp, u32 stride, u32 format,
 	*out = img;
 }
 
-bool sprite_create_texture(SDL_Renderer *ren, sprite_t *img)
+bool sprite_create_texture(SDL_Renderer* ren, sprite_t* img)
 {
 	bool res = false;
 
 	if (img != NULL) {
-		img->texture = SDL_CreateTexture((SDL_Renderer *)ren,
+		img->texture = SDL_CreateTexture((SDL_Renderer*)ren,
 						 img->surface->format->format,
 						 SDL_TEXTUREACCESS_STATIC,
 						 img->surface->w,
@@ -193,7 +187,7 @@ bool sprite_create_texture(SDL_Renderer *ren, sprite_t *img)
 	return res;
 }
 
-void sprite_shutdown(sprite_t *img)
+void sprite_shutdown(sprite_t* img)
 {
 	if (img != NULL) {
 		if (img->surface != NULL) {
@@ -207,7 +201,3 @@ void sprite_shutdown(sprite_t *img)
 		printf("imagefile_shutdown: OK!\n");
 	}
 }
-
-#ifdef _CRT_SECURE_NO_WARNINGS
-#undef _CRT_SECURE_NO_WARNINGS
-#endif

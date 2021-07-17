@@ -19,13 +19,13 @@ path = "assets/bullet_rgba.tga"
 type = "sprite"
 
 [[assets]]
-name = "tiled_wall_16x16"
-path = "assets/tiled_wall_16x16.tga"
+name = "tiled_wall_64x64"
+path = "assets/tiled_wall_64x64.tga"
 type = "sprite"
 
 [[assets]]
-name = "machines_floor_16x16"
-path = "assets/machines_floor_16x16.tga"
+name = "machines_floor_64x64"
+path = "assets/machines_floor_64x64.tga"
 type = "sprite"
 
 [[assets]]

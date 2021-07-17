@@ -42,9 +42,10 @@ extern "C" {
 #define LARGE_EPSILON 1e-2f
 #define EPSILON 1e-4f
 #define TINY_EPSILON 1e-5f
-static inline bool close_float(float f1, float f2, float precision)
+
+static inline bool f32_compare(float f1, float f2, float epsilon)
 {
-	return fabsf(f1 - f2) <= precision;
+	return fabsf(f1 - f2) <= epsilon;
 }
 
 #ifdef __cplusplus

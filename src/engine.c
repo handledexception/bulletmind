@@ -19,13 +19,13 @@
 #include "engine.h"
 #include "font.h"
 #include "input.h"
-#include "main.h"
 #include "resource.h"
 
 #include "core/logger.h"
 #include "core/mem_arena.h"
 #include "core/time_convert.h"
 #include "core/utils.h"
+#include "core/video.h"
 
 #include "platform/platform.h"
 
@@ -36,7 +36,7 @@
 	(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER | \
 	 SDL_INIT_GAMECONTROLLER)
 
-engine_t *engine = NULL;
+engine_t* engine = NULL;
 
 static u64 engine_start_ticks = 0ULL;
 
@@ -55,9 +55,9 @@ f64 eng_get_time_sec(void)
 	return nsec_to_sec_f64(eng_get_time_ns());
 }
 
-game_resource_t *eng_get_resource(engine_t *eng, const char *name)
+game_resource_t* eng_get_resource(engine_t* eng, const char* name)
 {
-	game_resource_t *rsrc = NULL;
+	game_resource_t* rsrc = NULL;
 	for (size_t rdx = 0; rdx < MAX_GAME_RESOURCES; rdx++) {
 		if (!strcmp(eng->game_resources[rdx]->name, name)) {
 			rsrc = eng->game_resources[rdx];
@@ -68,7 +68,7 @@ game_resource_t *eng_get_resource(engine_t *eng, const char *name)
 	return rsrc;
 }
 
-bool eng_init(const char *name, i32 version, engine_t *eng)
+bool eng_init(const char* name, i32 version, engine_t* eng)
 {
 	u64 init_start = os_get_time_ns();
 
@@ -83,9 +83,18 @@ bool eng_init(const char *name, i32 version, engine_t *eng)
 	sprintf(window_title, "%s v%s", name, ver_str);
 
 	SDL_Init(SDL_FLAGS);
-	eng->window = SDL_CreateWindow(window_title, SDL_WINDOWPOS_CENTERED,
-				       SDL_WINDOWPOS_CENTERED, eng->wnd_width,
-				       eng->wnd_height, SDL_WINDOW_SHOWN);
+
+	i32 window_pos_x = eng->window_bounds.x;
+	i32 window_pos_y = eng->window_bounds.y;
+	if (window_pos_x == -1)
+		window_pos_x = SDL_WINDOWPOS_CENTERED;
+	if (window_pos_y == -1)
+		window_pos_y = SDL_WINDOWPOS_CENTERED;
+
+	eng->window = SDL_CreateWindow(window_title,
+		window_pos_x, window_pos_y,
+		eng->window_bounds.w, eng->window_bounds.h,
+		SDL_WINDOW_SHOWN);
 
 	if (eng->window == NULL) {
 		logger(LOG_ERROR, "error creating engine window: %s\n",
@@ -101,11 +110,9 @@ bool eng_init(const char *name, i32 version, engine_t *eng)
 		return false;
 	}
 
-	rect_t scr = {0, 0, eng->scr_width, eng->scr_height};
-	eng->scr_bounds = scr;
 	// SDL_RenderSetViewport(eng->renderer, (SDL_Rect*)&eng->scr_bounds);
-	SDL_RenderSetLogicalSize(eng->renderer, eng->scr_width,
-				 eng->scr_height);
+	SDL_RenderSetLogicalSize(eng->renderer, eng->camera_bounds.w,
+				 eng->camera_bounds.h);
 
 	// SDL_RenderSetIntegerScale(eng->renderer, true);
 
@@ -127,11 +134,11 @@ bool eng_init(const char *name, i32 version, engine_t *eng)
 	//     CAMERA_HEIGHT
 	// );
 
-	eng->inputs = (input_state_t *)arena_alloc(
+	eng->inputs = (input_state_t*)arena_alloc(
 		&g_mem_arena, sizeof(input_state_t), DEFAULT_ALIGNMENT);
 	memset(eng->inputs, 0, sizeof(input_state_t));
 
-	eng->audio = (audio_state_t *)arena_alloc(
+	eng->audio = (audio_state_t*)arena_alloc(
 		&g_mem_arena, sizeof(audio_state_t), DEFAULT_ALIGNMENT);
 	memset(eng->audio, 0, sizeof(audio_state_t));
 
@@ -147,7 +154,10 @@ bool eng_init(const char *name, i32 version, engine_t *eng)
 		return false;
 	eng_init_time();
 
-	eng->target_frametime = TARGET_FRAMETIME(eng->target_fps);
+	eng->font.rsrc = eng_get_resource(eng, "font_7px");
+	eng->font.sprite = (sprite_t*)eng->font.rsrc->data;
+
+	eng->target_frametime = FRAME_TIME(eng->target_fps);
 	eng->state = kEngineStateStartup;
 
 	f64 init_end_msec = nsec_to_msec_f64(os_get_time_ns() - init_start);
@@ -156,10 +166,10 @@ bool eng_init(const char *name, i32 version, engine_t *eng)
 	return true;
 }
 
-void eng_refresh(engine_t *eng, f64 dt)
+void eng_refresh(engine_t* eng, f64 dt)
 {
-	inp_refresh_mouse(&eng->inputs->mouse, eng->scr_scale_x,
-			  eng->scr_scale_y);
+	inp_refresh_mouse(&eng->inputs->mouse, eng->render_scale.x,
+			  eng->render_scale.y);
 
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
@@ -170,7 +180,7 @@ void eng_refresh(engine_t *eng, f64 dt)
 	ent_refresh(engine, dt);
 }
 
-void eng_shutdown(engine_t *eng)
+void eng_shutdown(engine_t* eng)
 {
 	ent_shutdown(eng->ent_list);
 	cmd_shutdown();
@@ -193,20 +203,18 @@ void eng_shutdown(engine_t *eng)
 
 void eng_play_sound(engine_t* eng, const char* name, i32 volume)
 {
-	game_resource_t *resource = eng_get_resource(engine, name);
+	game_resource_t* resource = eng_get_resource(engine, name);
 	if (resource != NULL) {
-		audio_chunk_t *sound_chunk = (audio_chunk_t *)resource->data;
+		audio_chunk_t* sound_chunk = (audio_chunk_t*)resource->data;
 
 		if (resource->type == kAssetTypeSoundEffect) {
 			sound_chunk->volume = volume;
-			
-			Mix_PlayChannel(
-				-1, (Mix_Chunk *)sound_chunk,
-				0);
-		}
-		else if (resource->type == kAssetTypeMusic) {
+
+			Mix_PlayChannel(-1, (Mix_Chunk*)sound_chunk, 0);
+		} else if (resource->type == kAssetTypeMusic) {
 			if (eng->audio->music == NULL) {
-				eng->audio->music = (Mix_Music*)Mix_LoadMUS(resource->path);
+				eng->audio->music =
+					(Mix_Music*)Mix_LoadMUS(resource->path);
 			}
 			if (!eng->audio->music_playing) {
 				Mix_VolumeMusic(volume);
@@ -214,7 +222,7 @@ void eng_play_sound(engine_t* eng, const char* name, i32 volume)
 				eng->audio->music_volume = volume;
 				eng->audio->music_playing = true;
 			}
-		}		
+		}
 	}
 }
 

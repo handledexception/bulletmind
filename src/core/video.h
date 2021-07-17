@@ -1,5 +1,7 @@
 #pragma once
 
+#define FRAME_TIME(x) 1.0 / x
+
 typedef enum {
 	IMG_TYPE_TARGA,
 	IMG_TYPE_BMP,

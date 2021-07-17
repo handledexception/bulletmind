@@ -35,64 +35,64 @@ typedef struct vec2f {
 	f32 y;
 } vec2f_t;
 
-static inline void vec2f_set(vec2f_t *dst, f32 x, f32 y)
+static inline void vec2f_set(vec2f_t* dst, f32 x, f32 y)
 {
 	dst->x = x;
 	dst->y = y;
 }
 
-static inline void vec2f_zero(vec2f_t *dst)
+static inline void vec2f_zero(vec2f_t* dst)
 {
 	vec2f_set(dst, 0.f, 0.f);
 }
 
-static inline void vec2f_copy(vec2f_t *dst, const vec2f_t other)
+static inline void vec2f_copy(vec2f_t* dst, const vec2f_t other)
 {
 	dst->x = other.x;
 	dst->y = other.y;
 }
 
-static inline void vec2f_add(vec2f_t *dst, const vec2f_t lhs, const vec2f_t rhs)
+static inline void vec2f_add(vec2f_t* dst, const vec2f_t lhs, const vec2f_t rhs)
 {
 	vec2f_set(dst, lhs.x + rhs.x, lhs.y + rhs.y);
 }
 
-static inline void vec2f_sub(vec2f_t *dst, const vec2f_t lhs, const vec2f_t rhs)
+static inline void vec2f_sub(vec2f_t* dst, const vec2f_t lhs, const vec2f_t rhs)
 {
 	vec2f_set(dst, lhs.x - rhs.x, lhs.y - rhs.y);
 }
 
-static inline void vec2f_mul(vec2f_t *dst, const vec2f_t lhs, const vec2f_t rhs)
+static inline void vec2f_mul(vec2f_t* dst, const vec2f_t lhs, const vec2f_t rhs)
 {
 	vec2f_set(dst, lhs.x * rhs.x, lhs.y * rhs.y);
 }
 
-static inline void vec2f_div(vec2f_t *dst, const vec2f_t lhs, const vec2f_t rhs)
+static inline void vec2f_div(vec2f_t* dst, const vec2f_t lhs, const vec2f_t rhs)
 {
 	vec2f_set(dst, lhs.x / rhs.x, lhs.y / rhs.y);
 }
 
-static inline void vec2f_addf(vec2f_t *dst, const vec2f_t v, f32 f)
+static inline void vec2f_addf(vec2f_t* dst, const vec2f_t v, f32 f)
 {
 	vec2f_set(dst, v.x + f, v.y + f);
 }
 
-static inline void vec2f_subf(vec2f_t *dst, const vec2f_t v, f32 f)
+static inline void vec2f_subf(vec2f_t* dst, const vec2f_t v, f32 f)
 {
 	vec2f_set(dst, v.x - f, v.y - f);
 }
 
-static inline void vec2f_mulf(vec2f_t *dst, const vec2f_t v, f32 f)
+static inline void vec2f_mulf(vec2f_t* dst, const vec2f_t v, f32 f)
 {
 	vec2f_set(dst, v.x * f, v.y * f);
 }
 
-static inline void vec2f_divf(vec2f_t *dst, const vec2f_t v, f32 f)
+static inline void vec2f_divf(vec2f_t* dst, const vec2f_t v, f32 f)
 {
 	vec2f_set(dst, v.x / f, v.y / f);
 }
 
-static inline void vec2f_negate(vec2f_t *dst, const vec2f_t v)
+static inline void vec2f_negate(vec2f_t* dst, const vec2f_t v)
 {
 	vec2f_set(dst, -v.x, -v.y);
 }
@@ -107,7 +107,7 @@ static inline f32 vec2f_len(const vec2f_t v)
 	return sqrtf(v.x * v.x + v.y * v.y);
 }
 
-static inline f32 vec2f_norm(vec2f_t *dst, const vec2f_t v)
+static inline f32 vec2f_norm(vec2f_t* dst, const vec2f_t v)
 {
 	const f32 length = 1.f / vec2f_len(v);
 	vec2f_mulf(dst, v, length);
@@ -121,12 +121,12 @@ static inline f32 vec2f_dist(const vec2f_t v1, const vec2f_t v2)
 	return vec2f_len(temp);
 }
 
-static inline void vec2f_fabsf(vec2f_t *dst, const vec2f_t v)
+static inline void vec2f_fabsf(vec2f_t* dst, const vec2f_t v)
 {
 	vec2f_set(dst, fabsf(v.x), fabsf(v.y));
 }
 
-static inline void vec2f_friction(vec2f_t *dst, const vec2f_t a, f32 friction)
+static inline void vec2f_friction(vec2f_t* dst, const vec2f_t a, f32 friction)
 {
 	f32 speed = vec2f_len(a);
 	f32 new_speed = speed - (speed * friction);

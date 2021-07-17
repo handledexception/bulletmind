@@ -22,11 +22,11 @@
 #include <SDL.h>
 
 typedef struct sprite_s {
-	u8 *data;
+	u8* data;
 	imgtype_t type;
 	pix_fmt_t pix_fmt;
-	SDL_Surface *surface;
-	SDL_Texture *texture;
+	SDL_Surface* surface;
+	SDL_Texture* texture;
 	i32 scaling;
 	bool has_alpha;
 } sprite_t;
@@ -41,13 +41,13 @@ typedef struct ss_frame_s {
 typedef struct sprite_sheet_s {
 	i32 width;
 	i32 height;
-	sprite_t *backing_sprite;
+	sprite_t* backing_sprite;
 	size_t num_frames;
-	ss_frame_t *frames;
+	ss_frame_t* frames;
 } sprite_sheet_t;
 
-bool sprite_load(const char *path, sprite_t **out);
-void sprite_create(u8 *data, u32 w, u32 h, u32 bpp, u32 stride, u32 format,
-		   sprite_t **out);
-bool sprite_create_texture(SDL_Renderer *ren, sprite_t *img);
-void sprite_shutdown(sprite_t *img);
+bool sprite_load(const char* path, sprite_t** out);
+void sprite_create(u8* data, u32 w, u32 h, u32 bpp, u32 stride, u32 format,
+		   sprite_t** out);
+bool sprite_create_texture(SDL_Renderer* ren, sprite_t* img);
+void sprite_shutdown(sprite_t* img);
