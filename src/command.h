@@ -24,7 +24,6 @@
 typedef struct input_state_s input_state_t;
 
 typedef enum {
-	kCommandNone = -1,
 	kCommandFirst = 0,
 	kCommandPlayerUp = kCommandFirst,
 	kCommandPlayerDown = 1,
@@ -37,10 +36,10 @@ typedef enum {
 	kCommandSetFpsLow = 8,
 	kCommandQuit = 9,
 	kCommandDebugMode = 10,
-	kCommandMax = 11
+	kCommandConsole = 11,
+	kCommandNone = 12,
+	kCommandMax = kCommandNone
 } command_t;
-
-// bool kActiveCommands[kCommandMax];
 
 void cmd_init(void);
 bool cmd_get_state(input_state_t* inputs, const command_t cmd);

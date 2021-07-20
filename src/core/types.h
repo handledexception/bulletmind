@@ -33,5 +33,13 @@ typedef unsigned long long u64;
 typedef float f32;
 typedef double f64;
 
+typedef enum {
+    kResultOk = 0,
+    kResultError = 1,
+    kResultNotFound = 2,
+    kResultNullPointer = 3,
+    kResultUnknown = 4
+} result;
+
 #include "core/rect.h"
 #include "core/video.h"

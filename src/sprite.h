@@ -34,7 +34,7 @@ typedef struct sprite_s {
 #define MAX_SPRITE_SHEET_FRAMES 32
 
 typedef struct ss_frame_s {
-	SDL_Rect bounds;
+	rect_t bounds;
 	f32 duration;
 } ss_frame_t;
 

@@ -53,12 +53,13 @@ bool cmd_get_state(input_state_t* inputs, const command_t cmd)
 		gamepad_button_state = gb->state;
 
 	return (bool)(key_state | mouse_button_state | gamepad_button_state);
-	// return kActiveCommands[cmd];
 }
 
+//todo(paul): debounce the keypresses to make toggle work
 void cmd_toggle_bool(input_state_t* inputs, const command_t cmd, bool* value)
 {
 	static bool toggled = false;
+
 	if (cmd_get_state(inputs, cmd) == true) {
 		if (toggled == false) {
 			if (value != NULL) {
@@ -84,6 +85,10 @@ void cmd_refresh(engine_t* eng)
 
 	cmd_toggle_bool(eng->inputs, kCommandDebugMode, &eng->debug);
 
+	cmd_toggle_bool(eng->inputs, kCommandConsole, &eng->console);
+	if (eng->console)
+		eng->state = kEngineConsole;
+
 	if (cmd_get_state(eng->inputs, kCommandSetFpsHigh) == true) {
 		eng->target_frametime = FRAME_TIME(eng->target_fps);
 	}
@@ -102,8 +107,6 @@ const char* cmd_get_name(const command_t cmd)
 	static char buffer[256];
 
 	switch (cmd) {
-	case kCommandNone:
-		break;
 	case kCommandPlayerUp:
 		strcpy(&buffer[0], "Player Move Up");
 		break;
@@ -135,9 +138,13 @@ const char* cmd_get_name(const command_t cmd)
 		strcpy(&buffer[0], "Quit Game");
 		break;
 	case kCommandDebugMode:
-		strcpy(&buffer[0], "Set Debug Mode");
+		strcpy(&buffer[0], "Toggle Debug Mode");
 		break;
-	case kCommandMax:
+	case kCommandConsole:
+		strcpy(&buffer[0], "Toggle Console");
+		break;
+	default:
+	case kCommandNone:
 		break;
 	}
 

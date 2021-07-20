@@ -19,6 +19,7 @@
 #include "platform/platform.h"
 // #include "platform/win-version.h"
 #include "core/time_convert.h"
+#include "core/logger.h"
 
 static LARGE_INTEGER clock_freq;
 static bool clock_initialized = false;
@@ -78,4 +79,35 @@ bool os_file_exists(const char* path)
 
 	free(path_utf16);
 	return hFind != INVALID_HANDLE_VALUE;
+}
+
+void* os_dlopen(const char* path)
+{
+	if (!path)
+		return NULL;
+
+	wchar_t* path_wide;
+	wchar_t* path_sep_wide;
+	
+	HMODULE module = NULL;
+	
+	os_utf8_to_wcs_ptr(path, 0, &path_wide);
+
+	module = LoadLibraryW(path_wide);
+	if (!module) {
+		logger(LOG_INFO, "LoadLibrary error %s", path);
+		return NULL;
+	}
+	
+	return module;
+}
+
+void* os_dlsym(void* module, const char* func)
+{
+	return GetProcAddress(module, func);
+}
+
+void os_dlclose(void* module)
+{
+	FreeLibrary(module);
 }

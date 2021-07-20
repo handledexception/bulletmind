@@ -29,7 +29,10 @@
 
 #include "platform/platform.h"
 
+#include "gfx/gfx_d3d11.h"
+
 #include <SDL.h>
+#include <SDL_syswm.h>
 #include <SDL_mixer.h>
 
 #define SDL_FLAGS                                            \
@@ -101,6 +104,12 @@ bool eng_init(const char* name, i32 version, engine_t* eng)
 		       SDL_GetError());
 		return false;
 	}
+
+	// SDL_SysWMinfo wm_info;
+	// SDL_GetWindowWMInfo(eng->window, &wm_info);
+	// HWND hwnd = wm_info.info.win.window;
+	// gfx_system_t* gfx_sys = (gfx_system_t*)malloc(sizeof(gfx_system_t));
+	// create_device_dependent_resources(gfx_sys);
 
 	eng->renderer = SDL_CreateRenderer(eng->window, eng->adapter_index,
 					   SDL_RENDERER_ACCELERATED);
@@ -176,8 +185,8 @@ void eng_refresh(engine_t* eng, f64 dt)
 		inp_refresh_pressed(eng->inputs, &event);
 	}
 
-	cmd_refresh(engine);
-	ent_refresh(engine, dt);
+	cmd_refresh(eng);
+	ent_refresh(eng, dt);
 }
 
 void eng_shutdown(engine_t* eng)

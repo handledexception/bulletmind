@@ -39,6 +39,7 @@ typedef struct audio_state_s audio_state_t;
 typedef enum {
 	kEngineStateStartup,
 	kEngineStatePlay,
+	kEngineConsole,
 	kEngineStateQuit,
 	kEngineStateShutdown
 } engine_state_t;
@@ -66,6 +67,7 @@ typedef struct engine_s {
 
 	engine_state_t state;
 	bool debug;
+	bool console;
 
 	entity_t* ent_list;
 	game_resource_t** game_resources;

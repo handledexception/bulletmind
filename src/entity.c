@@ -51,6 +51,8 @@ static const i32 kEnemyCaps =
 i32 gActiveEntities = 0; // extern
 i32 gLastEntity = 0;     // extern
 
+static const f32 kGravity = 9.8f;
+
 static const f32 kBulletSpeedMultiplier = 24000.f;
 
 bool ent_init(entity_t** ent_list, const i32 num_ents)
@@ -199,9 +201,12 @@ void ent_refresh(engine_t* eng, const f64 dt)
 						  sprite_sheet, &e->bbox,
 						  frame_scale, e->angle, flip);
 			} else if (!strcmp(e->name, "satellite")) {
-				draw_rect_solid(engine->renderer,
-						(f32)e->bbox.x, (f32)e->bbox.y,
-						e->size.x, e->size.y, e->color);
+				rect_t sat_rect = {
+					(f32)e->bbox.x, (f32)e->bbox.y,
+					e->size.x, e->size.y
+				};
+
+				draw_rect_solid(engine->renderer, sat_rect, e->color);
 			} else if (!strcmp(e->name, "bullet")) {
 				//TODO(paulh): Need a game_resource_t method for get_resource_by_name
 				game_resource_t* resource =
@@ -226,9 +231,18 @@ void ent_refresh(engine_t* eng, const f64 dt)
 						 sprite->texture, NULL, &dst,
 						 e->angle, NULL, SDL_FLIP_NONE);
 			} else {
-				draw_rect_solid(engine->renderer,
-						(f32)e->bbox.x, (f32)e->bbox.y,
-						e->size.x, e->size.y, e->color);
+				rect_t r = {
+					(f32)e->bbox.x, (f32)e->bbox.y,
+					e->size.x, e->size.y
+				};
+				draw_rect_solid(engine->renderer, r, e->color);
+			}
+
+			// Draw debug overlays
+			if (engine->debug) {
+				SDL_SetRenderDrawColor(engine->renderer, 0xff, 0xff, 0xff, 0xff);
+				f32 rad = get_rect_radius(e->bbox);
+				draw_circle(engine->renderer, (f32)e->org.x, (f32)e->org.y, rad);
 			}
 		}
 
@@ -361,11 +375,13 @@ void ent_bbox_update(entity_t* e)
 	vec2f_set(&half_size, (f32)(e->size.x) * 0.5f, (f32)(e->size.y) * 0.5f);
 	e->bbox.x = (i32)(e->org.x - half_size.x);
 	e->bbox.y = (i32)(e->org.y - half_size.y);
+	e->bbox.w = (i32)(e->org.x + half_size.x);
+	e->bbox.h = (i32)(e->org.y + half_size.y);
 }
 
 void eng_centerpoint(entity_t* e, vec2f_t* p)
 {
-	
+
 }
 
 void ent_set_name(entity_t* e, const char* name)
@@ -497,7 +513,8 @@ void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 {
 	// Player entity movement
 	vec2f_t p_accel = {0};
-	f32 p_speed = 800.f;
+	f32 p_speed = 48.f * kGravity; // meters/sec
+	f32 friction = 0.015625f; // 1 meter / 64 pixels
 	if (cmd_get_state(eng->inputs, kCommandPlayerSpeed) == true) {
 		p_speed *= 2.f;
 	}
@@ -514,7 +531,7 @@ void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 		p_accel.x = p_speed;
 	}
 
-	ent_euler_move(player, p_accel, 0.035, dt);
+	ent_euler_move(player, p_accel, friction, dt);
 	// screen bounds checking
 	if (player->org.x > (f32)eng->camera_bounds.w) {
 		player->org.x = (f32)eng->camera_bounds.w;

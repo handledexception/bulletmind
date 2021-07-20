@@ -27,6 +27,9 @@
 #include "core/buffer.h"
 #include "core/mem_arena.h"
 #include "core/time_convert.h"
+#include "core/utils.h"
+
+#include "math/vec2.h"
 
 #include "platform/platform.h"
 
@@ -36,8 +39,7 @@
 #include "input.h"
 #include "engine.h"
 #include "resource.h"
-#include "core/utils.h"
-#include "math/vec2.h"
+#include "render.h"
 
 #include <SDL.h>
 
@@ -172,6 +174,7 @@ int main(int argc, char** argv)
 #else
 	engine->debug = false;
 #endif
+	engine->console = false;
 
 	const u32 app_version =
 		pack_version(APP_VER_MAJ, APP_VER_MIN, APP_VER_REV);
@@ -188,32 +191,51 @@ int main(int argc, char** argv)
 
 		switch (engine->state) {
 		case kEngineStateStartup:
-			ent_spawn_player_and_satellite(engine->ent_list, engine->camera_bounds.w, engine->camera_bounds.h);
-			eng_play_sound(engine, "theme_music",
-				       DEFAULT_MUSIC_VOLUME);
-			engine->state = kEngineStatePlay;
-			break;
+			{
+				ent_spawn_player_and_satellite(engine->ent_list, engine->camera_bounds.w, engine->camera_bounds.h);
+				eng_play_sound(engine, "theme_music",
+						DEFAULT_MUSIC_VOLUME);
+				engine->state = kEngineStatePlay;
+				break;
+			}
 		case kEngineStatePlay:
-			SDL_SetRenderDrawColor(engine->renderer, 0x20, 0x20,
-					       0x20, 0xFF);
-			SDL_RenderClear(engine->renderer);
+		case kEngineConsole:
+			{
+				SDL_SetRenderDrawColor(engine->renderer, 0x20, 0x20,
+							0x20, 0xFF);
+				SDL_RenderClear(engine->renderer);
 
-			// vec2f_t cam = {0.f, 0.f};
-			entity_t* player = ent_by_index(engine->ent_list, 0);
-			update_tilemap(engine, (u32)player->org.x,
-				       (u32)player->org.y);
+				// vec2f_t cam = {0.f, 0.f};
+				entity_t* player = ent_by_index(engine->ent_list, 0);
+				update_tilemap(engine, (u32)player->org.x,
+						(u32)player->org.y);
 
-			if (engine->debug)
-				print_debug_info(engine, dt);
+				if (engine->debug)
+					print_debug_info(engine, dt);
 
-			eng_refresh(engine, dt);
+				eng_refresh(engine, dt);
 
-			break;
+				if (engine->console) {
+					u8 r, g, b, a;
+					SDL_GetRenderDrawColor(engine->renderer, &r, &g, &b, &a);
+					rgba_t con_color = { 0x3d, 0x3a, 0x36, 0xff };
+					rect_t con_rect = { engine->camera_bounds.x,
+						engine->camera_bounds.y,
+						engine->camera_bounds.w,
+						engine->camera_bounds.h / 3 };
+					draw_rect_solid(engine->renderer, con_rect, con_color);
+					SDL_SetRenderDrawColor(engine->renderer, r, g, b, a); // restore color
+				}
+
+				break;
+			}
 		default:
 		case kEngineStateQuit:
-			eng_stop_music(engine);
-			engine->state = kEngineStateShutdown;
-			break;
+			{
+				eng_stop_music(engine);
+				engine->state = kEngineStateShutdown;
+				break;
+			}
 		}
 
 		do {

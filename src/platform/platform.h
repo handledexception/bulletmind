@@ -43,4 +43,8 @@ BM_PLATFORM_EXPORT u64 os_get_time_ns(void);
 BM_PLATFORM_EXPORT f64 os_get_time_sec(void);
 BM_PLATFORM_EXPORT f64 os_get_time_msec(void);
 
+BM_PLATFORM_EXPORT void* os_dlopen(const char* path);
+BM_PLATFORM_EXPORT void* os_dlsym(void* module, const char* func);
+BM_PLATFORM_EXPORT void os_dlclose(void* module);
+
 BM_PLATFORM_EXPORT bool os_file_exists(const char* path);

@@ -60,6 +60,12 @@ set(BM_PLATFORM_SOURCES
     src/platform/platform.c
     src/platform/utf8.c)
 
+set(BM_GFX_HEADERS
+    src/gfx/gfx.h)
+
+set(BM_GFX_SOURCES
+    src/gfx/gfx.c)
+
 set(BM_GAME_HEADERS
     src/audio.h
     src/command.h
@@ -94,6 +100,13 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         ${BM_PLATFORM_SOURCES}
         src/platform/platform-win32.c)
 
+    set(BM_GFX_HEADERS
+        ${BM_GFX_HEADERS}
+        src/gfx/gfx_d3d11.h)
+    set(BM_GFX_SOURCES
+        ${BM_GFX_SOURCES}
+        src/gfx/gfx_d3d11.c)
+
     if (BM_BUILD_32BIT)
         set(BM_LIB_DIRS
             deps/SDL2/lib/x86)
@@ -125,6 +138,8 @@ set(BM_TARGET_SOURCES
     ${BM_MATH_HEADERS}
     ${BM_PLATFORM_HEADERS}
     ${BM_PLATFORM_SOURCES}
+    ${BM_GFX_HEADERS}
+    ${BM_GFX_SOURCES}
     ${BM_GAME_HEADERS}
     ${BM_GAME_SOURCES})
 

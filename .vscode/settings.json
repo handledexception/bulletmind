@@ -29,7 +29,8 @@
         "sdl_mixer.h": "c",
         "memalign.h": "c",
         "bitfield.h": "c",
-        "xiosbase": "cpp"
+        "xiosbase": "cpp",
+        "sdl_syswm.h": "c"
     },
     "cmake.configureOnOpen": false
 }
