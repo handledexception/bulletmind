@@ -18,7 +18,6 @@
 
 #include "platform/platform.h"
 // #include "platform/win-version.h"
-#include "core/time_convert.h"
 #include "core/logger.h"
 
 static LARGE_INTEGER clock_freq;
@@ -52,16 +51,6 @@ u64 os_get_time_ns(void)
 	time_val /= (f64)get_clock_freq();
 
 	return (u64)time_val;
-}
-
-f64 os_get_time_sec(void)
-{
-	return nsec_to_sec_f64(os_get_time_ns());
-}
-
-f64 os_get_time_msec(void)
-{
-	return nsec_to_msec_f64(os_get_time_ns());
 }
 
 bool os_file_exists(const char* path)

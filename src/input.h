@@ -106,11 +106,11 @@ typedef struct gamepad_s {
 	gamepad_axis_t axes[kGamepadAxisMax];
 } gamepad_t;
 
-typedef struct key_s {
+typedef struct kbkey_s {
 	u64 timestamp; // timestamp of last key state change
 	u16 scancode;  // keyboard scancode
 	u8 state;      // key up/down state
-} key_t;
+} kbkey_t;
 
 typedef struct mbutton_s {
 	u64 timestamp; // timestamp of last mouse button state change
@@ -129,13 +129,13 @@ typedef struct virtual_button_s {
 	const char* name; // display name
 	u8 state;         // 0 = up/released, 1 = down/pressed
 	mouse_button_t* mouse_button;
-	key_t* keyboard_key;
+	kbkey_t* keyboard_key;
 	gamepad_button_t* gamepad_button;
 } virtual_button_t;
 
 typedef struct input_state_s {
 	gamepad_t gamepads[MAX_GAMEPADS]; // array of gamepad states
-	key_t keys[MAX_KEYBOARD_KEYS];     // array of keyboard key states
+	kbkey_t keys[MAX_KEYBOARD_KEYS];     // array of keyboard key states
 	mouse_t mouse;                    // mouse state
 	virtual_button_t buttons[MAX_VIRTUAL_BUTTONS];
 } input_state_t;
@@ -149,8 +149,8 @@ bool inp_init_keyboard(input_state_t* inputs);
 bool inp_init_mouse(input_state_t* inputs);
 bool inp_init_gamepads(input_state_t* inputs);
 
-void inp_set_key_state(key_t* keys, u16 scancode, u8 state);
-u8 inp_get_key_state(key_t* keys, u16 scancode);
+void inp_set_key_state(kbkey_t* keys, u16 scancode, u8 state);
+u8 inp_get_key_state(kbkey_t* keys, u16 scancode);
 
 void inp_set_mouse_pos(mouse_t* mouse, const vec2i_t scr, const vec2i_t wnd);
 void inp_set_mouse_button_state(mouse_t* mouse, u16 button, u8 state);

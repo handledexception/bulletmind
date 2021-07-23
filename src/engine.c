@@ -29,7 +29,7 @@
 
 #include "platform/platform.h"
 
-#include "gfx/gfx_d3d11.h"
+// #include "gfx/gfx_d3d11.h"
 
 #include <SDL.h>
 #include <SDL_syswm.h>

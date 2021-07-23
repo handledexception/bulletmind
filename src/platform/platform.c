@@ -16,6 +16,7 @@
 
 #include "platform/platform.h"
 #include "platform/utf8.h"
+#include "core/time_convert.h"
 
 size_t os_utf8_to_wcs(const char* str, size_t len, wchar_t* dst,
 		      size_t dst_size)
@@ -54,4 +55,14 @@ size_t os_utf8_to_wcs_ptr(const char* str, size_t len, wchar_t** pstr)
 		*pstr = NULL;
 		return 0;
 	}
+}
+
+f64 os_get_time_sec(void)
+{
+	return nsec_to_sec_f64(os_get_time_ns());
+}
+
+f64 os_get_time_msec(void)
+{
+	return nsec_to_msec_f64(os_get_time_ns());
 }

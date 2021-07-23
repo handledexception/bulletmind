@@ -26,15 +26,14 @@ extern "C"
 
 #if defined(BM_WINDOWS)
 #define BM_MAX_PATH 256
-#elif defined(BM_MACOS)
+#elif defined(BM_DARWIN)
 #define BM_MAX_PATH 1024
 #elif defined(BM_LINUX)
 #define BM_MAX_PATH 4096
 #endif
 
-	BM_PLATFORM_EXPORT size_t
-	os_utf8_to_wcs(const char* str, size_t len, wchar_t* dst,
-		       size_t dst_size);
+BM_PLATFORM_EXPORT size_t os_utf8_to_wcs(const char* str, size_t len,
+						wchar_t* dst, size_t dst_size);
 BM_PLATFORM_EXPORT size_t os_utf8_to_wcs_ptr(const char* str, size_t len,
 					     wchar_t** pstr);
 

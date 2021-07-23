@@ -17,7 +17,7 @@
 #include "core/mem_align.h"
 
 #include <assert.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 #if defined(BM_WINDOWS)
 #define ALIGNED_MALLOC 1

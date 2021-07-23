@@ -245,7 +245,7 @@ bool inp_init_gamepads(input_state_t* inputs)
 	return !gamepad_err;
 }
 
-void inp_set_key_state(key_t* keys, u16 scancode, u8 state)
+void inp_set_key_state(kbkey_t* keys, u16 scancode, u8 state)
 {
 	if (keys) {
 		if (keys[scancode].state != state) {
@@ -256,7 +256,7 @@ void inp_set_key_state(key_t* keys, u16 scancode, u8 state)
 	}
 }
 
-u8 inp_get_key_state(key_t* keys, u16 scancode)
+u8 inp_get_key_state(kbkey_t* keys, u16 scancode)
 {
 	u8 state = 0;
 	if (keys)

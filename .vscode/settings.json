@@ -30,7 +30,9 @@
         "memalign.h": "c",
         "bitfield.h": "c",
         "xiosbase": "cpp",
-        "sdl_syswm.h": "c"
+        "sdl_syswm.h": "c",
+        "export.h": "c",
+        "types.h": "c"
     },
     "cmake.configureOnOpen": false
 }

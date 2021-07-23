@@ -119,7 +119,17 @@ void print_debug_info(engine_t* engine, f64 dt)
 	if (engine) {
 		entity_t* player_ent = ent_by_name(engine->ent_list, "player");
 		char time_buf[TEMP_STRING_MAX];
+#if defined BM_WINDOWS
 		_strtime(time_buf);
+#elif defined BM_DARWIN
+		time_t raw_time;
+		struct tm *info;
+   		time( &raw_time );
+
+   		info = localtime( &raw_time );
+
+   		strftime(time_buf, TEMP_STRING_MAX, "%x - %I:%M%p", info);
+#endif
 		font_print(engine, 10, 10, 1.5, "Time: %s", time_buf);
 		font_print(engine, 10, 30, 1.5, "Engine Time: %f",
 			   eng_get_time_sec());
