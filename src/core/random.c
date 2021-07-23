@@ -1,6 +1,6 @@
 #include "core/random.h"
 
-inline int gen_random(int lower, int upper, int iterations)
+int gen_random(int lower, int upper, int iterations)
 {
 	int result = 0;
 	// srand(time(0));
