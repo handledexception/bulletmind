@@ -34,10 +34,13 @@ void cmd_init(void)
 	logger(LOG_INFO, "cmd_init OK\n");
 }
 
-//TODO(paulh): Use the bitfield macros for this instead
-bool cmd_get_state(input_state_t* inputs, const command_t cmd)
+//TODO(paulh): This should probably be redesigned to return the state as an output param
+bool cmd_get_state(input_state_t* inputs, command_t cmd)
 {
 	virtual_button_t* vb = &inputs->buttons[cmd];
+	if (!vb)
+		return false;
+
 	kbkey_t* key = vb->keyboard_key;
 	gamepad_button_t* gb = vb->gamepad_button;
 	mouse_button_t* mb = vb->mouse_button;
@@ -56,23 +59,19 @@ bool cmd_get_state(input_state_t* inputs, const command_t cmd)
 }
 
 //todo(paul): debounce the keypresses to make toggle work
-void cmd_toggle_bool(input_state_t* inputs, const command_t cmd, bool* value)
-{
-	static bool toggled = false;
-
-	if (cmd_get_state(inputs, cmd) == true) {
-		if (toggled == false) {
-			if (value != NULL) {
-				if (*value == true)
-					*value = false;
-				else
-					*value = true;
-			}
-			toggled = true;
+void cmd_toggle_bool(input_state_t* inputs, command_t cmd, bool* value)
+{	
+	bool toggled = inputs->buttons[cmd].toggled;
+	if (cmd_get_state(inputs, cmd)) {
+		if (!toggled) {
+			*value = !*value;
+			inputs->buttons[cmd].toggled = true;
 		}
-	} else {
-		if (toggled == true)
-			toggled = false;
+	}
+	else {
+		if (toggled) {
+			inputs->buttons[cmd].toggled = false;
+		}
 	}
 }
 
@@ -86,6 +85,7 @@ void cmd_refresh(engine_t* eng)
 	cmd_toggle_bool(eng->inputs, kCommandDebugMode, &eng->debug);
 
 	cmd_toggle_bool(eng->inputs, kCommandConsole, &eng->console);
+
 	if (eng->console)
 		eng->state = kEngineConsole;
 
@@ -102,7 +102,7 @@ void cmd_shutdown(void)
 	logger(LOG_INFO, "cmd_shutdown OK\n");
 }
 
-const char* cmd_get_name(const command_t cmd)
+const char* cmd_get_name(command_t cmd)
 {
 	static char buffer[256];
 

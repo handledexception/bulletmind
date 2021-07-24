@@ -50,6 +50,15 @@ bool inp_init(input_state_t* inputs)
 	}
 	logger(LOG_INFO, "Initialized mouse OK");
 
+	for (size_t i = 0; i < kCommandMax; i++) {
+		inputs->buttons[i].name = NULL;
+		inputs->buttons[i].state = 0;
+		inputs->buttons[i].mouse_button = NULL;
+		inputs->buttons[i].keyboard_key = NULL;
+		inputs->buttons[i].gamepad_button = NULL;
+		inputs->buttons[i].toggled = false;
+	}
+
 	inp_bind_virtual_key(inputs, kCommandQuit, kScancodeEscape);
 	inp_bind_virtual_key(inputs, kCommandPlayerUp, kScancodeW);
 	inp_bind_virtual_key(inputs, kCommandPlayerDown, kScancodeS);
@@ -194,10 +203,25 @@ bool inp_init_keyboard(input_state_t* inputs)
 bool inp_init_mouse(input_state_t* inputs)
 {
 	inputs->mouse.buttons[SDL_BUTTON_LEFT].button = SDL_BUTTON_LEFT;
+	inputs->mouse.buttons[SDL_BUTTON_LEFT].timestamp = 0ULL;
+	inputs->mouse.buttons[SDL_BUTTON_LEFT].state = false;
+
 	inputs->mouse.buttons[SDL_BUTTON_MIDDLE].button = SDL_BUTTON_MIDDLE;
+	inputs->mouse.buttons[SDL_BUTTON_MIDDLE].timestamp = 0ULL;
+	inputs->mouse.buttons[SDL_BUTTON_MIDDLE].state = false;
+
 	inputs->mouse.buttons[SDL_BUTTON_RIGHT].button = SDL_BUTTON_RIGHT;
+	inputs->mouse.buttons[SDL_BUTTON_RIGHT].timestamp = 0ULL;
+	inputs->mouse.buttons[SDL_BUTTON_RIGHT].state = false;
+
 	inputs->mouse.buttons[SDL_BUTTON_X1].button = SDL_BUTTON_X1;
+	inputs->mouse.buttons[SDL_BUTTON_X1].timestamp = 0ULL;
+	inputs->mouse.buttons[SDL_BUTTON_X1].state = false;
+
 	inputs->mouse.buttons[SDL_BUTTON_X2].button = SDL_BUTTON_X2;
+	inputs->mouse.buttons[SDL_BUTTON_X2].timestamp = 0ULL;
+	inputs->mouse.buttons[SDL_BUTTON_X2].state = false;
+
 	return true;
 }
 
@@ -250,9 +274,8 @@ void inp_set_key_state(kbkey_t* keys, u16 scancode, u8 state)
 	if (keys) {
 		if (keys[scancode].state != state) {
 			keys[scancode].state = state;
+			keys[scancode].timestamp = os_get_time_ns();
 		}
-
-		keys[scancode].timestamp = os_get_time_ns();
 	}
 }
 
@@ -279,9 +302,8 @@ void inp_set_mouse_button_state(mouse_t* mouse, u16 button, u8 state)
 
 		if (mouse->buttons[button].state != state) {
 			mouse->buttons[button].state = state;
+			mouse->buttons[button].timestamp = os_get_time_ns();
 		}
-
-		mouse->buttons[button].timestamp = os_get_time_ns();
 	}
 }
 
@@ -504,8 +526,10 @@ bool inp_enumerate_gamepad_axes(gamepad_t* gamepad)
 void inp_set_gamepad_button_state(gamepad_t* gamepad,
 				  gamepad_button_kind_t button, u8 state)
 {
-	if (gamepad && gamepad->buttons[button].state != state)
+	if (gamepad && gamepad->buttons[button].state != state) {
 		gamepad->buttons[button].state = state;
+		gamepad->buttons[button].timestamp = os_get_time_ns();
+	}
 }
 
 u8 inp_get_gamepad_button_state(gamepad_t* gamepad,

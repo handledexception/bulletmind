@@ -131,6 +131,7 @@ typedef struct virtual_button_s {
 	mouse_button_t* mouse_button;
 	kbkey_t* keyboard_key;
 	gamepad_button_t* gamepad_button;
+	bool toggled;
 } virtual_button_t;
 
 typedef struct input_state_s {
