@@ -58,6 +58,9 @@
 #define WORLD_TILES_HEIGHT 256
 #define TILE_WIDTH 64
 #define TILE_HEIGHT 64
+
+#define CONSOLE_SPEED 10
+
 static u8* world_map = NULL;
 
 void generate_tilemap(u32 width, u32 height)
@@ -185,6 +188,25 @@ int main(int argc, char** argv)
 	engine->debug = false;
 #endif
 	engine->console = false;
+	i32 con_height = engine->camera_bounds.h / 3;
+	engine->console_bounds.x = engine->camera_bounds.x;
+	engine->console_bounds.y = engine->camera_bounds.y - con_height;
+	engine->console_bounds.w = engine->camera_bounds.w;
+	engine->console_bounds.h = con_height;
+
+	rect_t con_start = {
+		engine->console_bounds.x,
+		engine->console_bounds.y,
+		engine->console_bounds.w,
+		engine->console_bounds.h
+	};
+
+	rect_t con_end = {
+		engine->camera_bounds.x,
+		engine->camera_bounds.y,
+		engine->camera_bounds.w,
+		con_height
+	};
 
 	const u32 app_version =
 		pack_version(APP_VER_MAJ, APP_VER_MIN, APP_VER_REV);
@@ -225,16 +247,32 @@ int main(int argc, char** argv)
 
 				eng_refresh(engine, dt);
 
-				if (engine->console) {
+				if (engine->state == kEngineConsole) {
 					u8 r, g, b, a;
 					SDL_GetRenderDrawColor(engine->renderer, &r, &g, &b, &a);
 					rgba_t con_color = { 0x3d, 0x3a, 0x36, 0xff };
-					rect_t con_rect = { engine->camera_bounds.x,
-						engine->camera_bounds.y,
-						engine->camera_bounds.w,
-						engine->camera_bounds.h / 3 };
-					draw_rect_solid(engine->renderer, con_rect, con_color);
+
+					if (engine->console) {
+
+						if (engine->console_bounds.y < con_end.y)
+							engine->console_bounds.y += CONSOLE_SPEED;
+
+					}
+					else {
+						if (engine->console_bounds.y > con_start.y)
+							engine->console_bounds.y -= CONSOLE_SPEED;
+						else
+							engine->state = kEngineStatePlay;
+					}
+
+					draw_rect_solid(engine->renderer, engine->console_bounds, con_color);
 					SDL_SetRenderDrawColor(engine->renderer, r, g, b, a); // restore color
+
+					font_print(
+						engine,
+						engine->console_bounds.x + 8,
+						engine->console_bounds.y + engine->console_bounds.h - 20,
+						1.5, "> hello, world!");
 				}
 
 				break;

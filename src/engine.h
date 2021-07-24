@@ -67,7 +67,9 @@ typedef struct engine_s {
 
 	engine_state_t state;
 	bool debug;
+	
 	bool console;
+	rect_t console_bounds;
 
 	entity_t* ent_list;
 	game_resource_t** game_resources;

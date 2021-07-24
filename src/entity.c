@@ -238,7 +238,7 @@ void ent_refresh(engine_t* eng, const f64 dt)
 			// Draw debug overlays
 			if (engine->debug) {
 				SDL_SetRenderDrawColor(engine->renderer, 0xff, 0xff, 0xff, 0xff);
-				f32 rad = get_rect_radius(e->bounds);
+				f32 rad = radius_of_circle_in_rect(e->bounds);
 				draw_circle(engine->renderer, (f32)e->org.x, (f32)e->org.y, rad);
 			}
 		}
