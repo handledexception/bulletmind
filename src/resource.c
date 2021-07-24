@@ -102,6 +102,14 @@ bool game_res_init(engine_t* eng)
 		eng->game_resources[asset_idx] = make_game_resource(
 			eng, asset_name, asset_path, asset_type);
 
+		if (asset_type == kAssetTypeSprite) {
+			i32 sprite_scale = 1;
+			if (!read_table_int32(asset, "scale", &sprite_scale))
+				sprite_scale = 1;
+			sprite_t* s = (sprite_t*)eng->game_resources[asset_idx]->data;
+			s->scaling = sprite_scale;
+		}
+
 		logger(LOG_INFO, "Loaded game resource: %s (%s)\n", asset_name,
 		       asset_type_to_string(asset_type));
 

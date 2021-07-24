@@ -41,6 +41,12 @@ static inline void vec2f_set(vec2f_t* dst, f32 x, f32 y)
 	dst->y = y;
 }
 
+static inline void vec2i_set(vec2i_t* dst, i32 x, i32 y)
+{
+	dst->x = x;
+	dst->y = y;
+}
+
 static inline void vec2f_zero(vec2f_t* dst)
 {
 	vec2f_set(dst, 0.f, 0.f);
@@ -90,6 +96,11 @@ static inline void vec2f_mulf(vec2f_t* dst, const vec2f_t v, f32 f)
 static inline void vec2f_divf(vec2f_t* dst, const vec2f_t v, f32 f)
 {
 	vec2f_set(dst, v.x / f, v.y / f);
+}
+
+static inline void vec2i_div(vec2i_t* dst, const vec2i_t v, i32 i)
+{
+	vec2i_set(dst, v.x / i, v.y / i);
 }
 
 static inline void vec2f_negate(vec2f_t* dst, const vec2f_t v)

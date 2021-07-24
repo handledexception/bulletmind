@@ -53,7 +53,7 @@ typedef struct entity_s {
 	vec2f_t org;		// entity centerpoint
 	vec2f_t vel;		// entity velocity
 	vec2i_t size;		// entity width and height in pixels
-	rect_t bbox;		// entity bounding box
+	rect_t bounds;		// entity bounding box
 	vec2f_t mouse_org; 	// mouse click origin
 	rgba_t color;		// entity rect color (if no sprite)
 	f32 angle;			// entity angle
@@ -77,7 +77,7 @@ entity_t* ent_spawn(entity_t* ent_list, const char* name, const vec2f_t org,
 		    const vec2i_t size, const rgba_t* color, const i32 caps,
 		    const f64 lifetime);
 void ent_lifetime_update(entity_t* e);
-void ent_bbox_update(entity_t* e);
+void ent_update_bounds(entity_t* e);
 
 void ent_set_name(entity_t* e, const char* name);
 
@@ -89,7 +89,7 @@ bool ent_has_no_caps(entity_t* e);
 
 void ent_set_pos(entity_t* e, const vec2f_t org);
 void ent_set_vel(entity_t* e, const vec2f_t vel, f32 ang);
-void ent_set_bbox(entity_t* e, const rect_t* bbox);
+void ent_set_bounds(entity_t* e, const rect_t* bounds);
 void ent_set_mouse_org(entity_t* e, const vec2f_t m_org);
 void ent_euler_move(entity_t* e, const vec2f_t accel, const f32 friction,
 		    const f64 dt);

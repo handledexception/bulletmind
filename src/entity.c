@@ -178,9 +178,6 @@ void ent_refresh(engine_t* eng, const f64 dt)
 				sprite_sheet_t* sprite_sheet =
 					(sprite_sheet_t*)resource->data;
 
-				//TODO: implement frame timing (hold frame for X milliseconds before incrementing)
-				//TODO: scale frames iteration by player movement speed (simulate running)
-
 				// Flip sprite on X axis depending on mouse pos
 				vec2f_t player_to_mouse = {0.f, 0.f};
 				vec2f_t pm_temp = {0.f, 0.f};
@@ -194,15 +191,12 @@ void ent_refresh(engine_t* eng, const f64 dt)
 				vec2f_t vel_tmp = {0.f, 0.f};
 				vec2f_fabsf(&vel_tmp, e->vel);
 				frame_scale = MAX(vel_tmp.x, vel_tmp.y);
-
-				// printf("frame scale %f, %f, %f | ", frame_scale, vel_tmp.x, vel_tmp.y);
-
 				draw_sprite_sheet(engine->renderer,
-						  sprite_sheet, &e->bbox,
+						  sprite_sheet, e->org,
 						  frame_scale, e->angle, flip);
 			} else if (!strcmp(e->name, "satellite")) {
 				rect_t sat_rect = {
-					(f32)e->bbox.x, (f32)e->bbox.y,
+					(f32)e->bounds.x, (f32)e->bounds.y,
 					e->size.x, e->size.y
 				};
 
@@ -212,9 +206,12 @@ void ent_refresh(engine_t* eng, const f64 dt)
 				game_resource_t* resource =
 					eng_get_resource(engine, "bullet");
 				sprite_t* sprite = (sprite_t*)resource->data;
-				SDL_Rect dst = {e->bbox.x, e->bbox.y,
-						sprite->surface->clip_rect.w,
-						sprite->surface->clip_rect.h};
+				SDL_Rect dst = {
+					e->bounds.x,
+					e->bounds.y,
+					sprite->surface->clip_rect.w,
+					sprite->surface->clip_rect.h
+				};
 
 				// calculate angle of rotation between mouse and bullet origins
 				if (e->angle == 0.f) {
@@ -232,7 +229,7 @@ void ent_refresh(engine_t* eng, const f64 dt)
 						 e->angle, NULL, SDL_FLIP_NONE);
 			} else {
 				rect_t r = {
-					(f32)e->bbox.x, (f32)e->bbox.y,
+					(f32)e->bounds.x, (f32)e->bounds.y,
 					e->size.x, e->size.y
 				};
 				draw_rect_solid(engine->renderer, r, e->color);
@@ -241,7 +238,7 @@ void ent_refresh(engine_t* eng, const f64 dt)
 			// Draw debug overlays
 			if (engine->debug) {
 				SDL_SetRenderDrawColor(engine->renderer, 0xff, 0xff, 0xff, 0xff);
-				f32 rad = get_rect_radius(e->bbox);
+				f32 rad = get_rect_radius(e->bounds);
 				draw_circle(engine->renderer, (f32)e->org.x, (f32)e->org.y, rad);
 			}
 		}
@@ -251,13 +248,13 @@ void ent_refresh(engine_t* eng, const f64 dt)
 		//         entity_t* collider = ent_by_index(ent_list, c);
 		// 		if (e == collider) break; // don't check against self
 		// 		if (ent_has_caps(collider, kEntityCollider)) {
-		// 			f32 ex = e->org.x + e->bbox.w;
-		// 			f32 ey = e->org.y + e->bbox.h;
+		// 			f32 ex = e->org.x + e->bounds.w;
+		// 			f32 ey = e->org.y + e->bounds.h;
 		// 			if (ex >= collider->org.x) {
-		// 				e->org.x = collider->org.x - e->bbox.w;
+		// 				e->org.x = collider->org.x - e->bounds.w;
 		// 			}
 		// 			if (ey > collider->org.y) {
-		// 				e->org.y = collider->org.y - e->bbox.h;
+		// 				e->org.y = collider->org.y - e->bounds.h;
 		// 			}
 		// 		}
 		// 	}
@@ -326,14 +323,14 @@ entity_t* ent_spawn(entity_t* ent_list, const char* name, const vec2f_t org,
 {
 	entity_t* e = ent_new(ent_list);
 	if (e != NULL) {
-		const vec2i_t half_size = {(i32)(size.x / 2),
-					   (i32)(size.y / 2)};
-		const rect_t bounding = {
-			(i32)org.x - half_size.x,
-			(i32)org.y - half_size.y,
-			(i32)org.x + half_size.x,
-			(i32)org.y + half_size.y,
-		};
+		// const vec2i_t half_size = {(i32)(size.x / 2),
+		// 			   (i32)(size.y / 2)};
+		// const rect_t bounding = {
+		// 	(i32)org.x - half_size.x,
+		// 	(i32)org.y - half_size.y,
+		// 	(i32)org.x + half_size.x,
+		// 	(i32)org.y + half_size.y,
+		// };
 
 		ent_set_name(e, name);
 		ent_set_caps(e, caps);
@@ -342,8 +339,9 @@ entity_t* ent_spawn(entity_t* ent_list, const char* name, const vec2f_t org,
 		e->size = size;
 		e->color = *color;
 		e->angle = 0.f;
-		e->bbox = bounding;
 		e->timestamp = eng_get_time_sec();
+
+		ent_update_bounds(e);
 
 		if (!lifetime)
 			e->lifetime = lifetime;
@@ -369,14 +367,14 @@ void ent_lifetime_update(entity_t* e)
 }
 
 // update the bounding box constraints based on changes in entity origin
-void ent_bbox_update(entity_t* e)
+void ent_update_bounds(entity_t* e)
 {
-	vec2f_t half_size = {0.f, 0.f};
-	vec2f_set(&half_size, (f32)(e->size.x) * 0.5f, (f32)(e->size.y) * 0.5f);
-	e->bbox.x = (i32)(e->org.x - half_size.x);
-	e->bbox.y = (i32)(e->org.y - half_size.y);
-	e->bbox.w = (i32)(e->org.x + half_size.x);
-	e->bbox.h = (i32)(e->org.y + half_size.y);
+	vec2i_t half_size = { e->size.x, e->size.y };
+	vec2i_div(&half_size, e->size, 2);
+	e->bounds.x = (i32)(e->org.x) - half_size.x;
+	e->bounds.y = (i32)(e->org.y) - half_size.y;
+	e->bounds.w = (i32)(e->org.x) + half_size.x;
+	e->bounds.h = (i32)(e->org.y) + half_size.y;
 }
 
 void eng_centerpoint(entity_t* e, vec2f_t* p)
@@ -426,12 +424,12 @@ void ent_set_vel(entity_t* e, const vec2f_t vel, const f32 ang)
 	e->angle = atan(vec2f_dot(e->org, e->vel));
 }
 
-void ent_set_bbox(entity_t* e, const rect_t* bbox)
+void ent_set_bounds(entity_t* e, const rect_t* bounds)
 {
-	e->bbox = *bbox;
-	const vec2i_t bbox_half_size = {e->bbox.w / 2, e->bbox.h / 2};
-	e->org.x -= (f32)bbox_half_size.x;
-	e->org.y -= (f32)bbox_half_size.y;
+	e->bounds = *bounds;
+	const vec2i_t bounds_half_size = {e->bounds.w / 2, e->bounds.h / 2};
+	e->org.x -= (f32)bounds_half_size.x;
+	e->org.y -= (f32)bounds_half_size.y;
 }
 
 void ent_set_mouse_org(entity_t* e, const vec2f_t m_org)
@@ -514,7 +512,7 @@ void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 	// Player entity movement
 	vec2f_t p_accel = {0};
 	f32 p_speed = 48.f * kGravity; // meters/sec
-	f32 friction = 0.015625f; // 1 meter / 64 pixels
+	f32 friction = 0.015625f * 2.f; // 1 meter / 64 pixels
 	if (cmd_get_state(eng->inputs, kCommandPlayerSpeed) == true) {
 		p_speed *= 2.f;
 	}
@@ -545,7 +543,7 @@ void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 	if (player->org.y < (f32)eng->camera_bounds.y) {
 		player->org.y = (f32)eng->camera_bounds.y;
 	}
-	ent_bbox_update(player);
+	ent_update_bounds(player);
 }
 
 void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* eng,
@@ -594,7 +592,7 @@ void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* eng,
 	}
 
 	ent_euler_move(satellite, dist, 0.05f, dt);
-	ent_bbox_update(satellite);
+	ent_update_bounds(satellite);
 }
 
 void ent_move_bullet(entity_t* bullet, engine_t* eng, f64 dt)
@@ -608,7 +606,7 @@ void ent_move_bullet(entity_t* bullet, engine_t* eng, f64 dt)
 	}
 	// reflection: r = d-2(d*n)n where d*nd*n is the dot product, and nn must be normalized.
 	ent_euler_move(bullet, dist, 0.0, dt);
-	ent_bbox_update(bullet);
+	ent_update_bounds(bullet);
 }
 
 void ent_move_enemy(entity_t* enemy, entity_t* player, engine_t* eng, f64 dt)
@@ -621,5 +619,5 @@ void ent_move_enemy(entity_t* enemy, entity_t* player, engine_t* eng, f64 dt)
 	vec2f_mulf(&dist, dist, 150.f);
 	// }
 	ent_euler_move(enemy, dist, 0.0, dt);
-	ent_bbox_update(enemy);
+	ent_update_bounds(enemy);
 }

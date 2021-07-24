@@ -60,7 +60,7 @@ bool cmd_get_state(input_state_t* inputs, command_t cmd)
 
 //todo(paul): debounce the keypresses to make toggle work
 void cmd_toggle_bool(input_state_t* inputs, command_t cmd, bool* value)
-{	
+{
 	bool toggled = inputs->buttons[cmd].toggled;
 	if (cmd_get_state(inputs, cmd)) {
 		if (!toggled) {
@@ -77,17 +77,14 @@ void cmd_toggle_bool(input_state_t* inputs, command_t cmd, bool* value)
 
 void cmd_refresh(engine_t* eng)
 {
-	// static bool toggled = false;
-	if (cmd_get_state(eng->inputs, kCommandQuit) == true) {
-		eng->state = kEngineStateQuit;
-	}
-
 	cmd_toggle_bool(eng->inputs, kCommandDebugMode, &eng->debug);
 
 	cmd_toggle_bool(eng->inputs, kCommandConsole, &eng->console);
-
 	if (eng->console)
 		eng->state = kEngineConsole;
+
+	if (cmd_get_state(eng->inputs, kCommandQuit))
+		eng->state = kEngineStateQuit;
 
 	if (cmd_get_state(eng->inputs, kCommandSetFpsHigh) == true) {
 		eng->target_frametime = FRAME_TIME(eng->target_fps);
