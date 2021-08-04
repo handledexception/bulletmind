@@ -69,6 +69,7 @@ bool inp_init(input_state_t* inputs)
 	inp_bind_virtual_key(inputs, kCommandSetFpsLow, kScancodeF6);
 	inp_bind_virtual_key(inputs, kCommandDebugMode, kScancodeF1);
 	inp_bind_virtual_key(inputs, kCommandConsole, kScancodeGrave);
+	inp_bind_virtual_key(inputs, kCommandToggleFullscreen, kScancodeLeftAlt);
 	inp_bind_virtual_key(inputs, kCommandPlayerPrimaryFire, kScancodeSpace);
 	inp_bind_virtual_gamepad_button(inputs, kCommandPlayerUp, 0,
 					kGamepadButtonDPadUp);

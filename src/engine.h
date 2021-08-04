@@ -37,12 +37,12 @@ typedef struct game_resource_s game_resource_t;
 typedef struct audio_state_s audio_state_t;
 
 typedef enum {
-	kEngineStateStartup,
-	kEngineStatePlay,
-	kEngineConsole,
-	kEngineStateQuit,
-	kEngineStateShutdown
-} engine_state_t;
+	kEngineModeStartup,
+	kEngineModePlay,
+	kEngineModeConsole,
+	kEngineModeQuit,
+	kEngineModeShutdown
+} engine_mode_t;
 
 #define MAX_SPAWN_TIMERS 1024
 #define DEFAULT_SFX_VOLUME 12
@@ -52,6 +52,7 @@ typedef struct engine_s {
 	i32 adapter_index;
 
 	SDL_Window* window;
+	bool fullscreen;
 	SDL_Renderer* renderer;
 	// SDL_Surface* scr_surface;
 	// SDL_Texture* scr_texture;
@@ -65,7 +66,7 @@ typedef struct engine_s {
 	i32 frame_count;
 	f64 spawn_timer[MAX_SPAWN_TIMERS];
 
-	engine_state_t state;
+	engine_mode_t mode;
 	bool debug;
 	
 	bool console;
@@ -94,3 +95,5 @@ game_resource_t* eng_get_resource(engine_t* eng, const char* name);
 
 void eng_play_sound(engine_t* eng, const char* name, i32 volume);
 void eng_stop_music(engine_t* eng);
+
+void eng_toggle_fullscreen(engine_t* eng, bool fullscreen);

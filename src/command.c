@@ -37,25 +37,33 @@ void cmd_init(void)
 //TODO(paulh): This should probably be redesigned to return the state as an output param
 bool cmd_get_state(input_state_t* inputs, command_t cmd)
 {
-	virtual_button_t* vb = &inputs->buttons[cmd];
-	if (!vb)
-		return false;
+	bool inputs_state = false;
 
-	kbkey_t* key = vb->keyboard_key;
-	gamepad_button_t* gb = vb->gamepad_button;
-	mouse_button_t* mb = vb->mouse_button;
-	u8 key_state = 0;
-	u8 mouse_button_state = 0;
-	u8 gamepad_button_state = 0;
+	// special case console so we can toggle console back off again
+	if (inputs->mode == kInputModeGame ||
+		(inputs->mode == kInputModeConsole && cmd == kCommandConsole)) {
+		virtual_button_t* vb = &inputs->buttons[cmd];
+		if (!vb)
+			return false;
 
-	if (key)
-		key_state = key->state;
-	if (mb)
-		mouse_button_state = mb->state;
-	if (gb)
-		gamepad_button_state = gb->state;
+		kbkey_t* key = vb->keyboard_key;
+		gamepad_button_t* gb = vb->gamepad_button;
+		mouse_button_t* mb = vb->mouse_button;
+		u8 key_state = 0;
+		u8 mouse_button_state = 0;
+		u8 gamepad_button_state = 0;
 
-	return (bool)(key_state | mouse_button_state | gamepad_button_state);
+		if (key)
+			key_state = key->state;
+		if (mb)
+			mouse_button_state = mb->state;
+		if (gb)
+			gamepad_button_state = gb->state;
+
+		inputs_state = (bool)(key_state | mouse_button_state | gamepad_button_state);
+	}
+
+	return inputs_state;
 }
 
 //todo(paul): debounce the keypresses to make toggle work
@@ -80,11 +88,16 @@ void cmd_refresh(engine_t* eng)
 	cmd_toggle_bool(eng->inputs, kCommandDebugMode, &eng->debug);
 
 	cmd_toggle_bool(eng->inputs, kCommandConsole, &eng->console);
-	if (eng->console)
-		eng->state = kEngineConsole;
+	if (eng->console) {
+		eng->mode = kEngineModeConsole;
+		eng->inputs->mode = kInputModeConsole;
+	}
+
+	// cmd_toggle_bool(eng->inputs, kCommandToggleFullscreen, &eng->fullscreen);
+	// eng_toggle_fullscreen(eng, eng->fullscreen);
 
 	if (cmd_get_state(eng->inputs, kCommandQuit))
-		eng->state = kEngineStateQuit;
+		eng->mode = kEngineModeQuit;
 
 	if (cmd_get_state(eng->inputs, kCommandSetFpsHigh) == true) {
 		eng->target_frametime = FRAME_TIME(eng->target_fps);

@@ -187,7 +187,9 @@ int main(int argc, char** argv)
 #else
 	engine->debug = false;
 #endif
+	engine->fullscreen = false;
 	engine->console = false;
+
 	i32 con_height = engine->camera_bounds.h / 3;
 	engine->console_bounds.x = engine->camera_bounds.x;
 	engine->console_bounds.y = engine->camera_bounds.y - con_height;
@@ -218,20 +220,20 @@ int main(int argc, char** argv)
 
 	// main loop
 	f64 dt = 0.0;
-	while (engine->state != kEngineStateShutdown) {
+	while (engine->mode != kEngineModeShutdown) {
 		u64 frame_start_ns = os_get_time_ns();
 
-		switch (engine->state) {
-		case kEngineStateStartup:
+		switch (engine->mode) {
+		case kEngineModeStartup:
 			{
 				ent_spawn_player_and_satellite(engine->ent_list, engine->camera_bounds.w, engine->camera_bounds.h);
 				eng_play_sound(engine, "theme_music",
 						DEFAULT_MUSIC_VOLUME);
-				engine->state = kEngineStatePlay;
+				engine->mode = kEngineModePlay;
 				break;
 			}
-		case kEngineStatePlay:
-		case kEngineConsole:
+		case kEngineModePlay:
+		case kEngineModeConsole:
 			{
 				SDL_SetRenderDrawColor(engine->renderer, 0x20, 0x20,
 							0x20, 0xFF);
@@ -247,7 +249,7 @@ int main(int argc, char** argv)
 
 				eng_refresh(engine, dt);
 
-				if (engine->state == kEngineConsole) {
+				if (engine->mode == kEngineModeConsole) {
 					u8 r, g, b, a;
 					SDL_GetRenderDrawColor(engine->renderer, &r, &g, &b, &a);
 					rgba_t con_color = { 0x3d, 0x3a, 0x36, 0xff };
@@ -261,8 +263,10 @@ int main(int argc, char** argv)
 					else {
 						if (engine->console_bounds.y > con_start.y)
 							engine->console_bounds.y -= CONSOLE_SPEED;
-						else
-							engine->state = kEngineStatePlay;
+						else {
+							engine->mode = kEngineModePlay;
+							engine->inputs->mode = kInputModeGame;
+						}
 					}
 
 					draw_rect_solid(engine->renderer, engine->console_bounds, con_color);
@@ -278,10 +282,10 @@ int main(int argc, char** argv)
 				break;
 			}
 		default:
-		case kEngineStateQuit:
+		case kEngineModeQuit:
 			{
 				eng_stop_music(engine);
-				engine->state = kEngineStateShutdown;
+				engine->mode = kEngineModeShutdown;
 				break;
 			}
 		}

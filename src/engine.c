@@ -167,7 +167,7 @@ bool eng_init(const char* name, i32 version, engine_t* eng)
 	eng->font.sprite = (sprite_t*)eng->font.rsrc->data;
 
 	eng->target_frametime = FRAME_TIME(eng->target_fps);
-	eng->state = kEngineStateStartup;
+	eng->mode = kEngineModeStartup;
 
 	f64 init_end_msec = nsec_to_msec_f64(os_get_time_ns() - init_start);
 	logger(LOG_INFO, "eng_init OK [%fms]\n", init_end_msec);
@@ -239,4 +239,12 @@ void eng_stop_music(engine_t* eng)
 {
 	if (eng->audio && eng->audio->music_playing)
 		Mix_HaltMusic();
+}
+
+void eng_toggle_fullscreen(engine_t* eng, bool fullscreen)
+{
+    // bool is_fullscreen = SDL_GetWindowFlags(eng->window) & SDL_WINDOW_FULLSCREEN;
+    SDL_SetWindowFullscreen(eng->window, fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
+	printf("FULLSCREEN %d", fullscreen);
+    // SDL_ShowCursor(is_fullscreen);
 }

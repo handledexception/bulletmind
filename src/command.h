@@ -37,7 +37,8 @@ typedef enum {
 	kCommandQuit = 9,
 	kCommandDebugMode = 10,
 	kCommandConsole = 11,
-	kCommandNone = 12,
+	kCommandToggleFullscreen = 12,
+	kCommandNone = 13,
 	kCommandMax = kCommandNone
 } command_t;
 

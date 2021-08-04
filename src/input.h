@@ -38,6 +38,11 @@
 #define MAX_VIRTUAL_BUTTONS	(MAX_KEYBOARD_KEYS + MAX_MOUSE_BUTTONS + MAX_GAMEPAD_BUTTONS)
 
 typedef enum {
+	kInputModeGame = 0,
+	kInputModeConsole = 1
+} input_mode_t;
+
+typedef enum {
 	kInputNone = -1,
 	kInputKeyboard = 0,
 	kInputMouse = 1,
@@ -139,6 +144,7 @@ typedef struct input_state_s {
 	kbkey_t keys[MAX_KEYBOARD_KEYS];     // array of keyboard key states
 	mouse_t mouse;                    // mouse state
 	virtual_button_t buttons[MAX_VIRTUAL_BUTTONS];
+	input_mode_t mode;
 } input_state_t;
 
 bool inp_init(input_state_t* inputs);
