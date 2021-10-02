@@ -35,27 +35,27 @@
 
 #include <SDL.h>
 
-static const i32 kPlayerCaps = (kEntityPlayer | kEntityMover | kEntityCollider |
+static const s32 kPlayerCaps = (kEntityPlayer | kEntityMover | kEntityCollider |
 				kEntityShooter | kEntityRenderable);
 
-static const i32 kSatelliteCaps =
+static const s32 kSatelliteCaps =
 	(kEntitySatellite | kEntityMover | kEntityShooter | kEntityCollider |
 	 kEntityRenderable);
 
-static const i32 kBulletCaps =
+static const s32 kBulletCaps =
 	(kEntityBullet | kEntityMover | kEntityCollider | kEntityRenderable);
 
-static const i32 kEnemyCaps =
+static const s32 kEnemyCaps =
 	(kEntityEnemy | kEntityMover | kEntityCollider | kEntityRenderable);
 
-i32 gActiveEntities = 0; // extern
-i32 gLastEntity = 0;     // extern
+s32 gActiveEntities = 0; // extern
+s32 gLastEntity = 0;     // extern
 
 static const f32 kGravity = 9.8f;
 
 static const f32 kBulletSpeedMultiplier = 24000.f;
 
-bool ent_init(entity_t** ent_list, const i32 num_ents)
+bool ent_init(entity_t** ent_list, const s32 num_ents)
 {
 	if (ent_list == NULL)
 		return false;
@@ -88,7 +88,7 @@ void ent_refresh(engine_t* eng, const f64 dt)
 	}
 
 	gActiveEntities = 0;
-	for (i32 edx = 0; edx < MAX_ENTITIES; edx++) {
+	for (s32 edx = 0; edx < MAX_ENTITIES; edx++) {
 		entity_t* e = ent_by_index(ent_list, edx);
 
 		if (e == NULL)
@@ -244,18 +244,20 @@ void ent_refresh(engine_t* eng, const f64 dt)
 		}
 
 		// if (ent_has_caps(e, kEntityCollider)) {
-		// 	for (i32 c = 0; c < MAX_ENTITIES; c++) {
-		//         entity_t* collider = ent_by_index(ent_list, c);
-		// 		if (e == collider) break; // don't check against self
+		// 	for (s32 c = 0; c < MAX_ENTITIES; c++) {
+		// 		entity_t* collider = ent_by_index(ent_list, c);
+		// 		if (e == collider)
+		// 			continue; // don't check against self
 		// 		if (ent_has_caps(collider, kEntityCollider)) {
-		// 			f32 ex = e->org.x + e->bounds.w;
-		// 			f32 ey = e->org.y + e->bounds.h;
-		// 			if (ex >= collider->org.x) {
-		// 				e->org.x = collider->org.x - e->bounds.w;
-		// 			}
-		// 			if (ey > collider->org.y) {
-		// 				e->org.y = collider->org.y - e->bounds.h;
-		// 			}
+		// 			if (e->bounds.w > collider->bounds.x)
+		// 				e->org.x -= e->size.x;
+		// 			if (e->bounds.h > collider->bounds.y)
+		// 				e->org.y -= e->size.y;
+		// 			// if (e->bounds.x < collider->bounds.w)
+		// 			// 	e->org.x += e->size.x;
+		// 			// if (e->bounds.y < collider->bounds.h)
+		// 			// 	e->org.y += e->size.y;
+		// 			ent_update_bounds(e);
 		// 		}
 		// 	}
 		// }
@@ -274,7 +276,7 @@ entity_t* ent_new(entity_t* ent_list)
 	entity_t* e = NULL;
 
 	// search entity list for first slot with no caps set
-	for (i32 edx = 0; edx < MAX_ENTITIES; edx++) {
+	for (s32 edx = 0; edx < MAX_ENTITIES; edx++) {
 		e = ent_by_index(ent_list, edx);
 		if (e == NULL) {
 			logger(LOG_WARNING, "Entity slot %d is NULL!\n", edx);
@@ -294,7 +296,7 @@ entity_t* ent_new(entity_t* ent_list)
 	return e;
 }
 
-entity_t* ent_by_index(entity_t* ent_list, const i32 idx)
+entity_t* ent_by_index(entity_t* ent_list, const s32 idx)
 {
 	entity_t* e = &ent_list[idx];
 	if (e == NULL) {
@@ -318,18 +320,18 @@ entity_t* ent_by_name(entity_t* ent_list, const char* name)
 }
 
 entity_t* ent_spawn(entity_t* ent_list, const char* name, const vec2f_t org,
-		    const vec2i_t size, const rgba_t* color, const i32 caps,
+		    const vec2i_t size, const rgba_t* color, const s32 caps,
 		    f64 lifetime)
 {
 	entity_t* e = ent_new(ent_list);
 	if (e != NULL) {
-		// const vec2i_t half_size = {(i32)(size.x / 2),
-		// 			   (i32)(size.y / 2)};
+		// const vec2i_t half_size = {(s32)(size.x / 2),
+		// 			   (s32)(size.y / 2)};
 		// const rect_t bounding = {
-		// 	(i32)org.x - half_size.x,
-		// 	(i32)org.y - half_size.y,
-		// 	(i32)org.x + half_size.x,
-		// 	(i32)org.y + half_size.y,
+		// 	(s32)org.x - half_size.x,
+		// 	(s32)org.y - half_size.y,
+		// 	(s32)org.x + half_size.x,
+		// 	(s32)org.y + half_size.y,
 		// };
 
 		ent_set_name(e, name);
@@ -371,10 +373,10 @@ void ent_update_bounds(entity_t* e)
 {
 	vec2i_t half_size = { e->size.x, e->size.y };
 	vec2i_div(&half_size, e->size, 2);
-	e->bounds.x = (i32)(e->org.x) - half_size.x;
-	e->bounds.y = (i32)(e->org.y) - half_size.y;
-	e->bounds.w = (i32)(e->org.x) + half_size.x;
-	e->bounds.h = (i32)(e->org.y) + half_size.y;
+	e->bounds.x = (s32)(e->org.x) - half_size.x;
+	e->bounds.y = (s32)(e->org.y) - half_size.y;
+	e->bounds.w = (s32)(e->org.x) + half_size.x;
+	e->bounds.h = (s32)(e->org.y) + half_size.y;
 }
 
 void eng_centerpoint(entity_t* e, vec2f_t* p)
@@ -398,7 +400,7 @@ void ent_remove_caps(entity_t* e, const entity_caps_t caps)
 	e->caps &= ~caps;
 }
 
-void ent_set_caps(entity_t* e, const i32 cap_flags)
+void ent_set_caps(entity_t* e, const s32 cap_flags)
 {
 	e->caps = cap_flags;
 }
@@ -451,7 +453,7 @@ void ent_euler_move(entity_t* e, const vec2f_t accel, const f32 friction,
 	vec2f_add(&e->org, e->org, delta);
 }
 
-bool ent_spawn_player_and_satellite(entity_t* ent_list, i32 cam_width, i32 cam_height)
+bool ent_spawn_player_and_satellite(entity_t* ent_list, s32 cam_width, s32 cam_height)
 {
 	// center on screen
 	vec2f_t player_org = {
@@ -489,7 +491,7 @@ bool ent_spawn_player_and_satellite(entity_t* ent_list, i32 cam_width, i32 cam_h
 	return true;
 }
 
-bool ent_spawn_enemy(entity_t* ent_list, i32 cam_width, i32 cam_height)
+bool ent_spawn_enemy(entity_t* ent_list, s32 cam_width, s32 cam_height)
 {
 	vec2f_t org = {
 		(f32)gen_random(0, cam_width, 1),
@@ -530,19 +532,21 @@ void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 	}
 
 	ent_euler_move(player, p_accel, friction, dt);
+
 	// screen bounds checking
-	if (player->org.x > (f32)eng->camera_bounds.w) {
-		player->org.x = (f32)eng->camera_bounds.w;
+	if (player->org.x > (f32)eng->camera_bounds.w - 25) {
+		player->org.x = (f32)eng->camera_bounds.w - 25;
 	}
-	if (player->org.y > (f32)eng->camera_bounds.h) {
-		player->org.y = (f32)eng->camera_bounds.h;
+	if (player->org.y > (f32)eng->camera_bounds.h - 25) {
+		player->org.y = (f32)eng->camera_bounds.h - 25;
 	}
-	if (player->org.x < (f32)eng->camera_bounds.x) {
-		player->org.x = (f32)eng->camera_bounds.x;
+	if (player->org.x < (f32)eng->camera_bounds.x + 25) {
+		player->org.x = (f32)eng->camera_bounds.x + 25;
 	}
-	if (player->org.y < (f32)eng->camera_bounds.y) {
-		player->org.y = (f32)eng->camera_bounds.y;
+	if (player->org.y < (f32)eng->camera_bounds.y + 25) {
+		player->org.y = (f32)eng->camera_bounds.y + 25;
 	}
+
 	ent_update_bounds(player);
 }
 

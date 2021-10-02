@@ -7,7 +7,7 @@
 
 #include <SDL_mixer.h>
 
-bool audio_init(i32 num_channels, i32 sample_rate, i32 chunk_size)
+bool audio_init(s32 num_channels, s32 sample_rate, s32 chunk_size)
 {
 	if (Mix_OpenAudio(sample_rate, MIX_DEFAULT_FORMAT, num_channels,
 			  chunk_size) == -1)

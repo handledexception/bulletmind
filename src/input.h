@@ -83,15 +83,15 @@ typedef enum {
 } gamepad_button_kind_t;
 
 typedef struct gamepad_axis_s {
-	i32 index;
+	s32 index;
 	const char* name;
-	i16 value;
+	s16 value;
 	u64 timestamp;
 	gamepad_axis_kind_t kind;
 } gamepad_axis_t;
 
 typedef struct gamepad_button_s {
-	i32 index;
+	s32 index;
 	const char* name;
 	const char* alt_name;
 	gamepad_button_kind_t kind;
@@ -102,7 +102,7 @@ typedef struct gamepad_button_s {
 typedef struct gamepad_s {
 	const char* name;
 	void* instance;
-	i32 index;
+	s32 index;
 	bool is_connected;
 	u16 product_id;
 	u16 vendor_id;
@@ -178,7 +178,7 @@ u8 inp_get_gamepad_button_state(gamepad_t* gamepad,
 				gamepad_button_kind_t button);
 void inp_set_gamepad_axis_value(gamepad_t* gamepad, gamepad_axis_kind_t axis,
 				u16 value);
-i16 inp_get_gamepad_axis_value(gamepad_t* gamepad, gamepad_axis_kind_t axis);
+s16 inp_get_gamepad_axis_value(gamepad_t* gamepad, gamepad_axis_kind_t axis);
 
 bool inp_bind_virtual_key(input_state_t* inputs, command_t cmd, u16 scancode);
 bool inp_bind_virtual_mouse_button(input_state_t* inputs, command_t cmd,

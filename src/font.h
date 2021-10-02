@@ -30,4 +30,4 @@ typedef struct font_s {
 	sprite_t* sprite;
 } font_t;
 
-void font_print(engine_t* eng, i32 x, i32 y, f32 scale, const char* str, ...);
+void font_print(engine_t* eng, s32 x, s32 y, f32 scale, const char* str, ...);

@@ -103,7 +103,7 @@ bool game_res_init(engine_t* eng)
 			eng, asset_name, asset_path, asset_type);
 
 		if (asset_type == kAssetTypeSprite) {
-			i32 sprite_scale = 1;
+			s32 sprite_scale = 1;
 			if (!read_table_int32(asset, "scale", &sprite_scale))
 				sprite_scale = 1;
 			sprite_t* s = (sprite_t*)eng->game_resources[asset_idx]->data;
@@ -163,9 +163,9 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 			// Read sprite sheet metadata
 			toml_table_t* meta = toml_table_in(nfo, "meta");
 			char* sprite_path = NULL;
-			i32 sheet_width = 0;
-			i32 sheet_height = 0;
-			i32 frame_scale_factor = 1;
+			s32 sheet_width = 0;
+			s32 sheet_height = 0;
+			s32 frame_scale_factor = 1;
 			read_table_string(meta, "path", &sprite_path);
 			read_table_int32(meta, "width", &sheet_width);
 			read_table_int32(meta, "height", &sheet_height);
@@ -199,10 +199,10 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 				ss_frame_t* ss_frame = &sprite_sheet->frames[i];
 				toml_table_t* frame_nfo =
 					toml_table_at(frames, i);
-				i32 x = 0;
-				i32 y = 0;
-				i32 width = 0;
-				i32 height = 0;
+				s32 x = 0;
+				s32 y = 0;
+				s32 width = 0;
+				s32 height = 0;
 				f64 duration = 0.f;
 
 				read_table_int32(frame_nfo, "x", &x);

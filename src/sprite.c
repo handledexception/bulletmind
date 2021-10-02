@@ -91,7 +91,7 @@ bool sprite_load(const char* path, sprite_t** out)
 		u16 width = header->width;
 		u16 height = header->height;
 		u8 bytes_per_pixel = header->bpp / 8;
-		i32 stride = width * bytes_per_pixel;
+		s32 stride = width * bytes_per_pixel;
 		size_t pixel_size = width * height * bytes_per_pixel;
 
 		img->data = (u8*)arena_alloc(&g_mem_arena, pixel_size,
@@ -108,7 +108,7 @@ bool sprite_load(const char* path, sprite_t** out)
 		}
 		// origin bit 0 = lower-left origin pixel
 		else {
-			for (i32 c = 0; c < height; c++) {
+			for (s32 c = 0; c < height; c++) {
 				memcpy(img->data + stride * c,
 				       tga_pixels + stride * (height - (c + 1)),
 				       stride);

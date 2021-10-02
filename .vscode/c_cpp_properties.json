@@ -1,38 +1,7 @@
 {
     "configurations": [
         {
-            "name": "macOS",
-            "includePath": [
-                "${workspaceFolder}",
-                "${workspaceFolder}\\src",
-                "${workspaceFolder}\\deps\\tomlc99",
-                "${workspaceFolder}\\deps\\SDL2\\include"
-            ],
-            "defines": [
-                "BM_DEBUG",
-                "BM_DARWIN"
-            ],
-            "intelliSenseMode": "clang-x64",
-			// "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.23.28105/bin/Hostx64/x64/cl.exe",
-            "compilerPath": "/usr/bin/clang",
-			"cStandard": "c11",
-			"cppStandard": "c++17",
-			"browse": {
-				"limitSymbolsToIncludedHeaders": true,
-				"databaseFilename": ""
-            }
-            // "cStandard": "c11",
-            // "cppStandard": "c++17",
-            // "intelliSenseMode": "clang-x64"
-        },
-        {
             "name": "Win32",
-            "includePath": [
-                "${workspaceFolder}",
-                "${workspaceFolder}\\src",
-                "${workspaceFolder}\\deps\\tomlc99",
-                "${workspaceFolder}\\deps\\SDL2\\include"
-            ],
             "defines": [
                 "BM_DEBUG",
                 "BM_WINDOWS",
@@ -40,18 +9,13 @@
                 "UNICODE",
                 "_UNICODE"
             ],
-            "intelliSenseMode": "clang-x64",
-			// "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.23.28105/bin/Hostx64/x64/cl.exe",
-            "compilerPath": "C:\\Program Files\\LLVM\\bin\\clang++.exe",
-			"cStandard": "c11",
-			"cppStandard": "c++17",
-			"browse": {
-				"limitSymbolsToIncludedHeaders": true,
-				"databaseFilename": ""
-            }
-            // "cStandard": "c11",
-            // "cppStandard": "c++17",
-            // "intelliSenseMode": "clang-x64"
+            "includePath": [
+                "${workspaceFolder}/src"
+            ],
+            "intelliSenseMode": "windows-msvc-x64",
+            "compilerPath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\bin\\Hostx64\\x64\\cl.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17"
         }
     ],
     "version": 4

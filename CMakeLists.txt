@@ -21,24 +21,27 @@ set(BM_INCLUDE_DIRS
     deps/tomlc99
     deps/SDL2/include)
 
+# tomlc99
 set(TOMLC99_SOURCES
     deps/tomlc99/toml.h
     deps/tomlc99/toml.c)
 
+# core
 set(BM_CORE_HEADERS
     src/core/binary.h
     src/core/bitfield.h
     src/core/buffer.h
     src/core/c99defs.h
+    src/core/export.h
     src/core/logger.h
     src/core/mem_align.h
     src/core/mem_arena.h
     src/core/rect.h
     src/core/scancodes.h
+    src/core/string.h
     src/core/time_convert.h
     src/core/types.h
     src/core/utils.h)
-
 set(BM_CORE_SOURCES
     src/core/binary.c
     src/core/buffer.c
@@ -46,28 +49,36 @@ set(BM_CORE_SOURCES
     src/core/mem_align.c
     src/core/mem_arena.c
     src/core/random.c
+    src/core/string.c
     src/core/utils.c)
 
+# math
 set(BM_MATH_HEADERS
     src/math/math-defs.h
     src/math/vec2.h)
 
+# platform
 set(BM_PLATFORM_HEADERS
-    src/platform/export.h
     src/platform/platform.h
     src/platform/scancode.h
     src/platform/utf8.h)
-
 set(BM_PLATFORM_SOURCES
     src/platform/platform.c
     src/platform/utf8.c)
 
+# gfx
 set(BM_GFX_HEADERS
     src/gfx/gfx.h)
-
 set(BM_GFX_SOURCES
     src/gfx/gfx.c)
 
+# gui
+set(BM_GUI_HEADERS
+    src/gui/gui.h)
+set(BM_GUI_SOURCES
+    src/gui/gui.c)
+
+# game
 set(BM_GAME_HEADERS
     src/audio.h
     src/command.h
@@ -79,7 +90,6 @@ set(BM_GAME_HEADERS
     src/resource.h
     src/sprite.h
     src/toml_config.h)
-
 set(BM_GAME_SOURCES
     src/audio.c
     src/command.c
@@ -95,6 +105,8 @@ set(BM_GAME_SOURCES
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_definitions(
+        -DUNICODE
+        -D_UNICODE
         -DBM_WINDOWS
         -D_CRT_SECURE_NO_WARNINGS)
 
@@ -108,6 +120,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(BM_GFX_SOURCES
         ${BM_GFX_SOURCES}
         src/gfx/gfx_d3d11.c)
+    set(BM_GUI_SOURCES
+        ${BM_GUI_SOURCES}
+        src/gui/gui_win32.c)
 
     if (BM_BUILD_32BIT)
         set(BM_LIB_DIRS
@@ -146,6 +161,8 @@ set(BM_TARGET_SOURCES
     ${BM_PLATFORM_SOURCES}
     ${BM_GFX_HEADERS}
     ${BM_GFX_SOURCES}
+    ${BM_GUI_HEADERS}
+    ${BM_GUI_SOURCES}
     ${BM_GAME_HEADERS}
     ${BM_GAME_SOURCES})
 

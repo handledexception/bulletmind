@@ -30,12 +30,12 @@
 #define FONT_COLS 16
 #define FONT_ROWS 6
 
-void font_print(engine_t* eng, i32 x, i32 y, f32 scale, const char* str, ...)
+void font_print(engine_t* eng, s32 x, s32 y, f32 scale, const char* str, ...)
 {
 	va_list args;
 	char text[TEMP_STRING_MAX];
-	i32 c = 0;
-	i32 fx, tu, tv;
+	s32 c = 0;
+	s32 fx, tu, tv;
 
 	if (str == NULL)
 		return;

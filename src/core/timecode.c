@@ -114,7 +114,7 @@ u32 round_fps_rational(double fps) {
 void frames_to_timecode(u32 frames, fps_t fps, bool drop, timecode_t* tc) {
     bool is_hfr = is_high_framerate(fps);
 
-    i64 frame = (i64)frames;
+    s64 frame = (s64)frames;
 
     f64 fps_num = fps.numerator;
 
@@ -189,8 +189,8 @@ void frames_to_timecode(u32 frames, fps_t fps, bool drop, timecode_t* tc) {
 }
 
 u32 timecode_to_frames(timecode_t* tc) {
-    i64 frame_rate = 0;
-    i64 frame_duration = 0;
+    s64 frame_rate = 0;
+    s64 frame_duration = 0;
 
     u32 frame = 0;
 

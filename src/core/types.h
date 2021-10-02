@@ -14,22 +14,32 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#pragma once
+#ifndef H_BM_CORE_TYPES
+#define H_BM_CORE_TYPES
 
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 
-#define MAX_PATH 256
+#ifndef MAX_PATH
+    #if defined(BM_WINDOWS)
+    #define MAX_PATH 256
+    #elif defined(BM_DARWIN)
+    #define MAX_PATH 1024
+    #elif defined(BM_LINUX)
+    #define MAX_PATH 4096
+    #endif
+#endif
+
 #define TEMP_STRING_MAX 4096
 
-typedef char i8;
+typedef char s8;
 typedef unsigned char u8;
-typedef short i16;
+typedef short s16;
 typedef unsigned short u16;
-typedef int i32;
+typedef int s32;
 typedef unsigned int u32;
-typedef long long i64;
+typedef long long s64;
 typedef unsigned long long u64;
 typedef float f32;
 typedef double f64;
@@ -37,10 +47,16 @@ typedef double f64;
 typedef enum {
     kResultOk = 0,
     kResultError = 1,
-    kResultNotFound = 2,
-    kResultNullPointer = 3,
-    kResultUnknown = 4
+    kResultIoError = 2,
+    kResultNotFound = 3,
+    kResultNull = 4,
+    kResultOutOfMemory = 5,
+    kResultUnknown = 6
 } result;
+
+#define UNUSED_PARAMETER(param) (void)param
 
 #include "core/rect.h"
 #include "core/video.h"
+
+#endif

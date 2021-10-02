@@ -27,7 +27,7 @@ typedef struct sprite_s {
 	pix_fmt_t pix_fmt;
 	SDL_Surface* surface;
 	SDL_Texture* texture;
-	i32 scaling;
+	s32 scaling;
 	bool has_alpha;
 } sprite_t;
 
@@ -39,8 +39,8 @@ typedef struct ss_frame_s {
 } ss_frame_t;
 
 typedef struct sprite_sheet_s {
-	i32 width;
-	i32 height;
+	s32 width;
+	s32 height;
 	sprite_t* backing_sprite;
 	size_t num_frames;
 	ss_frame_t* frames;

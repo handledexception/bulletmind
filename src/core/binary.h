@@ -34,10 +34,10 @@ typedef struct stream_s {
 bool bin_stream_init(stream_t** stream, u8* data, const size_t size);
 void bin_stream_shutdown(stream_t* stream);
 bool bin_stream_seek(stream_t* stream, const seek_origin_t origin,
-		     const i32 offset);
+		     const s32 offset);
 bool bin_stream_write(stream_t* stream, u8* data, const size_t size,
 		      size_t* bytes_written);
-// void bin_write_i8(stream_t* stream, const i8 value, const seek_origin_t origin);
-// void binary_writer_write_i16(stream_t* stream, const i16 value);
-// void binary_writer_write_i32(stream_t* stream, const i32 value);
-// void binary_writer_write_i64(stream_t* stream, const i64 value);
+// void bin_write_s8(stream_t* stream, const s8 value, const seek_origin_t origin);
+// void binary_writer_write_s16(stream_t* stream, const s16 value);
+// void binary_writer_write_s32(stream_t* stream, const s32 value);
+// void binary_writer_write_s64(stream_t* stream, const s64 value);

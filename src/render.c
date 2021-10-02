@@ -71,7 +71,7 @@ void draw_sprite_sheet(SDL_Renderer* rend, sprite_sheet_t* sprite_sheet,
 		       vec2f_t org, const f64 scale, const f32 angle,
 		       const bool flip)
 {
-	static i32 frame_num = 0;
+	static s32 frame_num = 0;
 	static f64 frame_time = 0.0;
 
 	sprite_t* backing_sprite = sprite_sheet->backing_sprite;
@@ -92,11 +92,11 @@ void draw_sprite_sheet(SDL_Renderer* rend, sprite_sheet_t* sprite_sheet,
 		frame_delay = 0.025;
 
 	// printf("frame_delay %f\n", frame_delay);
-	i32 scaled_width = current_frame->bounds.w * backing_sprite->scaling;
-	i32 scaled_height = current_frame->bounds.h * backing_sprite->scaling;
+	s32 scaled_width = current_frame->bounds.w * backing_sprite->scaling;
+	s32 scaled_height = current_frame->bounds.h * backing_sprite->scaling;
 	SDL_Rect dst = {
-		(i32)(org.x) - scaled_width / 2,
-		(i32)(org.y) - scaled_height / 2,
+		(s32)(org.x) - scaled_width / 2,
+		(s32)(org.y) - scaled_height / 2,
 		scaled_width,
 		scaled_height,
 	};

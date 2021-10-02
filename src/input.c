@@ -102,8 +102,8 @@ void inp_refresh_mouse(mouse_t* mouse, f32 scale_x, f32 scale_y)
 	fmy /= scale_y;
 
 	vec2i_t mouse_window_pos;
-	mouse_window_pos.x = (i32)fmx;
-	mouse_window_pos.y = (i32)fmy;
+	mouse_window_pos.x = (s32)fmx;
+	mouse_window_pos.y = (s32)fmy;
 
 	vec2i_t mouse_screen_pos;
 	SDL_GetGlobalMouseState(&mouse_screen_pos.x, &mouse_screen_pos.y);
@@ -460,7 +460,7 @@ bool inp_enumerate_gamepad_buttons(gamepad_t* gamepad)
 {
 	bool btn_err = false;
 
-	for (i32 bdx = kGamepadButtonA; bdx < kGamepadButtonMax; bdx++) {
+	for (s32 bdx = kGamepadButtonA; bdx < kGamepadButtonMax; bdx++) {
 		const SDL_GameControllerButton button =
 			(SDL_GameControllerButton)bdx;
 
@@ -489,14 +489,14 @@ bool inp_enumerate_gamepad_axes(gamepad_t* gamepad)
 {
 	bool axis_err = false;
 
-	for (i32 adx = (i32)kGamepadAxisLeftStickX; adx < (i32)kGamepadAxisMax;
+	for (s32 adx = (s32)kGamepadAxisLeftStickX; adx < (s32)kGamepadAxisMax;
 	     adx++) {
 		const SDL_GameControllerAxis axis = (SDL_GameControllerAxis)adx;
 
 		const char* axis_name =
 			SDL_GameControllerGetStringForAxis(axis);
 
-		const i16 axis_value = SDL_GameControllerGetAxis(
+		const s16 axis_value = SDL_GameControllerGetAxis(
 			(SDL_GameController*)gamepad->instance, axis);
 
 		// SDL_GameControllerGetAxis returns 0 on success or failure. Must use SDL_GetError to check for errors.
@@ -549,9 +549,9 @@ void inp_set_gamepad_axis_value(gamepad_t* gamepad, gamepad_axis_kind_t axis,
 		gamepad->axes[axis].value = value;
 }
 
-i16 inp_get_gamepad_axis_value(gamepad_t* gamepad, gamepad_axis_kind_t axis)
+s16 inp_get_gamepad_axis_value(gamepad_t* gamepad, gamepad_axis_kind_t axis)
 {
-	i16 value = 0;
+	s16 value = 0;
 	if (gamepad)
 		value = gamepad->axes[axis].value;
 	return value;

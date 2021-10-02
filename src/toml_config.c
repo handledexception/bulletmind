@@ -66,14 +66,14 @@ bool read_table_string(toml_table_t* table, const char* key, char** val)
 	return false;
 }
 
-bool read_table_int32(toml_table_t* table, const char* key, i32* val)
+bool read_table_int32(toml_table_t* table, const char* key, s32* val)
 {
 	if (table != NULL) {
 		const char* raw_value = toml_raw_in(table, key);
-		i64 tmp = 0LL;
+		s64 tmp = 0LL;
 		if (raw_value != NULL) {
 			toml_rtoi(raw_value, &tmp);
-			*val = (i32)tmp;
+			*val = (s32)tmp;
 		}
 		return true;
 	}

@@ -26,8 +26,8 @@ extern "C" {
 #endif
 
 typedef struct vec2i {
-	i32 x;
-	i32 y;
+	s32 x;
+	s32 y;
 } vec2i_t;
 
 typedef struct vec2f {
@@ -41,7 +41,7 @@ static inline void vec2f_set(vec2f_t* dst, f32 x, f32 y)
 	dst->y = y;
 }
 
-static inline void vec2i_set(vec2i_t* dst, i32 x, i32 y)
+static inline void vec2i_set(vec2i_t* dst, s32 x, s32 y)
 {
 	dst->x = x;
 	dst->y = y;
@@ -98,7 +98,7 @@ static inline void vec2f_divf(vec2f_t* dst, const vec2f_t v, f32 f)
 	vec2f_set(dst, v.x / f, v.y / f);
 }
 
-static inline void vec2i_div(vec2i_t* dst, const vec2i_t v, i32 i)
+static inline void vec2i_div(vec2i_t* dst, const vec2i_t v, s32 i)
 {
 	vec2i_set(dst, v.x / i, v.y / i);
 }

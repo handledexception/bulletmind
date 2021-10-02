@@ -32,7 +32,14 @@
         "xiosbase": "cpp",
         "sdl_syswm.h": "c",
         "export.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "dxgi.h": "c",
+        "dxgi1_2.h": "c",
+        "dxgi1_3.h": "c",
+        "utils.h": "c",
+        "stdbool.h": "c",
+        "system.h": "c",
+        "d3d11_1.h": "c"
     },
     "cmake.configureOnOpen": false
 }

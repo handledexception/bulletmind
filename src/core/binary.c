@@ -40,7 +40,7 @@ void bin_stream_shutdown(stream_t* stream)
 }
 
 bool bin_stream_seek(stream_t* stream, const seek_origin_t origin,
-		     const i32 offset)
+		     const s32 offset)
 {
 	if (!stream)
 		return false;
@@ -51,7 +51,7 @@ bool bin_stream_seek(stream_t* stream, const seek_origin_t origin,
 		else
 			return false;
 	} else if (origin == SEEK_ORIGIN_CURRENT) {
-		const size_t new_pos = (size_t)((i32)stream->position + offset);
+		const size_t new_pos = (size_t)((s32)stream->position + offset);
 		if (new_pos <= stream->size && new_pos >= 0)
 			stream->position = new_pos;
 		else

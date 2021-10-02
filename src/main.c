@@ -26,6 +26,7 @@
 
 #include "core/buffer.h"
 #include "core/mem_arena.h"
+#include "core/string.h"
 #include "core/time_convert.h"
 #include "core/utils.h"
 
@@ -71,10 +72,10 @@ void generate_tilemap(u32 width, u32 height)
 	}
 }
 
-sprite_t* world_map_tile_index(engine_t* engine, i32 x, i32 y, i32 w, i32 h,
-			       i32 cam_x, i32 cam_y)
+sprite_t* world_map_tile_index(engine_t* engine, s32 x, s32 y, s32 w, s32 h,
+			       s32 cam_x, s32 cam_y)
 {
-	i32 index = x + (y * w);
+	s32 index = x + (y * w);
 	sprite_t* tile = NULL;
 	game_resource_t* resource = NULL;
 	switch (world_map[index]) {
@@ -102,10 +103,10 @@ sprite_t* world_map_tile_index(engine_t* engine, i32 x, i32 y, i32 w, i32 h,
 	return tile;
 }
 
-void update_tilemap(engine_t* engine, i32 cam_x, i32 cam_y)
+void update_tilemap(engine_t* engine, s32 cam_x, s32 cam_y)
 {
-	for (i32 y = 0; y < WORLD_TILES_HEIGHT; y++) {
-		for (i32 x = 0; x < WORLD_TILES_WIDTH; x++) {
+	for (s32 y = 0; y < WORLD_TILES_HEIGHT; y++) {
+		for (s32 x = 0; x < WORLD_TILES_WIDTH; x++) {
 			sprite_t* tile =
 				world_map_tile_index(engine, x, y, TILE_WIDTH,
 						     TILE_HEIGHT, cam_x, cam_y);
@@ -159,6 +160,10 @@ void print_debug_info(engine_t* engine, f64 dt)
 
 int main(int argc, char** argv)
 {
+	char s[16] = "\"hello, world!\"";
+	str_upper_no_copy(s, 0);
+	printf("%s\n", s);
+
 	generate_tilemap(WORLD_TILES_WIDTH, WORLD_TILES_HEIGHT);
 
 	// Allocate memory arena - 8MiB
@@ -190,7 +195,7 @@ int main(int argc, char** argv)
 	engine->fullscreen = false;
 	engine->console = false;
 
-	i32 con_height = engine->camera_bounds.h / 3;
+	s32 con_height = engine->camera_bounds.h / 3;
 	engine->console_bounds.x = engine->camera_bounds.x;
 	engine->console_bounds.y = engine->camera_bounds.y - con_height;
 	engine->console_bounds.w = engine->camera_bounds.w;
@@ -241,8 +246,10 @@ int main(int argc, char** argv)
 
 				// vec2f_t cam = {0.f, 0.f};
 				entity_t* player = ent_by_index(engine->ent_list, 0);
-				update_tilemap(engine, (u32)player->org.x,
-						(u32)player->org.y);
+				update_tilemap(engine,
+					(u32)player->org.x - TILE_WIDTH,
+					(u32)player->org.y - TILE_HEIGHT
+				);
 
 				if (engine->debug)
 					print_debug_info(engine, dt);
@@ -258,7 +265,6 @@ int main(int argc, char** argv)
 
 						if (engine->console_bounds.y < con_end.y)
 							engine->console_bounds.y += CONSOLE_SPEED;
-
 					}
 					else {
 						if (engine->console_bounds.y > con_start.y)

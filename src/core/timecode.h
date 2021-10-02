@@ -1,7 +1,7 @@
 #ifndef H_AJA_TIMECODE
 #define H_AJA_TIMECODE
 
-#include "types.h"
+#include "core/types.h"
 
 #ifdef __cplusplus
 extern "C" {

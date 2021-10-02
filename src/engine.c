@@ -29,7 +29,8 @@
 
 #include "platform/platform.h"
 
-// #include "gfx/gfx_d3d11.h"
+#include "gfx/gfx_d3d11.h"
+#include "gui/gui.h"
 
 #include <SDL.h>
 #include <SDL_syswm.h>
@@ -71,7 +72,7 @@ game_resource_t* eng_get_resource(engine_t* eng, const char* name)
 	return rsrc;
 }
 
-bool eng_init(const char* name, i32 version, engine_t* eng)
+bool eng_init(const char* name, s32 version, engine_t* eng)
 {
 	u64 init_start = os_get_time_ns();
 
@@ -87,8 +88,8 @@ bool eng_init(const char* name, i32 version, engine_t* eng)
 
 	SDL_Init(SDL_FLAGS);
 
-	i32 window_pos_x = eng->window_bounds.x;
-	i32 window_pos_y = eng->window_bounds.y;
+	s32 window_pos_x = eng->window_bounds.x;
+	s32 window_pos_y = eng->window_bounds.y;
 	if (window_pos_x == -1)
 		window_pos_x = SDL_WINDOWPOS_CENTERED;
 	if (window_pos_y == -1)
@@ -105,11 +106,52 @@ bool eng_init(const char* name, i32 version, engine_t* eng)
 		return false;
 	}
 
-	// SDL_SysWMinfo wm_info;
-	// SDL_GetWindowWMInfo(eng->window, &wm_info);
+	// const size_t sz_sixteen_megabytes = 64 * 1000 * 1000;
+	// char* src_buf = malloc(sz_sixteen_megabytes);
+	// f64 start_ms = os_get_time_msec();
+	// memset(src_buf, 1, sz_sixteen_megabytes);
+	// printf("%zu %f\n", sz_sixteen_megabytes, os_get_time_msec() - start_ms);
+#define BM_TEST_D3D11
+#ifdef BM_TEST_D3D11
+	gui_init();
+	gui_window_t* wnd = gui_create_window("bm window", 100, 100, 640, 480, 0, NULL);
+	gui_window_t* wnd2 = gui_create_window("bm view", 0, 0, 640, 480, 0, wnd);
+
+	SDL_SysWMinfo wm_info;
+	SDL_VERSION(&wm_info.version); // must call to get valid HWND??
+	SDL_GetWindowWMInfo(eng->window, &wm_info);
 	// HWND hwnd = wm_info.info.win.window;
-	// gfx_system_t* gfx_sys = (gfx_system_t*)malloc(sizeof(gfx_system_t));
-	// create_device_dependent_resources(gfx_sys);
+	HWND hwnd = gui_get_window_handle(wnd2);
+	const struct gfx_config gfx_cfg = {
+		.adapter = 0,
+		// .width = eng->window_bounds.w,
+		// .height = eng->window_bounds.h,
+		.width = wnd->w,
+		.height = wnd->h,
+		.fps_num = 60,
+		.fps_den = 1,
+		.pix_fmt = GFX_FORMAT_BGRA,
+		.fullscreen = false,
+		.window = { hwnd }
+	};
+	gfx_system_t* gfx_sys = gfx_system_init(&gfx_cfg, BM_GFX_D3D11);
+	gfx_shader_t* hlsl_vs = gfx_compile_shader_from_file(
+		"assets/solid.vs.hlsl", "VSMain", kDX11VertexShaderTarget, GFX_SHADER_VERTEX);
+	gfx_shader_t* hlsl_ps = gfx_compile_shader_from_file(
+		"assets/solid.ps.hlsl", "PSMain", kDX11PixelShaderTarget, GFX_SHADER_PIXEL);
+	gfx_build_shader(gfx_sys, hlsl_vs);
+	gfx_build_shader(gfx_sys, hlsl_ps);
+	rgba_t clear_color = {
+		.r = 0.f,
+		.g = 0.f,
+		.b = 0.f,
+		.a = 1.f,
+	};
+	gfx_render_clear(gfx_sys, &clear_color);
+	gfx_render_begin(gfx_sys);
+	gfx_render_end(gfx_sys, false, 0);
+	// gfx_system_shutdown(gfx_sys);
+#endif
 
 	eng->renderer = SDL_CreateRenderer(eng->window, eng->adapter_index,
 					   SDL_RENDERER_ACCELERATED);
@@ -210,7 +252,7 @@ void eng_shutdown(engine_t* eng)
 	logger(LOG_INFO, "eng_shutdown OK\n\nGoodbye!\n");
 }
 
-void eng_play_sound(engine_t* eng, const char* name, i32 volume)
+void eng_play_sound(engine_t* eng, const char* name, s32 volume)
 {
 	game_resource_t* resource = eng_get_resource(engine, name);
 	if (resource != NULL) {

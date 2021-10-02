@@ -5,8 +5,8 @@
 #include <math.h>
 
 typedef struct {
-	i32 x, y;
-	i32 w, h;
+	s32 x, y;
+	s32 w, h;
 } rect_t;
 
 static inline f32 radius_of_circle_in_rect(rect_t r)

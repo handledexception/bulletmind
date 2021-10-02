@@ -76,7 +76,7 @@ void* os_dlopen(const char* path)
 		return NULL;
 
 	wchar_t* path_wide;
-	wchar_t* path_sep_wide;
+	// wchar_t* path_sep_wide;
 	
 	HMODULE module = NULL;
 	

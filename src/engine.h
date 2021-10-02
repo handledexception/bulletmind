@@ -49,7 +49,7 @@ typedef enum {
 #define DEFAULT_MUSIC_VOLUME 25
 
 typedef struct engine_s {
-	i32 adapter_index;
+	s32 adapter_index;
 
 	SDL_Window* window;
 	bool fullscreen;
@@ -63,7 +63,7 @@ typedef struct engine_s {
 
 	f32 target_fps;
 	f64 target_frametime;
-	i32 frame_count;
+	s32 frame_count;
 	f64 spawn_timer[MAX_SPAWN_TIMERS];
 
 	engine_mode_t mode;
@@ -83,7 +83,7 @@ typedef struct engine_s {
 
 extern engine_t* engine;
 
-bool eng_init(const char* name, i32 version, engine_t* eng);
+bool eng_init(const char* name, s32 version, engine_t* eng);
 void eng_refresh(engine_t* eng, f64 dt);
 void eng_shutdown(engine_t* eng);
 
@@ -93,7 +93,7 @@ f64 eng_get_time_sec(void);
 
 game_resource_t* eng_get_resource(engine_t* eng, const char* name);
 
-void eng_play_sound(engine_t* eng, const char* name, i32 volume);
+void eng_play_sound(engine_t* eng, const char* name, s32 volume);
 void eng_stop_music(engine_t* eng);
 
 void eng_toggle_fullscreen(engine_t* eng, bool fullscreen);

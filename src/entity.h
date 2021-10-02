@@ -46,7 +46,7 @@ typedef enum {
 } entity_caps_t;
 
 typedef struct entity_s {
-	i32 index;
+	s32 index;
 	char name[TEMP_STRING_MAX];
 	entity_caps_t caps;
 
@@ -62,19 +62,19 @@ typedef struct entity_s {
 	f64 lifetime;		// entity lifetime in seconds
 } entity_t;
 
-extern i32 gActiveEntities;
-extern i32 gLastEntity;
+extern s32 gActiveEntities;
+extern s32 gLastEntity;
 
-bool ent_init(entity_t** ent_list, const i32 num_ents);
+bool ent_init(entity_t** ent_list, const s32 num_ents);
 void ent_refresh(engine_t* eng, const f64 dt);
 void ent_shutdown(entity_t* ent_list);
 
 entity_t* ent_new(entity_t* ent_list);
 entity_t* ent_by_name(entity_t* ent_list, const char* name);
-entity_t* ent_by_index(entity_t* ent_list, const i32 idx);
+entity_t* ent_by_index(entity_t* ent_list, const s32 idx);
 
 entity_t* ent_spawn(entity_t* ent_list, const char* name, const vec2f_t org,
-		    const vec2i_t size, const rgba_t* color, const i32 caps,
+		    const vec2i_t size, const rgba_t* color, const s32 caps,
 		    const f64 lifetime);
 void ent_lifetime_update(entity_t* e);
 void ent_update_bounds(entity_t* e);
@@ -83,7 +83,7 @@ void ent_set_name(entity_t* e, const char* name);
 
 void ent_add_caps(entity_t* e, const entity_caps_t caps);
 void ent_remove_caps(entity_t* e, const entity_caps_t caps);
-void ent_set_caps(entity_t* e, const i32 cap_flags);
+void ent_set_caps(entity_t* e, const s32 cap_flags);
 bool ent_has_caps(entity_t* e, const entity_caps_t caps);
 bool ent_has_no_caps(entity_t* e);
 
@@ -94,8 +94,8 @@ void ent_set_mouse_org(entity_t* e, const vec2f_t m_org);
 void ent_euler_move(entity_t* e, const vec2f_t accel, const f32 friction,
 		    const f64 dt);
 
-bool ent_spawn_player_and_satellite(entity_t* ent_list, i32 cam_width, i32 cam_height);
-bool ent_spawn_enemy(entity_t* ent_list, i32 cam_width, i32 cam_height);
+bool ent_spawn_player_and_satellite(entity_t* ent_list, s32 cam_width, s32 cam_height);
+bool ent_spawn_enemy(entity_t* ent_list, s32 cam_width, s32 cam_height);
 void ent_move_player(entity_t* player, engine_t* eng, const f64 dt);
 
 void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* eng,

@@ -20,6 +20,6 @@ typedef struct audio_state_s {
 	u8 music_volume;
 } audio_state_t;
 
-bool audio_init(i32 num_channels, i32 sample_rate, i32 chunk_size);
+bool audio_init(s32 num_channels, s32 sample_rate, s32 chunk_size);
 bool audio_load_sound(const char* path, audio_chunk_t** data);
 void audio_shutdown();
