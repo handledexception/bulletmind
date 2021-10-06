@@ -36,7 +36,7 @@ BM_PLATFORM_EXPORT size_t os_utf8_to_wcs(const char *str, size_t len, wchar_t *d
 		      size_t dst_size);
 BM_PLATFORM_EXPORT size_t os_utf8_to_wcs_ptr(const char *str, size_t len, wchar_t **pstr);
 
-BM_PLATFORM_EXPORT void os_sleep_ms(const u32 duration);
+BM_PLATFORM_EXPORT void os_sleep_ms(u32 duration);
 BM_PLATFORM_EXPORT u64 os_get_time_ns(void);
 BM_PLATFORM_EXPORT f64 os_get_time_sec(void);
 BM_PLATFORM_EXPORT f64 os_get_time_msec(void);

@@ -18,7 +18,6 @@
 
 #include "platform/platform.h"
 // #include "platform/win-version.h"
-#include "time/time_convert.h"
 
 static LARGE_INTEGER clock_freq;
 static bool clock_initialized = false;
@@ -32,7 +31,7 @@ static inline u64 get_clock_freq(void)
 	return clock_freq.QuadPart;
 }
 
-void os_sleep_ms(const u32 duration)
+void os_sleep_ms(u32 duration)
 {
 	u32 d = duration;
 	// if (get_win_ver() >= 0x0602 & duration > 0)
@@ -51,16 +50,6 @@ u64 os_get_time_ns(void)
 	time_val /= (f64)get_clock_freq();
 
 	return (u64)time_val;
-}
-
-f64 os_get_time_sec(void)
-{
-	return nsec_to_sec_f64(os_get_time_ns());
-}
-
-f64 os_get_time_msec(void)
-{
-	return nsec_to_msec_f64(os_get_time_ns());
 }
 
 bool os_file_exists(const char* path)
