@@ -18,7 +18,10 @@
 
 #include "platform/platform.h"
 // #include "platform/win-version.h"
+<<<<<<< HEAD
 #include "core/logger.h"
+=======
+>>>>>>> apple-silicon
 
 static LARGE_INTEGER clock_freq;
 static bool clock_initialized = false;
@@ -32,7 +35,7 @@ static inline u64 get_clock_freq(void)
 	return clock_freq.QuadPart;
 }
 
-void os_sleep_ms(const u32 duration)
+void os_sleep_ms(u32 duration)
 {
 	u32 d = duration;
 	// if (get_win_ver() >= 0x0602 & duration > 0)

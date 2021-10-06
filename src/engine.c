@@ -29,11 +29,13 @@
 
 #include "platform/platform.h"
 
+#if defined(BM_WINDOWS)
 #include "gfx/gfx_d3d11.h"
 #include "gui/gui.h"
+#include <SDL_syswm.h>
+#endif
 
 #include <SDL.h>
-#include <SDL_syswm.h>
 #include <SDL_mixer.h>
 
 #define SDL_FLAGS                                            \
@@ -111,8 +113,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	// f64 start_ms = os_get_time_msec();
 	// memset(src_buf, 1, sz_sixteen_megabytes);
 	// printf("%zu %f\n", sz_sixteen_megabytes, os_get_time_msec() - start_ms);
-#define BM_TEST_D3D11
-#ifdef BM_TEST_D3D11
+#if defined(BM_WINDOWS)
 	gui_init();
 	gui_window_t* wnd = gui_create_window("bm window", 100, 100, 640, 480, 0, NULL);
 	gui_window_t* wnd2 = gui_create_window("bm view", 0, 0, 640, 480, 0, wnd);

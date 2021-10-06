@@ -3,7 +3,6 @@ project (bulletmind)
 cmake_minimum_required(VERSION 3.18)
 
 option(BM_BUILD_32BIT "build bulletmind as 32-bit" OFF)
-option(BM_BUILD_64BIT "build bulletmind as 64-bit" ON)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -12,7 +11,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 if (BM_BUILD_32BIT)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
-elseif(BM_BUILD_64BIT)
+else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
 endif()
 
@@ -128,7 +127,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         set(BM_LIB_DIRS
             deps/SDL2/lib/x86)
         set(BM_ARCH "x86")
-    elseif(BM_BUILD_64BIT)
+    else()
         set(BM_LIB_DIRS
             deps/SDL2/lib/x64)
         set(BM_ARCH "x64")

@@ -20,6 +20,8 @@
 #include "core/string.h"
 #include "core/time_convert.h"
 
+#include <sys/errno.h>
+
 FILE* os_wfopen(const wchar_t* path, const char* mode)
 {
 	FILE *file = NULL;
