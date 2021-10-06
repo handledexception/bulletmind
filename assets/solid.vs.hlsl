@@ -6,7 +6,7 @@ cbuffer ShaderParams : register(b0)
 
 struct VSInput
 {
-    float4 position : SV_Position;
+    float4 position : SV_Position; // POSITION?
     float2 tex : TEXCOORD0;
 };
 

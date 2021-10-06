@@ -20,10 +20,8 @@
 #include "font.h"
 #include "sprite.h"
 
-#include "core/c99defs.h"
-#include "core/types.h"
-
 #include "math/vec2.h"
+#include "math/vec4.h"
 
 typedef struct SDL_Window SDL_Window;
 typedef struct SDL_Renderer SDL_Renderer;

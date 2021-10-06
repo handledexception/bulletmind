@@ -275,7 +275,7 @@ int main(int argc, char** argv)
 						}
 					}
 
-					draw_rect_solid(engine->renderer, engine->console_bounds, con_color);
+					draw_rect_solid(engine->renderer, engine->console_bounds, &con_color);
 					SDL_SetRenderDrawColor(engine->renderer, r, g, b, a); // restore color
 
 					font_print(

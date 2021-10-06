@@ -14,10 +14,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#pragma once
+#ifndef H_BM_MATH_VEC2
+#define H_BM_MATH_VEC2
 
-#include "core/c99defs.h"
 #include "core/types.h"
+
 #include <math.h>
 
 #ifdef __cplusplus
@@ -150,13 +151,8 @@ static inline void vec2f_friction(vec2f_t* dst, const vec2f_t a, f32 friction)
 	vec2f_mulf(dst, a, new_speed);
 }
 
-typedef struct rgba {
-	f32 r;
-	f32 g;
-	f32 b;
-	f32 a;
-} rgba_t;
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif // H_BM_MATH_VEC2

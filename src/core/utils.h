@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "core/c99defs.h"
 #include "core/types.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))

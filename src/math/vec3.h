@@ -14,14 +14,16 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#pragma once
+#ifndef H_BM_MATH_VEC3
+#define H_BM_MATH_VEC3
 
-#if defined(_MSC_VER)
-#define inline __inline
+#include "core/types.h"
+#include "core/export.h"
+
+typedef struct vec3f {
+    f32 x;
+    f32 y;
+    f32 z;
+} vec3f_t;
+
 #endif
-
-#include <stddef.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>

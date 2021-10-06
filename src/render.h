@@ -17,14 +17,15 @@
 #pragma once
 
 #include "core/rect.h"
-#include "math/vec2.h"
 
 #include <SDL.h>
 
 typedef struct sprite_sheet_s sprite_sheet_t;
+typedef struct vec2f vec2f_t;
+typedef struct rgba rgba_t;
 
 void draw_circle(SDL_Renderer* rend, f32 cx, f32 cy, f32 radius);
-void draw_rect_solid(SDL_Renderer* rend, rect_t rect, rgba_t color);
+void draw_rect_solid(SDL_Renderer* rend, rect_t rect, rgba_t* color);
 void draw_sprite_sheet(SDL_Renderer* rend, sprite_sheet_t* sprite_sheet,
-		       vec2f_t org, const f64 scale, const f32 angle,
+		       vec2f_t* org, const f64 scale, const f32 angle,
 		       const bool flip);

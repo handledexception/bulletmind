@@ -29,7 +29,7 @@
 #include "core/time_convert.h"
 #include "core/utils.h"
 
-#include "math/math-defs.h"
+#include "math/utils.h"
 
 #include "platform/platform.h"
 
@@ -192,7 +192,7 @@ void ent_refresh(engine_t* eng, const f64 dt)
 				vec2f_fabsf(&vel_tmp, e->vel);
 				frame_scale = MAX(vel_tmp.x, vel_tmp.y);
 				draw_sprite_sheet(engine->renderer,
-						  sprite_sheet, e->org,
+						  sprite_sheet, &e->org,
 						  frame_scale, e->angle, flip);
 			} else if (!strcmp(e->name, "satellite")) {
 				rect_t sat_rect = {
@@ -200,7 +200,7 @@ void ent_refresh(engine_t* eng, const f64 dt)
 					e->size.x, e->size.y
 				};
 
-				draw_rect_solid(engine->renderer, sat_rect, e->color);
+				draw_rect_solid(engine->renderer, sat_rect, &e->color);
 			} else if (!strcmp(e->name, "bullet")) {
 				//TODO(paulh): Need a game_resource_t method for get_resource_by_name
 				game_resource_t* resource =
@@ -232,7 +232,7 @@ void ent_refresh(engine_t* eng, const f64 dt)
 					(f32)e->bounds.x, (f32)e->bounds.y,
 					e->size.x, e->size.y
 				};
-				draw_rect_solid(engine->renderer, r, e->color);
+				draw_rect_solid(engine->renderer, r, &e->color);
 			}
 
 			// Draw debug overlays

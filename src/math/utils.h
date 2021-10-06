@@ -14,9 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#pragma once
+#ifndef H_BM_MATH_UTILS
+#define H_BM_MATH_UTILS
 
-#include "core/c99defs.h"
 #include "core/types.h"
 
 #include <math.h>
@@ -51,3 +51,5 @@ static inline bool f32_compare(float f1, float f2, float epsilon)
 #ifdef __cplusplus
 }
 #endif
+
+#endif // H_BM_MATH_UTILS

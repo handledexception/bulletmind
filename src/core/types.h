@@ -17,9 +17,17 @@
 #ifndef H_BM_CORE_TYPES
 #define H_BM_CORE_TYPES
 
+#if defined(_MSC_VER)
+#define inline __inline
+#endif
+
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <time.h>
 
 #ifndef MAX_PATH
     #if defined(BM_WINDOWS)
@@ -51,7 +59,8 @@ typedef enum {
     kResultNotFound = 3,
     kResultNull = 4,
     kResultOutOfMemory = 5,
-    kResultUnknown = 6
+    kResultNotImplemented = 6,
+    kResultUnknown = 7
 } result;
 
 #define UNUSED_PARAMETER(param) (void)param

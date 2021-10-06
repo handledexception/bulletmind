@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "core/c99defs.h"
 #include "core/types.h"
 
 bool is_power_of_two(uintptr_t x);

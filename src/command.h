@@ -18,7 +18,6 @@
 
 #include "engine.h"
 
-#include "core/c99defs.h"
 #include "core/types.h"
 
 typedef struct input_state_s input_state_t;

@@ -140,7 +140,15 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	gfx_shader_t* hlsl_ps = gfx_compile_shader_from_file(
 		"assets/solid.ps.hlsl", "PSMain", kDX11PixelShaderTarget, GFX_SHADER_PIXEL);
 	gfx_build_shader(gfx_sys, hlsl_vs);
+	gfx_create_shader_input_layout(gfx_sys, hlsl_vs, GFX_VERTEX_POS_UV);
 	gfx_build_shader(gfx_sys, hlsl_ps);
+	gfx_set_vertex_shader(gfx_sys, hlsl_vs);
+	gfx_set_pixel_shader(gfx_sys, hlsl_ps);
+
+	gfx_init_sampler_state(gfx_sys);
+	gfx_init_rasterizer(gfx_sys, GFX_CULLING_NONE, GFX_RASTER_WINDING_CCW);
+	gfx_bind_rasterizer(gfx_sys);
+	
 	rgba_t clear_color = {
 		.r = 0.f,
 		.g = 0.f,
