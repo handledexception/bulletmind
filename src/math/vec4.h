@@ -27,6 +27,13 @@ typedef struct vec4f {
     f32 w;
 } vec4f_t;
 
+typedef struct rgba {
+	f32 r;
+	f32 g;
+	f32 b;
+	f32 a;
+} rgba_t;
+
 static inline void vec4f_set(vec4f_t* dst, f32 x, f32 y, f32 z, f32 w)
 {
     dst->x = x;
@@ -115,4 +122,4 @@ static inline void vec4f_norm(vec4f_t* dst, const vec4f_t* v)
     }
 }
 
-#endif
+#endif // H_BM_MATH_VEC4

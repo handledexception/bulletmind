@@ -18,7 +18,7 @@
 
 #include "command.h"
 
-#include "core/c99defs.h"
+#include "core/types.h"
 #include "core/scancodes.h"
 
 #include "math/vec2.h"

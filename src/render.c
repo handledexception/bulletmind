@@ -20,6 +20,7 @@
 #include "core/time_convert.h"
 
 #include "math/vec2.h"
+#include "math/vec4.h"
 
 #include "platform/platform.h"
 
@@ -61,14 +62,14 @@ void draw_circle(SDL_Renderer* rend, f32 cx, f32 cy, f32 radius)
    }
 }
 
-void draw_rect_solid(SDL_Renderer* rend, rect_t rect, rgba_t rgba)
+void draw_rect_solid(SDL_Renderer* rend, rect_t rect, rgba_t* rgba)
 {
-	SDL_SetRenderDrawColor(rend, rgba.r, rgba.g, rgba.b, rgba.a);
+	SDL_SetRenderDrawColor(rend, rgba->r, rgba->g, rgba->b, rgba->a);
 	SDL_RenderFillRect(rend, (const SDL_Rect*)&rect);
 }
 
 void draw_sprite_sheet(SDL_Renderer* rend, sprite_sheet_t* sprite_sheet,
-		       vec2f_t org, const f64 scale, const f32 angle,
+		       vec2f_t* org, const f64 scale, const f32 angle,
 		       const bool flip)
 {
 	static s32 frame_num = 0;
@@ -95,8 +96,8 @@ void draw_sprite_sheet(SDL_Renderer* rend, sprite_sheet_t* sprite_sheet,
 	s32 scaled_width = current_frame->bounds.w * backing_sprite->scaling;
 	s32 scaled_height = current_frame->bounds.h * backing_sprite->scaling;
 	SDL_Rect dst = {
-		(s32)(org.x) - scaled_width / 2,
-		(s32)(org.y) - scaled_height / 2,
+		(s32)(org->x) - scaled_width / 2,
+		(s32)(org->y) - scaled_height / 2,
 		scaled_width,
 		scaled_height,
 	};

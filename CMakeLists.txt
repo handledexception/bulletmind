@@ -30,7 +30,6 @@ set(BM_CORE_HEADERS
     src/core/binary.h
     src/core/bitfield.h
     src/core/buffer.h
-    src/core/c99defs.h
     src/core/export.h
     src/core/logger.h
     src/core/mem_align.h
@@ -53,8 +52,11 @@ set(BM_CORE_SOURCES
 
 # math
 set(BM_MATH_HEADERS
-    src/math/math-defs.h
-    src/math/vec2.h)
+    src/math/types.h
+    src/math/utils.h
+    src/math/vec2.h
+    src/math/vec3.h
+    src/math/vec4.h)
 
 # platform
 set(BM_PLATFORM_HEADERS

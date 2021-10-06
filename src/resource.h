@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "core/c99defs.h"
 #include "core/types.h"
 
 #define MAX_GAME_RESOURCES 256

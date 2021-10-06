@@ -8,10 +8,10 @@
             "name": "(Windows) Launch",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceRoot}\\ninja-debug-x86\\bulletmind.exe",
+            "program": "${workspaceRoot}\\ninja-debug-x64\\bulletmind.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}\\ninja-debug-x86",
+            "cwd": "${workspaceFolder}\\ninja-debug-x64",
             "environment": [],
             "console": "integratedTerminal"
         }

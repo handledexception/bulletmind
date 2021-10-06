@@ -16,10 +16,10 @@
 
 #pragma once
 
-#include "core/c99defs.h"
 #include "core/types.h"
 
 #include "math/vec2.h"
+#include "math/vec4.h"
 
 typedef struct engine_s engine_t;
 

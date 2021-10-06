@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "core/c99defs.h"
 #include "core/types.h"
 
 typedef struct engine_s engine_t;

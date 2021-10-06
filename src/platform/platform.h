@@ -16,9 +16,8 @@
 
 #pragma once
 
-#include "core/c99defs.h"
-#include "core/types.h"
 #include "core/export.h"
+#include "core/types.h"
 
 #include <sys/types.h>
 #include <wchar.h>

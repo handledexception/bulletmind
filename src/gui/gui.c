@@ -1,6 +1,6 @@
 #include "gui/gui.h"
 
-#include "core/c99defs.h"
+#include "core/types.h"
 
 static gui_platform_t* gui = NULL;
 

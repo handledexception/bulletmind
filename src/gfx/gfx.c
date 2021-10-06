@@ -19,6 +19,15 @@ u32 gfx_get_bits_per_pixel(enum gfx_pixel_format pf)
     case GFX_FORMAT_NV12:
         bpp = 16;
         break;
+    case GFX_FORMAT_DEPTH_U16:
+        bpp = 16;
+        break;
+    case GFX_FORMAT_DEPTH_U24:
+        bpp = 24;
+        break;
+    case GFX_FORMAT_DEPTH_F32:
+        bpp = 32;
+        break;
     case GFX_FORMAT_UNKNOWN:
     default:
         break;
