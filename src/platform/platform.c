@@ -20,7 +20,7 @@
 #include "core/string.h"
 #include "core/time_convert.h"
 
-#if defined(BM_MACOS) || defined(BM_LINUX)
+#if defined(BM_DARWIN) || defined(BM_LINUX)
 #include <sys/errno.h>
 #endif
 
