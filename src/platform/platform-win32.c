@@ -18,10 +18,7 @@
 
 #include "platform/platform.h"
 // #include "platform/win-version.h"
-<<<<<<< HEAD
 #include "core/logger.h"
-=======
->>>>>>> apple-silicon
 
 static LARGE_INTEGER clock_freq;
 static bool clock_initialized = false;

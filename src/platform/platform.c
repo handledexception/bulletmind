@@ -20,7 +20,9 @@
 #include "core/string.h"
 #include "core/time_convert.h"
 
+#if defined(BM_MACOS) || defined(BM_LINUX)
 #include <sys/errno.h>
+#endif
 
 FILE* os_wfopen(const wchar_t* path, const char* mode)
 {
