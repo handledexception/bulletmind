@@ -25,6 +25,7 @@
 #define APP_VER_KIND "dev"
 
 #include "core/buffer.h"
+#include "core/logger.h"
 #include "core/mem_arena.h"
 #include "core/string.h"
 #include "core/time_convert.h"
@@ -127,12 +128,12 @@ void print_debug_info(engine_t* engine, f64 dt)
 		_strtime(time_buf);
 #elif defined BM_DARWIN
 		time_t raw_time;
-		struct tm *info;
-   		time( &raw_time );
+		struct tm* info;
+		time(&raw_time);
 
-   		info = localtime( &raw_time );
+		info = localtime(&raw_time);
 
-   		strftime(time_buf, TEMP_STRING_MAX, "%x - %I:%M%p", info);
+		strftime(time_buf, TEMP_STRING_MAX, "%x - %I:%M%p", info);
 #endif
 		font_print(engine, 10, 10, 1.5, "Time: %s", time_buf);
 		font_print(engine, 10, 30, 1.5, "Engine Time: %f",
@@ -160,9 +161,9 @@ void print_debug_info(engine_t* engine, f64 dt)
 
 int main(int argc, char** argv)
 {
-	char s[16] = "\"hello, world!\"";
+	char s[26] = "\"Main screen turn on...\"";
 	str_upper_no_copy(s, 0);
-	printf("%s\n", s);
+	logger(LOG_INFO, "%s\n", s);
 
 	generate_tilemap(WORLD_TILES_WIDTH, WORLD_TILES_HEIGHT);
 
@@ -173,15 +174,15 @@ int main(int argc, char** argv)
 	engine = (engine_t*)arena_alloc(&g_mem_arena, sz_engine,
 					DEFAULT_ALIGNMENT);
 	memset(engine, 0, sizeof(engine_t));
-	engine->adapter_index = -1;			// SDL default to first available
-	engine->window_bounds.x = -1;		// SDL window position centered
-	engine->window_bounds.y = -1;		// ""
-	engine->window_bounds.w = WINDOW_WIDTH;
-	engine->window_bounds.h = WINDOW_HEIGHT;
-	engine->camera_bounds.x = 0;
-	engine->camera_bounds.y = 0;
-	engine->camera_bounds.w = CAMERA_WIDTH;
-	engine->camera_bounds.h = CAMERA_HEIGHT;
+	engine->adapter_index = -1; // SDL default to first available
+	engine->window_rect.x = -1; // SDL window position centered
+	engine->window_rect.y = -1; // ""
+	engine->window_rect.w = WINDOW_WIDTH;
+	engine->window_rect.h = WINDOW_HEIGHT;
+	engine->camera_rect.x = 0;
+	engine->camera_rect.y = 0;
+	engine->camera_rect.w = CAMERA_WIDTH;
+	engine->camera_rect.h = CAMERA_HEIGHT;
 	engine->render_scale.x = (f32)WINDOW_WIDTH / (f32)CAMERA_WIDTH;
 	engine->render_scale.y = (f32)WINDOW_HEIGHT / (f32)CAMERA_HEIGHT;
 	engine->target_fps = TARGET_FPS;
@@ -195,31 +196,23 @@ int main(int argc, char** argv)
 	engine->fullscreen = false;
 	engine->console = false;
 
-	s32 con_height = engine->camera_bounds.h / 3;
-	engine->console_bounds.x = engine->camera_bounds.x;
-	engine->console_bounds.y = engine->camera_bounds.y - con_height;
-	engine->console_bounds.w = engine->camera_bounds.w;
+	s32 con_height = engine->camera_rect.h / 3;
+	engine->console_bounds.x = engine->camera_rect.x;
+	engine->console_bounds.y = engine->camera_rect.y - con_height;
+	engine->console_bounds.w = engine->camera_rect.w;
 	engine->console_bounds.h = con_height;
 
-	rect_t con_start = {
-		engine->console_bounds.x,
-		engine->console_bounds.y,
-		engine->console_bounds.w,
-		engine->console_bounds.h
-	};
+	rect_t con_start = {engine->console_bounds.x, engine->console_bounds.y,
+			    engine->console_bounds.w, engine->console_bounds.h};
 
-	rect_t con_end = {
-		engine->camera_bounds.x,
-		engine->camera_bounds.y,
-		engine->camera_bounds.w,
-		con_height
-	};
+	rect_t con_end = {engine->camera_rect.x, engine->camera_rect.y,
+			  engine->camera_rect.w, con_height};
 
 	const u32 app_version =
 		pack_version(APP_VER_MAJ, APP_VER_MIN, APP_VER_REV);
 
 	if (!eng_init(APP_NAME, app_version, engine)) {
-		printf("Something went wrong!\n");
+		logger(LOG_ERROR, "Something went wrong!\n");
 		return -1;
 	}
 
@@ -229,71 +222,76 @@ int main(int argc, char** argv)
 		u64 frame_start_ns = os_get_time_ns();
 
 		switch (engine->mode) {
-		case kEngineModeStartup:
-			{
-				ent_spawn_player_and_satellite(engine->ent_list, engine->camera_bounds.w, engine->camera_bounds.h);
-				eng_play_sound(engine, "theme_music",
-						DEFAULT_MUSIC_VOLUME);
-				engine->mode = kEngineModePlay;
-				break;
-			}
+		case kEngineModeStartup: {
+			ent_spawn_player_and_satellite(engine->ent_list,
+						       engine->camera_rect.w,
+						       engine->camera_rect.h);
+			eng_play_sound(engine, "theme_music",
+				       DEFAULT_MUSIC_VOLUME);
+			engine->mode = kEngineModePlay;
+			break;
+		}
 		case kEngineModePlay:
-		case kEngineModeConsole:
-			{
-				SDL_SetRenderDrawColor(engine->renderer, 0x20, 0x20,
-							0x20, 0xFF);
-				SDL_RenderClear(engine->renderer);
+		case kEngineModeConsole: {
+			SDL_SetRenderDrawColor(engine->renderer, 0x20, 0x20,
+					       0x20, 0xFF);
+			SDL_RenderClear(engine->renderer);
 
-				// vec2f_t cam = {0.f, 0.f};
-				entity_t* player = ent_by_index(engine->ent_list, 0);
-				update_tilemap(engine,
-					(u32)player->org.x - TILE_WIDTH,
-					(u32)player->org.y - TILE_HEIGHT
-				);
+			// vec2f_t cam = {0.f, 0.f};
+			entity_t* player = ent_by_index(engine->ent_list, 0);
+			update_tilemap(engine, (u32)player->org.x - TILE_WIDTH,
+				       (u32)player->org.y - TILE_HEIGHT);
 
-				if (engine->debug)
-					print_debug_info(engine, dt);
+			if (engine->debug)
+				print_debug_info(engine, dt);
 
-				eng_refresh(engine, dt);
+			eng_refresh(engine, dt);
 
-				if (engine->mode == kEngineModeConsole) {
-					u8 r, g, b, a;
-					SDL_GetRenderDrawColor(engine->renderer, &r, &g, &b, &a);
-					rgba_t con_color = { 0x3d, 0x3a, 0x36, 0xff };
+			if (engine->mode == kEngineModeConsole) {
+				u8 r, g, b, a;
+				SDL_GetRenderDrawColor(engine->renderer, &r, &g,
+						       &b, &a);
+				rgba_t con_color = {0x3d, 0x3a, 0x36, 0xff};
 
-					if (engine->console) {
+				if (engine->console) {
 
-						if (engine->console_bounds.y < con_end.y)
-							engine->console_bounds.y += CONSOLE_SPEED;
-					}
+					if (engine->console_bounds.y <
+					    con_end.y)
+						engine->console_bounds.y +=
+							CONSOLE_SPEED;
+				} else {
+					if (engine->console_bounds.y >
+					    con_start.y)
+						engine->console_bounds.y -=
+							CONSOLE_SPEED;
 					else {
-						if (engine->console_bounds.y > con_start.y)
-							engine->console_bounds.y -= CONSOLE_SPEED;
-						else {
-							engine->mode = kEngineModePlay;
-							engine->inputs->mode = kInputModeGame;
-						}
+						engine->mode = kEngineModePlay;
+						engine->inputs->mode =
+							kInputModeGame;
 					}
-
-					draw_rect_solid(engine->renderer, engine->console_bounds, &con_color);
-					SDL_SetRenderDrawColor(engine->renderer, r, g, b, a); // restore color
-
-					font_print(
-						engine,
-						engine->console_bounds.x + 8,
-						engine->console_bounds.y + engine->console_bounds.h - 20,
-						1.5, "> hello, world!");
 				}
 
-				break;
+				draw_rect_solid(engine->renderer,
+						&engine->console_bounds,
+						&con_color);
+				SDL_SetRenderDrawColor(engine->renderer, r, g,
+						       b, a); // restore color
+
+				font_print(engine, engine->console_bounds.x + 8,
+					   engine->console_bounds.y +
+						   engine->console_bounds.h -
+						   20,
+					   1.5, "> hello, world!");
 			}
+
+			break;
+		}
 		default:
-		case kEngineModeQuit:
-			{
-				eng_stop_music(engine);
-				engine->mode = kEngineModeShutdown;
-				break;
-			}
+		case kEngineModeQuit: {
+			eng_stop_music(engine);
+			engine->mode = kEngineModeShutdown;
+			break;
+		}
 		}
 
 		do {

@@ -547,7 +547,7 @@ result gfx_build_shader(gfx_system_t* gfx, gfx_shader_t* shader)
 
 result gfx_create_shader_input_layout(gfx_system_t* gfx, gfx_shader_t* vs, enum gfx_vertex_type vertex_type)
 {
-    D3D11_INPUT_ELEMENT_DESC* descs = NULL;
+    const D3D11_INPUT_ELEMENT_DESC* descs = NULL;
     size_t num_elems = 0;
 
     switch (vertex_type) {
@@ -602,6 +602,16 @@ void gfx_set_pixel_shader(gfx_system_t* gfx, gfx_shader_t* ps)
         gfx->pixel_shader = ps;
 }
 
+void gfx_upload_shader_vars(gfx_system_t* gfx, const gfx_shader_var_t* vars, enum gfx_shader_type type)
+{
+    if (gfx && vars) {
+        if (type == GFX_SHADER_VERTEX)
+            ID3D11DeviceContext1_VSSetConstantBuffers(gfx->ctx, 0, 1, &vars->cbuffer->buffer);
+        else if (type == GFX_SHADER_PIXEL)
+            ID3D11DeviceContext1_PSSetConstantBuffers(gfx->ctx, 0, 1, &vars->cbuffer->buffer);
+    }
+}
+
 D3D11_USAGE gfx_buffer_usage_to_d3d11_usage(enum gfx_buffer_usage usage)
 {
     D3D11_USAGE d3d11_usage = D3D11_USAGE_DEFAULT;
@@ -631,6 +641,8 @@ result gfx_create_buffer(gfx_system_t* gfx, const void* data, size_t size, enum 
         return kResultNull;
 
     gfx_buffer_t* buf = malloc(sizeof(gfx_buffer_t));
+    buf->usage = usage;
+    buf->type = type;
 
     u32 cpu_access_flags = 0;
     if (usage == GFX_BUFFER_USAGE_DYNAMIC)
@@ -1181,10 +1193,15 @@ void gfx_set_viewport(gfx_system_t* gfx, u32 width, u32 height)
 
 void gfx_render_clear(gfx_system_t* gfx, const rgba_t* color)
 {
+    float clear_color[4];
+    clear_color[0] = color->r / 255.f;
+    clear_color[1] = color->g / 255.f;
+    clear_color[2] = color->b / 255.f;
+    clear_color[3] = color->a / 255.f;
     if (gfx && gfx->ctx && gfx->render_target) {
         struct gfx_texture2d* tex = (struct gfx_texture2d*)gfx->render_target->impl;
         if (tex && tex->rtv) {
-            ID3D11DeviceContext1_ClearRenderTargetView(gfx->ctx, tex->rtv, (FLOAT*)color);
+            ID3D11DeviceContext1_ClearRenderTargetView(gfx->ctx, tex->rtv, (FLOAT*)clear_color);
         }
 
         struct gfx_texture2d* zs = (struct gfx_texture2d*)gfx->zstencil_target->impl;
@@ -1200,7 +1217,7 @@ void gfx_render_begin(gfx_system_t* gfx)
 {
     if (gfx && gfx->ctx) {
         // render scene begin
-        u32 vertex_count = 0;
+        u32 vertex_count = 4;
         u32 start_vertex = 0;
         ID3D11DeviceContext1_VSSetShader(gfx->ctx, (ID3D11VertexShader*)gfx->vertex_shader->shader, NULL, 0);
         ID3D11DeviceContext1_PSSetShader(gfx->ctx, (ID3D11PixelShader*)gfx->pixel_shader->shader, NULL, 0);
@@ -1220,16 +1237,13 @@ void gfx_init_sprite(gfx_system_t* gfx)
     struct gfx_vertex_data* vd = malloc(sizeof(struct gfx_vertex_data));
     memset(vd, 0, sizeof(*vd));
 
-    vd->positions = (struct gfx_vertex_data_element*)malloc(sizeof(struct gfx_vertex_data_element));
-    size_t sz_positions = sizeof(vec3f_t) * 4;
-    vd->positions->data = malloc(sz_positions);
-    vd->positions->num = 4;
-    vd->positions->size = sizeof(vec3f_t);
+    vd->num_vertices = 4;
+    size_t sz_positions = sizeof(vec3f_t) * vd->num_vertices;
+    vd->positions = (vec3f_t*)malloc(sz_positions);
 
-    vd->tex_verts = (struct gfx_vertex_data_element*)malloc(sizeof(struct gfx_vertex_data_element));
+    vd->tex_verts = (struct texture_vertex*)malloc(sizeof(struct texture_vertex));
     size_t sz_tex_verts = sizeof(vec2f_t) * 4;
     vd->tex_verts->data = malloc(sz_tex_verts);
-    vd->tex_verts->num = 4;
     vd->tex_verts->size = sizeof(vec2f_t);
 
     gfx_create_buffer(gfx, vd, sz_positions + sz_tex_verts, GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DYNAMIC, &gfx->sprite_vb);

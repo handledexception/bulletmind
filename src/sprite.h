@@ -17,12 +17,13 @@
 #pragma once
 
 #include "core/types.h"
+#include "math/types.h"
 
 #include <SDL.h>
 
 typedef struct sprite_s {
 	u8* data;
-	imgtype_t type;
+	img_type_t type;
 	pix_fmt_t pix_fmt;
 	SDL_Surface* surface;
 	SDL_Texture* texture;
@@ -33,7 +34,7 @@ typedef struct sprite_s {
 #define MAX_SPRITE_SHEET_FRAMES 32
 
 typedef struct ss_frame_s {
-	rect_t bounds;
+	struct bounds bbox;
 	f32 duration;
 } ss_frame_t;
 

@@ -17,6 +17,10 @@
 #ifndef H_BM_CORE_TYPES
 #define H_BM_CORE_TYPES
 
+#ifndef NOMINMAX   /* don't define min() and max(). */
+#define NOMINMAX
+#endif
+
 #if defined(_MSC_VER)
 #define inline __inline
 #endif
@@ -30,13 +34,13 @@
 #include <time.h>
 
 #ifndef MAX_PATH
-    #if defined(BM_WINDOWS)
-    #define MAX_PATH 256
-    #elif defined(BM_DARWIN)
-    #define MAX_PATH 1024
-    #elif defined(BM_LINUX)
-    #define MAX_PATH 4096
-    #endif
+#if defined(BM_WINDOWS)
+#define MAX_PATH 256
+#elif defined(BM_DARWIN)
+#define MAX_PATH 1024
+#elif defined(BM_LINUX)
+#define MAX_PATH 4096
+#endif
 #endif
 
 #define TEMP_STRING_MAX 4096
@@ -53,14 +57,14 @@ typedef float f32;
 typedef double f64;
 
 typedef enum {
-    kResultOk = 0,
-    kResultError = 1,
-    kResultIoError = 2,
-    kResultNotFound = 3,
-    kResultNull = 4,
-    kResultOutOfMemory = 5,
-    kResultNotImplemented = 6,
-    kResultUnknown = 7
+	kResultOk = 0,
+	kResultError = 1,
+	kResultIoError = 2,
+	kResultNotFound = 3,
+	kResultNull = 4,
+	kResultOutOfMemory = 5,
+	kResultNotImplemented = 6,
+	kResultUnknown = 7
 } result;
 
 #define UNUSED_PARAMETER(param) (void)param

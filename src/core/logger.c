@@ -14,8 +14,10 @@ static void default_log_handler(enum LOG_LEVEL level, const char* fmt,
 	vsnprintf(msg, sizeof(msg), fmt, args);
 	switch (level) {
 	case LOG_DEBUG:
+#ifdef BM_DEBUG
 		fprintf(stdout, "debug: %s\n", msg);
 		fflush(stdout);
+#endif
 		break;
 	case LOG_INFO:
 		fprintf(stdout, "info: %s\n", msg);

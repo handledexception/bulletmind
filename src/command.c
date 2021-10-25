@@ -41,7 +41,7 @@ bool cmd_get_state(input_state_t* inputs, command_t cmd)
 
 	// special case console so we can toggle console back off again
 	if (inputs->mode == kInputModeGame ||
-		(inputs->mode == kInputModeConsole && cmd == kCommandConsole)) {
+	    (inputs->mode == kInputModeConsole && cmd == kCommandConsole)) {
 		virtual_button_t* vb = &inputs->buttons[cmd];
 		if (!vb)
 			return false;
@@ -60,7 +60,8 @@ bool cmd_get_state(input_state_t* inputs, command_t cmd)
 		if (gb)
 			gamepad_button_state = gb->state;
 
-		inputs_state = (bool)(key_state | mouse_button_state | gamepad_button_state);
+		inputs_state = (bool)(key_state | mouse_button_state |
+				      gamepad_button_state);
 	}
 
 	return inputs_state;
@@ -75,8 +76,7 @@ void cmd_toggle_bool(input_state_t* inputs, command_t cmd, bool* value)
 			*value = !*value;
 			inputs->buttons[cmd].toggled = true;
 		}
-	}
-	else {
+	} else {
 		if (toggled) {
 			inputs->buttons[cmd].toggled = false;
 		}
@@ -93,8 +93,8 @@ void cmd_refresh(engine_t* eng)
 		eng->inputs->mode = kInputModeConsole;
 	}
 
-	// cmd_toggle_bool(eng->inputs, kCommandToggleFullscreen, &eng->fullscreen);
-	// eng_toggle_fullscreen(eng, eng->fullscreen);
+	cmd_toggle_bool(eng->inputs, kCommandToggleFullscreen, &eng->fullscreen);
+	eng_toggle_fullscreen(eng, eng->fullscreen);
 
 	if (cmd_get_state(eng->inputs, kCommandQuit))
 		eng->mode = kEngineModeQuit;

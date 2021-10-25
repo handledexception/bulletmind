@@ -54,9 +54,14 @@ set(BM_CORE_SOURCES
 set(BM_MATH_HEADERS
     src/math/types.h
     src/math/utils.h
+    src/math/bounds.h
     src/math/vec2.h
     src/math/vec3.h
-    src/math/vec4.h)
+    src/math/vec4.h
+    src/math/mat4.h)
+
+set(BM_MATH_SOURCES
+    src/math/mat4.c)
 
 # platform
 set(BM_PLATFORM_HEADERS
@@ -69,9 +74,11 @@ set(BM_PLATFORM_SOURCES
 
 # gfx
 set(BM_GFX_HEADERS
-    src/gfx/gfx.h)
+    src/gfx/gfx.h
+    src/gfx/camera.h)
 set(BM_GFX_SOURCES
-    src/gfx/gfx.c)
+    src/gfx/gfx.c
+    src/gfx/camera.c)
 
 # gui
 set(BM_GUI_HEADERS
@@ -158,6 +165,7 @@ set(BM_TARGET_SOURCES
     ${BM_CORE_HEADERS}
     ${BM_CORE_SOURCES}
     ${BM_MATH_HEADERS}
+    ${BM_MATH_SOURCES}
     ${BM_PLATFORM_HEADERS}
     ${BM_PLATFORM_SOURCES}
     ${BM_GFX_HEADERS}

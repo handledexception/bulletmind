@@ -8,7 +8,7 @@ typedef enum {
 	IMG_TYPE_PNG,
 	IMG_TYPE_JPEG,
 	IMG_TYPE_RAW,
-} imgtype_t;
+} img_type_t;
 
 typedef enum {
 	BGR24,

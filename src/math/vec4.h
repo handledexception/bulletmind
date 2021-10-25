@@ -19,107 +19,104 @@
 
 #include "core/types.h"
 #include "core/export.h"
+#include "math/vec3.h"
 
 typedef struct vec4f {
-    f32 x;
-    f32 y;
-    f32 z;
-    f32 w;
+	f32 x;
+	f32 y;
+	f32 z;
+	f32 w;
 } vec4f_t;
 
 typedef struct rgba {
-	f32 r;
-	f32 g;
-	f32 b;
-	f32 a;
+	u8 r;
+	u8 g;
+	u8 b;
+	u8 a;
 } rgba_t;
 
 static inline void vec4f_set(vec4f_t* dst, f32 x, f32 y, f32 z, f32 w)
 {
-    dst->x = x;
-    dst->y = y;
-    dst->z = z;
-    dst->w = w;
+	dst->x = x;
+	dst->y = y;
+	dst->z = z;
+	dst->w = w;
+}
+
+static inline void vec4f_from_vec3(vec4f_t* dst, const vec3f_t* v)
+{
+	dst->x = v->x;
+	dst->y = v->y;
+	dst->z = v->z;
+	dst->w = 1.f;
 }
 
 static inline void vec4f_zero(vec4f_t* dst)
 {
-    vec4f_set(dst, 0.f, 0.f, 0.f, 0.f);
+	vec4f_set(dst, 0.f, 0.f, 0.f, 0.f);
 }
 
 static inline void vec4f_copy(vec4f_t* dst, const vec4f_t* rhs)
 {
-    vec4f_set(dst, rhs->x, rhs->y, rhs->z, rhs->w);
+	vec4f_set(dst, rhs->x, rhs->y, rhs->z, rhs->w);
 }
 
-static inline void vec4f_add(vec4f_t* dst, const vec4f_t* lhs, const vec4f_t* rhs)
+static inline void vec4f_add(vec4f_t* dst, const vec4f_t* lhs,
+			     const vec4f_t* rhs)
 {
-    vec4f_set(dst,
-        lhs->x + rhs->x,
-        lhs->y + rhs->y,
-        lhs->z + rhs->z,
-        lhs->w + rhs->w
-    );
+	vec4f_set(dst, lhs->x + rhs->x, lhs->y + rhs->y, lhs->z + rhs->z,
+		  lhs->w + rhs->w);
 }
 
-static inline void vec4f_sub(vec4f_t* dst, const vec4f_t* lhs, const vec4f_t* rhs)
+static inline void vec4f_sub(vec4f_t* dst, const vec4f_t* lhs,
+			     const vec4f_t* rhs)
 {
-    vec4f_set(dst,
-        lhs->x - rhs->x,
-        lhs->y - rhs->y,
-        lhs->z - rhs->z,
-        lhs->w - rhs->w
-    );
+	vec4f_set(dst, lhs->x - rhs->x, lhs->y - rhs->y, lhs->z - rhs->z,
+		  lhs->w - rhs->w);
 }
 
-static inline void vec4f_mul(vec4f_t* dst, const vec4f_t* lhs, const vec4f_t* rhs)
+static inline void vec4f_mul(vec4f_t* dst, const vec4f_t* lhs,
+			     const vec4f_t* rhs)
 {
-    vec4f_set(dst,
-        lhs->x * rhs->x,
-        lhs->y * rhs->y,
-        lhs->z * rhs->z,
-        lhs->w * rhs->w
-    );
+	vec4f_set(dst, lhs->x * rhs->x, lhs->y * rhs->y, lhs->z * rhs->z,
+		  lhs->w * rhs->w);
 }
 
-static inline void vec4f_div(vec4f_t* dst, const vec4f_t* lhs, const vec4f_t* rhs)
+static inline void vec4f_div(vec4f_t* dst, const vec4f_t* lhs,
+			     const vec4f_t* rhs)
 {
-    vec4f_set(dst,
-        lhs->x / rhs->x,
-        lhs->y / rhs->y,
-        lhs->z / rhs->z,
-        lhs->w / rhs->w
-    );
+	vec4f_set(dst, lhs->x / rhs->x, lhs->y / rhs->y, lhs->z / rhs->z,
+		  lhs->w / rhs->w);
 }
 
 static inline f32 vec4f_dot(const vec4f_t* v1, const vec4f_t* v2)
 {
-    return (v1->x * v2->x + v1->y * v2->y + v1->z * v2->z + v1->w * v2->w);
+	return (v1->x * v2->x + v1->y * v2->y + v1->z * v2->z + v1->w * v2->w);
 }
 
 static inline f32 vec4f_len(const vec4f_t* v)
 {
-    f32 v_dot = vec4f_dot(v, v);
-    return v_dot > 0.f ? sqrtf(v_dot) : 0.f;
+	f32 v_dot = vec4f_dot(v, v);
+	return v_dot > 0.f ? sqrtf(v_dot) : 0.f;
 }
 
 static inline void vec4_mulf(vec4f_t* dst, const vec4f_t* v, f32 s)
 {
-    vec4f_set(dst, v->x * s, v->y * s, v->z * s, v->w * s);
+	vec4f_set(dst, v->x * s, v->y * s, v->z * s, v->w * s);
 }
 
 static inline void vec4f_norm(vec4f_t* dst, const vec4f_t* v)
 {
-    f32 len = vec4f_dot(v, v);
-    if (len > 0.f) {
-        len = 1.f / sqrtf(len);
-        dst->x = v->x * len;
-        dst->y = v->y * len;
-        dst->z = v->z * len;
-        dst->w = v->w * len;
-    } else {
-        vec4f_zero(dst);
-    }
+	f32 len = vec4f_dot(v, v);
+	if (len > 0.f) {
+		len = 1.f / sqrtf(len);
+		dst->x = v->x * len;
+		dst->y = v->y * len;
+		dst->z = v->z * len;
+		dst->w = v->w * len;
+	} else {
+		vec4f_zero(dst);
+	}
 }
 
 #endif // H_BM_MATH_VEC4

@@ -106,7 +106,8 @@ bool game_res_init(engine_t* eng)
 			s32 sprite_scale = 1;
 			if (!read_table_int32(asset, "scale", &sprite_scale))
 				sprite_scale = 1;
-			sprite_t* s = (sprite_t*)eng->game_resources[asset_idx]->data;
+			sprite_t* s =
+				(sprite_t*)eng->game_resources[asset_idx]->data;
 			s->scaling = sprite_scale;
 		}
 
@@ -212,10 +213,10 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 				read_table_f64(frame_nfo, "duration",
 					       &duration);
 
-				ss_frame->bounds.x = x;
-				ss_frame->bounds.y = y;
-				ss_frame->bounds.w = width;
-				ss_frame->bounds.h = height;
+				ss_frame->bbox.min.x = x;
+				ss_frame->bbox.min.y = y;
+				ss_frame->bbox.max.x = width;
+				ss_frame->bbox.max.y = height;
 				ss_frame->duration = (f32)duration;
 			}
 

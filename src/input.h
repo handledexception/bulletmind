@@ -35,12 +35,10 @@
 #define MAX_GAMEPAD_AXES 6
 #define MAX_MOUSE_BUTTONS 16
 #define MAX_KEYBOARD_KEYS kScancodeMax
-#define MAX_VIRTUAL_BUTTONS	(MAX_KEYBOARD_KEYS + MAX_MOUSE_BUTTONS + MAX_GAMEPAD_BUTTONS)
+#define MAX_VIRTUAL_BUTTONS \
+	(MAX_KEYBOARD_KEYS + MAX_MOUSE_BUTTONS + MAX_GAMEPAD_BUTTONS)
 
-typedef enum {
-	kInputModeGame = 0,
-	kInputModeConsole = 1
-} input_mode_t;
+typedef enum { kInputModeGame = 0, kInputModeConsole = 1 } input_mode_t;
 
 typedef enum {
 	kInputNone = -1,
@@ -141,7 +139,7 @@ typedef struct virtual_button_s {
 
 typedef struct input_state_s {
 	gamepad_t gamepads[MAX_GAMEPADS]; // array of gamepad states
-	kbkey_t keys[MAX_KEYBOARD_KEYS];     // array of keyboard key states
+	kbkey_t keys[MAX_KEYBOARD_KEYS];  // array of keyboard key states
 	mouse_t mouse;                    // mouse state
 	virtual_button_t buttons[MAX_VIRTUAL_BUTTONS];
 	input_mode_t mode;

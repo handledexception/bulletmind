@@ -26,24 +26,24 @@
 
 FILE* os_wfopen(const wchar_t* path, const char* mode)
 {
-	FILE *file = NULL;
-	
+	FILE* file = NULL;
+
 	if (path) {
 #ifdef _MSC_VER
 		wchar_t* wcs_mode = NULL;
 
 		os_utf8_to_wcs_ptr(mode, 0, &wcs_mode);
-		
+
 		file = _wfopen(path, wcs_mode);
-		
+
 		free(wcs_mode);
 #else
 		char* mbs_path = NULL;
 
 		os_wcs_to_utf8_ptr(path, 0, &mbs_path);
-		
+
 		file = fopen(mbs_path, mode);
-		
+
 		free(mbs_path);
 #endif
 	}
@@ -59,9 +59,9 @@ FILE* os_fopen(const char* path, const char* mode)
 
 	if (path) {
 		os_utf8_to_wcs_ptr(path, 0, &wpath);
-		
+
 		file = os_wfopen(wpath, mode);
-		
+
 		free(wpath);
 	}
 
@@ -121,7 +121,7 @@ int os_stat(const char* file, struct stat* st)
 }
 #endif
 
-int os_fseek_s64(FILE *file, s64 offset, int origin)
+int os_fseek_s64(FILE* file, s64 offset, int origin)
 {
 #ifdef _MSC_VER
 	return _fseeki64(file, offset, origin);
@@ -130,7 +130,7 @@ int os_fseek_s64(FILE *file, s64 offset, int origin)
 #endif
 }
 
-s64 os_ftell_s64(FILE *file)
+s64 os_ftell_s64(FILE* file)
 {
 #ifdef _MSC_VER
 	return _ftelli64(file);
@@ -245,14 +245,14 @@ size_t os_utf8_to_wcs_ptr(const char* str, size_t len, wchar_t** pstr)
 
 		*pstr = malloc((out_len + 1) * sizeof(wchar_t));
 		return os_utf8_to_wcs(str, len, *pstr, out_len + 1);
-	} 
-	else {
+	} else {
 		*pstr = NULL;
 		return 0;
 	}
 }
 
-size_t os_wcs_to_utf8(const wchar_t* str, size_t len, char* dst, size_t dst_size)
+size_t os_wcs_to_utf8(const wchar_t* str, size_t len, char* dst,
+		      size_t dst_size)
 {
 	size_t in_len = 0;
 	size_t out_len = 0;
@@ -268,23 +268,23 @@ size_t os_wcs_to_utf8(const wchar_t* str, size_t len, char* dst, size_t dst_size
 			return 0;
 
 		if (out_len)
-			out_len = wchar_to_utf8(str, in_len, dst, out_len + 1, 0);
-		
+			out_len =
+				wchar_to_utf8(str, in_len, dst, out_len + 1, 0);
+
 		dst[out_len] = 0;
 	}
 
 	return out_len;
 }
 
-size_t os_wcs_to_utf8_ptr(const wchar_t *str, size_t len, char **pstr)
+size_t os_wcs_to_utf8_ptr(const wchar_t* str, size_t len, char** pstr)
 {
 	if (str) {
 		size_t out_len = os_wcs_to_utf8(str, len, NULL, 0);
 
 		*pstr = malloc((out_len + 1) * sizeof(char));
 		return os_wcs_to_utf8(str, len, *pstr, out_len + 1);
-	}
-	else {
+	} else {
 		*pstr = NULL;
 		return 0;
 	}

@@ -29,6 +29,8 @@
 
 #include "platform/platform.h"
 
+#include "gfx/camera.h"
+
 #if defined(BM_WINDOWS)
 #include "gfx/gfx_d3d11.h"
 #include "gui/gui.h"
@@ -90,17 +92,16 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 
 	SDL_Init(SDL_FLAGS);
 
-	s32 window_pos_x = eng->window_bounds.x;
-	s32 window_pos_y = eng->window_bounds.y;
+	s32 window_pos_x = eng->window_rect.x;
+	s32 window_pos_y = eng->window_rect.y;
 	if (window_pos_x == -1)
 		window_pos_x = SDL_WINDOWPOS_CENTERED;
 	if (window_pos_y == -1)
 		window_pos_y = SDL_WINDOWPOS_CENTERED;
 
-	eng->window = SDL_CreateWindow(window_title,
-		window_pos_x, window_pos_y,
-		eng->window_bounds.w, eng->window_bounds.h,
-		SDL_WINDOW_SHOWN);
+	eng->window = SDL_CreateWindow(window_title, window_pos_x, window_pos_y,
+				       eng->window_rect.w, eng->window_rect.h,
+				       SDL_WINDOW_SHOWN);
 
 	if (eng->window == NULL) {
 		logger(LOG_ERROR, "error creating engine window: %s\n",
@@ -108,53 +109,81 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 		return false;
 	}
 
-	// const size_t sz_sixteen_megabytes = 64 * 1000 * 1000;
-	// char* src_buf = malloc(sz_sixteen_megabytes);
-	// f64 start_ms = os_get_time_msec();
-	// memset(src_buf, 1, sz_sixteen_megabytes);
-	// printf("%zu %f\n", sz_sixteen_megabytes, os_get_time_msec() - start_ms);
-#if defined(BM_WINDOWS)
+// #if defined(BM_WINDOWS)
+#if 0
 	gui_init();
-	gui_window_t* wnd = gui_create_window("bm window", 100, 100, 640, 480, 0, NULL);
-	gui_window_t* wnd2 = gui_create_window("bm view", 0, 0, 640, 480, 0, wnd);
+	gui_window_t* wnd =
+		gui_create_window("bm window", 100, 100, 640, 480, 0, NULL);
+	gui_window_t* wnd2 =
+		gui_create_window("bm view", 0, 0, 640, 480, 0, wnd);
 
 	SDL_SysWMinfo wm_info;
 	SDL_VERSION(&wm_info.version); // must call to get valid HWND??
 	SDL_GetWindowWMInfo(eng->window, &wm_info);
 	// HWND hwnd = wm_info.info.win.window;
 	HWND hwnd = gui_get_window_handle(wnd2);
-	const struct gfx_config gfx_cfg = {
-		.adapter = 0,
-		// .width = eng->window_bounds.w,
-		// .height = eng->window_bounds.h,
-		.width = wnd->w,
-		.height = wnd->h,
-		.fps_num = 60,
-		.fps_den = 1,
-		.pix_fmt = GFX_FORMAT_BGRA,
-		.fullscreen = false,
-		.window = { hwnd }
-	};
+	const struct gfx_config gfx_cfg = {.adapter = 0,
+					   // .width = eng->window_rect.w,
+					   // .height = eng->window_rect.h,
+					   .width = wnd->w,
+					   .height = wnd->h,
+					   .fps_num = 60,
+					   .fps_den = 1,
+					   .pix_fmt = GFX_FORMAT_BGRA,
+					   .fullscreen = false,
+					   .window = {hwnd}};
+
+	camera_t cam_pers;
+	rect_t viewport = {.x = 0, .y = 0, .w = wnd->w, .h = wnd->h};
+	vec3f_t cam_pos = {-0.777f, 1.566f, -2.5f};
+	vec3f_t cam_dir = {0.f, 0.f, 1.f};
+	vec3f_t cam_up = {0.f, 1.f, 0.f};
+	gfx_camera_persp(&cam_pers, &cam_pos, &cam_dir, &cam_up, &viewport,
+			 75.f, Z_NEAR, Z_FAR);
+
 	gfx_system_t* gfx_sys = gfx_system_init(&gfx_cfg, BM_GFX_D3D11);
 	gfx_shader_t* hlsl_vs = gfx_compile_shader_from_file(
-		"assets/solid.vs.hlsl", "VSMain", kDX11VertexShaderTarget, GFX_SHADER_VERTEX);
+		"assets/pos_color.vs.hlsl", "VSMain", kDX11VertexShaderTarget,
+		GFX_SHADER_VERTEX);
 	gfx_shader_t* hlsl_ps = gfx_compile_shader_from_file(
-		"assets/solid.ps.hlsl", "PSMain", kDX11PixelShaderTarget, GFX_SHADER_PIXEL);
+		"assets/pos_color.ps.hlsl", "PSMain", kDX11PixelShaderTarget,
+		GFX_SHADER_PIXEL);
 	gfx_build_shader(gfx_sys, hlsl_vs);
-	gfx_create_shader_input_layout(gfx_sys, hlsl_vs, GFX_VERTEX_POS_UV);
+	gfx_create_shader_input_layout(gfx_sys, hlsl_vs, GFX_VERTEX_POS_COLOR);
 	gfx_build_shader(gfx_sys, hlsl_ps);
 	gfx_set_vertex_shader(gfx_sys, hlsl_vs);
 	gfx_set_pixel_shader(gfx_sys, hlsl_ps);
 
+	struct gfx_vertex_data* tetrahedron = malloc(sizeof(*tetrahedron));
+	tetrahedron->num_vertices = 4;
+	tetrahedron->positions = malloc(sizeof(vec3f_t) * 4);
+	tetrahedron->colors = malloc(sizeof(vec4f_t) * 4);
+	tetrahedron->positions[0] = (vec3f_t){1.f, 1.f, 1.f};
+	tetrahedron->positions[1] = (vec3f_t){-1.f, -1.f, 1.f};
+	tetrahedron->positions[2] = (vec3f_t){-1.f, 1.f, -1.f};
+	tetrahedron->positions[3] = (vec3f_t){1.f, -1.f, -1.f};
+	tetrahedron->colors[0] = (vec4f_t){1.f, 0.f, 0.f, 1.f};
+	tetrahedron->colors[1] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
+	tetrahedron->colors[2] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
+	tetrahedron->colors[3] = (vec4f_t){1.f, 1.f, 1.f, 1.f};
+	size_t vbd_size = (sizeof(vec3f_t) * 4) + (sizeof(vec4f_t) * 4);
+	gfx_buffer_t* vertex_buffer = NULL;
+	gfx_create_buffer(gfx_sys, (void*)&tetrahedron, vbd_size,
+			  GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DEFAULT,
+			  &vertex_buffer);
+
 	gfx_init_sampler_state(gfx_sys);
 	gfx_init_rasterizer(gfx_sys, GFX_CULLING_NONE, GFX_RASTER_WINDING_CCW);
 	gfx_bind_rasterizer(gfx_sys);
-	
+	gfx_bind_vertex_buffer(gfx_sys, vertex_buffer, vbd_size, 0);
+	gfx_bind_input_layout(gfx_sys, hlsl_vs);
+	gfx_bind_primitive_topology(gfx_sys, GFX_TOPOLOGY_TRIANGLE_STRIP);
+
 	rgba_t clear_color = {
-		.r = 0.f,
-		.g = 0.f,
-		.b = 0.f,
-		.a = 1.f,
+		.r = 0,
+		.g = 0,
+		.b = 0,
+		.a = 255,
 	};
 	gfx_render_clear(gfx_sys, &clear_color);
 	gfx_render_begin(gfx_sys);
@@ -171,8 +200,8 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	}
 
 	// SDL_RenderSetViewport(eng->renderer, (SDL_Rect*)&eng->scr_bounds);
-	SDL_RenderSetLogicalSize(eng->renderer, eng->camera_bounds.w,
-				 eng->camera_bounds.h);
+	SDL_RenderSetLogicalSize(eng->renderer, eng->camera_rect.w,
+				 eng->camera_rect.h);
 
 	// SDL_RenderSetIntegerScale(eng->renderer, true);
 
@@ -294,8 +323,9 @@ void eng_stop_music(engine_t* eng)
 
 void eng_toggle_fullscreen(engine_t* eng, bool fullscreen)
 {
-    // bool is_fullscreen = SDL_GetWindowFlags(eng->window) & SDL_WINDOW_FULLSCREEN;
-    SDL_SetWindowFullscreen(eng->window, fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
-	printf("FULLSCREEN %d", fullscreen);
-    // SDL_ShowCursor(is_fullscreen);
+	// bool is_fullscreen = SDL_GetWindowFlags(eng->window) & SDL_WINDOW_FULLSCREEN;
+	SDL_SetWindowFullscreen(eng->window,
+				fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
+	logger(LOG_DEBUG, "Fullscreen toggled: %d", fullscreen);
+	// SDL_ShowCursor(is_fullscreen);
 }

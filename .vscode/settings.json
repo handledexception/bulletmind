@@ -39,7 +39,11 @@
         "utils.h": "c",
         "stdbool.h": "c",
         "system.h": "c",
-        "d3d11_1.h": "c"
+        "d3d11_1.h": "c",
+        "mat4.h": "c",
+        "camera.h": "c",
+        "vec3.h": "c",
+        "vec4.h": "c"
     },
     "cmake.configureOnOpen": false
 }
