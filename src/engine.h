@@ -20,8 +20,7 @@
 #include "font.h"
 #include "sprite.h"
 
-#include "math/vec2.h"
-#include "math/vec4.h"
+#include "math/types.h"
 
 typedef struct SDL_Window SDL_Window;
 typedef struct SDL_Renderer SDL_Renderer;
@@ -29,9 +28,7 @@ typedef struct SDL_Surface SDL_Surface;
 typedef struct SDL_Texture SDL_Texture;
 
 typedef struct input_state_s input_state_t;
-
 typedef struct game_resource_s game_resource_t;
-
 typedef struct audio_state_s audio_state_t;
 
 typedef enum {
@@ -49,19 +46,20 @@ typedef enum {
 typedef struct engine_s {
 	s32 adapter_index;
 
+	char window_title[TEMP_STRING_MAX];
 	SDL_Window* window;
 	bool fullscreen;
 	SDL_Renderer* renderer;
 	// SDL_Surface* scr_surface;
 	// SDL_Texture* scr_texture;
 
-	rect_t window_bounds;
-	rect_t camera_bounds;
+	rect_t window_rect;
+	rect_t camera_rect;
 	vec2f_t render_scale;
 
 	f32 target_fps;
 	f64 target_frametime;
-	s32 frame_count;
+	u64 frame_count;
 	f64 spawn_timer[MAX_SPAWN_TIMERS];
 
 	engine_mode_t mode;

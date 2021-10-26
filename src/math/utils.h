@@ -39,9 +39,10 @@ extern "C" {
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-#define LARGE_EPSILON 1e-2f
-#define EPSILON 1e-4f
-#define TINY_EPSILON 1e-5f
+#define LARGE_EPSILON 	1e-2f
+#define EPSILON 		1e-4f
+#define TINY_EPSILON 	1e-5f
+#define M_INFINITE 		3.4e38f
 
 static inline bool f32_compare(float f1, float f2, float epsilon)
 {

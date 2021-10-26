@@ -93,8 +93,13 @@ void cmd_refresh(engine_t* eng)
 		eng->inputs->mode = kInputModeConsole;
 	}
 
-	// cmd_toggle_bool(eng->inputs, kCommandToggleFullscreen, &eng->fullscreen);
-	// eng_toggle_fullscreen(eng, eng->fullscreen);
+	static bool fullscreen = false;
+	cmd_toggle_bool(eng->inputs, kCommandToggleFullscreen, &fullscreen);
+	if (fullscreen != eng->fullscreen) {
+		eng->fullscreen = fullscreen;
+		logger(LOG_DEBUG, "Fullscreen toggled: %d", fullscreen);
+	}
+	eng_toggle_fullscreen(eng, eng->fullscreen);
 
 	if (cmd_get_state(eng->inputs, kCommandQuit))
 		eng->mode = kEngineModeQuit;

@@ -2,7 +2,8 @@
 Sun 10/01/2017 
 ================================================================================= 
       18 text files.
-classified 18 files      18 unique files.                              
+classified 18 files
+      18 unique files.                              
        0 files ignored.
 
 http://cloc.sourceforge.net v 1.60  T=0.02 s (793.6 files/s, 49819.3 lines/s)
@@ -18,7 +19,8 @@ SUM:                            18            196             65            869
 Sat 10/14/2017 
 ================================================================================= 
       20 text files.
-classified 20 files      20 unique files.                              
+classified 20 files
+      20 unique files.                              
        0 files ignored.
 
 http://cloc.sourceforge.net v 1.60  T=0.03 s (764.4 files/s, 53506.6 lines/s)
@@ -34,7 +36,8 @@ SUM:                            20            244             70           1086
 Thu 01/02/2020 
 ================================================================================= 
       25 text files.
-classified 25 files      25 unique files.                              
+classified 25 files
+      25 unique files.                              
        0 files ignored.
 
 http://cloc.sourceforge.net v 1.60  T=0.08 s (320.8 files/s, 21162.2 lines/s)
@@ -50,7 +53,8 @@ SUM:                            25            293             79           1277
 Thu 01/02/2020 
 ================================================================================= 
       25 text files.
-classified 25 files      25 unique files.                              
+classified 25 files
+      25 unique files.                              
        0 files ignored.
 
 http://cloc.sourceforge.net v 1.60  T=0.03 s (847.8 files/s, 55919.1 lines/s)
@@ -66,7 +70,8 @@ SUM:                            25            293             79           1277
 Sun 01/26/2020 
 ================================================================================= 
       26 text files.
-classified 26 files      26 unique files.                              
+classified 26 files
+      26 unique files.                              
        0 files ignored.
 
 http://cloc.sourceforge.net v 1.60  T=0.03 s (810.4 files/s, 58194.9 lines/s)
@@ -82,7 +87,8 @@ SUM:                            26            330            117           1420
 Sat 06/20/2020 
 ================================================================================= 
       30 text files.
-classified 30 files      30 unique files.                              
+classified 30 files
+      30 unique files.                              
        0 files ignored.
 
 http://cloc.sourceforge.net v 1.60  T=0.03 s (949.5 files/s, 67477.0 lines/s)
@@ -98,7 +104,8 @@ SUM:                            30            377            141           1614
 Sun 02/28/2021 
 ================================================================================= 
       35 text files.
-classified 35 files      35 unique files.                              
+classified 35 files
+      35 unique files.                              
        0 files ignored.
 
 http://cloc.sourceforge.net v 1.60  T=0.04 s (829.5 files/s, 75862.4 lines/s)
@@ -114,7 +121,8 @@ SUM:                            35            519            219           2463
 Mon 03/01/2021 
 ================================================================================= 
       35 text files.
-classified 35 files      35 unique files.                              
+classified 35 files
+      35 unique files.                              
        0 files ignored.
 
 http://cloc.sourceforge.net v 1.60  T=0.04 s (809.6 files/s, 78443.0 lines/s)
@@ -130,7 +138,8 @@ SUM:                            35            538            224           2629
 Mon 07/12/2021 
 ================================================================================= 
       22 text files.
-classified 22 files      22 unique files.                              
+classified 22 files
+      22 unique files.                              
        0 files ignored.
 
 http://cloc.sourceforge.net v 1.60  T=0.04 s (605.6 files/s, 88527.1 lines/s)
@@ -146,7 +155,8 @@ SUM:                            22            476            410           2330
 Mon 07/12/2021 
 ================================================================================= 
       49 text files.
-classified 49 files      49 unique files.                              
+classified 49 files
+      49 unique files.                              
        4 files ignored.
 
 http://cloc.sourceforge.net v 1.60  T=0.06 s (798.2 files/s, 84612.3 lines/s)
@@ -162,7 +172,8 @@ SUM:                            49            755            917           3522
 Sat 07/17/2021 
 ================================================================================= 
       50 text files.
-classified 50 files      50 unique files.                              
+classified 50 files
+      50 unique files.                              
        4 files ignored.
 
 http://cloc.sourceforge.net v 1.60  T=0.06 s (800.3 files/s, 84042.9 lines/s)
@@ -178,7 +189,8 @@ SUM:                            50            771            914           3566
 Tue 07/20/2021 
 ================================================================================= 
       54 text files.
-classified 54 files      54 unique files.                              
+classified 54 files
+      54 unique files.                              
        5 files ignored.
 
 http://cloc.sourceforge.net v 1.60  T=0.07 s (805.1 files/s, 82792.6 lines/s)
@@ -194,7 +206,8 @@ SUM:                            54            828            921           3804
 Wed 10/20/2021 
 ================================================================================= 
       76 text files.
-classified 76 files      76 unique files.                              
+classified 76 files
+      76 unique files.                              
        8 files ignored.
 
 http://cloc.sourceforge.net v 1.60  T=0.10 s (756.5 files/s, 89981.7 lines/s)
@@ -205,4 +218,21 @@ C                               33            963            529           4707
 C/C++ Header                    43            463            525           1853
 -------------------------------------------------------------------------------
 SUM:                            76           1426           1054           6560
+-------------------------------------------------------------------------------
+================================================================================= 
+Mon 10/25/2021 
+================================================================================= 
+      77 text files.
+classified 77 files
+      77 unique files.                              
+       8 files ignored.
+
+http://cloc.sourceforge.net v 1.60  T=0.11 s (729.5 files/s, 88432.0 lines/s)
+-------------------------------------------------------------------------------
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+C                               33            963            546           4843
+C/C++ Header                    44            488            538           1956
+-------------------------------------------------------------------------------
+SUM:                            77           1451           1084           6799
 -------------------------------------------------------------------------------

@@ -15,6 +15,7 @@
  */
 
 #include "toml_config.h"
+#include "core/logger.h"
 
 #include <errno.h>
 
@@ -26,7 +27,7 @@ bool read_toml_config(const char* path, toml_table_t** toml)
 
 	fp = fopen(path, "r");
 	if (fp == NULL) {
-		printf("Error opening TOML file %s: %d\n", path, errno);
+		logger(LOG_ERROR, "Error opening TOML file %s: %d\n", path, errno);
 		return false;
 	}
 
@@ -35,7 +36,7 @@ bool read_toml_config(const char* path, toml_table_t** toml)
 	fclose(fp);
 
 	if (!conf) {
-		printf("Error parsing TOML file %s: %s\n", path, err_buf);
+		logger(LOG_ERROR, "Error parsing TOML file %s: %s\n", path, err_buf);
 		return false;
 	}
 

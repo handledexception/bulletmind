@@ -41,7 +41,7 @@
 #include <SDL_mixer.h>
 
 #define SDL_FLAGS                                            \
-	(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER | \
+	(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_TIMER | \
 	 SDL_INIT_GAMECONTROLLER)
 
 engine_t* engine = NULL;
@@ -85,23 +85,23 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	// build window title
 	char ver_str[12];
 	version_string(version, ver_str);
-	const size_t sz_win_title =
-		(sizeof(u8) * strlen(ver_str) + strlen(name)) + 2;
-	char window_title[sz_win_title];
+	// const size_t sz_win_title =
+	// 	(sizeof(u8) * strlen(ver_str) + strlen(name)) + 2;
+	char window_title[TEMP_STRING_MAX];
 	sprintf(window_title, "%s v%s", name, ver_str);
 
 	SDL_Init(SDL_FLAGS);
 
-	s32 window_pos_x = eng->window_bounds.x;
-	s32 window_pos_y = eng->window_bounds.y;
+	s32 window_pos_x = eng->window_rect.x;
+	s32 window_pos_y = eng->window_rect.y;
 	if (window_pos_x == -1)
 		window_pos_x = SDL_WINDOWPOS_CENTERED;
 	if (window_pos_y == -1)
 		window_pos_y = SDL_WINDOWPOS_CENTERED;
 
 	eng->window = SDL_CreateWindow(window_title, window_pos_x, window_pos_y,
-				       eng->window_bounds.w,
-				       eng->window_bounds.h, SDL_WINDOW_SHOWN);
+				       eng->window_rect.w, eng->window_rect.h,
+				       SDL_WINDOW_SHOWN);
 
 	if (eng->window == NULL) {
 		logger(LOG_ERROR, "error creating engine window: %s\n",
@@ -109,7 +109,8 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 		return false;
 	}
 
-#if defined(BM_WINDOWS)
+// #if defined(BM_WINDOWS)
+#if 0
 	gui_init();
 	gui_window_t* wnd =
 		gui_create_window("bm window", 100, 100, 640, 480, 0, NULL);
@@ -122,8 +123,8 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	// HWND hwnd = wm_info.info.win.window;
 	HWND hwnd = gui_get_window_handle(wnd2);
 	const struct gfx_config gfx_cfg = {.adapter = 0,
-					   // .width = eng->window_bounds.w,
-					   // .height = eng->window_bounds.h,
+					   // .width = eng->window_rect.w,
+					   // .height = eng->window_rect.h,
 					   .width = wnd->w,
 					   .height = wnd->h,
 					   .fps_num = 60,
@@ -179,10 +180,10 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	gfx_bind_primitive_topology(gfx_sys, GFX_TOPOLOGY_TRIANGLE_STRIP);
 
 	rgba_t clear_color = {
-		.r = 0.f,
-		.g = 0.f,
-		.b = 0.f,
-		.a = 1.f,
+		.r = 0,
+		.g = 0,
+		.b = 0,
+		.a = 255,
 	};
 	gfx_render_clear(gfx_sys, &clear_color);
 	gfx_render_begin(gfx_sys);
@@ -199,8 +200,8 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	}
 
 	// SDL_RenderSetViewport(eng->renderer, (SDL_Rect*)&eng->scr_bounds);
-	SDL_RenderSetLogicalSize(eng->renderer, eng->camera_bounds.w,
-				 eng->camera_bounds.h);
+	SDL_RenderSetLogicalSize(eng->renderer, eng->camera_rect.w,
+				 eng->camera_rect.h);
 
 	// SDL_RenderSetIntegerScale(eng->renderer, true);
 
@@ -297,8 +298,9 @@ void eng_play_sound(engine_t* eng, const char* name, s32 volume)
 
 		if (resource->type == kAssetTypeSoundEffect) {
 			sound_chunk->volume = volume;
-
-			Mix_PlayChannel(-1, (Mix_Chunk*)sound_chunk, 0);
+			int play_ok = Mix_PlayChannel(-1, (Mix_Chunk*)sound_chunk, 0);
+			if (play_ok < 0)
+				logger(LOG_ERROR, "Error playing sound: %s", resource->name);
 		} else if (resource->type == kAssetTypeMusic) {
 			if (eng->audio->music == NULL) {
 				eng->audio->music =
@@ -306,7 +308,7 @@ void eng_play_sound(engine_t* eng, const char* name, s32 volume)
 			}
 			if (!eng->audio->music_playing) {
 				Mix_VolumeMusic(volume);
-				Mix_FadeInMusic(eng->audio->music, -1, 250);
+				Mix_FadeInMusic(eng->audio->music, -1, 150);
 				eng->audio->music_volume = volume;
 				eng->audio->music_playing = true;
 			}
@@ -324,7 +326,7 @@ void eng_toggle_fullscreen(engine_t* eng, bool fullscreen)
 {
 	// bool is_fullscreen = SDL_GetWindowFlags(eng->window) & SDL_WINDOW_FULLSCREEN;
 	SDL_SetWindowFullscreen(eng->window,
-				fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
-	printf("FULLSCREEN %d", fullscreen);
+		fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
+
 	// SDL_ShowCursor(is_fullscreen);
 }

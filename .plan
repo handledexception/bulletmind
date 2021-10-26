@@ -1,4 +1,11 @@
 ---------------------------------
+Paul Hindt's .plan for 10/25/2021
+---------------------------------
+Issues:
+- Sound effects not playing correctly w/ SDLMixer x64 build but works on x86.
+- This is happening despite Mix_PlayChannel returning 0.
+
+---------------------------------
 Paul Hindt's .plan for 09/22/2021
 ---------------------------------
 company name ideas

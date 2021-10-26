@@ -3,13 +3,13 @@
 #include "core/types.h"
 
 #define BM_NUM_AUDIO_CHANNELS 2
-#define BM_AUDIO_SAMPLE_RATE 48000
+#define BM_AUDIO_SAMPLE_RATE 44100
 #define BM_AUDIO_CHUNK_SIZE 4096
 
 typedef struct audio_chunk_s {
 	bool allocated;
 	u8* data;
-	size_t size;
+	u32 size;
 	u8 volume; /* Per-sample volume, 0-128 */
 } audio_chunk_t;
 

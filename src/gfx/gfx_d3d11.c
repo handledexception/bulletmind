@@ -1193,10 +1193,15 @@ void gfx_set_viewport(gfx_system_t* gfx, u32 width, u32 height)
 
 void gfx_render_clear(gfx_system_t* gfx, const rgba_t* color)
 {
+    float clear_color[4];
+    clear_color[0] = color->r / 255.f;
+    clear_color[1] = color->g / 255.f;
+    clear_color[2] = color->b / 255.f;
+    clear_color[3] = color->a / 255.f;
     if (gfx && gfx->ctx && gfx->render_target) {
         struct gfx_texture2d* tex = (struct gfx_texture2d*)gfx->render_target->impl;
         if (tex && tex->rtv) {
-            ID3D11DeviceContext1_ClearRenderTargetView(gfx->ctx, tex->rtv, (FLOAT*)color);
+            ID3D11DeviceContext1_ClearRenderTargetView(gfx->ctx, tex->rtv, (FLOAT*)clear_color);
         }
 
         struct gfx_texture2d* zs = (struct gfx_texture2d*)gfx->zstencil_target->impl;

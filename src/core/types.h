@@ -17,6 +17,10 @@
 #ifndef H_BM_CORE_TYPES
 #define H_BM_CORE_TYPES
 
+#ifndef NOMINMAX   /* don't define min() and max(). */
+#define NOMINMAX
+#endif
+
 #if defined(_MSC_VER)
 #define inline __inline
 #endif
@@ -29,13 +33,13 @@
 #include <stdbool.h>
 #include <time.h>
 
-#ifndef MAX_PATH
+#ifndef BM_MAX_PATH
 #if defined(BM_WINDOWS)
-#define MAX_PATH 256
+#define BM_MAX_PATH 256
 #elif defined(BM_DARWIN)
-#define MAX_PATH 1024
+#define BM_MAX_PATH 1024
 #elif defined(BM_LINUX)
-#define MAX_PATH 4096
+#define BM_MAX_PATH 4096
 #endif
 #endif
 

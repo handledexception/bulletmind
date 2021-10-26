@@ -20,7 +20,7 @@
 #include <assert.h>
 
 size_t arena_allocated_bytes = 0;
-u8 arena_buf[ARENA_TOTAL_BYTES];
+u8 arena_buf[(size_t)ARENA_TOTAL_BYTES];
 arena_t g_mem_arena = {NULL, 0, 0, 0};
 
 void arena_init(arena_t* arena, void* backing_buffer, size_t sz_backing)
@@ -55,13 +55,11 @@ void* arena_alloc(arena_t* arena, size_t size, size_t align)
 
 		arena_allocated_bytes = arena->curr_offset;
 
-#if defined(BM_DEBUG)
-		// logger(LOG_DEBUG, "arena_alloc - this: %zu bytes | used: %zu bytes | remain: %zu bytes | arena size: %zu bytes\n",
-		//        arena->curr_offset - arena->prev_offset,
-		//        arena_allocated_bytes,
-		//        ARENA_TOTAL_BYTES - arena_allocated_bytes,
-		//        ARENA_TOTAL_BYTES);
-#endif
+		logger(LOG_DEBUG, "arena_alloc - this: %zu bytes | used: %zu bytes | remain: %zu bytes | arena size: %zu bytes\n",
+		       arena->curr_offset - arena->prev_offset,
+		       arena_allocated_bytes,
+		       (size_t)ARENA_TOTAL_BYTES - arena_allocated_bytes,
+		       (size_t)ARENA_TOTAL_BYTES);
 		return ptr;
 	} else {
 		logger(LOG_ERROR, "Out of arena memory!\n");

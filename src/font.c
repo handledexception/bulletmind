@@ -24,11 +24,11 @@
 
 #include <SDL.h>
 
-#define FONT_BASE 32
-#define FONT_NULL 127
-#define FONT_PX 7
-#define FONT_COLS 16
-#define FONT_ROWS 6
+#define ASCII_BASE 32
+#define ASCII_NULL 127
+#define FONT_CEL_SIZE_PX 7
+#define FONT_NUM_COLS 16
+#define FONT_NUM_ROWS 6
 
 void font_print(engine_t* eng, s32 x, s32 y, f32 scale, const char* str, ...)
 {
@@ -47,15 +47,15 @@ void font_print(engine_t* eng, s32 x, s32 y, f32 scale, const char* str, ...)
 	va_end(args);
 
 	while (text[c] != '\0') {
-		if (text[c] >= FONT_BASE && text[c] < FONT_NULL) {
-			fx = text[c] - FONT_BASE;
-			tu = (f32)(fx % FONT_COLS) * FONT_PX;
-			tv = (f32)(fx / FONT_COLS) * FONT_PX;
-			SDL_Rect src = {tu, tv, FONT_PX, FONT_PX};
-			SDL_Rect dst = {x, y, FONT_PX * scale, FONT_PX * scale};
+		if (text[c] >= ASCII_BASE && text[c] < ASCII_NULL) {
+			fx = text[c] - ASCII_BASE;
+			tu = (f32)(fx % FONT_NUM_COLS) * FONT_CEL_SIZE_PX;
+			tv = (f32)(fx / FONT_NUM_COLS) * FONT_CEL_SIZE_PX;
+			SDL_Rect src = {tu, tv, FONT_CEL_SIZE_PX, FONT_CEL_SIZE_PX};
+			SDL_Rect dst = {x, y, FONT_CEL_SIZE_PX * scale, FONT_CEL_SIZE_PX * scale};
 			SDL_RenderCopy((SDL_Renderer*)eng->renderer,
 				       eng->font.sprite->texture, &src, &dst);
-			x += FONT_PX * scale;
+			x += FONT_CEL_SIZE_PX * scale;
 		}
 		c++;
 	}

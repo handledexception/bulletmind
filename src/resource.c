@@ -137,8 +137,8 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 	game_resource_t* resource = NULL;
 
 	const size_t sz_path = strlen(asset_path) + 1;
-	assert(sz_path <= MAX_PATH);
-	if (sz_path > MAX_PATH)
+	assert(sz_path <= BM_MAX_PATH);
+	if (sz_path > BM_MAX_PATH)
 		return NULL;
 
 	// Sprite types (sprite, sprite sheet, sprite font)
@@ -213,10 +213,10 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 				read_table_f64(frame_nfo, "duration",
 					       &duration);
 
-				ss_frame->bounds.x = x;
-				ss_frame->bounds.y = y;
-				ss_frame->bounds.w = width;
-				ss_frame->bounds.h = height;
+				ss_frame->bbox.min.x = x;
+				ss_frame->bbox.min.y = y;
+				ss_frame->bbox.max.x = width;
+				ss_frame->bbox.max.y = height;
 				ss_frame->duration = (f32)duration;
 			}
 

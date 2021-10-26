@@ -4,15 +4,28 @@ cmake_minimum_required(VERSION 3.18)
 
 option(BM_BUILD_32BIT "build bulletmind as 32-bit" OFF)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_definitions(-DBM_DEBUG)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0")
-endif()
-if (BM_BUILD_32BIT)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
-else()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
+if (CMAKE_CXX_COMPILER_ID STREQUAL MSVC)
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+        add_definitions(-DBM_DEBUG)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Od /Zi")
+    endif()
+    if (BM_BUILD_32BIT)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MACHINE:X86")
+    else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MACHINE:X64")
+    endif()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL Clang OR CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+    message("Compiler: ${CMAKE_CXX_COMPILER_ID}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-int-to-pointer-cast")
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+        add_definitions(-DBM_DEBUG)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0")
+    endif()
+    if (BM_BUILD_32BIT)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
+    else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
+    endif()
 endif()
 
 set(BM_INCLUDE_DIRS
@@ -54,6 +67,7 @@ set(BM_CORE_SOURCES
 set(BM_MATH_HEADERS
     src/math/types.h
     src/math/utils.h
+    src/math/bounds.h
     src/math/vec2.h
     src/math/vec3.h
     src/math/vec4.h
@@ -116,6 +130,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         -D_UNICODE
         -DBM_WINDOWS
         -D_CRT_SECURE_NO_WARNINGS)
+        # -DSDL_AUDIODRIVER=dsound)
 
     set(BM_PLATFORM_SOURCES
         ${BM_PLATFORM_SOURCES}

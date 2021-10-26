@@ -43,7 +43,8 @@
         "mat4.h": "c",
         "camera.h": "c",
         "vec3.h": "c",
-        "vec4.h": "c"
+        "vec4.h": "c",
+        "algorithm": "c"
     },
     "cmake.configureOnOpen": false
 }

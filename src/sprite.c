@@ -15,6 +15,7 @@
  */
 
 #include "sprite.h"
+#include "core/logger.h"
 #include "core/mem_arena.h"
 #include "core/utils.h"
 
@@ -65,11 +66,11 @@ bool sprite_load(const char* path, sprite_t** out)
 		fseek(file_ptr, 0, SEEK_SET);
 		file_buf = (u8*)malloc(fsize);
 		if (file_ptr == NULL) {
-			printf("sprite_load - file %s has no data!\n", path);
+			logger(LOG_ERROR, "sprite_load - file %s has no data!\n", path);
 			return false;
 		} else if (fread(file_buf, sizeof(u8), fsize, file_ptr) !=
 			   fsize) {
-			printf("sprite_load - could not read to end of file %s\n",
+			logger(LOG_ERROR, "sprite_load - could not read to end of file %s\n",
 			       path);
 			free(file_buf);
 			file_buf = NULL;
@@ -81,7 +82,7 @@ bool sprite_load(const char* path, sprite_t** out)
 		// make sure we have a valid minimal TGA header and raw unmapped RGB data
 		if (tga_header_size != 18 || header->color_map_type > 0 ||
 		    header->image_type != 2) {
-			printf("sprite_load - Incorrect TGA header size! (%zu bytes) Should be 18 bytes.\n",
+			logger(LOG_ERROR, "sprite_load - Incorrect TGA header size! (%zu bytes) Should be 18 bytes.\n",
 			       tga_header_size);
 			free(file_buf);
 			file_buf = NULL;
@@ -97,7 +98,7 @@ bool sprite_load(const char* path, sprite_t** out)
 		img->data = (u8*)arena_alloc(&g_mem_arena, pixel_size,
 					     DEFAULT_ALIGNMENT);
 
-		printf("sprite_load - %s, %dx%d %d bytes per pixel\n", path,
+		logger(LOG_INFO, "sprite_load - %s, %dx%d %d bytes per pixel\n", path,
 		       width, height, bytes_per_pixel);
 
 		u8* tga_pixels = file_buf + tga_header_size;
@@ -198,6 +199,6 @@ void sprite_shutdown(sprite_t* img)
 			SDL_DestroyTexture(img->texture);
 			img->texture = NULL;
 		}
-		printf("imagefile_shutdown: OK!\n");
+		logger(LOG_INFO, "imagefile_shutdown: OK!\n");
 	}
 }

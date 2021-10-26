@@ -29,10 +29,10 @@ typedef struct vec4f {
 } vec4f_t;
 
 typedef struct rgba {
-	f32 r;
-	f32 g;
-	f32 b;
-	f32 a;
+	u8 r;
+	u8 g;
+	u8 b;
+	u8 a;
 } rgba_t;
 
 static inline void vec4f_set(vec4f_t* dst, f32 x, f32 y, f32 z, f32 w)
