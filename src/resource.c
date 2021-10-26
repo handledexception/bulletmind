@@ -106,7 +106,8 @@ bool game_res_init(engine_t* eng)
 			s32 sprite_scale = 1;
 			if (!read_table_int32(asset, "scale", &sprite_scale))
 				sprite_scale = 1;
-			sprite_t* s = (sprite_t*)eng->game_resources[asset_idx]->data;
+			sprite_t* s =
+				(sprite_t*)eng->game_resources[asset_idx]->data;
 			s->scaling = sprite_scale;
 		}
 

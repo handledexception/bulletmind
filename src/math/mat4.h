@@ -23,33 +23,37 @@
 #include <math.h>
 
 typedef struct mat4f {
-    vec4f_t x;
-    vec4f_t y;
-    vec4f_t z;
-    vec4f_t w;
+	vec4f_t x;
+	vec4f_t y;
+	vec4f_t z;
+	vec4f_t w;
 } mat4f_t;
 
 static inline void mat4f_zero(mat4f_t* m)
 {
-    vec4f_zero(&m->x);
-    vec4f_zero(&m->y);
-    vec4f_zero(&m->z);
-    vec4f_zero(&m->w);
+	vec4f_zero(&m->x);
+	vec4f_zero(&m->y);
+	vec4f_zero(&m->z);
+	vec4f_zero(&m->w);
 }
 
 static inline void mat4f_identity(mat4f_t* m)
 {
-    mat4f_zero(m);
-    m->x.x = 1.f;
-    m->y.y = 1.f;
-    m->z.z = 1.f;
-    m->w.w = 1.f;
+	mat4f_zero(m);
+	m->x.x = 1.f;
+	m->y.y = 1.f;
+	m->z.z = 1.f;
+	m->w.w = 1.f;
 }
 
 BM_DLL_EXPORT void mat4f_transpose(mat4f_t* dst, const mat4f_t* m);
-BM_DLL_EXPORT void mat4f_mul(mat4f_t* dst, const mat4f_t* lhs, const mat4f_t* rhs);
-BM_DLL_EXPORT void mat4f_ortho_lh(mat4f_t* dst, f32 width, f32 height, f32 z_near, f32 z_far);
-BM_DLL_EXPORT void mat4f_perspective_fov_lh(mat4f_t* dst, f32 fov, f32 aspect, f32 z_near, f32 z_far);
-BM_DLL_EXPORT void mat4f_look_at_lh(mat4f_t* dst, const vec3f_t* pos, const vec3f_t* dir, const vec3f_t* up);
+BM_DLL_EXPORT void mat4f_mul(mat4f_t* dst, const mat4f_t* lhs,
+			     const mat4f_t* rhs);
+BM_DLL_EXPORT void mat4f_ortho_lh(mat4f_t* dst, f32 width, f32 height,
+				  f32 z_near, f32 z_far);
+BM_DLL_EXPORT void mat4f_perspective_fov_lh(mat4f_t* dst, f32 fov, f32 aspect,
+					    f32 z_near, f32 z_far);
+BM_DLL_EXPORT void mat4f_look_at_lh(mat4f_t* dst, const vec3f_t* pos,
+				    const vec3f_t* dir, const vec3f_t* up);
 
 #endif

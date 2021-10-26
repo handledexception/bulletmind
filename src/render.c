@@ -27,39 +27,37 @@
 // https://stackoverflow.com/questions/38334081/howto-draw-circles-arcs-and-vector-graphics-in-sdl
 void draw_circle(SDL_Renderer* rend, f32 cx, f32 cy, f32 radius)
 {
-   const f32 diameter = (radius * 2.f);
+	const f32 diameter = (radius * 2.f);
 
-   f32 x = (radius - 1.f);
-   f32 y = 0.f;
-   f32 tx = 1.f;
-   f32 ty = 1.f;
-   f32 error = (tx - diameter);
+	f32 x = (radius - 1.f);
+	f32 y = 0.f;
+	f32 tx = 1.f;
+	f32 ty = 1.f;
+	f32 error = (tx - diameter);
 
-   while (x >= y) {
-      //  Each of the following renders an octant of the circle
-      SDL_RenderDrawPoint(rend, cx + x, cy - y);
-      SDL_RenderDrawPoint(rend, cx + x, cy + y);
-      SDL_RenderDrawPoint(rend, cx - x, cy - y);
-      SDL_RenderDrawPoint(rend, cx - x, cy + y);
-      SDL_RenderDrawPoint(rend, cx + y, cy - x);
-      SDL_RenderDrawPoint(rend, cx + y, cy + x);
-      SDL_RenderDrawPoint(rend, cx - y, cy - x);
-      SDL_RenderDrawPoint(rend, cx - y, cy + x);
+	while (x >= y) {
+		//  Each of the following renders an octant of the circle
+		SDL_RenderDrawPoint(rend, cx + x, cy - y);
+		SDL_RenderDrawPoint(rend, cx + x, cy + y);
+		SDL_RenderDrawPoint(rend, cx - x, cy - y);
+		SDL_RenderDrawPoint(rend, cx - x, cy + y);
+		SDL_RenderDrawPoint(rend, cx + y, cy - x);
+		SDL_RenderDrawPoint(rend, cx + y, cy + x);
+		SDL_RenderDrawPoint(rend, cx - y, cy - x);
+		SDL_RenderDrawPoint(rend, cx - y, cy + x);
 
-      if (error <= 0.f)
-      {
-         ++y;
-         error += ty;
-         ty += 2.f;
-      }
+		if (error <= 0.f) {
+			++y;
+			error += ty;
+			ty += 2.f;
+		}
 
-      if (error > 0.f)
-      {
-         --x;
-         tx += 2.f;
-         error += (tx - diameter);
-      }
-   }
+		if (error > 0.f) {
+			--x;
+			tx += 2.f;
+			error += (tx - diameter);
+		}
+	}
 }
 
 void draw_rect_solid(SDL_Renderer* rend, rect_t rect, rgba_t* rgba)
@@ -106,8 +104,9 @@ void draw_sprite_sheet(SDL_Renderer* rend, sprite_sheet_t* sprite_sheet,
 	if (flip)
 		sprite_flip = SDL_FLIP_HORIZONTAL;
 
-	SDL_RenderCopyEx(rend, backing_sprite->texture, (SDL_Rect*)&current_frame->bounds,
-			 &dst, angle, NULL, sprite_flip);
+	SDL_RenderCopyEx(rend, backing_sprite->texture,
+			 (SDL_Rect*)&current_frame->bounds, &dst, angle, NULL,
+			 sprite_flip);
 
 	if (frame_delay > 0.0 && os_get_time_sec() >= frame_time) {
 		frame_time = os_get_time_sec() + frame_delay;

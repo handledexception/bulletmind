@@ -77,9 +77,9 @@ void* os_dlopen(const char* path)
 
 	wchar_t* path_wide;
 	// wchar_t* path_sep_wide;
-	
+
 	HMODULE module = NULL;
-	
+
 	os_utf8_to_wcs_ptr(path, 0, &path_wide);
 
 	module = LoadLibraryW(path_wide);
@@ -87,7 +87,7 @@ void* os_dlopen(const char* path)
 		logger(LOG_INFO, "LoadLibrary error %s", path);
 		return NULL;
 	}
-	
+
 	return module;
 }
 

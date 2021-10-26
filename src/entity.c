@@ -83,7 +83,8 @@ void ent_refresh(engine_t* eng, const f64 dt)
 	if (eng->spawn_timer[0] == 0.0)
 		eng->spawn_timer[0] = eng_get_time_sec() + 2.0;
 	if (eng_get_time_sec() >= eng->spawn_timer[0]) {
-		ent_spawn_enemy(ent_list, eng->camera_bounds.w, eng->camera_bounds.h);
+		ent_spawn_enemy(ent_list, eng->camera_bounds.w,
+				eng->camera_bounds.h);
 		eng->spawn_timer[0] = 0.0;
 	}
 
@@ -195,23 +196,20 @@ void ent_refresh(engine_t* eng, const f64 dt)
 						  sprite_sheet, &e->org,
 						  frame_scale, e->angle, flip);
 			} else if (!strcmp(e->name, "satellite")) {
-				rect_t sat_rect = {
-					(f32)e->bounds.x, (f32)e->bounds.y,
-					e->size.x, e->size.y
-				};
+				rect_t sat_rect = {(f32)e->bounds.x,
+						   (f32)e->bounds.y, e->size.x,
+						   e->size.y};
 
-				draw_rect_solid(engine->renderer, sat_rect, &e->color);
+				draw_rect_solid(engine->renderer, sat_rect,
+						&e->color);
 			} else if (!strcmp(e->name, "bullet")) {
 				//TODO(paulh): Need a game_resource_t method for get_resource_by_name
 				game_resource_t* resource =
 					eng_get_resource(engine, "bullet");
 				sprite_t* sprite = (sprite_t*)resource->data;
-				SDL_Rect dst = {
-					e->bounds.x,
-					e->bounds.y,
-					sprite->surface->clip_rect.w,
-					sprite->surface->clip_rect.h
-				};
+				SDL_Rect dst = {e->bounds.x, e->bounds.y,
+						sprite->surface->clip_rect.w,
+						sprite->surface->clip_rect.h};
 
 				// calculate angle of rotation between mouse and bullet origins
 				if (e->angle == 0.f) {
@@ -228,18 +226,18 @@ void ent_refresh(engine_t* eng, const f64 dt)
 						 sprite->texture, NULL, &dst,
 						 e->angle, NULL, SDL_FLIP_NONE);
 			} else {
-				rect_t r = {
-					(f32)e->bounds.x, (f32)e->bounds.y,
-					e->size.x, e->size.y
-				};
+				rect_t r = {(f32)e->bounds.x, (f32)e->bounds.y,
+					    e->size.x, e->size.y};
 				draw_rect_solid(engine->renderer, r, &e->color);
 			}
 
 			// Draw debug overlays
 			if (engine->debug) {
-				SDL_SetRenderDrawColor(engine->renderer, 0xff, 0xff, 0xff, 0xff);
+				SDL_SetRenderDrawColor(engine->renderer, 0xff,
+						       0xff, 0xff, 0xff);
 				f32 rad = radius_of_circle_in_rect(e->bounds);
-				draw_circle(engine->renderer, (f32)e->org.x, (f32)e->org.y, rad);
+				draw_circle(engine->renderer, (f32)e->org.x,
+					    (f32)e->org.y, rad);
 			}
 		}
 
@@ -371,7 +369,7 @@ void ent_lifetime_update(entity_t* e)
 // update the bounding box constraints based on changes in entity origin
 void ent_update_bounds(entity_t* e)
 {
-	vec2i_t half_size = { e->size.x, e->size.y };
+	vec2i_t half_size = {e->size.x, e->size.y};
 	vec2i_div(&half_size, e->size, 2);
 	e->bounds.x = (s32)(e->org.x) - half_size.x;
 	e->bounds.y = (s32)(e->org.y) - half_size.y;
@@ -379,10 +377,7 @@ void ent_update_bounds(entity_t* e)
 	e->bounds.h = (s32)(e->org.y) + half_size.y;
 }
 
-void eng_centerpoint(entity_t* e, vec2f_t* p)
-{
-
-}
+void eng_centerpoint(entity_t* e, vec2f_t* p) {}
 
 void ent_set_name(entity_t* e, const char* name)
 {
@@ -453,13 +448,12 @@ void ent_euler_move(entity_t* e, const vec2f_t accel, const f32 friction,
 	vec2f_add(&e->org, e->org, delta);
 }
 
-bool ent_spawn_player_and_satellite(entity_t* ent_list, s32 cam_width, s32 cam_height)
+bool ent_spawn_player_and_satellite(entity_t* ent_list, s32 cam_width,
+				    s32 cam_height)
 {
 	// center on screen
-	vec2f_t player_org = {
-		(f32)(cam_width * 0.5f),
-		(f32)(cam_height * 0.5f)
-	};
+	vec2f_t player_org = {(f32)(cam_width * 0.5f),
+			      (f32)(cam_height * 0.5f)};
 	vec2i_t player_size = {16, 16};
 	rgba_t player_color = {0x0, 0x0, 0xff, 0xff};
 
@@ -493,10 +487,8 @@ bool ent_spawn_player_and_satellite(entity_t* ent_list, s32 cam_width, s32 cam_h
 
 bool ent_spawn_enemy(entity_t* ent_list, s32 cam_width, s32 cam_height)
 {
-	vec2f_t org = {
-		(f32)gen_random(0, cam_width, 1),
-		(f32)gen_random(0, cam_height, 3)
-	};
+	vec2f_t org = {(f32)gen_random(0, cam_width, 1),
+		       (f32)gen_random(0, cam_height, 3)};
 	vec2i_t size = {16, 16};
 	rgba_t color = {0xf0, 0x36, 0x00, 0xff};
 	entity_t* enemy = ent_spawn(ent_list, "enemy", org, size, &color,
@@ -513,7 +505,7 @@ void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 {
 	// Player entity movement
 	vec2f_t p_accel = {0};
-	f32 p_speed = 48.f * kGravity; // meters/sec
+	f32 p_speed = 48.f * kGravity;  // meters/sec
 	f32 friction = 0.015625f * 2.f; // 1 meter / 64 pixels
 	if (cmd_get_state(eng->inputs, kCommandPlayerSpeed) == true) {
 		p_speed *= 2.f;

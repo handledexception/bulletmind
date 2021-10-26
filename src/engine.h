@@ -66,7 +66,7 @@ typedef struct engine_s {
 
 	engine_mode_t mode;
 	bool debug;
-	
+
 	bool console;
 	rect_t console_bounds;
 

@@ -44,12 +44,14 @@ BM_DLL_EXPORT char* os_quick_read_utf8_file(const char* path);
 
 BM_DLL_EXPORT s64 os_get_file_size(const char* path);
 
-BM_DLL_EXPORT size_t os_utf8_to_wcs(const char* str, size_t len,
-						wchar_t* dst, size_t dst_size);
+BM_DLL_EXPORT size_t os_utf8_to_wcs(const char* str, size_t len, wchar_t* dst,
+				    size_t dst_size);
 BM_DLL_EXPORT size_t os_utf8_to_wcs_ptr(const char* str, size_t len,
-					     wchar_t** pstr);
-BM_DLL_EXPORT size_t os_wcs_to_utf8(const wchar_t* str, size_t len, char* dst, size_t dst_size);
-BM_DLL_EXPORT size_t os_wcs_to_utf8_ptr(const wchar_t *str, size_t len, char **pstr);
+					wchar_t** pstr);
+BM_DLL_EXPORT size_t os_wcs_to_utf8(const wchar_t* str, size_t len, char* dst,
+				    size_t dst_size);
+BM_DLL_EXPORT size_t os_wcs_to_utf8_ptr(const wchar_t* str, size_t len,
+					char** pstr);
 
 BM_DLL_EXPORT void os_sleep_ms(const u32 duration);
 BM_DLL_EXPORT u64 os_get_time_ns(void);

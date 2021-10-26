@@ -50,16 +50,16 @@ typedef struct entity_s {
 	char name[TEMP_STRING_MAX];
 	entity_caps_t caps;
 
-	vec2f_t org;		// entity centerpoint
-	vec2f_t vel;		// entity velocity
-	vec2i_t size;		// entity width and height in pixels
-	rect_t bounds;		// entity bounding box
-	vec2f_t mouse_org; 	// mouse click origin
-	rgba_t color;		// entity rect color (if no sprite)
-	f32 angle;			// entity angle
+	vec2f_t org;       // entity centerpoint
+	vec2f_t vel;       // entity velocity
+	vec2i_t size;      // entity width and height in pixels
+	rect_t bounds;     // entity bounding box
+	vec2f_t mouse_org; // mouse click origin
+	rgba_t color;      // entity rect color (if no sprite)
+	f32 angle;         // entity angle
 
-	f64 timestamp;		// engine timestamp in seconds
-	f64 lifetime;		// entity lifetime in seconds
+	f64 timestamp; // engine timestamp in seconds
+	f64 lifetime;  // entity lifetime in seconds
 } entity_t;
 
 extern s32 gActiveEntities;
@@ -94,7 +94,8 @@ void ent_set_mouse_org(entity_t* e, const vec2f_t m_org);
 void ent_euler_move(entity_t* e, const vec2f_t accel, const f32 friction,
 		    const f64 dt);
 
-bool ent_spawn_player_and_satellite(entity_t* ent_list, s32 cam_width, s32 cam_height);
+bool ent_spawn_player_and_satellite(entity_t* ent_list, s32 cam_width,
+				    s32 cam_height);
 bool ent_spawn_enemy(entity_t* ent_list, s32 cam_width, s32 cam_height);
 void ent_move_player(entity_t* player, engine_t* eng, const f64 dt);
 
