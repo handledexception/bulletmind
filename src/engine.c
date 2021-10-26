@@ -40,7 +40,7 @@
 #include <SDL.h>
 #include <SDL_mixer.h>
 
-#define SDL_FLAGS                                            \
+#define SDL_FLAGS                                                             \
 	(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_TIMER | \
 	 SDL_INIT_GAMECONTROLLER)
 
@@ -298,9 +298,11 @@ void eng_play_sound(engine_t* eng, const char* name, s32 volume)
 
 		if (resource->type == kAssetTypeSoundEffect) {
 			sound_chunk->volume = volume;
-			int play_ok = Mix_PlayChannel(-1, (Mix_Chunk*)sound_chunk, 0);
+			int play_ok =
+				Mix_PlayChannel(-1, (Mix_Chunk*)sound_chunk, 0);
 			if (play_ok < 0)
-				logger(LOG_ERROR, "Error playing sound: %s", resource->name);
+				logger(LOG_ERROR, "Error playing sound: %s",
+				       resource->name);
 		} else if (resource->type == kAssetTypeMusic) {
 			if (eng->audio->music == NULL) {
 				eng->audio->music =
@@ -326,7 +328,7 @@ void eng_toggle_fullscreen(engine_t* eng, bool fullscreen)
 {
 	// bool is_fullscreen = SDL_GetWindowFlags(eng->window) & SDL_WINDOW_FULLSCREEN;
 	SDL_SetWindowFullscreen(eng->window,
-		fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
+				fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
 
 	// SDL_ShowCursor(is_fullscreen);
 }

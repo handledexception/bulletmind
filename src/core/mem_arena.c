@@ -55,7 +55,8 @@ void* arena_alloc(arena_t* arena, size_t size, size_t align)
 
 		arena_allocated_bytes = arena->curr_offset;
 
-		logger(LOG_DEBUG, "arena_alloc - this: %zu bytes | used: %zu bytes | remain: %zu bytes | arena size: %zu bytes\n",
+		logger(LOG_DEBUG,
+		       "arena_alloc - this: %zu bytes | used: %zu bytes | remain: %zu bytes | arena size: %zu bytes\n",
 		       arena->curr_offset - arena->prev_offset,
 		       arena_allocated_bytes,
 		       (size_t)ARENA_TOTAL_BYTES - arena_allocated_bytes,

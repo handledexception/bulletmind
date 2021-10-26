@@ -39,8 +39,7 @@ static const s32 kPlayerCaps = (kEntityPlayer | kEntityMover | kEntityCollider |
 				kEntityShooter | kEntityRenderable);
 
 static const s32 kSatelliteCaps =
-	(kEntitySatellite | kEntityMover | kEntityShooter |
-	 kEntityRenderable);
+	(kEntitySatellite | kEntityMover | kEntityShooter | kEntityRenderable);
 
 static const s32 kBulletCaps =
 	(kEntityBullet | kEntityMover | kEntityCollider | kEntityRenderable);
@@ -143,13 +142,22 @@ void ent_refresh_colliders(engine_t* eng, entity_t* e, f64 dt)
 			if (e == c)
 				continue; // don't check against self
 			if (ent_has_caps(c, kEntityCollider)) {
-				if (bounds_intersects(&e->bbox, &c->bbox, EPSILON)) {
-					logger(LOG_DEBUG, "%s (min {%f, %f, %f} max {%f, %f, %f}) intersects %s (min {%f, %f, %f} max {%f, %f, %f})",
-						e->name, e->bbox.min.x, e->bbox.min.y, e->bbox.min.z, e->bbox.max.x, e->bbox.max.y, e->bbox.max.z,
-						c->name, c->bbox.min.x, c->bbox.min.y, c->bbox.min.z, c->bbox.max.x, c->bbox.max.y, c->bbox.max.z);
-					if (!strcmp(e->name, "bullet") && !strcmp(c->name, "enemy")) {
+				if (bounds_intersects(&e->bbox, &c->bbox,
+						      EPSILON)) {
+					logger(LOG_DEBUG,
+					       "%s (min {%f, %f, %f} max {%f, %f, %f}) intersects %s (min {%f, %f, %f} max {%f, %f, %f})",
+					       e->name, e->bbox.min.x,
+					       e->bbox.min.y, e->bbox.min.z,
+					       e->bbox.max.x, e->bbox.max.y,
+					       e->bbox.max.z, c->name,
+					       c->bbox.min.x, c->bbox.min.y,
+					       c->bbox.min.z, c->bbox.max.x,
+					       c->bbox.max.y, c->bbox.max.z);
+					if (!strcmp(e->name, "bullet") &&
+					    !strcmp(c->name, "enemy")) {
 						ent_despawn(ent_list, c);
-					} else if (!strcmp(e->name, "enemy") && !strcmp(c->name, "bullet")) {
+					} else if (!strcmp(e->name, "enemy") &&
+						   !strcmp(c->name, "bullet")) {
 						ent_despawn(ent_list, e);
 					}
 				}
@@ -234,24 +242,18 @@ void ent_refresh_renderables(engine_t* eng, entity_t* e, f64 dt)
 			draw_sprite_sheet(eng->renderer, sprite_sheet, &e->org,
 					  frame_scale, e->angle, flip);
 		} else if (!strcmp(e->name, "satellite")) {
-			rect_t sat_rect = {
-				(s32)e->bbox.min.x,
-				(s32)e->bbox.min.y,
-				e->size.x,
-				e->size.y
-			};
+			rect_t sat_rect = {(s32)e->bbox.min.x,
+					   (s32)e->bbox.min.y, e->size.x,
+					   e->size.y};
 			draw_rect_solid(eng->renderer, &sat_rect, &e->color);
 		} else if (!strcmp(e->name, "bullet")) {
 			//TODO(paulh): Need a game_resource_t method for get_resource_by_name
 			game_resource_t* resource =
 				eng_get_resource(eng, "bullet");
 			sprite_t* sprite = (sprite_t*)resource->data;
-			SDL_Rect dst = {
-				e->bbox.min.x,
-				e->bbox.min.y,
-				sprite->surface->clip_rect.w,
-				sprite->surface->clip_rect.h
-			};
+			SDL_Rect dst = {e->bbox.min.x, e->bbox.min.y,
+					sprite->surface->clip_rect.w,
+					sprite->surface->clip_rect.h};
 			// calculate angle of rotation between mouse and bullet origins
 			if (e->angle == 0.f) {
 				vec2f_t mouse_to_bullet = {0.f, 0.f};
@@ -264,12 +266,8 @@ void ent_refresh_renderables(engine_t* eng, entity_t* e, f64 dt)
 			SDL_RenderCopyEx(eng->renderer, sprite->texture, NULL,
 					 &dst, e->angle, NULL, SDL_FLIP_NONE);
 		} else {
-			rect_t r = {
-				(s32)e->bbox.min.x,
-				(s32)e->bbox.min.y,
-				e->size.x,
-				e->size.y
-			};
+			rect_t r = {(s32)e->bbox.min.x, (s32)e->bbox.min.y,
+				    e->size.x, e->size.y};
 			draw_rect_solid(eng->renderer, &r, &e->color);
 		}
 

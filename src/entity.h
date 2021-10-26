@@ -53,9 +53,9 @@ typedef struct entity_s {
 	struct bounds bbox;
 	// struct bounds bounding;
 
-	vec2f_t org;       // entity centerpoint
-	vec2f_t vel;       // entity velocity
-	vec2i_t size;      // entity width and height in pixels
+	vec2f_t org;  // entity centerpoint
+	vec2f_t vel;  // entity velocity
+	vec2i_t size; // entity width and height in pixels
 	// rect_t rect;       // entity bounding box
 	vec2f_t mouse_org; // mouse click origin
 	rgba_t color;      // entity rect color (if no sprite)

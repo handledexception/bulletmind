@@ -17,7 +17,7 @@
 #ifndef H_BM_CORE_TYPES
 #define H_BM_CORE_TYPES
 
-#ifndef NOMINMAX   /* don't define min() and max(). */
+#ifndef NOMINMAX /* don't define min() and max(). */
 #define NOMINMAX
 #endif
 

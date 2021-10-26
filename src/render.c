@@ -116,9 +116,8 @@ void draw_sprite_sheet(SDL_Renderer* rend, sprite_sheet_t* sprite_sheet,
 		.w = (s32)current_frame->bbox.max.x,
 		.h = (s32)current_frame->bbox.max.y,
 	};
-	SDL_RenderCopyEx(rend, backing_sprite->texture,
-			 (SDL_Rect*)&frame_rect, &dst, angle, NULL,
-			 sprite_flip);
+	SDL_RenderCopyEx(rend, backing_sprite->texture, (SDL_Rect*)&frame_rect,
+			 &dst, angle, NULL, sprite_flip);
 
 	if (frame_delay > 0.0 && os_get_time_sec() >= frame_time) {
 		frame_time = os_get_time_sec() + frame_delay;
