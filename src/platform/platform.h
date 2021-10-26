@@ -23,7 +23,7 @@
 #include <wchar.h>
 
 #ifdef __cplusplus
-extern "C"
+extern "C" {
 #endif
 
 BM_DLL_EXPORT FILE* os_wfopen(const wchar_t* path, const char* mode);
@@ -61,3 +61,7 @@ BM_DLL_EXPORT void* os_dlsym(void* module, const char* func);
 BM_DLL_EXPORT void os_dlclose(void* module);
 
 BM_DLL_EXPORT bool os_file_exists(const char* path);
+
+#ifdef __cplusplus
+}
+#endif

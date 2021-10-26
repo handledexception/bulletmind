@@ -19,6 +19,7 @@
 
 #include "core/types.h"
 #include "core/export.h"
+#include "math/vec3.h"
 
 typedef struct vec4f {
     f32 x;
@@ -40,6 +41,14 @@ static inline void vec4f_set(vec4f_t* dst, f32 x, f32 y, f32 z, f32 w)
     dst->y = y;
     dst->z = z;
     dst->w = w;
+}
+
+static inline void vec4f_from_vec3(vec4f_t* dst, const vec3f_t* v)
+{
+    dst->x = v->x;
+    dst->y = v->y;
+    dst->z = v->z;
+    dst->w = 1.f;
 }
 
 static inline void vec4f_zero(vec4f_t* dst)

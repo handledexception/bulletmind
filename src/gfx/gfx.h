@@ -4,8 +4,13 @@
 #include "core/types.h"
 #include "core/export.h"
 
+#define Z_NEAR 0.1f
+#define Z_FAR 1000.f
+#define FOV_Y 90.f
+
 typedef struct vec2f vec2f_t;
 typedef struct vec3f vec3f_t;
+typedef struct vec4f vec4f_t;
 typedef struct mat4f mat4f_t;
 
 typedef enum {
@@ -167,18 +172,18 @@ enum gfx_buffer_usage {
 };
 
 // 1D, 2D, 3D texel data
-struct gfx_vertex_data_element {
-    size_t num;
+struct texture_vertex {
     size_t size;
     void* data;
 };
 
 struct gfx_vertex_data {
-    struct gfx_vertex_data_element* positions;
-    struct gfx_vertex_data_element* normals;
-    struct gfx_vertex_data_element* tangents;
-    struct gfx_vertex_data_element* colors;
-    struct gfx_vertex_data_element* tex_verts;
+    size_t num_vertices;
+    struct vec3f* positions;
+    struct vec3f* normals;
+    struct vec3f* tangents;
+    struct vec4f* colors;
+    struct texture_vertex* tex_verts;
 };
 
 enum gfx_vertex_type {
@@ -191,7 +196,7 @@ enum gfx_vertex_type {
     GFX_VERTEX_LAST = GFX_VERTEX_UNKNOWN
 };
 
-enum shader_param_type {
+enum gfx_shader_var_type {
     GFX_SHADER_PARAM_BOOL,
     GFX_SHADER_PARAM_S32,
     GFX_SHADER_PARAM_U32,
@@ -206,11 +211,12 @@ enum shader_param_type {
 
 typedef struct {
     const char* name;
-    enum shader_param_type type;
+    enum gfx_shader_var_type type;
     size_t size;                    // size of the variable (16-byte aligned)
     size_t offset;                  // offset inside of constant buffer
     void* data;
-} shader_param_t;
+    gfx_buffer_t* cbuffer;
+} gfx_shader_var_t;
 
 u32 gfx_get_bits_per_pixel(enum gfx_pixel_format pf);
 

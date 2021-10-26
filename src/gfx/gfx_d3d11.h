@@ -37,6 +37,7 @@ result gfx_create_shader_input_layout(gfx_system_t* gfx, gfx_shader_t* vs, enum 
 void gfx_bind_input_layout(gfx_system_t* gfx, const gfx_shader_t* vs);
 void gfx_set_vertex_shader(gfx_system_t* gfx, gfx_shader_t* vs);
 void gfx_set_pixel_shader(gfx_system_t* gfx, gfx_shader_t* ps);
+void gfx_upload_shader_vars(gfx_system_t* gfx, const gfx_shader_var_t* vars, enum gfx_shader_type type);
 
 result gfx_create_buffer(gfx_system_t* gfx, const void* data, size_t size, enum gfx_buffer_type type, enum gfx_buffer_usage usage, gfx_buffer_t** buffer);
 result gfx_buffer_copy_data(gfx_system_t* gfx, gfx_buffer_t* buffer, const void* data, size_t size);
