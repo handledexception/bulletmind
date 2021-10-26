@@ -56,7 +56,7 @@ void* get_window_user_data(HWND hwnd)
 LRESULT CALLBACK gui_win32_wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 {
     gui_window_data_t* data = NULL;
-    LRESULT result = 0;
+    // LRESULT result = 0;
 
     switch (msg) {
     case WM_NCCREATE:

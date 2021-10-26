@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.18)
 
 option(BM_BUILD_32BIT "build bulletmind as 32-bit" OFF)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-int-to-pointer-cast")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DBM_DEBUG)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0")
