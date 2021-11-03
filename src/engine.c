@@ -92,23 +92,6 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 
 	SDL_Init(SDL_FLAGS);
 
-	s32 window_pos_x = eng->window_rect.x;
-	s32 window_pos_y = eng->window_rect.y;
-	if (window_pos_x == -1)
-		window_pos_x = SDL_WINDOWPOS_CENTERED;
-	if (window_pos_y == -1)
-		window_pos_y = SDL_WINDOWPOS_CENTERED;
-
-	eng->window = SDL_CreateWindow(window_title, window_pos_x, window_pos_y,
-				       eng->window_rect.w, eng->window_rect.h,
-				       SDL_WINDOW_SHOWN);
-
-	if (eng->window == NULL) {
-		logger(LOG_ERROR, "error creating engine window: %s\n",
-		       SDL_GetError());
-		return false;
-	}
-
 // #if defined(BM_WINDOWS)
 #if 0
 	gui_init();
@@ -153,6 +136,30 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	gfx_build_shader(gfx_sys, hlsl_ps);
 	gfx_set_vertex_shader(gfx_sys, hlsl_vs);
 	gfx_set_pixel_shader(gfx_sys, hlsl_ps);
+	
+	mat4f_t world_matrix;
+	mat4f_identity(&world_matrix);
+	// world_matrix.z.z = 0.5f;
+	mat4f_t view_proj_matrix;
+	mat4f_mul(&view_proj_matrix, &cam_pers.view_matrix, &cam_pers.proj_matrix);
+	mat4f_transpose(&view_proj_matrix, &view_proj_matrix);
+	size_t num_vs_vars = 2;
+	gfx_shader_var_t* vs_vars = malloc(sizeof(gfx_shader_var_t) * num_vs_vars);
+	vs_vars[0].name = "world";
+	vs_vars[0].type = GFX_SHADER_PARAM_VEC4;
+	vs_vars[0].offset = 0;
+	vs_vars[0].data = malloc(sizeof(mat4f_t));
+	memcpy(&vs_vars[0].data, &world_matrix, sizeof(mat4f_t));
+	vs_vars[0].size = sizeof(mat4f_t);
+	vs_vars[1].name = "view_proj";
+	vs_vars[1].type = GFX_SHADER_PARAM_VEC4;
+	vs_vars[1].offset = (sizeof(mat4f_t) + 15) & ~15;
+	vs_vars[1].size = sizeof(mat4f_t);
+	vs_vars[1].data = malloc(sizeof(mat4f_t));
+	memcpy(&vs_vars[1].data, &view_proj_matrix, sizeof(mat4f_t));
+	gfx_buffer_t* cbuffer;
+	size_t cbuffer_size = ((sizeof(mat4f_t) * num_vs_vars) + 15) & 0xfffffff0;
+	gfx_create_buffer(gfx_sys, NULL, cbuffer_size, GFX_BUFFER_CONSTANT, GFX_BUFFER_USAGE_DYNAMIC, &cbuffer);
 
 	struct gfx_vertex_data* tetrahedron = malloc(sizeof(*tetrahedron));
 	tetrahedron->num_vertices = 4;
@@ -179,17 +186,39 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	gfx_bind_input_layout(gfx_sys, hlsl_vs);
 	gfx_bind_primitive_topology(gfx_sys, GFX_TOPOLOGY_TRIANGLE_STRIP);
 
-	rgba_t clear_color = {
-		.r = 0,
-		.g = 0,
-		.b = 0,
-		.a = 255,
-	};
-	gfx_render_clear(gfx_sys, &clear_color);
-	gfx_render_begin(gfx_sys);
-	gfx_render_end(gfx_sys, false, 0);
+	while  (1) {
+		rgba_t clear_color = {
+			.r = 0,
+			.g = 0,
+			.b = 0,
+			.a = 255,
+		};
+		gfx_render_clear(gfx_sys, &clear_color);
+		gfx_upload_constant_buffer(gfx_sys, cbuffer, GFX_SHADER_VERTEX);
+		gfx_render_begin(gfx_sys);
+		gfx_render_end(gfx_sys, false, 0);
+		SDL_Delay(100);
+		printf("test\n");
+	}
 	// gfx_system_shutdown(gfx_sys);
 #endif
+
+	s32 window_pos_x = eng->window_rect.x;
+	s32 window_pos_y = eng->window_rect.y;
+	if (window_pos_x == -1)
+		window_pos_x = SDL_WINDOWPOS_CENTERED;
+	if (window_pos_y == -1)
+		window_pos_y = SDL_WINDOWPOS_CENTERED;
+
+	eng->window = SDL_CreateWindow(window_title, window_pos_x, window_pos_y,
+				       eng->window_rect.w, eng->window_rect.h,
+				       SDL_WINDOW_SHOWN);
+
+	if (eng->window == NULL) {
+		logger(LOG_ERROR, "error creating engine window: %s\n",
+		       SDL_GetError());
+		return false;
+	}
 
 	eng->renderer = SDL_CreateRenderer(eng->window, eng->adapter_index,
 					   SDL_RENDERER_ACCELERATED);
@@ -295,7 +324,6 @@ void eng_play_sound(engine_t* eng, const char* name, s32 volume)
 	game_resource_t* resource = eng_get_resource(engine, name);
 	if (resource != NULL) {
 		audio_chunk_t* sound_chunk = (audio_chunk_t*)resource->data;
-
 		if (resource->type == kAssetTypeSoundEffect) {
 			sound_chunk->volume = volume;
 			int play_ok =

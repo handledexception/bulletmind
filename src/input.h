@@ -19,7 +19,7 @@
 #include "command.h"
 
 #include "core/types.h"
-#include "core/scancodes.h"
+#include "core/scancode.h"
 
 #include "math/vec2.h"
 

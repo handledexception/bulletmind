@@ -43,39 +43,32 @@ typedef enum {
 #define DEFAULT_SFX_VOLUME 12
 #define DEFAULT_MUSIC_VOLUME 25
 
-typedef struct engine_s {
+typedef struct engine_s engine_t;
+struct engine_s {
 	s32 adapter_index;
-
 	char window_title[TEMP_STRING_MAX];
 	SDL_Window* window;
 	bool fullscreen;
 	SDL_Renderer* renderer;
 	// SDL_Surface* scr_surface;
 	// SDL_Texture* scr_texture;
-
 	rect_t window_rect;
 	rect_t camera_rect;
 	vec2f_t render_scale;
-
 	f32 target_fps;
 	f64 target_frametime;
 	u64 frame_count;
 	f64 spawn_timer[MAX_SPAWN_TIMERS];
-
 	engine_mode_t mode;
 	bool debug;
-
 	bool console;
 	rect_t console_bounds;
-
 	entity_t* ent_list;
 	game_resource_t** game_resources;
 	font_t font;
-
 	input_state_t* inputs;
-
 	audio_state_t* audio;
-} engine_t;
+};
 
 extern engine_t* engine;
 

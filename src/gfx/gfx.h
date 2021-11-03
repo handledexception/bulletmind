@@ -215,11 +215,9 @@ typedef struct {
     size_t size;                    // size of the variable (16-byte aligned)
     size_t offset;                  // offset inside of constant buffer
     void* data;
-    gfx_buffer_t* cbuffer;
 } gfx_shader_var_t;
 
 u32 gfx_get_bits_per_pixel(enum gfx_pixel_format pf);
-
 u32 gfx_texture_get_width(gfx_texture_t* texture);
 u32 gfx_texture_get_height(gfx_texture_t* texture);
 void gfx_texture_get_size(gfx_texture_t* texture, vec2f_t* size);

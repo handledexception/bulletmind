@@ -602,13 +602,13 @@ void gfx_set_pixel_shader(gfx_system_t* gfx, gfx_shader_t* ps)
         gfx->pixel_shader = ps;
 }
 
-void gfx_upload_shader_vars(gfx_system_t* gfx, const gfx_shader_var_t* vars, enum gfx_shader_type type)
+void gfx_upload_constant_buffer(gfx_system_t* gfx, const gfx_buffer_t* buffer, enum gfx_shader_type type)
 {
-    if (gfx && vars) {
+    if (gfx && buffer) {
         if (type == GFX_SHADER_VERTEX)
-            ID3D11DeviceContext1_VSSetConstantBuffers(gfx->ctx, 0, 1, &vars->cbuffer->buffer);
+            ID3D11DeviceContext1_VSSetConstantBuffers(gfx->ctx, 0, 1, &buffer->buffer);
         else if (type == GFX_SHADER_PIXEL)
-            ID3D11DeviceContext1_PSSetConstantBuffers(gfx->ctx, 0, 1, &vars->cbuffer->buffer);
+            ID3D11DeviceContext1_PSSetConstantBuffers(gfx->ctx, 0, 1, &buffer->buffer);
     }
 }
 

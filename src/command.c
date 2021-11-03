@@ -86,13 +86,8 @@ void cmd_toggle_bool(input_state_t* inputs, command_t cmd, bool* value)
 void cmd_refresh(engine_t* eng)
 {
 	cmd_toggle_bool(eng->inputs, kCommandDebugMode, &eng->debug);
-
-	cmd_toggle_bool(eng->inputs, kCommandConsole, &eng->console);
-	if (eng->console) {
-		eng->mode = kEngineModeConsole;
-		eng->inputs->mode = kInputModeConsole;
-	}
-
+	
+	// toggle fullscreen
 	static bool fullscreen = false;
 	cmd_toggle_bool(eng->inputs, kCommandToggleFullscreen, &fullscreen);
 	if (fullscreen != eng->fullscreen) {
@@ -101,15 +96,19 @@ void cmd_refresh(engine_t* eng)
 	}
 	eng_toggle_fullscreen(eng, eng->fullscreen);
 
+	// toggle console
+	cmd_toggle_bool(eng->inputs, kCommandConsole, &eng->console);
+	if (eng->console) {
+		eng->mode = kEngineModeConsole;
+		eng->inputs->mode = kInputModeConsole;
+	}
+
 	if (cmd_get_state(eng->inputs, kCommandQuit))
 		eng->mode = kEngineModeQuit;
-
-	if (cmd_get_state(eng->inputs, kCommandSetFpsHigh) == true) {
+	if (cmd_get_state(eng->inputs, kCommandSetFpsHigh) == true)
 		eng->target_frametime = FRAME_TIME(eng->target_fps);
-	}
-	if (cmd_get_state(eng->inputs, kCommandSetFpsLow) == true) {
+	if (cmd_get_state(eng->inputs, kCommandSetFpsLow) == true)
 		eng->target_frametime = FRAME_TIME(10);
-	}
 }
 
 void cmd_shutdown(void)

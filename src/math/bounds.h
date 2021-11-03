@@ -29,17 +29,6 @@ static inline void bounds_get_center(vec3f_t* center, const bounds_t* b)
 	vec3f_add(center, center, &b->min);
 }
 
-// bool bounds_intersects(const struct bounds *b, const struct bounds *test,
-// 		       float epsilon)
-// {
-// 	return ((b->min.x - b2->max.x) <= epsilon) &&
-// 	       ((b2->min.x - b->max.x) <= epsilon) &&
-// 	       ((b->min.y - b2->max.y) <= epsilon) &&
-// 	       ((b2->min.y - b->max.y) <= epsilon) &&
-// 	       ((b->min.z - b2->max.z) <= epsilon) &&
-// 	       ((b2->min.z - b->max.z) <= epsilon);
-// }
-
 static inline bool bounds_intersects(const struct bounds* b1,
 				     const struct bounds* b2, f32 epsilon)
 {

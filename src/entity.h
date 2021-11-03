@@ -27,7 +27,7 @@ typedef struct engine_s engine_t;
 #define PLAYER_ENTITY_INDEX 0
 #define SATELLITE_ENTITY_INDEX 1
 
-#define MAX_ENTITIES 256 // small max ents for debugging
+#define MAX_ENTITIES 1024 // small max ents for debugging
 #define MASK_ENTITIES (MAX_ENTITIES - 1)
 
 #define MAX_ENTITY_CAPS 32

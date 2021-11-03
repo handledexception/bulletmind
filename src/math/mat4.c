@@ -29,26 +29,23 @@ void mat4f_mul(mat4f_t* dst, const mat4f_t* lhs, const mat4f_t* rhs)
 {
 	mat4f_t tmp;
 	mat4f_zero(&tmp);
-	mat4f_transpose(&tmp, rhs);
-	dst->x.x = vec4f_dot(&lhs->x, &tmp.x);
-	dst->x.y = vec4f_dot(&lhs->x, &tmp.y);
-	dst->x.z = vec4f_dot(&lhs->x, &tmp.z);
-	dst->x.w = vec4f_dot(&lhs->x, &tmp.w);
-
-	dst->y.x = vec4f_dot(&lhs->y, &tmp.x);
-	dst->y.y = vec4f_dot(&lhs->y, &tmp.y);
-	dst->y.z = vec4f_dot(&lhs->y, &tmp.z);
-	dst->y.w = vec4f_dot(&lhs->y, &tmp.w);
-
-	dst->z.x = vec4f_dot(&lhs->z, &tmp.x);
-	dst->z.y = vec4f_dot(&lhs->z, &tmp.y);
-	dst->z.z = vec4f_dot(&lhs->z, &tmp.z);
-	dst->z.w = vec4f_dot(&lhs->z, &tmp.w);
-
-	dst->w.x = vec4f_dot(&lhs->w, &tmp.x);
-	dst->w.y = vec4f_dot(&lhs->w, &tmp.y);
-	dst->w.z = vec4f_dot(&lhs->w, &tmp.z);
-	dst->w.w = vec4f_dot(&lhs->w, &tmp.w);
+	// mat4f_transpose(&tmp, rhs);
+	dst->x.x = vec4f_dot(&lhs->x, &rhs->x);
+	dst->x.y = vec4f_dot(&lhs->x, &rhs->y);
+	dst->x.z = vec4f_dot(&lhs->x, &rhs->z);
+	dst->x.w = vec4f_dot(&lhs->x, &rhs->w);
+	dst->y.x = vec4f_dot(&lhs->y, &rhs->x);
+	dst->y.y = vec4f_dot(&lhs->y, &rhs->y);
+	dst->y.z = vec4f_dot(&lhs->y, &rhs->z);
+	dst->y.w = vec4f_dot(&lhs->y, &rhs->w);
+	dst->z.x = vec4f_dot(&lhs->z, &rhs->x);
+	dst->z.y = vec4f_dot(&lhs->z, &rhs->y);
+	dst->z.z = vec4f_dot(&lhs->z, &rhs->z);
+	dst->z.w = vec4f_dot(&lhs->z, &rhs->w);
+	dst->w.x = vec4f_dot(&lhs->w, &rhs->x);
+	dst->w.y = vec4f_dot(&lhs->w, &rhs->y);
+	dst->w.z = vec4f_dot(&lhs->w, &rhs->z);
+	dst->w.w = vec4f_dot(&lhs->w, &rhs->w);
 }
 
 void mat4f_ortho_lh(mat4f_t* dst, f32 width, f32 height, f32 z_near, f32 z_far)

@@ -14,6 +14,11 @@ path = "assets/ss_skelly.toml"
 type = "sprite_sheet"
 
 [[assets]]
+name = "roboid"
+path = "assets/roboid.toml"
+type = "sprite_sheet"
+
+[[assets]]
 name = "bullet"
 path = "assets/bullet_rgba.tga"
 type = "sprite"

@@ -242,10 +242,21 @@ void ent_refresh_renderables(engine_t* eng, entity_t* e, f64 dt)
 			draw_sprite_sheet(eng->renderer, sprite_sheet, &e->org,
 					  frame_scale, e->angle, flip);
 		} else if (!strcmp(e->name, "satellite")) {
-			rect_t sat_rect = {(s32)e->bbox.min.x,
-					   (s32)e->bbox.min.y, e->size.x,
-					   e->size.y};
-			draw_rect_solid(eng->renderer, &sat_rect, &e->color);
+			game_resource_t* resource = eng_get_resource(eng, "roboid");
+			sprite_sheet_t* sprite_sheet = (sprite_sheet_t*)resource->data;
+			entity_t* player = ent_by_name(eng->ent_list, "player");
+			vec2f_t sat_to_player = { 0.f, 0.f };
+			vec2f_sub(&sat_to_player, e->org, player->org);
+			vec2f_norm(&sat_to_player, sat_to_player);
+			bool flip = false;
+			if (sat_to_player.x > 0.f)
+				flip = true;
+			f64 frame_scale = 1.0;
+			draw_sprite_sheet(eng->renderer, sprite_sheet, &e->org, frame_scale, e->angle, flip);
+			// rect_t sat_rect = {(s32)e->bbox.min.x,
+			// 		   (s32)e->bbox.min.y, e->size.x,
+			// 		   e->size.y};
+			// draw_rect_solid(eng->renderer, &sat_rect, &e->color);
 		} else if (!strcmp(e->name, "bullet")) {
 			//TODO(paulh): Need a game_resource_t method for get_resource_by_name
 			game_resource_t* resource =

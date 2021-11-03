@@ -236,8 +236,6 @@ int main(int argc, char** argv)
 			SDL_SetRenderDrawColor(engine->renderer, 0x20, 0x20,
 					       0x20, 0xFF);
 			SDL_RenderClear(engine->renderer);
-
-			// vec2f_t cam = {0.f, 0.f};
 			entity_t* player = ent_by_index(engine->ent_list, 0);
 			update_tilemap(engine, (u32)player->org.x - TILE_WIDTH,
 				       (u32)player->org.y - TILE_HEIGHT);
@@ -252,9 +250,7 @@ int main(int argc, char** argv)
 				SDL_GetRenderDrawColor(engine->renderer, &r, &g,
 						       &b, &a);
 				rgba_t con_color = {0x3d, 0x3a, 0x36, 0xff};
-
 				if (engine->console) {
-
 					if (engine->console_bounds.y <
 					    con_end.y)
 						engine->console_bounds.y +=
@@ -270,20 +266,17 @@ int main(int argc, char** argv)
 							kInputModeGame;
 					}
 				}
-
 				draw_rect_solid(engine->renderer,
 						&engine->console_bounds,
 						&con_color);
 				SDL_SetRenderDrawColor(engine->renderer, r, g,
 						       b, a); // restore color
-
 				font_print(engine, engine->console_bounds.x + 8,
 					   engine->console_bounds.y +
 						   engine->console_bounds.h -
 						   20,
 					   1.5, "> hello, world!");
 			}
-
 			break;
 		}
 		default:

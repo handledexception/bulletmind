@@ -48,7 +48,7 @@ set(BM_CORE_HEADERS
     src/core/mem_align.h
     src/core/mem_arena.h
     src/core/rect.h
-    src/core/scancodes.h
+    src/core/scancode.h
     src/core/string.h
     src/core/time_convert.h
     src/core/types.h
@@ -79,7 +79,6 @@ set(BM_MATH_SOURCES
 # platform
 set(BM_PLATFORM_HEADERS
     src/platform/platform.h
-    src/platform/scancode.h
     src/platform/utf8.h)
 set(BM_PLATFORM_SOURCES
     src/platform/platform.c

@@ -76,6 +76,7 @@ void draw_sprite_sheet(SDL_Renderer* rend, sprite_sheet_t* sprite_sheet,
 		       vec2f_t* org, const f64 scale, const f32 angle,
 		       const bool flip)
 {
+	//TODO(paulh): move the frame time fields into the sprite_sheet_t structure
 	static s32 frame_num = 0;
 	static f64 frame_time = 0.0;
 
