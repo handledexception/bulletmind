@@ -10,6 +10,8 @@
                 "_UNICODE"
             ],
             "includePath": [
+                "${workspaceFolder}/deps",
+                "${workspaceFolder}/deps/SDL2/include",
                 "${workspaceFolder}/src"
             ],
             "intelliSenseMode": "windows-msvc-x64",

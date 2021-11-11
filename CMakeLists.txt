@@ -46,7 +46,7 @@ set(BM_CORE_HEADERS
     src/core/export.h
     src/core/logger.h
     src/core/mem_align.h
-    src/core/mem_arena.h
+    src/core/memory.h
     src/core/rect.h
     src/core/scancode.h
     src/core/string.h
@@ -58,7 +58,7 @@ set(BM_CORE_SOURCES
     src/core/buffer.c
     src/core/logger.c
     src/core/mem_align.c
-    src/core/mem_arena.c
+    src/core/memory.c
     src/core/random.c
     src/core/string.c
     src/core/utils.c)

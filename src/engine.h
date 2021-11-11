@@ -53,7 +53,8 @@ struct engine_s {
 	// SDL_Surface* scr_surface;
 	// SDL_Texture* scr_texture;
 	rect_t window_rect;
-	rect_t camera_rect;
+	rect_t cam_rect;
+	rect_t cam_inset;
 	vec2f_t render_scale;
 	f32 target_fps;
 	f64 target_frametime;

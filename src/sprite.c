@@ -16,7 +16,7 @@
 
 #include "sprite.h"
 #include "core/logger.h"
-#include "core/mem_arena.h"
+#include "core/memory.h"
 #include "core/utils.h"
 
 #include <stdio.h>

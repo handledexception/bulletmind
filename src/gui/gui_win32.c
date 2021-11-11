@@ -25,6 +25,36 @@ static HINSTANCE g_hinstance = NULL;
 static ATOM g_atom = 0;
 static const wchar_t* g_classname = L"BMAppClass";
 
+LRESULT gui_process_keyboard_msg_win32(UINT msg, WPARAM wp, LPARAM lp)
+{
+    LRESULT result = 0;
+    bool key_down = false;
+    int vk = (int)wp;
+
+    switch (msg) {
+    case WM_KEYDOWN:
+    case WM_SYSKEYDOWN:
+        key_down = true;
+        result = 1;
+        break;
+    case WM_KEYUP:
+    case WM_SYSKEYUP:
+    default:
+        break;
+    }
+
+    switch (vk) {
+    case VK_SHIFT:
+        vk = (int)MapVirtualKey(((UINT)lp & 0x00ff0000) >> 16u, MAPVK_VSC_TO_VK_EX);
+        if (!key_down) {
+
+        }
+    }
+
+    return result;
+}
+
+
 HMODULE get_module_from_wndproc(WNDPROC wp)
 {
     HMODULE instance = NULL;
@@ -71,6 +101,9 @@ LRESULT CALLBACK gui_win32_wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
             }
         }
         break;
+    case WM_KEYDOWN:
+    case WM_KEYUP:
+        return gui_process_keyboard_msg_win32(msg, wp, lp);
     default:
         data = (gui_window_data_t*)get_window_user_data(hwnd);
     }
@@ -82,7 +115,7 @@ bool gui_create_window_win32(gui_platform_t* gs, gui_window_t* window)
 {
     if (!window)
         return false;
-    
+
     HWND hwnd = NULL;
     HWND parent_hwnd = NULL;
     HMENU menu = NULL;

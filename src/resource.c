@@ -20,7 +20,7 @@
 #include "toml_config.h"
 
 #include "core/logger.h"
-#include "core/mem_arena.h"
+#include "core/memory.h"
 #include "core/utils.h"
 
 #include "platform/platform.h"
@@ -147,11 +147,9 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 		sprite_t* sprite = NULL;
 		if (sprite_load(asset_path, &sprite) &&
 		    sprite_create_texture(eng->renderer, sprite)) {
-
 			resource = arena_alloc(&g_mem_arena,
 					       sizeof(game_resource_t),
 					       DEFAULT_ALIGNMENT);
-
 			sprintf(resource->name, "%s", asset_name);
 			sprintf(resource->path, "%s", asset_path);
 			resource->type = asset_type;

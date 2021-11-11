@@ -23,7 +23,7 @@
 #include "resource.h"
 
 #include "core/logger.h"
-#include "core/mem_arena.h"
+#include "core/memory.h"
 #include "core/random.h"
 #include "core/rect.h"
 #include "core/time_convert.h"
@@ -79,8 +79,8 @@ void ent_refresh(engine_t* eng, const f64 dt)
 	if (eng->spawn_timer[0] == 0.0)
 		eng->spawn_timer[0] = eng_get_time_sec() + 2.0;
 	if (eng_get_time_sec() >= eng->spawn_timer[0]) {
-		ent_spawn_enemy(ent_list, eng->camera_rect.w,
-				eng->camera_rect.h);
+		ent_spawn_enemy(ent_list, eng->cam_rect.w,
+				eng->cam_rect.h);
 		eng->spawn_timer[0] = 0.0;
 	}
 
@@ -600,17 +600,17 @@ void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 	ent_euler_move(player, p_accel, friction, dt);
 
 	// screen bounds checking
-	if (player->org.x > (f32)eng->camera_rect.w - 25) {
-		player->org.x = (f32)eng->camera_rect.w - 25;
+	if (player->org.x > (f32)eng->cam_rect.w - 25) {
+		player->org.x = (f32)eng->cam_rect.w - 25;
 	}
-	if (player->org.y > (f32)eng->camera_rect.h - 25) {
-		player->org.y = (f32)eng->camera_rect.h - 25;
+	if (player->org.y > (f32)eng->cam_rect.h - 25) {
+		player->org.y = (f32)eng->cam_rect.h - 25;
 	}
-	if (player->org.x < (f32)eng->camera_rect.x + 25) {
-		player->org.x = (f32)eng->camera_rect.x + 25;
+	if (player->org.x < (f32)eng->cam_rect.x + 25) {
+		player->org.x = (f32)eng->cam_rect.x + 25;
 	}
-	if (player->org.y < (f32)eng->camera_rect.y + 25) {
-		player->org.y = (f32)eng->camera_rect.y + 25;
+	if (player->org.y < (f32)eng->cam_rect.y + 25) {
+		player->org.y = (f32)eng->cam_rect.y + 25;
 	}
 
 	// ent_center_rect(player);
@@ -621,16 +621,23 @@ void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* eng,
 {
 	static f32 sat_speed = 1000.f;
 	vec2f_t dist = {0.f, 0.f};
+	vec2f_t sat_to_player = { 0.f, 0.f };
 	vec2f_sub(&dist, player->org, satellite->org);
+	sat_to_player.x = dist.x;
+	sat_to_player.y = dist.y;
 	vec2f_norm(&dist, dist);
 
 	const f32 orbit_dist = 48.f;
-	const f32 orbit_thresh = 64.f;
+	const f32 orbit_thresh = 72.f;
 	const bool is_orbiting =
-		(fabsf(dist.x) < orbit_thresh || fabsf(dist.y) < orbit_thresh);
+		(fabsf(sat_to_player.x) < orbit_thresh || fabsf(sat_to_player.y) < orbit_thresh);
+	if (is_orbiting)
+		satellite->flags |= kSatelliteOrbitCW;
+	else
+		satellite->flags &= ~kSatelliteOrbitCW;
 
 	static f32 orbit_angle = 0.f;
-	if (is_orbiting) {
+	if (satellite->flags & kSatelliteOrbitCW) {
 		sat_speed = 450.f;
 		vec2f_t orbit_ring = {0.f, 0.f};
 		vec2f_t orbit_vec = {0.f, 0.f};

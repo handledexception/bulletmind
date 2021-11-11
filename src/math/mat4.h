@@ -46,14 +46,18 @@ static inline void mat4f_identity(mat4f_t* m)
 	m->w.w = 1.f;
 }
 
-BM_DLL_EXPORT void mat4f_transpose(mat4f_t* dst, const mat4f_t* m);
-BM_DLL_EXPORT void mat4f_mul(mat4f_t* dst, const mat4f_t* lhs,
+BM_EXPORT void mat4f_transpose(mat4f_t* dst, const mat4f_t* m);
+BM_EXPORT void mat4f_mul(mat4f_t* dst, const mat4f_t* lhs,
 			     const mat4f_t* rhs);
-BM_DLL_EXPORT void mat4f_ortho_lh(mat4f_t* dst, f32 width, f32 height,
+BM_EXPORT void mat4f_translate_v3(mat4f_t* dst, const vec3f_t* v);
+BM_EXPORT void mat4f_translate(mat4f_t* dst, const vec4f_t* v);
+BM_EXPORT void mat4f_scale_v3(mat4f_t* dst, const vec3f_t* v);
+BM_EXPORT void mat4f_scale(mat4f_t* dst, const vec4f_t* v);
+BM_EXPORT void mat4f_ortho_lh(mat4f_t* dst, f32 width, f32 height,
 				  f32 z_near, f32 z_far);
-BM_DLL_EXPORT void mat4f_perspective_fov_lh(mat4f_t* dst, f32 fov, f32 aspect,
+BM_EXPORT void mat4f_perspective_fov_lh(mat4f_t* dst, f32 fov, f32 aspect,
 					    f32 z_near, f32 z_far);
-BM_DLL_EXPORT void mat4f_look_at_lh(mat4f_t* dst, const vec3f_t* pos,
+BM_EXPORT void mat4f_look_at_lh(mat4f_t* dst, const vec3f_t* pos,
 				    const vec3f_t* dir, const vec3f_t* up);
 
 #endif

@@ -44,7 +44,23 @@
         "camera.h": "c",
         "vec3.h": "c",
         "vec4.h": "c",
-        "algorithm": "c"
+        "algorithm": "c",
+        "array": "cpp",
+        "bit": "cpp",
+        "charconv": "cpp",
+        "chrono": "cpp",
+        "compare": "cpp",
+        "format": "cpp",
+        "iterator": "cpp",
+        "memory": "cpp",
+        "mutex": "cpp",
+        "sstream": "cpp",
+        "system_error": "cpp",
+        "xlocale": "cpp",
+        "xlocbuf": "cpp",
+        "xlocmon": "cpp",
+        "xloctime": "cpp",
+        "xtree": "cpp"
     },
     "cmake.configureOnOpen": false
 }

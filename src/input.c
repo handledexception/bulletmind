@@ -17,7 +17,7 @@
 #include "input.h"
 
 #include "core/logger.h"
-#include "core/mem_arena.h"
+#include "core/memory.h"
 
 #include "platform/platform.h"
 

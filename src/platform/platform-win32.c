@@ -100,3 +100,23 @@ void os_dlclose(void* module)
 {
 	FreeLibrary(module);
 }
+
+long os_atomic_inc_long(volatile long *val)
+{
+	return _InterlockedIncrement(val);
+}
+
+long os_atomic_dec_long(volatile long *val)
+{
+	return _InterlockedDecrement(val);
+}
+
+long os_atomic_set_long(volatile long *ptr, long val)
+{
+	return _InterlockedExchange(ptr, val);
+}
+
+long os_atomic_exchange_long(volatile long *ptr, long val)
+{
+	return os_atomic_set_long(ptr, val);
+}

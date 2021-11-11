@@ -17,6 +17,17 @@
 #pragma once
 
 #include "core/types.h"
+#include "core/export.h"
+
+struct memory_allocator {
+	void *(*malloc)(size_t);
+	void *(*realloc)(void *, size_t);
+	void (*free)(void *);
+};
+
+BM_EXPORT void* bm_malloc(size_t size);
+BM_EXPORT void* bm_realloc(void* ptr, size_t size);
+BM_EXPORT void  bm_free(void* ptr);
 
 // Basic linear allocator
 // https://www.gingerbill.org/article/2019/02/08/memory-allocation-strategies-002/
@@ -35,7 +46,7 @@ typedef struct arena_s {
 } arena_t;
 
 extern size_t arena_allocated_bytes;
-extern u8 arena_buf[ARENA_TOTAL_BYTES];
+extern u8* arena_buf;
 extern arena_t g_mem_arena;
 
 void arena_init(arena_t* arena, void* backing_buffer, size_t sz_backing);
