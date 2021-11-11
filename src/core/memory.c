@@ -14,15 +14,51 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 #include "core/logger.h"
-#include "core/mem_arena.h"
+#include "core/memory.h"
 #include "core/mem_align.h"
+#include "platform/platform.h"
 
 #include <assert.h>
 
+static uint64_t gNumAllocations = 0;
+static uint64_t gBytesAllocated = 0;
+static struct memory_allocator gAllocator = { malloc, realloc, free };
+
 size_t arena_allocated_bytes = 0;
-u8 arena_buf[(size_t)ARENA_TOTAL_BYTES];
+u8* arena_buf = NULL;
 arena_t g_mem_arena = {NULL, 0, 0, 0};
 
+void* bm_malloc(size_t size)
+{
+	void* ptr = gAllocator.malloc(size);
+	size_t bytes_allocated = gBytesAllocated + size;
+	os_atomic_set_long(&gBytesAllocated, bytes_allocated);
+	os_atomic_inc_long(&gNumAllocations);
+	return ptr;
+}
+
+void* bm_realloc(void* ptr, size_t size)
+{
+	if (ptr) {
+		realloc(ptr, size);
+		size_t bytes_allocated = gBytesAllocated + size;
+		os_atomic_set_long(&gBytesAllocated, bytes_allocated);
+		os_atomic_inc_long(&gNumAllocations);
+	}
+}
+
+void  bm_free(void* ptr)
+{
+	if (ptr) {
+		gAllocator.free(ptr);
+		os_atomic_dec_long(&gNumAllocations);
+	}
+}
+
+
+//
+// memory arena
+//
 void arena_init(arena_t* arena, void* backing_buffer, size_t sz_backing)
 {
 	arena->buffer = (u8*)backing_buffer;

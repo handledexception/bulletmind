@@ -3,6 +3,6 @@
 
 #include "core/export.h"
 
-extern BM_DLL_EXPORT int core_system_exit();
+extern BM_EXPORT int core_system_exit();
 
 #endif

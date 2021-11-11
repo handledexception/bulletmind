@@ -125,6 +125,29 @@ struct gfx_system {
 
 typedef HRESULT(WINAPI* PFN_CREATE_DXGI_FACTORY2)(UINT flags, REFIID riid, void** ppFactory);
 
+D3D11_USAGE gfx_buffer_usage_to_d3d11_usage(enum gfx_buffer_usage usage)
+{
+    D3D11_USAGE d3d11_usage = D3D11_USAGE_DEFAULT;
+    switch (usage) {
+    case GFX_BUFFER_USAGE_DEFAULT:
+        d3d11_usage = D3D11_USAGE_DEFAULT;
+        break;
+    case GFX_BUFFER_USAGE_DYNAMIC:
+        d3d11_usage = D3D11_USAGE_DYNAMIC;
+        break;
+    case GFX_BUFFER_USAGE_IMMUTABLE:
+        d3d11_usage = D3D11_USAGE_IMMUTABLE;
+        break;
+    case GFX_BUFFER_USAGE_STAGING:
+        d3d11_usage = D3D11_USAGE_STAGING;
+        break;
+    case GFX_BUFFER_USAGE_UNKNOWN:
+    default:
+        break;
+    }
+    return d3d11_usage;
+}
+
 DXGI_FORMAT gfx_pixel_format_to_dxgi_format(enum gfx_pixel_format pf)
 {
     switch (pf) {
@@ -185,59 +208,13 @@ void gfx_activate_d3d11_debug_info(gfx_system_t* gfx)
     ID3D11InfoQueue* nfo_q;
     if(SUCCEEDED(IProvideClassInfo_QueryInterface(gfx->device, &BM_IID_ID3D11InfoQueue, (void**)&nfo_q)))
     {
+        // ID3D11InfoQueue_SetBreakOnSeverity(nfo_q, D3D11_MESSAGE_SEVERITY_INFO, TRUE);
+        // ID3D11InfoQueue_SetBreakOnSeverity(nfo_q, D3D11_MESSAGE_SEVERITY_MESSAGE, TRUE);
+        // ID3D11InfoQueue_SetBreakOnSeverity(nfo_q, D3D11_MESSAGE_SEVERITY_WARNING, TRUE);
         ID3D11InfoQueue_SetBreakOnSeverity(nfo_q, D3D11_MESSAGE_SEVERITY_CORRUPTION, TRUE);
         ID3D11InfoQueue_SetBreakOnSeverity(nfo_q, D3D11_MESSAGE_SEVERITY_ERROR, TRUE);
 
         ID3D11InfoQueue_Release(nfo_q);
-    }
-}
-
-// TODO(paulh): Refactor to initialize D3D11 once, and allow instantiating multple swap chains
-gfx_system_t* gfx_system_init(const struct gfx_config* cfg, s32 flags)
-{
-    (void)flags;
-
-    gfx_system_t* gfx = (gfx_system_t*)malloc(sizeof(gfx_system_t));
-    memset(gfx, 0, sizeof(*gfx));
-
-    if (gfx_create_device_dependent_resources(gfx, cfg->adapter) != kResultOk) {
-        gfx_com_release_d3d11(gfx);
-        free((void*)gfx);
-        gfx = NULL;
-        return gfx;
-    }
-
-    gfx_activate_d3d11_debug_info(gfx);
-
-    if (gfx_create_swap_chain(gfx, cfg) != kResultOk) {
-        gfx_com_release_d3d11(gfx);
-        free((void*)gfx);
-        gfx = NULL;
-        return gfx;
-    }
-
-    if (gfx_init_render_target(gfx, cfg->width, cfg->height, cfg->pix_fmt) != kResultOk ||
-        gfx_init_zstencil(gfx, cfg->width, cfg->height, false) != kResultOk) {
-        gfx_com_release_d3d11(gfx);
-        free((void*)gfx);
-        gfx = NULL;
-        return gfx;
-    }
-
-    gfx_set_viewport(gfx, cfg->width, cfg->height);
-
-    gfx_init_sprite(gfx);
-
-    return gfx;
-}
-
-void gfx_system_shutdown(gfx_system_t* gfx)
-{
-    if (gfx) {
-       gfx_destroy_device_dependent_resources(gfx);
-        gfx_com_release_d3d11(gfx);
-        free(gfx);
-        gfx = NULL;
     }
 }
 
@@ -271,6 +248,212 @@ result gfx_com_release_d3d11(gfx_system_t* gfx)
     }
 
     return kResultOk;
+}
+
+//
+// gfx system
+//
+result gfx_enumerate_adapters(gfx_system_t* gfx, u32 adapter_index, u32* count)
+{
+    UINT i = 0;
+
+    result res = kResultNotFound;
+
+    for (i = 0; IDXGIFactory2_EnumAdapters1(gfx->dxgi_factory, i, &gfx->dxgi_adapter) == S_OK; i++) {
+        DXGI_ADAPTER_DESC desc;
+
+        IDXGIAdapter1_GetDesc(gfx->dxgi_adapter, &desc);
+
+        /* ignore Microsoft's 'basic' renderer */
+		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c)
+			continue;
+
+        char adapter_name[512] = "";
+
+        os_wcs_to_utf8(desc.Description, 0, adapter_name, sizeof adapter_name);
+
+        logger(LOG_INFO, "[gfx]\tDXGI Adapter %u: %s", i, (const char*)&adapter_name[0]);
+        logger(LOG_INFO, "     \tDedicated VRAM: %u", desc.DedicatedVideoMemory);
+        logger(LOG_INFO, "     \tShared VRAM:    %u", desc.SharedSystemMemory);
+        logger(LOG_INFO, "     \tPCI ID:         %x:%x", desc.VendorId, desc.DeviceId);
+        logger(LOG_INFO, "     \tRevision:       %u", desc.Revision);
+
+        LARGE_INTEGER umd;
+        if (SUCCEEDED(IDXGIAdapter1_CheckInterfaceSupport(gfx->dxgi_adapter, &BM_IID_IDXGIDevice, &umd))) {
+            const u64 version = umd.QuadPart;
+            const u16 aa = (version >> 48) & 0xffff;
+            const u16 bb = (version >> 32) & 0xffff;
+            const u16 ccccc = (version >> 16) &0xffff;
+            const u64 ddddd = version & 0xffff;
+            logger(LOG_INFO, "     \tDriver Version: %u.%u.%u.%u", aa, bb, ccccc, ddddd);
+        }
+        else {
+            logger(LOG_WARNING, "     \tDriver Version: Unknown");
+        }
+
+        if (adapter_index == i) {
+            res = kResultOk;
+            break;
+        }
+
+        logger(LOG_INFO, "[gfx] Monitors");
+        gfx_enumerate_adapter_monitors(gfx);
+
+        (*count)++;
+    }
+
+    return res;
+}
+
+static bool gfx_get_monitor_target(const MONITORINFOEX* info, DISPLAYCONFIG_TARGET_DEVICE_NAME* target)
+{
+	bool found = false;
+
+	u32 num_paths = 0;
+    u32 num_modes = 0;
+	if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &num_paths, &num_modes) == ERROR_SUCCESS) {
+        DISPLAYCONFIG_PATH_INFO* paths = (DISPLAYCONFIG_PATH_INFO*)malloc(num_paths * (sizeof(DISPLAYCONFIG_PATH_INFO)));
+        DISPLAYCONFIG_MODE_INFO* modes = (DISPLAYCONFIG_MODE_INFO*)malloc(num_modes * (sizeof(DISPLAYCONFIG_MODE_INFO)));
+        if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &num_paths, paths, &num_modes, modes, NULL) == ERROR_SUCCESS) {
+			// realloc(paths, num_paths * sizeof(DISPLAYCONFIG_PATH_INFO));
+			for (size_t i = 0; i < num_paths; ++i) {
+				const DISPLAYCONFIG_PATH_INFO path = paths[i];
+				DISPLAYCONFIG_SOURCE_DEVICE_NAME source;
+                source.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
+                source.header.size = sizeof(source);
+                source.header.adapterId = path.sourceInfo.adapterId;
+				source.header.id = path.sourceInfo.id;
+				if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS) {
+                    // wchar_t info_device[512] = L"";
+                    // os_utf8_to_wcs(info->szDevice, 0, info_device, 512);
+                    if (wcscmp(info->szDevice, source.viewGdiDeviceName) == 0) {
+                        target->header.type = DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
+                        target->header.size = sizeof(*target);
+                        target->header.adapterId = path.sourceInfo.adapterId;
+                        target->header.id = path.targetInfo.id;
+                        found = DisplayConfigGetDeviceInfo(&target->header) == ERROR_SUCCESS;
+                        break;
+                    }
+				}
+			}
+		}
+        free(paths);
+        free(modes);
+        paths = NULL;
+        modes = NULL;
+	}
+	return found;
+}
+
+result gfx_enumerate_adapter_monitors(gfx_system_t* gfx)
+{
+    if (!gfx && !gfx->dxgi_adapter)
+        return kResultNull;
+
+    IDXGIOutput* dxgi_output = NULL;
+    u32 output_index = 0;
+    for (output_index = 0; IDXGIAdapter1_EnumOutputs(gfx->dxgi_adapter, output_index, &dxgi_output) == S_OK; output_index++) {
+        DXGI_OUTPUT_DESC desc;
+        if (FAILED(IDXGIOutput_GetDesc(dxgi_output, &desc)))
+            continue;
+
+        bool target_found = false;
+        DISPLAYCONFIG_TARGET_DEVICE_NAME target;
+
+        MONITORINFOEX nfo;
+        nfo.cbSize = sizeof(MONITORINFOEX);
+        if (GetMonitorInfo(desc.Monitor, (LPMONITORINFO)&nfo)) {
+            target_found = gfx_get_monitor_target(&nfo, &target);
+
+            DEVMODE mode;
+            mode.dmSize = sizeof(mode);
+            mode.dmDriverExtra = 0;
+
+            u32 refresh_rate = 0;
+            if (EnumDisplaySettings(nfo.szDevice, ENUM_CURRENT_SETTINGS, &mode)) {
+                refresh_rate = mode.dmDisplayFrequency;
+            }
+            const RECT rect = desc.DesktopCoordinates;
+            char device_name[512] = "";
+            char friendly_name[512] = "";
+            os_wcs_to_utf8(desc.DeviceName, 0, device_name, sizeof desc.DeviceName);
+            os_wcs_to_utf8(target.monitorFriendlyDeviceName, 0, friendly_name, sizeof target.monitorFriendlyDeviceName);
+            logger(LOG_INFO, "     \tOutput %u:     %s", output_index, device_name);
+            logger(LOG_INFO, "     \tFriendly Name: %s", friendly_name);
+            logger(LOG_INFO, "     \tPosition:      %d, %d", rect.left, rect.top);
+            logger(LOG_INFO, "     \tSize:          %d, %d", rect.right - rect.left, rect.bottom - rect.top);
+            logger(LOG_INFO, "     \tAttached:      %s", desc.AttachedToDesktop ? "true" : "false");
+            logger(LOG_INFO, "     \tRefresh Rate:  %uhz", refresh_rate);
+        }
+    }
+    return kResultOk;
+}
+
+void gfx_set_viewport(gfx_system_t* gfx, u32 width, u32 height)
+{
+    D3D11_VIEWPORT viewport = {
+        .Width = (FLOAT)width,
+        .Height = (FLOAT)height,
+        .MaxDepth = 1.f,
+        .MinDepth = 0.f,
+        .TopLeftX = 0.f,
+        .TopLeftY = 0.f,
+    };
+
+    ID3D11DeviceContext1_RSSetViewports(gfx->ctx, 1, &viewport);
+}
+
+// TODO(paulh): Refactor to initialize D3D11 once, and allow instantiating multple swap chains
+gfx_system_t* gfx_system_init(const struct gfx_config* cfg, s32 flags)
+{
+    (void)flags;
+
+    gfx_system_t* gfx = (gfx_system_t*)malloc(sizeof(gfx_system_t));
+    memset(gfx, 0, sizeof(*gfx));
+
+    if (gfx_create_device_dependent_resources(gfx, cfg->adapter) != kResultOk) {
+        gfx_com_release_d3d11(gfx);
+        free((void*)gfx);
+        gfx = NULL;
+        return gfx;
+    }
+
+    gfx_activate_d3d11_debug_info(gfx);
+
+    if (gfx_create_swap_chain(gfx, cfg) != kResultOk) {
+        gfx_com_release_d3d11(gfx);
+        free((void*)gfx);
+        gfx = NULL;
+        return gfx;
+    }
+
+    if (gfx_init_render_target(gfx, cfg->width, cfg->height, cfg->pix_fmt) != kResultOk ||
+        gfx_init_zstencil(gfx, cfg->width, cfg->height, false) != kResultOk) {
+        gfx_com_release_d3d11(gfx);
+        free((void*)gfx);
+        gfx = NULL;
+        return gfx;
+    }
+    gfx_set_render_target(gfx, gfx->render_target, gfx->zstencil_target);
+    gfx_set_viewport(gfx, cfg->width, cfg->height);
+    gfx_init_sprite(gfx);
+
+    return gfx;
+}
+
+void gfx_system_shutdown(gfx_system_t* gfx)
+{
+    if (gfx) {
+        gfx_com_release_d3d11(gfx);
+        gfx_destroy_device_dependent_resources(gfx);
+        free(gfx);
+        gfx = NULL;
+    }
+}
+
+void gfx_system_bind_render_target(gfx_system_t* gfx)
+{
+    gfx_set_render_target(gfx, gfx->render_target, gfx->zstencil_target);
 }
 
 result gfx_create_swap_chain(gfx_system_t* gfx, const struct gfx_config* cfg)
@@ -460,6 +643,173 @@ void gfx_destroy_device_dependent_resources(gfx_system_t* gfx)
     }
 }
 
+void gfx_render_clear(gfx_system_t* gfx, const rgba_t* color)
+{
+    float clear_color[4];
+    clear_color[0] = color->r / 255.f;
+    clear_color[1] = color->g / 255.f;
+    clear_color[2] = color->b / 255.f;
+    clear_color[3] = color->a / 255.f;
+    if (gfx && gfx->ctx && gfx->render_target) {
+        struct gfx_texture2d* tex = (struct gfx_texture2d*)gfx->render_target->impl;
+        if (tex && tex->rtv) {
+            ID3D11DeviceContext1_ClearRenderTargetView(gfx->ctx, tex->rtv, (FLOAT*)clear_color);
+        }
+
+        struct gfx_texture2d* zs = (struct gfx_texture2d*)gfx->zstencil_target->impl;
+        if (zs && zs->dsv) {
+            u32 dsv_clear_flags = D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL;
+            u8 stencil = 0;
+            ID3D11DeviceContext1_ClearDepthStencilView(gfx->ctx, zs->dsv, dsv_clear_flags, 1.f, stencil);
+        }
+    }
+}
+
+void gfx_render_begin(gfx_system_t* gfx)
+{
+    if (gfx && gfx->ctx) {
+        // render scene begin
+        u32 vertex_count = 12;
+        u32 start_vertex = 0;
+        ID3D11DeviceContext1_VSSetShader(gfx->ctx, (ID3D11VertexShader*)gfx->vertex_shader->shader, NULL, 0);
+        ID3D11DeviceContext1_PSSetShader(gfx->ctx, (ID3D11PixelShader*)gfx->pixel_shader->shader, NULL, 0);
+        ID3D11DeviceContext1_PSSetSamplers(gfx->ctx, 0, 1, &gfx->sampler_state);
+        ID3D11DeviceContext1_Draw(gfx->ctx, vertex_count, start_vertex);
+    }
+    return;
+}
+
+void gfx_render_end(gfx_system_t* gfx, bool vsync, u32 flags)
+{
+    IDXGISwapChain1_Present(gfx->dxgi_swap_chain, (UINT)vsync, flags);
+}
+
+void gfx_init_sprite(gfx_system_t* gfx)
+{
+    struct gfx_vertex_data* vd = malloc(sizeof(struct gfx_vertex_data));
+    memset(vd, 0, sizeof(*vd));
+
+    vd->num_vertices = 4;
+    size_t sz_positions = sizeof(vec3f_t) * vd->num_vertices;
+    vd->positions = (vec3f_t*)malloc(sz_positions);
+
+    vd->tex_verts = (struct texture_vertex*)malloc(sizeof(struct texture_vertex));
+    size_t sz_tex_verts = sizeof(vec2f_t) * 4;
+    vd->tex_verts->data = malloc(sz_tex_verts);
+    vd->tex_verts->size = sizeof(vec2f_t);
+
+    gfx_create_buffer(gfx, vd, sz_positions + sz_tex_verts, GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DYNAMIC, &gfx->sprite_vb);
+}
+
+void gfx_draw_sprite(gfx_system_t* gfx, struct gfx_texture* texture, u32 width, u32 height, u32 flags)
+{
+}
+
+//
+// gfx buffer
+//
+result gfx_create_buffer(gfx_system_t* gfx, const void* data, size_t size, enum gfx_buffer_type type, enum gfx_buffer_usage usage, gfx_buffer_t** buffer)
+{
+    if (!gfx || !gfx->device)
+        return kResultNull;
+
+    gfx_buffer_t* buf = malloc(sizeof(gfx_buffer_t));
+    buf->usage = usage;
+    buf->type = type;
+
+    u32 cpu_access_flags = 0;
+    if (usage == GFX_BUFFER_USAGE_DYNAMIC)
+        cpu_access_flags = D3D11_CPU_ACCESS_WRITE;
+
+    u32 bind_flags = 0;
+    switch(type) {
+    case GFX_BUFFER_VERTEX:
+        bind_flags = D3D11_BIND_VERTEX_BUFFER;
+        break;
+    case GFX_BUFFER_INDEX:
+        bind_flags = D3D11_BIND_INDEX_BUFFER;
+        break;
+    case GFX_BUFFER_CONSTANT:
+        bind_flags = D3D11_BIND_CONSTANT_BUFFER;
+        break;
+    default:
+    case GFX_BUFFER_UNKNOWN:
+        return kResultUnknown;
+    }
+
+    D3D11_BUFFER_DESC desc = {
+        .Usage = gfx_buffer_usage_to_d3d11_usage(usage),
+        .CPUAccessFlags = (UINT)cpu_access_flags,
+        .ByteWidth = (UINT)size,
+        .BindFlags = (UINT)bind_flags,
+        .MiscFlags = 0,
+        .StructureByteStride = 0
+    };
+
+    buf->data = (u8*)data;
+    buf->size = size;
+
+    HRESULT hr = S_OK;
+    if (data && size) {
+        D3D11_SUBRESOURCE_DATA srd = {
+            .pSysMem = buf->data,
+            .SysMemPitch = 0,
+            .SysMemSlicePitch = 0
+        };
+        hr = ID3D11Device1_CreateBuffer(gfx->device, &desc, &srd, &buf->buffer);
+    } else {
+        hr = ID3D11Device1_CreateBuffer(gfx->device, &desc, NULL, &buf->buffer);
+    }
+
+    if (FAILED(hr))
+        return kResultNull;
+
+    *buffer = buf;
+
+    return kResultOk;
+}
+
+result gfx_buffer_copy_data(gfx_system_t* gfx, gfx_buffer_t* buffer, const void* data, size_t size)
+{
+    if (!gfx || !buffer || !data || size == 0)
+        return kResultNull;
+
+    D3D11_MAPPED_SUBRESOURCE sr = {
+        .DepthPitch = 0,
+        .pData = NULL,
+        .RowPitch = 0,
+    };
+
+    if (FAILED(ID3D11DeviceContext1_Map(gfx->ctx, (ID3D11Resource*)buffer->buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &sr)))
+        return kResultError;
+
+    memcpy(sr.pData, data, size);
+
+    ID3D11DeviceContext1_Unmap(gfx->ctx, (ID3D11Resource*)buffer->buffer, 0);
+
+    return kResultOk;
+}
+
+void gfx_bind_vertex_buffer(gfx_system_t* gfx, gfx_buffer_t* vb, u32 stride, u32 offset)
+{
+    if (gfx && gfx->ctx) {
+        ID3D11DeviceContext1_IASetVertexBuffers(gfx->ctx, 0, 1, &vb->buffer, (UINT*)&stride, (UINT*)&offset);
+    }
+}
+
+void gfx_upload_constant_buffer(gfx_system_t* gfx, const gfx_buffer_t* buffer, enum gfx_shader_type type)
+{
+    if (gfx && buffer) {
+        if (type == GFX_SHADER_VERTEX)
+            ID3D11DeviceContext1_VSSetConstantBuffers(gfx->ctx, 0, 1, &buffer->buffer);
+        else if (type == GFX_SHADER_PIXEL)
+            ID3D11DeviceContext1_PSSetConstantBuffers(gfx->ctx, 0, 1, &buffer->buffer);
+    }
+}
+
+//
+// gfx shader
+//
 gfx_shader_t* gfx_compile_shader_from_file(const char* path, const char* entrypoint, const char* target, enum gfx_shader_type type)
 {
     gfx_shader_t* shader = NULL;
@@ -495,20 +845,6 @@ gfx_shader_t* gfx_compile_shader_from_file(const char* path, const char* entrypo
     }
 
     return shader;
-}
-
-void gfx_bind_vertex_buffer(gfx_system_t* gfx, gfx_buffer_t* vb, u32 stride, u32 offset)
-{
-    if (gfx && gfx->ctx) {
-        ID3D11DeviceContext1_IASetVertexBuffers(gfx->ctx, 0, 1, &vb->buffer, &stride, &offset);
-    }
-}
-
-void gfx_bind_primitive_topology(gfx_system_t* gfx, enum gfx_topology topo)
-{
-    if (gfx && gfx->ctx) {
-        ID3D11DeviceContext1_IASetPrimitiveTopology(gfx->ctx, gfx_topology_to_d3d11_topology(topo));
-    }
 }
 
 result gfx_build_shader(gfx_system_t* gfx, gfx_shader_t* shader)
@@ -583,6 +919,13 @@ result gfx_create_shader_input_layout(gfx_system_t* gfx, gfx_shader_t* vs, enum 
     return kResultOk;
 }
 
+void gfx_bind_primitive_topology(gfx_system_t* gfx, enum gfx_topology topo)
+{
+    if (gfx && gfx->ctx) {
+        ID3D11DeviceContext1_IASetPrimitiveTopology(gfx->ctx, gfx_topology_to_d3d11_topology(topo));
+    }
+}
+
 void gfx_bind_input_layout(gfx_system_t* gfx, const gfx_shader_t* vs)
 {
     if (gfx && gfx->ctx && vs) {
@@ -602,120 +945,9 @@ void gfx_set_pixel_shader(gfx_system_t* gfx, gfx_shader_t* ps)
         gfx->pixel_shader = ps;
 }
 
-void gfx_upload_constant_buffer(gfx_system_t* gfx, const gfx_buffer_t* buffer, enum gfx_shader_type type)
-{
-    if (gfx && buffer) {
-        if (type == GFX_SHADER_VERTEX)
-            ID3D11DeviceContext1_VSSetConstantBuffers(gfx->ctx, 0, 1, &buffer->buffer);
-        else if (type == GFX_SHADER_PIXEL)
-            ID3D11DeviceContext1_PSSetConstantBuffers(gfx->ctx, 0, 1, &buffer->buffer);
-    }
-}
-
-D3D11_USAGE gfx_buffer_usage_to_d3d11_usage(enum gfx_buffer_usage usage)
-{
-    D3D11_USAGE d3d11_usage = D3D11_USAGE_DEFAULT;
-    switch (usage) {
-    case GFX_BUFFER_USAGE_DEFAULT:
-        d3d11_usage = D3D11_USAGE_DEFAULT;
-        break;
-    case GFX_BUFFER_USAGE_DYNAMIC:
-        d3d11_usage = D3D11_USAGE_DYNAMIC;
-        break;
-    case GFX_BUFFER_USAGE_IMMUTABLE:
-        d3d11_usage = D3D11_USAGE_IMMUTABLE;
-        break;
-    case GFX_BUFFER_USAGE_STAGING:
-        d3d11_usage = D3D11_USAGE_STAGING;
-        break;
-    case GFX_BUFFER_USAGE_UNKNOWN:
-    default:
-        break;
-    }
-    return d3d11_usage;
-}
-
-result gfx_create_buffer(gfx_system_t* gfx, const void* data, size_t size, enum gfx_buffer_type type, enum gfx_buffer_usage usage, gfx_buffer_t** buffer)
-{
-    if (!gfx || !gfx->device)
-        return kResultNull;
-
-    gfx_buffer_t* buf = malloc(sizeof(gfx_buffer_t));
-    buf->usage = usage;
-    buf->type = type;
-
-    u32 cpu_access_flags = 0;
-    if (usage == GFX_BUFFER_USAGE_DYNAMIC)
-        cpu_access_flags = D3D11_CPU_ACCESS_WRITE;
-
-    u32 bind_flags = 0;
-    switch(type) {
-    case GFX_BUFFER_VERTEX:
-        bind_flags = D3D11_BIND_VERTEX_BUFFER;
-        break;
-    case GFX_BUFFER_INDEX:
-        bind_flags = D3D11_BIND_INDEX_BUFFER;
-        break;
-    case GFX_BUFFER_CONSTANT:
-        bind_flags = D3D11_BIND_CONSTANT_BUFFER;
-        break;
-    default:
-    case GFX_BUFFER_UNKNOWN:
-        return kResultUnknown;
-    }
-
-    D3D11_BUFFER_DESC desc = {
-        .Usage = gfx_buffer_usage_to_d3d11_usage(usage),
-        .CPUAccessFlags = (UINT)cpu_access_flags,
-        .ByteWidth = (UINT)size,
-        .BindFlags = (UINT)bind_flags,
-        .MiscFlags = 0,
-        .StructureByteStride = 0
-    };
-
-    buf->data = (u8*)data;
-    buf->size = size;
-
-    HRESULT hr = S_OK;
-    if (data && size) {
-        D3D11_SUBRESOURCE_DATA srd = {
-            .pSysMem = buf->data,
-            .SysMemPitch = 0,
-            .SysMemSlicePitch = 0
-        };
-        hr = ID3D11Device1_CreateBuffer(gfx->device, &desc, &srd, &buf->buffer);
-    } else {
-        hr = ID3D11Device1_CreateBuffer(gfx->device, &desc, NULL, &buf->buffer);
-    }
-
-    if (FAILED(hr))
-        return kResultNull;
-
-    *buffer = buf;
-
-    return kResultOk;
-}
-
-result gfx_buffer_copy_data(gfx_system_t* gfx, gfx_buffer_t* buffer, const void* data, size_t size)
-{
-    if (!gfx || !buffer || !data || size == 0)
-        return kResultNull;
-
-    D3D11_MAPPED_SUBRESOURCE sr = {
-        .DepthPitch = 0,
-        .pData = NULL,
-        .RowPitch = 0,
-    };
-
-    ID3D11DeviceContext1_Map(gfx->ctx, (ID3D11Resource*)buffer->buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &sr);
-
-    memcpy(sr.pData, data, size);
-
-    ID3D11DeviceContext1_Unmap(gfx->ctx, (ID3D11Resource*)buffer->buffer, 0);
-
-    return kResultOk;
-}
-
+//
+// gfx sampler
+//
 result gfx_init_sampler_state(gfx_system_t* gfx)
 {
     if (!gfx || !gfx->device)
@@ -758,142 +990,53 @@ void gfx_bind_sampler_state(gfx_system_t* gfx, gfx_texture_t* texture, u32 slot)
     }
 }
 
-static bool gfx_get_monitor_target(const MONITORINFOEX* info, DISPLAYCONFIG_TARGET_DEVICE_NAME* target)
+//
+// gfx rasterizer
+//
+result gfx_init_rasterizer(gfx_system_t* gfx, enum gfx_culling_mode culling, enum gfx_raster_flags flags)
 {
-	bool found = false;
-
-	u32 num_paths = 0;
-    u32 num_modes = 0;
-	if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &num_paths, &num_modes) == ERROR_SUCCESS) {
-        DISPLAYCONFIG_PATH_INFO* paths = (DISPLAYCONFIG_PATH_INFO*)malloc(num_paths * (sizeof(DISPLAYCONFIG_PATH_INFO)));
-        DISPLAYCONFIG_MODE_INFO* modes = (DISPLAYCONFIG_MODE_INFO*)malloc(num_modes * (sizeof(DISPLAYCONFIG_MODE_INFO)));
-        if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &num_paths, paths, &num_modes, modes, NULL) == ERROR_SUCCESS) {
-			// realloc(paths, num_paths * sizeof(DISPLAYCONFIG_PATH_INFO));
-			for (size_t i = 0; i < num_paths; ++i) {
-				const DISPLAYCONFIG_PATH_INFO path = paths[i];
-				DISPLAYCONFIG_SOURCE_DEVICE_NAME source;
-                source.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
-                source.header.size = sizeof(source);
-                source.header.adapterId = path.sourceInfo.adapterId;
-				source.header.id = path.sourceInfo.id;
-				if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS) {
-                    // wchar_t info_device[512] = L"";
-                    // os_utf8_to_wcs(info->szDevice, 0, info_device, 512);
-                    if (wcscmp(info->szDevice, source.viewGdiDeviceName) == 0) {
-                        target->header.type = DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
-                        target->header.size = sizeof(*target);
-                        target->header.adapterId = path.sourceInfo.adapterId;
-                        target->header.id = path.targetInfo.id;
-                        found = DisplayConfigGetDeviceInfo(&target->header) == ERROR_SUCCESS;
-                        break;
-                    }
-				}
-			}
-		}
-        free(paths);
-        free(modes);
-        paths = NULL;
-        modes = NULL;
-	}
-	return found;
-}
-
-result gfx_enumerate_adapters(gfx_system_t* gfx, u32 adapter_index, u32* count)
-{
-    UINT i = 0;
-
-    result res = kResultNotFound;
-
-    for (i = 0; IDXGIFactory2_EnumAdapters1(gfx->dxgi_factory, i, &gfx->dxgi_adapter) == S_OK; i++) {
-        DXGI_ADAPTER_DESC desc;
-
-        IDXGIAdapter1_GetDesc(gfx->dxgi_adapter, &desc);
-
-        /* ignore Microsoft's 'basic' renderer */
-		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c)
-			continue;
-
-        char adapter_name[512] = "";
-
-        os_wcs_to_utf8(desc.Description, 0, adapter_name, sizeof adapter_name);
-
-        logger(LOG_INFO, "[gfx]\tDXGI Adapter %u: %s", i, (const char*)&adapter_name[0]);
-        logger(LOG_INFO, "     \tDedicated VRAM: %u", desc.DedicatedVideoMemory);
-        logger(LOG_INFO, "     \tShared VRAM:    %u", desc.SharedSystemMemory);
-        logger(LOG_INFO, "     \tPCI ID:         %x:%x", desc.VendorId, desc.DeviceId);
-        logger(LOG_INFO, "     \tRevision:       %u", desc.Revision);
-
-        LARGE_INTEGER umd;
-        if (SUCCEEDED(IDXGIAdapter1_CheckInterfaceSupport(gfx->dxgi_adapter, &BM_IID_IDXGIDevice, &umd))) {
-            const u64 version = umd.QuadPart;
-            const u16 aa = (version >> 48) & 0xffff;
-            const u16 bb = (version >> 32) & 0xffff;
-            const u16 ccccc = (version >> 16) &0xffff;
-            const u64 ddddd = version & 0xffff;
-            logger(LOG_INFO, "     \tDriver Version: %u.%u.%u.%u", aa, bb, ccccc, ddddd);
-        }
-        else {
-            logger(LOG_WARNING, "     \tDriver Version: Unknown");
-        }
-
-        if (adapter_index == i) {
-            res = kResultOk;
-            break;
-        }
-
-        logger(LOG_INFO, "[gfx] Monitors");
-        gfx_enumerate_adapter_monitors(gfx);
-
-        (*count)++;
+    bool changed = false;
+    if (gfx->raster_opts.culling_mode != culling ||
+        gfx->raster_opts.raster_flags != flags) {
+        changed = true;
     }
 
-    return res;
-}
+    if (gfx->raster_state && changed) {
+        ID3D11RasterizerState1_Release(gfx->raster_state);
+        gfx->raster_state = NULL;
+    }
 
-result gfx_enumerate_adapter_monitors(gfx_system_t* gfx)
-{
-    if (!gfx && !gfx->dxgi_adapter)
-        return kResultNull;
-
-    IDXGIOutput* dxgi_output = NULL;
-    u32 output_index = 0;
-    for (output_index = 0; IDXGIAdapter1_EnumOutputs(gfx->dxgi_adapter, output_index, &dxgi_output) == S_OK; output_index++) {
-        DXGI_OUTPUT_DESC desc;
-        if (FAILED(IDXGIOutput_GetDesc(dxgi_output, &desc)))
-            continue;
-
-        bool target_found = false;
-        DISPLAYCONFIG_TARGET_DEVICE_NAME target;
-
-        MONITORINFOEX nfo;
-        nfo.cbSize = sizeof(MONITORINFOEX);
-        if (GetMonitorInfo(desc.Monitor, (LPMONITORINFO)&nfo)) {
-            target_found = gfx_get_monitor_target(&nfo, &target);
-
-            DEVMODE mode;
-            mode.dmSize = sizeof(mode);
-            mode.dmDriverExtra = 0;
-
-            u32 refresh_rate = 0;
-            if (EnumDisplaySettings(nfo.szDevice, ENUM_CURRENT_SETTINGS, &mode)) {
-                refresh_rate = mode.dmDisplayFrequency;
-            }
-            const RECT rect = desc.DesktopCoordinates;
-            char device_name[512] = "";
-            char friendly_name[512] = "";
-            os_wcs_to_utf8(desc.DeviceName, 0, device_name, sizeof desc.DeviceName);
-            os_wcs_to_utf8(target.monitorFriendlyDeviceName, 0, friendly_name, sizeof target.monitorFriendlyDeviceName);
-            logger(LOG_INFO, "     \tOutput %u:     %s", output_index, device_name);
-            logger(LOG_INFO, "     \tFriendly Name: %s", friendly_name);
-            logger(LOG_INFO, "     \tPosition:      %d, %d", rect.left, rect.top);
-            logger(LOG_INFO, "     \tSize:          %d, %d", rect.right - rect.left, rect.bottom - rect.top);
-            logger(LOG_INFO, "     \tAttached:      %s", desc.AttachedToDesktop ? "true" : "false");
-            logger(LOG_INFO, "     \tRefresh Rate:  %uhz", refresh_rate);
+    if (!gfx->raster_state) {
+        D3D11_RASTERIZER_DESC desc = {
+            .FillMode = (flags & GFX_RASTER_WIREFRAME) ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID,
+            .CullMode = gfx_culling_mode_to_d3d11_cull_mode(culling),
+            .FrontCounterClockwise = (BOOL)(flags & GFX_RASTER_WINDING_CCW),
+            .DepthBias = 0,
+            .DepthBiasClamp = 0.f,
+            .SlopeScaledDepthBias = 0.f,
+            .DepthClipEnable = FALSE,
+            .ScissorEnable = (flags & GFX_RASTER_SCISSOR),
+            .MultisampleEnable = (flags & GFX_RASTER_MULTI_SAMPLE),
+            .AntialiasedLineEnable = (flags & GFX_RASTER_ANTIALIAS_LINES),
+        };
+        if (FAILED(ID3D11Device1_CreateRasterizerState(gfx->device, &desc, &gfx->raster_state))) {
+            return kResultNull;
         }
     }
+
     return kResultOk;
 }
 
+void gfx_bind_rasterizer(gfx_system_t* gfx)
+{
+    if (gfx && gfx->device) {
+        ID3D11DeviceContext1_RSSetState(gfx->ctx, gfx->raster_state);
+    }
+}
+
+//
+// gfx texture
+//
 result gfx_create_texture2d(gfx_system_t* gfx, const u8* data, const struct gfx_texture_desc* desc, gfx_texture_t** texture)
 {
     if (!texture || !*texture)
@@ -1046,6 +1189,23 @@ result gfx_init_render_target(gfx_system_t* gfx, u32 width, u32 height, enum gfx
     return kResultOk;
 }
 
+void gfx_set_render_target(gfx_system_t* gfx, gfx_texture_t* texture, gfx_texture_t* zstencil)
+{
+    if (gfx && gfx->ctx) {
+        ID3D11RenderTargetView* rtv = NULL;
+        ID3D11DepthStencilView* dsv = NULL;
+        if (texture && texture->impl) {
+            struct gfx_texture2d* tex = (struct gfx_texture2d*)texture->impl;
+            rtv = tex->rtv;
+        }
+        if (zstencil && zstencil->impl) {
+            struct gfx_texture2d* tex = (struct gfx_texture2d*)zstencil->impl;
+            dsv = tex->dsv;
+        }
+        ID3D11DeviceContext1_OMSetRenderTargets(gfx->ctx, 1, &rtv, dsv);
+    }
+}
+
 result gfx_create_zstencil_state(gfx_system_t* gfx, bool enable, struct gfx_zstencil_state** state)
 {
     if (!gfx || !gfx->device || !state)
@@ -1134,123 +1294,6 @@ void gfx_bind_zstencil_state(gfx_system_t* gfx, const struct gfx_zstencil_state*
     if (gfx && state) {
         ID3D11DeviceContext1_OMSetDepthStencilState(gfx->ctx, state->dss, 1);
     }
-}
-
-result gfx_init_rasterizer(gfx_system_t* gfx, enum gfx_culling_mode culling, enum gfx_raster_flags flags)
-{
-    bool changed = false;
-    if (gfx->raster_opts.culling_mode != culling ||
-        gfx->raster_opts.raster_flags != flags) {
-        changed = true;
-    }
-
-    if (gfx->raster_state && changed) {
-        ID3D11RasterizerState1_Release(gfx->raster_state);
-        gfx->raster_state = NULL;
-    }
-
-    if (!gfx->raster_state) {
-        D3D11_RASTERIZER_DESC desc = {
-            .FillMode = (flags & GFX_RASTER_WIREFRAME) ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID,
-            .CullMode = gfx_culling_mode_to_d3d11_cull_mode(culling),
-            .FrontCounterClockwise = (BOOL)(flags & GFX_RASTER_WINDING_CCW),
-            .DepthBias = 0,
-            .DepthBiasClamp = 0.f,
-            .SlopeScaledDepthBias = 0.f,
-            .DepthClipEnable = FALSE,
-            .ScissorEnable = (flags & GFX_RASTER_SCISSOR),
-            .MultisampleEnable = (flags & GFX_RASTER_MULTI_SAMPLE),
-            .AntialiasedLineEnable = (flags & GFX_RASTER_ANTIALIAS_LINES),
-        };
-        if (FAILED(ID3D11Device1_CreateRasterizerState(gfx->device, &desc, &gfx->raster_state))) {
-            return kResultNull;
-        }
-    }
-
-    return kResultOk;
-}
-
-void gfx_bind_rasterizer(gfx_system_t* gfx)
-{
-    if (gfx && gfx->device) {
-        ID3D11DeviceContext1_RSSetState(gfx->ctx, gfx->raster_state);
-    }
-}
-
-void gfx_set_viewport(gfx_system_t* gfx, u32 width, u32 height)
-{
-    D3D11_VIEWPORT viewport = {
-        .Width = (FLOAT)width,
-        .Height = (FLOAT)height,
-        .MaxDepth = 1.f,
-        .MinDepth = 0.f,
-        .TopLeftX = 0.f,
-        .TopLeftY = 0.f,
-    };
-
-    ID3D11DeviceContext1_RSSetViewports(gfx->ctx, 1, &viewport);
-}
-
-void gfx_render_clear(gfx_system_t* gfx, const rgba_t* color)
-{
-    float clear_color[4];
-    clear_color[0] = color->r / 255.f;
-    clear_color[1] = color->g / 255.f;
-    clear_color[2] = color->b / 255.f;
-    clear_color[3] = color->a / 255.f;
-    if (gfx && gfx->ctx && gfx->render_target) {
-        struct gfx_texture2d* tex = (struct gfx_texture2d*)gfx->render_target->impl;
-        if (tex && tex->rtv) {
-            ID3D11DeviceContext1_ClearRenderTargetView(gfx->ctx, tex->rtv, (FLOAT*)clear_color);
-        }
-
-        struct gfx_texture2d* zs = (struct gfx_texture2d*)gfx->zstencil_target->impl;
-        if (zs && zs->dsv) {
-            u32 dsv_clear_flags = D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL;
-            u8 stencil = 0;
-            ID3D11DeviceContext1_ClearDepthStencilView(gfx->ctx, zs->dsv, dsv_clear_flags, 1.f, stencil);
-        }
-    }
-}
-
-void gfx_render_begin(gfx_system_t* gfx)
-{
-    if (gfx && gfx->ctx) {
-        // render scene begin
-        u32 vertex_count = 4;
-        u32 start_vertex = 0;
-        ID3D11DeviceContext1_VSSetShader(gfx->ctx, (ID3D11VertexShader*)gfx->vertex_shader->shader, NULL, 0);
-        ID3D11DeviceContext1_PSSetShader(gfx->ctx, (ID3D11PixelShader*)gfx->pixel_shader->shader, NULL, 0);
-        ID3D11DeviceContext1_PSSetSamplers(gfx->ctx, 0, 1, &gfx->sampler_state);
-        ID3D11DeviceContext1_Draw(gfx->ctx, vertex_count, start_vertex);
-    }
-    return;
-}
-
-void gfx_render_end(gfx_system_t* gfx, bool vsync, u32 flags)
-{
-    IDXGISwapChain1_Present(gfx->dxgi_swap_chain, (UINT)vsync, flags);
-}
-
-void gfx_init_sprite(gfx_system_t* gfx)
-{
-    struct gfx_vertex_data* vd = malloc(sizeof(struct gfx_vertex_data));
-    memset(vd, 0, sizeof(*vd));
-
-    vd->num_vertices = 4;
-    size_t sz_positions = sizeof(vec3f_t) * vd->num_vertices;
-    vd->positions = (vec3f_t*)malloc(sz_positions);
-
-    vd->tex_verts = (struct texture_vertex*)malloc(sizeof(struct texture_vertex));
-    size_t sz_tex_verts = sizeof(vec2f_t) * 4;
-    vd->tex_verts->data = malloc(sz_tex_verts);
-    vd->tex_verts->size = sizeof(vec2f_t);
-
-    gfx_create_buffer(gfx, vd, sz_positions + sz_tex_verts, GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DYNAMIC, &gfx->sprite_vb);
-}
-
-void gfx_draw_sprite(gfx_system_t* gfx, struct gfx_texture* texture, u32 width, u32 height, u32 flags)
-{
 }
 
 u32 gfx_texture_get_width(gfx_texture_t* texture)

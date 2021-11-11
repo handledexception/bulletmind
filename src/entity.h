@@ -41,13 +41,25 @@ typedef enum {
 	kEntityBullet = 1 << 5,
 	kEntityPlayer = 1 << 6,
 	kEntityRenderable = 1 << 7,
-	kEntityEnemy = 1 << 9
+	kEntityEnemy = 1 << 9,
+	kEntityCamera = 1 << 10,
+	kEntityTile = 1 << 11,
 } entity_caps_t;
+
+typedef enum {
+	kSatelliteStationary =  1 << 0,
+	kSatelliteOrbitCW = 1 << 1,
+	kSatelliteOrbitCCW = 1 << 2,
+	kSatelliteTargetNearestEnemy = 1 << 3,
+	kSatelliteTargetNearestFriendly = 1 << 4,
+	kSatelliteCollectItems = 1 << 5
+} satellite_flags_t;
 
 typedef struct entity_s {
 	s32 index;
 	char name[TEMP_STRING_MAX];
 	entity_caps_t caps;
+	s32 flags;
 
 	struct vec3f origin; // top-left
 	struct bounds bbox;
@@ -116,3 +128,5 @@ void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* eng,
 void ent_move_bullet(entity_t* bullet, engine_t* eng, const f64 dt);
 
 void ent_move_enemy(entity_t* enemy, entity_t* player, engine_t* eng, f64 dt);
+
+// void ent_spawn_tile(entity_t* ent_list, )
