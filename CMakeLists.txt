@@ -52,7 +52,8 @@ set(BM_CORE_HEADERS
     src/core/string.h
     src/core/time_convert.h
     src/core/types.h
-    src/core/utils.h)
+    src/core/utils.h
+    src/core/vector.h)
 set(BM_CORE_SOURCES
     src/core/binary.c
     src/core/buffer.c

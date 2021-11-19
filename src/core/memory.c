@@ -20,8 +20,8 @@
 
 #include <assert.h>
 
-static uint64_t gNumAllocations = 0;
-static uint64_t gBytesAllocated = 0;
+static uint64_t g_num_allocations = 0;
+static uint64_t g_bytes_allocated = 0;
 static struct memory_allocator gAllocator = { malloc, realloc, free };
 
 size_t arena_allocated_bytes = 0;
@@ -31,9 +31,8 @@ arena_t g_mem_arena = {NULL, 0, 0, 0};
 void* bm_malloc(size_t size)
 {
 	void* ptr = gAllocator.malloc(size);
-	size_t bytes_allocated = gBytesAllocated + size;
-	os_atomic_set_long(&gBytesAllocated, bytes_allocated);
-	os_atomic_inc_long(&gNumAllocations);
+	os_atomic_set_long(&g_bytes_allocated, g_bytes_allocated + size);
+	os_atomic_inc_long(&g_num_allocations);
 	return ptr;
 }
 
@@ -41,9 +40,9 @@ void* bm_realloc(void* ptr, size_t size)
 {
 	if (ptr) {
 		realloc(ptr, size);
-		size_t bytes_allocated = gBytesAllocated + size;
-		os_atomic_set_long(&gBytesAllocated, bytes_allocated);
-		os_atomic_inc_long(&gNumAllocations);
+		size_t bytes_allocated = g_bytes_allocated + size;
+		os_atomic_set_long(&g_bytes_allocated, bytes_allocated);
+		os_atomic_inc_long(&g_num_allocations);
 	}
 }
 
@@ -51,7 +50,7 @@ void  bm_free(void* ptr)
 {
 	if (ptr) {
 		gAllocator.free(ptr);
-		os_atomic_dec_long(&gNumAllocations);
+		os_atomic_dec_long(&g_num_allocations);
 	}
 }
 

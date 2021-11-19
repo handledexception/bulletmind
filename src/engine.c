@@ -226,9 +226,9 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	tetrahedron->colors[6] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
 	tetrahedron->colors[7] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
 	tetrahedron->colors[8] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
-	tetrahedron->colors[9] = (vec4f_t){ 0.f, 1.f, 1.f, 1.f };
-	tetrahedron->colors[10] = (vec4f_t){ 0.f, 1.f, 1.f, 1.f };
-	tetrahedron->colors[11] = (vec4f_t){ 0.f, 1.f, 1.f, 1.f };
+	tetrahedron->colors[9] = (vec4f_t){ 0.25f, 0.33f, 1.f, 1.f };
+	tetrahedron->colors[10] = (vec4f_t){ 0.25f, 0.33f, 1.f, 1.f };
+	tetrahedron->colors[11] = (vec4f_t){ 0.25f, 0.33f, 1.f, 1.f };
 	size_t vbd_size = (sizeof(vec3f_t) * num_verts) + (sizeof(vec4f_t) * num_verts);
 	uint8_t* vertex_data = (uint8_t*)malloc(vbd_size);
 	size_t offset = 0;

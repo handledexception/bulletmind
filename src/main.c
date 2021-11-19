@@ -30,6 +30,7 @@
 #include "core/string.h"
 #include "core/time_convert.h"
 #include "core/utils.h"
+#include "core/vector.h"
 
 #include "math/vec2.h"
 
@@ -195,8 +196,22 @@ void print_debug_info(engine_t* engine, f64 dt)
 	}
 }
 
+struct vec_elem {
+	int id;
+	float val;
+};
+
 int main(int argc, char** argv)
 {
+	struct vector v;
+	vector_create(&v);
+	struct vec_elem e1 = { .id = 5, .val = 3.14f };
+	struct vec_elem e2 = { .id = 6, .val = 6.28f };
+	vector_push_back(&v, &e1, sizeof(struct vec_elem));
+	vector_push_back(&v, &e2, sizeof(struct vec_elem));
+	struct vec_elem* e3 = (struct vec_elem*)vector_elem(&v, sizeof(struct vec_elem), 0);
+	struct vec_elem* e4 = (struct vec_elem*)vector_elem(&v, sizeof(struct vec_elem), 1);
+	
 	char s[26] = "\"Main screen turn on...\"";
 	str_upper_no_copy(s, 0);
 	logger(LOG_INFO, "%s\n", s);

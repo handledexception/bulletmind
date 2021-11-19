@@ -271,7 +271,7 @@ BM_EXPORT void gfx_destroy_texture(gfx_texture_t* texture);
 BM_EXPORT result gfx_init_render_target(gfx_system_t* gfx, u32 width, u32 height, enum gfx_pixel_format pf);
 BM_EXPORT void gfx_set_render_target(gfx_system_t* gfx, gfx_texture_t* texture, gfx_texture_t* zstencil);
 BM_EXPORT result gfx_create_zstencil_state(gfx_system_t* gfx, bool enable, struct gfx_zstencil_state** state);
-BM_EXPORT result gfx_init_zstencil(gfx_system_t* gfx, u32 width, u32 height, bool enabled);
+BM_EXPORT result gfx_init_zstencil(gfx_system_t* gfx, u32 width, u32 height, enum gfx_pixel_format pix_fmt, bool enabled);
 BM_EXPORT void gfx_destroy_zstencil(gfx_system_t* gfx);
 BM_EXPORT void gfx_bind_zstencil_state(gfx_system_t* gfx, const struct gfx_zstencil_state* state);
 

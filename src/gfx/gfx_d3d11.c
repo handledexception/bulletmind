@@ -428,7 +428,7 @@ gfx_system_t* gfx_system_init(const struct gfx_config* cfg, s32 flags)
     }
 
     if (gfx_init_render_target(gfx, cfg->width, cfg->height, cfg->pix_fmt) != kResultOk ||
-        gfx_init_zstencil(gfx, cfg->width, cfg->height, false) != kResultOk) {
+        gfx_init_zstencil(gfx, cfg->width, cfg->height, GFX_FORMAT_DEPTH_U24, false) != kResultOk) {
         gfx_com_release_d3d11(gfx);
         free((void*)gfx);
         gfx = NULL;
@@ -1242,7 +1242,7 @@ result gfx_create_zstencil_state(gfx_system_t* gfx, bool enable, struct gfx_zste
 }
 
 // TODO(paulh): Release stuff if failed!!!!!
-result gfx_init_zstencil(gfx_system_t* gfx, u32 width, u32 height, bool enabled)
+result gfx_init_zstencil(gfx_system_t* gfx, u32 width, u32 height, enum gfx_pixel_format pix_fmt, bool enabled)
 {
     if (!gfx || !gfx->device)
         return kResultNull;
@@ -1251,7 +1251,7 @@ result gfx_init_zstencil(gfx_system_t* gfx, u32 width, u32 height, bool enabled)
 
     struct gfx_texture_desc desc = {
         .type = GFX_TEXTURE_2D,
-        .pix_fmt = GFX_FORMAT_DEPTH_U24,
+        .pix_fmt = pix_fmt,
         .width = width,
         .height = height,
         .mip_levels = 1,
