@@ -428,7 +428,7 @@ gfx_system_t* gfx_system_init(const struct gfx_config* cfg, s32 flags)
     }
 
     if (gfx_init_render_target(gfx, cfg->width, cfg->height, cfg->pix_fmt) != kResultOk ||
-        gfx_init_zstencil(gfx, cfg->width, cfg->height, GFX_FORMAT_DEPTH_U24, false) != kResultOk) {
+        gfx_init_zstencil(gfx, cfg->width, cfg->height, GFX_FORMAT_DEPTH_U24, flags & BM_GFX_DEPTH_TEST) != kResultOk) {
         gfx_com_release_d3d11(gfx);
         free((void*)gfx);
         gfx = NULL;
@@ -1014,7 +1014,7 @@ result gfx_init_rasterizer(gfx_system_t* gfx, enum gfx_culling_mode culling, enu
             .DepthBias = 0,
             .DepthBiasClamp = 0.f,
             .SlopeScaledDepthBias = 0.f,
-            .DepthClipEnable = FALSE,
+            .DepthClipEnable = TRUE,
             .ScissorEnable = (flags & GFX_RASTER_SCISSOR),
             .MultisampleEnable = (flags & GFX_RASTER_MULTI_SAMPLE),
             .AntialiasedLineEnable = (flags & GFX_RASTER_ANTIALIAS_LINES),
@@ -1222,15 +1222,15 @@ result gfx_create_zstencil_state(gfx_system_t* gfx, bool enable, struct gfx_zste
         .DepthEnable = enable,
         .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL,
         .DepthFunc = D3D11_COMPARISON_LESS,
-        .StencilEnable = true,
+        .StencilEnable = enable,
         .StencilReadMask = 0xFF,
         .StencilWriteMask = 0xFF,
         .FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP,
-        .FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR,
+        .FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
         .FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP,
         .FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS,
         .BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP,
-        .BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR,
+        .BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
         .BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP,
         .BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS,
     };
@@ -1264,12 +1264,7 @@ result gfx_init_zstencil(gfx_system_t* gfx, u32 width, u32 height, enum gfx_pixe
     gfx->zstencil_state_disabled = malloc(sizeof(*gfx->zstencil_state_disabled));
     gfx_create_zstencil_state(gfx, false, &gfx->zstencil_state_disabled);
     gfx_create_zstencil_state(gfx, true, &gfx->zstencil_state_enabled);
-
-    if (enabled) {
-        gfx_bind_zstencil_state(gfx, gfx->zstencil_state_enabled);
-    } else {
-        gfx_bind_zstencil_state(gfx, gfx->zstencil_state_disabled);
-    }
+    gfx_toggle_zstencil(gfx, enabled);
 
     return kResultOk;
 }
@@ -1293,6 +1288,16 @@ void gfx_bind_zstencil_state(gfx_system_t* gfx, const struct gfx_zstencil_state*
 {
     if (gfx && state) {
         ID3D11DeviceContext1_OMSetDepthStencilState(gfx->ctx, state->dss, 1);
+    }
+}
+
+void gfx_toggle_zstencil(gfx_system_t* gfx, bool enabled)
+{
+    if (gfx) {
+        if (enabled)
+            gfx_bind_zstencil_state(gfx, gfx->zstencil_state_enabled);
+        else
+            gfx_bind_zstencil_state(gfx, gfx->zstencil_state_disabled);
     }
 }
 

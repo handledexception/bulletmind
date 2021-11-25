@@ -19,13 +19,9 @@ struct VSOutput
 VSOutput VSMain(VSInput input)
 {
     VSOutput output;
-
     input.position.w = 1.0f;
-
     output.position = mul(input.position, world);
     output.position = mul(output.position, view_proj);
-
     output.color = input.color;
-
     return output;
 }

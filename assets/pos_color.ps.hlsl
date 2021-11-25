@@ -9,5 +9,5 @@ struct VSOutput
 
 float4 PSMain(VSOutput input) : SV_TARGET0
 {
-    return float4(input.color.xyz, 1.f);
+    return float4(input.color);
 }

@@ -8,8 +8,8 @@
 extern "C" {
 #endif
 
-#define Z_NEAR 1.f
-#define Z_FAR -1.f
+#define Z_NEAR 0.0f
+#define Z_FAR 100.f
 #define FOV_Y 90.f
 
 typedef struct vec2f vec2f_t;
@@ -21,7 +21,8 @@ typedef struct rgba rgba_t;
 typedef enum {
     BM_GFX_D3D11 = 1 << 0,
     BM_GFX_OPENGL = 1 << 1,
-    BM_GFX_INVALID = 1 << 2
+    BM_GFX_DEPTH_TEST = 1 << 2,
+    BM_GFX_INVALID = 1 << 3
 } gfx_system_flags;
 
 struct gfx_system;
@@ -274,6 +275,7 @@ BM_EXPORT result gfx_create_zstencil_state(gfx_system_t* gfx, bool enable, struc
 BM_EXPORT result gfx_init_zstencil(gfx_system_t* gfx, u32 width, u32 height, enum gfx_pixel_format pix_fmt, bool enabled);
 BM_EXPORT void gfx_destroy_zstencil(gfx_system_t* gfx);
 BM_EXPORT void gfx_bind_zstencil_state(gfx_system_t* gfx, const struct gfx_zstencil_state* state);
+BM_EXPORT void gfx_toggle_zstencil(gfx_system_t* gfx, bool enabled);
 
 // misc
 BM_EXPORT u32 gfx_get_bits_per_pixel(enum gfx_pixel_format pf);

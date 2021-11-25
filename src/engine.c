@@ -141,13 +141,14 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 		.h = eng->window_rect.h,
 	};
 	// vec3f_t cam_pos = {-0.777f, 1.566f, -2.5f};
-	vec3f_t cam_pos = {0.25f, 0.75f, -1.f};
-	vec3f_t cam_dir = {0.f, 0.f, 1.f};
+	vec3f_t cam_pos = {0.f, 1.f, -1.f};
+	vec3f_t cam_dir = {0.f, 0.f, 0.f};
 	vec3f_t cam_up = {0.f, 1.f, 0.f};
 	gfx_camera_persp(&cam_pers, &cam_pos, &cam_dir, &cam_up, &viewport,
-			 75.f, Z_NEAR, Z_FAR);
+			 60.f, Z_NEAR, Z_FAR);
 
-	gfx_system_t* gfx_sys = gfx_system_init(&gfx_cfg, BM_GFX_D3D11);
+	bool zstencil_enabled = true;
+	gfx_system_t* gfx_sys = gfx_system_init(&gfx_cfg, BM_GFX_D3D11|(zstencil_enabled?BM_GFX_DEPTH_TEST:0));
 	gfx_shader_t* hlsl_vs = gfx_compile_shader_from_file(
 		"assets/pos_color.vs.hlsl", "VSMain", kDX11VertexShaderTarget,
 		GFX_SHADER_VERTEX);
@@ -160,82 +161,94 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	gfx_set_vertex_shader(gfx_sys, hlsl_vs);
 	gfx_set_pixel_shader(gfx_sys, hlsl_ps);
 
-	mat4f_t world_matrix, trans_matrix, scale_matrix;
+	mat4f_t world_matrix, view_proj_matrix, trans_matrix, scale_matrix;
 	mat4f_identity(&world_matrix);
+	mat4f_identity(&view_proj_matrix);
+	mat4f_identity(&trans_matrix);
+	mat4f_identity(&scale_matrix);
 	const vec4f_t trans_vec = { 0.f, 0.f, 0.0f, 1.f };
-	const vec4f_t scale_vec = { 0.5f, 0.5f, 0.5f, 1.f };
+	const vec4f_t scale_vec = { 1.f, 1.f, 1.f, 1.f };
 	mat4f_translate(&trans_matrix, &trans_vec);
 	mat4f_scale(&scale_matrix, &scale_vec);
 	mat4f_mul(&world_matrix, &trans_matrix, &scale_matrix);
-	mat4f_t view_proj_matrix;
 	mat4f_mul(&view_proj_matrix, &cam_pers.view_matrix, &cam_pers.proj_matrix);
 	mat4f_transpose(&view_proj_matrix, &view_proj_matrix);
-	size_t num_vs_vars = 2;
-	gfx_shader_var_t* vs_vars = malloc(sizeof(gfx_shader_var_t) * num_vs_vars);
-	vs_vars[0].name = "world";
-	vs_vars[0].type = GFX_SHADER_PARAM_VEC4;
-	vs_vars[0].data = malloc(sizeof(mat4f_t));
-	vs_vars[0].size = sizeof(mat4f_t);
-	vs_vars[0].offset = 0;
-	memcpy((void*)vs_vars[0].data, (const void*)&world_matrix, sizeof(mat4f_t));
-	vs_vars[1].name = "view_proj";
-	vs_vars[1].type = GFX_SHADER_PARAM_VEC4;
-	vs_vars[1].data = malloc(sizeof(mat4f_t));
-	vs_vars[1].size = sizeof(mat4f_t);
-	vs_vars[1].offset = sizeof(mat4f_t);
-	memcpy((void*)vs_vars[1].data, (const void*)&view_proj_matrix, sizeof(mat4f_t));
-	gfx_buffer_t* cbuffer;
-	size_t cbuffer_size = ((sizeof(mat4f_t) * num_vs_vars) + 15) & 0xfffffff0;
-	uint8_t* cbuffer_data = (uint8_t*)malloc(cbuffer_size);
-	memcpy(&cbuffer_data[0], vs_vars[1].data, sizeof(mat4f_t));
-	memcpy(&cbuffer_data[(sizeof(mat4f_t) + 15) & ~15], vs_vars[0].data, sizeof(mat4f_t));
+	// view_proj_matrix.z.z = -view_proj_matrix.z.z;
+	// size_t num_vs_vars = 2;
+	// gfx_shader_var_t* vs_vars = bm_malloc(sizeof(gfx_shader_var_t) * num_vs_vars);
+	// vs_vars[0].name = "world";
+	// vs_vars[0].type = GFX_SHADER_PARAM_VEC4;
+	// vs_vars[0].data = bm_malloc(sizeof(mat4f_t));
+	// vs_vars[0].size = sizeof(mat4f_t);
+	// vs_vars[0].offset = 0;
+	// memcpy((void*)vs_vars[0].data, (const void*)&world_matrix, sizeof(mat4f_t));
+	// vs_vars[1].name = "view_proj";
+	// vs_vars[1].type = GFX_SHADER_PARAM_VEC4;
+	// vs_vars[1].data = bm_malloc(sizeof(mat4f_t));
+	// vs_vars[1].size = sizeof(mat4f_t);
+	// vs_vars[1].offset = sizeof(mat4f_t);
+	// memcpy((void*)vs_vars[1].data, (const void*)&view_proj_matrix, sizeof(mat4f_t));
+	gfx_buffer_t* cbuffer = NULL;
+	u32 num_shader_vars = 2;
+	size_t cbuffer_size = ((sizeof(mat4f_t) * num_shader_vars) + 15) & 0xfffffff0;
+	uint8_t* cbuffer_data = (uint8_t*)bm_malloc(cbuffer_size);
+	// memcpy(&cbuffer_data[0], vs_vars[1].data, sizeof(mat4f_t));
+	// memcpy(&cbuffer_data[(sizeof(mat4f_t) + 15) & ~15], vs_vars[0].data, sizeof(mat4f_t));
+	memcpy(&cbuffer_data[0], (const void*)&world_matrix, sizeof(mat4f_t));
+	memcpy(&cbuffer_data[(sizeof(mat4f_t) + 15) & ~15], (const void*)&view_proj_matrix, sizeof(mat4f_t));
 	gfx_create_buffer(gfx_sys, NULL, cbuffer_size, GFX_BUFFER_CONSTANT, GFX_BUFFER_USAGE_DYNAMIC, &cbuffer);
 
-	struct gfx_vertex_data* tetrahedron = malloc(sizeof(*tetrahedron));
-	u32 num_verts = 12;
+	struct gfx_vertex_data* vertices = bm_malloc(sizeof(*vertices));
+	// u32 num_verts = 12;
+	u32 num_verts = 6;
 	u32 vertex_stride = gfx_get_vertex_stride(GFX_VERTEX_POS_COLOR);
-	tetrahedron->num_vertices = num_verts;
-	tetrahedron->positions = malloc(sizeof(vec3f_t) * num_verts);
-	tetrahedron->colors = malloc(sizeof(vec4f_t) * num_verts);
-	tetrahedron->positions[0] = (vec3f_t){1.f, 0.f, 1.f};
-	tetrahedron->positions[1] = (vec3f_t){0.f, 1.f, 1.f};
-	tetrahedron->positions[2] = (vec3f_t){-1.f, 0.f, 1.f};
-	tetrahedron->positions[3] = (vec3f_t){1.f, 0.f, 1.f};
-	tetrahedron->positions[4] = (vec3f_t){0.f, 1.f, 1.f};
-	tetrahedron->positions[5] = (vec3f_t){0.f, 0.f, -1.f};
-	tetrahedron->positions[6] = (vec3f_t){0.f, 1.f, 1.f};
-	tetrahedron->positions[7] = (vec3f_t){-1.f, 0.f, 1.f};
-	tetrahedron->positions[8] = (vec3f_t){0.f, 0.f, -1.f};
-	tetrahedron->positions[9] = (vec3f_t){1.f, 0.f, 1.f};
-	tetrahedron->positions[10] = (vec3f_t){-1.f, 0.f, 1.f};
-	tetrahedron->positions[11] = (vec3f_t){0.f, 0.f, -1.f};
-	// tetrahedron->positions[0] = (vec3f_t){1.f, 0.f, 1.f};
-	// tetrahedron->positions[1] = (vec3f_t){0.f, 1.f, 1.f};
-	// tetrahedron->positions[2] = (vec3f_t){-1.f, 0.f, 1.f};
-	// tetrahedron->positions[3] = (vec3f_t){0.f, 0.f, -1.f};
-	// tetrahedron->colors[0] = (vec4f_t){1.f, 0.f, 0.f, 1.f};
-	// tetrahedron->colors[1] = (vec4f_t){0.0f, 1.f, 0.f, 1.f};
-	// tetrahedron->colors[2] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
-	// tetrahedron->colors[3] = (vec4f_t){0.333f, 0.444f, 0.555f, 1.f};
-	tetrahedron->colors[0] = (vec4f_t){ 1.f, 0.f, 0.f, 1.f };
-	tetrahedron->colors[1] = (vec4f_t){ 1.f, 0.f, 0.f, 1.f };
-	tetrahedron->colors[2] = (vec4f_t){ 1.f, 0.f, 0.f, 1.f };
-	tetrahedron->colors[3] = (vec4f_t){ 0.f, 1.f, 0.f, 1.f };
-	tetrahedron->colors[4] = (vec4f_t){ 0.f, 1.f, 0.f, 1.f };
-	tetrahedron->colors[5] = (vec4f_t){ 0.f, 1.f, 0.f, 1.f };
-	tetrahedron->colors[6] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
-	tetrahedron->colors[7] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
-	tetrahedron->colors[8] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
-	tetrahedron->colors[9] = (vec4f_t){ 0.25f, 0.33f, 1.f, 1.f };
-	tetrahedron->colors[10] = (vec4f_t){ 0.25f, 0.33f, 1.f, 1.f };
-	tetrahedron->colors[11] = (vec4f_t){ 0.25f, 0.33f, 1.f, 1.f };
+	vertices->num_vertices = num_verts;
+	vertices->positions = bm_malloc(sizeof(vec3f_t) * num_verts);
+	vertices->colors = bm_malloc(sizeof(vec4f_t) * num_verts);
+	// vertices->positions[0]   = (vec3f_t){ -0.5f,  0.f,  1.f };
+	// vertices->positions[1]   = (vec3f_t){  0.5f,  0.f,  1.f };
+	// vertices->positions[2]   = (vec3f_t){  0.f,   1.f,  1.f };
+	// vertices->positions[3]   = (vec3f_t){ -0.5f,  0.f,  2.f };
+	// vertices->positions[4]   = (vec3f_t){  0.5f,  0.f,  2.f };
+	// vertices->positions[5]   = (vec3f_t){  0.f,   1.f,  2.f };
+	// vertices->positions[6]   = (vec3f_t){ -0.5f,  0.f,  3.f };
+	// vertices->positions[7]   = (vec3f_t){  0.5f,  0.f,  3.f };
+	// vertices->positions[8]   = (vec3f_t){  0.f,   1.f,  3.f };
+	// vertices->positions[9]   = (vec3f_t){ -0.5f,  0.f,  4.f };
+	// vertices->positions[10]  = (vec3f_t){  0.5f,  0.f,  4.f };
+	// vertices->positions[11]  = (vec3f_t){  0.f,   1.f,  4.f };
+	// vertices->colors[0] = (vec4f_t){ 1.f, 0.f, 0.f, 1.f };
+	// vertices->colors[1] = (vec4f_t){ 0.f, 1.f, 0.f, 1.f };
+	// vertices->colors[2] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
+	// vertices->colors[3] = (vec4f_t){ 1.f, 0.f, 0.f, 1.f };
+	// vertices->colors[4] = (vec4f_t){ 0.f, 1.f, 0.f, 1.f };
+	// vertices->colors[5] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
+	// vertices->colors[6] = (vec4f_t){ 1.f, 0.f, 0.f, 1.f };
+	// vertices->colors[7] = (vec4f_t){ 0.f, 1.f, 0.f, 1.f };
+	// vertices->colors[8] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
+	// vertices->colors[9] =  (vec4f_t){ 1.f, 0.f, 0.f, 1.f };
+	// vertices->colors[10] = (vec4f_t){ 0.f, 1.f, 0.f, 1.f };
+	// vertices->colors[11] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
+	vertices->positions[0]   = (vec3f_t){ -0.5f,  0.f, -0.5f };
+	vertices->positions[1]   = (vec3f_t){  0.5f,  0.f, -0.5f };
+	vertices->positions[2]   = (vec3f_t){  0.5f,  0.f,  0.5f };
+	vertices->positions[3]   = (vec3f_t){ -0.5f,  0.f, -0.5f };
+	vertices->positions[4]   = (vec3f_t){  0.5f,  0.f,  0.5f };
+	vertices->positions[5]   = (vec3f_t){ -0.5f,  0.f,  0.5f };
+	vertices->colors[0] = (vec4f_t){ 1.f, 0.f, 0.f, 1.f };
+	vertices->colors[1] = (vec4f_t){ 0.f, 1.f, 0.f, 1.f };
+	vertices->colors[2] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
+	vertices->colors[3] = (vec4f_t){ 1.f, 0.f, 0.f, 1.f };
+	vertices->colors[4] = (vec4f_t){ 0.f, 1.f, 0.f, 1.f };
+	vertices->colors[5] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
+
 	size_t vbd_size = (sizeof(vec3f_t) * num_verts) + (sizeof(vec4f_t) * num_verts);
-	uint8_t* vertex_data = (uint8_t*)malloc(vbd_size);
+	uint8_t* vertex_data = (uint8_t*)bm_malloc(vbd_size);
 	size_t offset = 0;
 	for (u32 i = 0; i < num_verts; i++) {
-		memcpy((void*)&vertex_data[offset], (const void*)&tetrahedron->positions[i], sizeof(struct vec3f));
+		memcpy((void*)&vertex_data[offset], (const void*)&vertices->positions[i], sizeof(struct vec3f));
 		offset  += sizeof(struct vec3f);
-		memcpy((void*)&vertex_data[offset], (const void*)&tetrahedron->colors[i], sizeof(struct vec4f));
+		memcpy((void*)&vertex_data[offset], (const void*)&vertices->colors[i], sizeof(struct vec4f));
 		offset += sizeof(struct vec4f);
 	}
 	gfx_buffer_t* vertex_buffer = NULL;
@@ -251,11 +264,48 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	bool done = false;
 	while (!done) {
 		if (SDL_PollEvent(&event) != 0) {
-			if ((event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) || event.type == SDL_QUIT) {
+			if (event.type == SDL_QUIT) {
 				done = true;
 				break;
 			}
+			if (event.type == SDL_KEYDOWN) {
+				if (event.key.keysym.scancode == SDL_SCANCODE_W) {
+					printf("w\n");
+					mat4f_t trans_fwd;
+					const vec4f_t trans_vec = { 0.f, 0.f, -0.1f, 1.f };
+					mat4f_translate(&trans_fwd, &trans_vec);
+					mat4f_mul(&view_proj_matrix, &view_proj_matrix, &trans_fwd);
+				} else if (event.key.keysym.scancode == SDL_SCANCODE_S) {
+					printf("s\n");
+					mat4f_t trans_bkwd;
+					const vec4f_t trans_vec = { 0.f, 0.f, 0.1f, 1.f };
+					mat4f_translate(&trans_bkwd, &trans_vec);
+					mat4f_mul(&view_proj_matrix, &view_proj_matrix, &trans_bkwd);
+				} else if (event.key.keysym.scancode == SDL_SCANCODE_A) {
+					printf("a\n");
+					mat4f_t trans_left;
+					const vec4f_t trans_vec = { -0.1f, 0.f, 0.f, 1.f };
+					mat4f_translate(&trans_left, &trans_vec);
+					mat4f_mul(&view_proj_matrix, &view_proj_matrix, &trans_left);
+				} else if (event.key.keysym.scancode == SDL_SCANCODE_D) {
+					printf("d\n");
+					mat4f_t trans_right;
+					const vec4f_t trans_vec = { 0.1f, 0.f, 0.f, 1.f };
+					mat4f_translate(&trans_right, &trans_vec);
+					mat4f_mul(&view_proj_matrix, &view_proj_matrix, &trans_right);
+				} else if (event.key.keysym.sym == SDLK_ESCAPE) {
+					done = true;
+					break;
+				}
+			}
 		}
+		// memcpy((void*)vs_vars[0].data, (const void*)&world_matrix, sizeof(mat4f_t));
+		// memcpy((void*)vs_vars[1].data, (const void*)&view_proj_matrix, sizeof(mat4f_t));
+		// memcpy(&cbuffer_data[0], vs_vars[1].data, sizeof(mat4f_t));
+		// memcpy(&cbuffer_data[(sizeof(mat4f_t) + 15) & ~15], vs_vars[0].data, sizeof(mat4f_t));
+		memcpy(&cbuffer_data[0], (const void*)&world_matrix, sizeof(mat4f_t));
+		memcpy(&cbuffer_data[(sizeof(mat4f_t) + 15) & ~15], (const void*)&view_proj_matrix, sizeof(mat4f_t));
+		
 		rgba_t clear_color = {
 			.r = 0,
 			.g = 0,
@@ -264,6 +314,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 		};
 		gfx_render_clear(gfx_sys, &clear_color);
 		gfx_system_bind_render_target(gfx_sys);
+		gfx_toggle_zstencil(gfx_sys, zstencil_enabled);
 		gfx_bind_vertex_buffer(gfx_sys, vertex_buffer, vertex_stride, 0);
 		gfx_bind_primitive_topology(gfx_sys, GFX_TOPOLOGY_TRIANGLE_LIST);
 		gfx_bind_input_layout(gfx_sys, hlsl_vs);

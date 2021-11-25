@@ -60,7 +60,8 @@
         "xlocbuf": "cpp",
         "xlocmon": "cpp",
         "xloctime": "cpp",
-        "xtree": "cpp"
+        "xtree": "cpp",
+        "gfx_d3d11.h": "c"
     },
     "cmake.configureOnOpen": false
 }
