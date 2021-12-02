@@ -86,7 +86,7 @@ void cmd_toggle_bool(input_state_t* inputs, command_t cmd, bool* value)
 void cmd_refresh(engine_t* eng)
 {
 	cmd_toggle_bool(eng->inputs, kCommandDebugMode, &eng->debug);
-	
+
 	// toggle fullscreen
 	static bool fullscreen = false;
 	cmd_toggle_bool(eng->inputs, kCommandToggleFullscreen, &fullscreen);

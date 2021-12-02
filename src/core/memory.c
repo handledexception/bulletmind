@@ -22,7 +22,7 @@
 
 static uint64_t g_num_allocations = 0;
 static uint64_t g_bytes_allocated = 0;
-static struct memory_allocator gAllocator = { malloc, realloc, free };
+static struct memory_allocator gAllocator = {malloc, realloc, free};
 
 size_t arena_allocated_bytes = 0;
 u8* arena_buf = NULL;
@@ -46,14 +46,13 @@ void* bm_realloc(void* ptr, size_t size)
 	}
 }
 
-void  bm_free(void* ptr)
+void bm_free(void* ptr)
 {
 	if (ptr) {
 		gAllocator.free(ptr);
 		os_atomic_dec_long(&g_num_allocations);
 	}
 }
-
 
 //
 // memory arena

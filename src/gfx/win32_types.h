@@ -46,8 +46,8 @@ typedef LONG_PTR LRESULT;
 #define CALLBACK __stdcall
 
 #define BM_DECLARE_HANDLE(name) \
-    struct name##__;         \
-    typedef struct name##__* name
+	struct name##__;        \
+	typedef struct name##__* name
 
 BM_DECLARE_HANDLE(HDC);
 BM_DECLARE_HANDLE(HWND);

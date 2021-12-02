@@ -109,8 +109,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 		return false;
 	}
 
-// #if defined(BM_WINDOWS)
-#if 1
+#if defined(BM_WINDOWS)
 	// gui_init();
 	// gui_window_t* wnd =
 	// 	gui_create_window("bm window", 100, 100, 640, 480, 0, NULL);
@@ -125,54 +124,58 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	const struct gfx_config gfx_cfg = {.adapter = 0,
 					   .width = eng->window_rect.w,
 					   .height = eng->window_rect.h,
-					//    .width = wnd->w,
-					//    .height = wnd->h,
+					   //    .width = wnd->w,
+					   //    .height = wnd->h,
 					   .fps_num = 60,
 					   .fps_den = 1,
 					   .pix_fmt = GFX_FORMAT_BGRA,
 					   .fullscreen = false,
 					   .window = {hwnd}};
 
-	camera_t cam_pers;
 	rect_t viewport = {
-		.x = 0, .y = 0,
+		.x = 0, .y = 0, .w = eng->window_rect.w, .h = eng->window_rect.h,
 		// .w = wnd->w, .h = wnd->h,
-		.w = eng->window_rect.w,
-		.h = eng->window_rect.h,
 	};
 	// vec3f_t cam_pos = {-0.777f, 1.566f, -2.5f};
-	vec3f_t cam_pos = {0.f, 1.f, -1.f};
+	vec3f_t cam_eye = {0.f, 0.25f, -1.f};
 	vec3f_t cam_dir = {0.f, 0.f, 0.f};
 	vec3f_t cam_up = {0.f, 1.f, 0.f};
-	gfx_camera_persp(&cam_pers, &cam_pos, &cam_dir, &cam_up, &viewport,
-			 60.f, Z_NEAR, Z_FAR);
+	gfx_camera_init(&engine->gfx.camera);
+	gfx_camera_persp(&engine->gfx.camera, &cam_eye, &cam_dir, &cam_up,
+			 &viewport, 60.f, Z_NEAR, Z_FAR);
+	logger(LOG_INFO, "\033[7mgfx\033[m Created perspective camera\n");
 
 	bool zstencil_enabled = true;
-	gfx_system_t* gfx_sys = gfx_system_init(&gfx_cfg, BM_GFX_D3D11|(zstencil_enabled?BM_GFX_DEPTH_TEST:0));
+	u32 gfx_sys_flags = BM_GFX_D3D11 |
+			    (zstencil_enabled ? BM_GFX_USE_ZBUFFER : 0);
+	engine->gfx.system = gfx_system_init(&gfx_cfg, gfx_sys_flags);
+
 	gfx_shader_t* hlsl_vs = gfx_compile_shader_from_file(
 		"assets/pos_color.vs.hlsl", "VSMain", kDX11VertexShaderTarget,
 		GFX_SHADER_VERTEX);
 	gfx_shader_t* hlsl_ps = gfx_compile_shader_from_file(
 		"assets/pos_color.ps.hlsl", "PSMain", kDX11PixelShaderTarget,
 		GFX_SHADER_PIXEL);
-	gfx_build_shader(gfx_sys, hlsl_vs);
-	gfx_create_shader_input_layout(gfx_sys, hlsl_vs, GFX_VERTEX_POS_COLOR);
-	gfx_build_shader(gfx_sys, hlsl_ps);
-	gfx_set_vertex_shader(gfx_sys, hlsl_vs);
-	gfx_set_pixel_shader(gfx_sys, hlsl_ps);
+	gfx_build_shader(engine->gfx.system, hlsl_vs);
+	gfx_create_shader_input_layout(engine->gfx.system, hlsl_vs,
+				       GFX_VERTEX_POS_COLOR);
+	gfx_build_shader(engine->gfx.system, hlsl_ps);
+	gfx_set_vertex_shader(engine->gfx.system, hlsl_vs);
+	gfx_set_pixel_shader(engine->gfx.system, hlsl_ps);
 
-	mat4f_t world_matrix, view_proj_matrix, trans_matrix, scale_matrix;
-	mat4f_identity(&world_matrix);
-	mat4f_identity(&view_proj_matrix);
+	mat4f_t trans_matrix, scale_matrix;
+	mat4f_identity(&engine->gfx.world);
+	mat4f_identity(&engine->gfx.view_proj);
 	mat4f_identity(&trans_matrix);
 	mat4f_identity(&scale_matrix);
-	const vec4f_t trans_vec = { 0.f, 0.f, 0.0f, 1.f };
-	const vec4f_t scale_vec = { 1.f, 1.f, 1.f, 1.f };
+	const vec4f_t trans_vec = {0.f, -0.5f, 1.0f, 1.f};
+	const vec4f_t scale_vec = {1.f, 1.f, 1.f, 1.f};
 	mat4f_translate(&trans_matrix, &trans_vec);
 	mat4f_scale(&scale_matrix, &scale_vec);
-	mat4f_mul(&world_matrix, &trans_matrix, &scale_matrix);
-	mat4f_mul(&view_proj_matrix, &cam_pers.view_matrix, &cam_pers.proj_matrix);
-	mat4f_transpose(&view_proj_matrix, &view_proj_matrix);
+	mat4f_mul(&engine->gfx.world, &trans_matrix, &scale_matrix);
+	mat4f_mul(&engine->gfx.view_proj, &engine->gfx.camera.view_matrix,
+		  &engine->gfx.camera.proj_matrix);
+	mat4f_transpose(&engine->gfx.view_proj, &engine->gfx.view_proj);
 	// view_proj_matrix.z.z = -view_proj_matrix.z.z;
 	// size_t num_vs_vars = 2;
 	// gfx_shader_var_t* vs_vars = bm_malloc(sizeof(gfx_shader_var_t) * num_vs_vars);
@@ -188,23 +191,31 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	// vs_vars[1].size = sizeof(mat4f_t);
 	// vs_vars[1].offset = sizeof(mat4f_t);
 	// memcpy((void*)vs_vars[1].data, (const void*)&view_proj_matrix, sizeof(mat4f_t));
-	gfx_buffer_t* cbuffer = NULL;
+
 	u32 num_shader_vars = 2;
-	size_t cbuffer_size = ((sizeof(mat4f_t) * num_shader_vars) + 15) & 0xfffffff0;
-	uint8_t* cbuffer_data = (uint8_t*)bm_malloc(cbuffer_size);
+	size_t cbuffer_size = ((sizeof(mat4f_t) * num_shader_vars) + 15) &
+			      0xfffffff0;
+	engine->gfx.cbuffer_size = cbuffer_size;
+	gfx_create_buffer(engine->gfx.system, NULL, cbuffer_size,
+			  GFX_BUFFER_CONSTANT, GFX_BUFFER_USAGE_DYNAMIC,
+			  &engine->gfx.cbuffer);
+	engine->gfx.cbuffer_data = (u8*)bm_malloc(cbuffer_size);
 	// memcpy(&cbuffer_data[0], vs_vars[1].data, sizeof(mat4f_t));
 	// memcpy(&cbuffer_data[(sizeof(mat4f_t) + 15) & ~15], vs_vars[0].data, sizeof(mat4f_t));
-	memcpy(&cbuffer_data[0], (const void*)&world_matrix, sizeof(mat4f_t));
-	memcpy(&cbuffer_data[(sizeof(mat4f_t) + 15) & ~15], (const void*)&view_proj_matrix, sizeof(mat4f_t));
-	gfx_create_buffer(gfx_sys, NULL, cbuffer_size, GFX_BUFFER_CONSTANT, GFX_BUFFER_USAGE_DYNAMIC, &cbuffer);
+	memcpy(&engine->gfx.cbuffer_data[0], (const void*)&engine->gfx.world,
+	       sizeof(mat4f_t));
+	memcpy(&engine->gfx.cbuffer_data[(sizeof(mat4f_t) + 15) & ~15],
+	       (const void*)&engine->gfx.view_proj, sizeof(mat4f_t));
 
 	struct gfx_vertex_data* vertices = bm_malloc(sizeof(*vertices));
 	// u32 num_verts = 12;
-	u32 num_verts = 6;
-	u32 vertex_stride = gfx_get_vertex_stride(GFX_VERTEX_POS_COLOR);
-	vertices->num_vertices = num_verts;
-	vertices->positions = bm_malloc(sizeof(vec3f_t) * num_verts);
-	vertices->colors = bm_malloc(sizeof(vec4f_t) * num_verts);
+	engine->gfx.num_vertices = 6;
+	engine->gfx.vertex_stride = gfx_get_vertex_stride(GFX_VERTEX_POS_COLOR);
+	vertices->num_vertices = engine->gfx.num_vertices;
+	vertices->positions =
+		bm_malloc(sizeof(vec3f_t) * engine->gfx.num_vertices);
+	vertices->colors =
+		bm_malloc(sizeof(vec4f_t) * engine->gfx.num_vertices);
 	// vertices->positions[0]   = (vec3f_t){ -0.5f,  0.f,  1.f };
 	// vertices->positions[1]   = (vec3f_t){  0.5f,  0.f,  1.f };
 	// vertices->positions[2]   = (vec3f_t){  0.f,   1.f,  1.f };
@@ -229,36 +240,41 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	// vertices->colors[9] =  (vec4f_t){ 1.f, 0.f, 0.f, 1.f };
 	// vertices->colors[10] = (vec4f_t){ 0.f, 1.f, 0.f, 1.f };
 	// vertices->colors[11] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
-	vertices->positions[0]   = (vec3f_t){ -0.5f,  0.f, -0.5f };
-	vertices->positions[1]   = (vec3f_t){  0.5f,  0.f, -0.5f };
-	vertices->positions[2]   = (vec3f_t){  0.5f,  0.f,  0.5f };
-	vertices->positions[3]   = (vec3f_t){ -0.5f,  0.f, -0.5f };
-	vertices->positions[4]   = (vec3f_t){  0.5f,  0.f,  0.5f };
-	vertices->positions[5]   = (vec3f_t){ -0.5f,  0.f,  0.5f };
-	vertices->colors[0] = (vec4f_t){ 1.f, 0.f, 0.f, 1.f };
-	vertices->colors[1] = (vec4f_t){ 0.f, 1.f, 0.f, 1.f };
-	vertices->colors[2] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
-	vertices->colors[3] = (vec4f_t){ 1.f, 0.f, 0.f, 1.f };
-	vertices->colors[4] = (vec4f_t){ 0.f, 1.f, 0.f, 1.f };
-	vertices->colors[5] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
+	vertices->positions[0] = (vec3f_t){-0.5f, 0.f, -0.5f};
+	vertices->positions[1] = (vec3f_t){0.5f, 0.f, -0.5f};
+	vertices->positions[2] = (vec3f_t){0.5f, 0.f, 0.5f};
+	vertices->positions[3] = (vec3f_t){-0.5f, 0.f, -0.5f};
+	vertices->positions[4] = (vec3f_t){0.5f, 0.f, 0.5f};
+	vertices->positions[5] = (vec3f_t){-0.5f, 0.f, 0.5f};
+	vertices->colors[0] = (vec4f_t){1.f, 0.f, 0.f, 1.f};
+	vertices->colors[1] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
+	vertices->colors[2] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
+	vertices->colors[3] = (vec4f_t){1.f, 0.f, 0.f, 1.f};
+	vertices->colors[4] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
+	vertices->colors[5] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
 
-	size_t vbd_size = (sizeof(vec3f_t) * num_verts) + (sizeof(vec4f_t) * num_verts);
-	uint8_t* vertex_data = (uint8_t*)bm_malloc(vbd_size);
+	size_t vbd_size = (sizeof(vec3f_t) * engine->gfx.num_vertices) +
+			  (sizeof(vec4f_t) * engine->gfx.num_vertices);
+	u8* vertex_data = (u8*)bm_malloc(vbd_size);
 	size_t offset = 0;
-	for (u32 i = 0; i < num_verts; i++) {
-		memcpy((void*)&vertex_data[offset], (const void*)&vertices->positions[i], sizeof(struct vec3f));
-		offset  += sizeof(struct vec3f);
-		memcpy((void*)&vertex_data[offset], (const void*)&vertices->colors[i], sizeof(struct vec4f));
+	for (u32 i = 0; i < engine->gfx.num_vertices; i++) {
+		memcpy((void*)&vertex_data[offset],
+		       (const void*)&vertices->positions[i],
+		       sizeof(struct vec3f));
+		offset += sizeof(struct vec3f);
+		memcpy((void*)&vertex_data[offset],
+		       (const void*)&vertices->colors[i], sizeof(struct vec4f));
 		offset += sizeof(struct vec4f);
 	}
-	gfx_buffer_t* vertex_buffer = NULL;
-	gfx_create_buffer(gfx_sys, (const void*)vertex_data, vbd_size,
-			  GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DEFAULT,
-			  &vertex_buffer);
 
-	gfx_init_sampler_state(gfx_sys);
-	gfx_init_rasterizer(gfx_sys, GFX_CULLING_NONE, 0);
+	gfx_create_buffer(engine->gfx.system, (const void*)vertex_data,
+			  vbd_size, GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DEFAULT,
+			  &engine->gfx.vertex_buffer);
 
+	gfx_init_sampler_state(engine->gfx.system);
+	gfx_init_rasterizer(engine->gfx.system, GFX_CULLING_NONE, 0);
+
+	/*
 	uint64_t frame_num = 0;
 	SDL_Event event;
 	bool done = false;
@@ -303,33 +319,34 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 		// memcpy((void*)vs_vars[1].data, (const void*)&view_proj_matrix, sizeof(mat4f_t));
 		// memcpy(&cbuffer_data[0], vs_vars[1].data, sizeof(mat4f_t));
 		// memcpy(&cbuffer_data[(sizeof(mat4f_t) + 15) & ~15], vs_vars[0].data, sizeof(mat4f_t));
+
 		memcpy(&cbuffer_data[0], (const void*)&world_matrix, sizeof(mat4f_t));
 		memcpy(&cbuffer_data[(sizeof(mat4f_t) + 15) & ~15], (const void*)&view_proj_matrix, sizeof(mat4f_t));
-		
 		rgba_t clear_color = {
 			.r = 0,
 			.g = 0,
 			.b = 0,
 			.a = 255,
 		};
-		gfx_render_clear(gfx_sys, &clear_color);
-		gfx_system_bind_render_target(gfx_sys);
-		gfx_toggle_zstencil(gfx_sys, zstencil_enabled);
-		gfx_bind_vertex_buffer(gfx_sys, vertex_buffer, vertex_stride, 0);
-		gfx_bind_primitive_topology(gfx_sys, GFX_TOPOLOGY_TRIANGLE_LIST);
-		gfx_bind_input_layout(gfx_sys, hlsl_vs);
-		gfx_bind_rasterizer(gfx_sys);
-		gfx_bind_sampler_state(gfx_sys, NULL, 0);
-		gfx_buffer_copy_data(gfx_sys, cbuffer, cbuffer_data, cbuffer_size);
-		gfx_upload_constant_buffer(gfx_sys, cbuffer, GFX_SHADER_VERTEX);
-		gfx_render_begin(gfx_sys);
-		gfx_render_end(gfx_sys, false, 0);
+		gfx_render_clear(engine->gfx.system, &clear_color);
+		gfx_system_bind_render_target(engine->gfx.system);
+		gfx_toggle_zstencil(engine->gfx.system, zstencil_enabled);
+		gfx_bind_vertex_buffer(engine->gfx.system, vertex_buffer, vertex_stride, 0);
+		gfx_bind_primitive_topology(engine->gfx.system, GFX_TOPOLOGY_TRIANGLE_LIST);
+		gfx_bind_input_layout(engine->gfx.system, hlsl_vs);
+		gfx_bind_rasterizer(engine->gfx.system);
+		gfx_bind_sampler_state(engine->gfx.system, NULL, 0);
+		gfx_buffer_copy_data(engine->gfx.system, cbuffer, cbuffer_data, cbuffer_size);
+		gfx_upload_constant_buffer(engine->gfx.system, cbuffer, GFX_SHADER_VERTEX);
+		gfx_render_begin(engine->gfx.system);
+		gfx_render_end(engine->gfx.system, false, 0);
 		SDL_Delay((Uint32)16.667);
 		printf("frame: %lld\n", frame_num++);
 	}
-	gfx_system_shutdown(gfx_sys);
-	SDL_Quit();
-	exit(0);
+	*/
+	// gfx_system_shutdown(gfx_sys);
+	// SDL_Quit();
+	// exit(0);
 #endif
 
 	eng->renderer = SDL_CreateRenderer(eng->window, eng->adapter_index,
@@ -408,6 +425,35 @@ void eng_refresh(engine_t* eng, f64 dt)
 
 	cmd_refresh(eng);
 	ent_refresh(eng, dt);
+
+	memcpy(&engine->gfx.cbuffer_data[0], (const void*)&engine->gfx.world,
+	       sizeof(mat4f_t));
+	memcpy(&engine->gfx.cbuffer_data[(sizeof(mat4f_t) + 15) & ~15],
+	       (const void*)&engine->gfx.view_proj, sizeof(mat4f_t));
+	rgba_t clear_color = {
+		.r = 0,
+		.g = 0,
+		.b = 0,
+		.a = 255,
+	};
+	gfx_render_clear(engine->gfx.system, &clear_color);
+	gfx_system_bind_render_target(engine->gfx.system);
+	bool zstencil_enabled = true;
+	gfx_toggle_zstencil(engine->gfx.system, zstencil_enabled);
+	gfx_bind_vertex_buffer(engine->gfx.system, engine->gfx.vertex_buffer,
+			       engine->gfx.vertex_stride, 0);
+	gfx_bind_primitive_topology(engine->gfx.system,
+				    GFX_TOPOLOGY_TRIANGLE_LIST);
+	gfx_bind_vertex_shader_input_layout(engine->gfx.system);
+	gfx_bind_rasterizer(engine->gfx.system);
+	gfx_bind_sampler_state(engine->gfx.system, NULL, 0);
+	gfx_buffer_copy_data(engine->gfx.system, engine->gfx.cbuffer,
+			     engine->gfx.cbuffer_data,
+			     engine->gfx.cbuffer_size);
+	gfx_upload_constant_buffer(engine->gfx.system, engine->gfx.cbuffer,
+				   GFX_SHADER_VERTEX);
+	gfx_render_begin(engine->gfx.system);
+	gfx_render_end(engine->gfx.system, false, 0);
 }
 
 void eng_shutdown(engine_t* eng)
@@ -425,6 +471,8 @@ void eng_shutdown(engine_t* eng)
 	// eng->scr_texture = NULL;
 	eng->renderer = NULL;
 	eng->window = NULL;
+
+	gfx_system_shutdown(engine->gfx.system);
 
 	SDL_Quit();
 

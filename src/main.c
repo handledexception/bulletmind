@@ -46,43 +46,38 @@
 
 #include <SDL.h>
 
-#define WINDOW_WIDTH  960
+#define WINDOW_WIDTH 960
 #define WINDOW_HEIGHT 720
-#define WINDOW_WIDTH_HALF  WINDOW_WIDTH  / 2
+#define WINDOW_WIDTH_HALF WINDOW_WIDTH / 2
 #define WINDOW_HEIGHT_HALF WINDOW_HEIGHT / 2
 
-#define CAMERA_WIDTH  640
+#define CAMERA_WIDTH 640
 #define CAMERA_HEIGHT 480
-#define CAMERA_INSET_WIDTH  (CAMERA_WIDTH  - 64)
+#define CAMERA_INSET_WIDTH (CAMERA_WIDTH - 64)
 #define CAMERA_INSET_HEIGHT (CAMERA_HEIGHT - 64)
-#define CAMERA_WIDTH_HALF    CAMERA_WIDTH  / 2
-#define CAMERA_HEIGHT_HALF   CAMERA_HEIGHT / 2
+#define CAMERA_WIDTH_HALF CAMERA_WIDTH / 2
+#define CAMERA_HEIGHT_HALF CAMERA_HEIGHT / 2
 #define TARGET_FPS 144.0
 
-#define WORLD_TILES_WIDTH  16
+#define WORLD_TILES_WIDTH 16
 #define WORLD_TILES_HEIGHT 16
-#define TILE_WIDTH  64
+#define TILE_WIDTH 64
 #define TILE_HEIGHT 64
 
 #define CONSOLE_SPEED 10
 
 static u8 world_map[WORLD_TILES_WIDTH * WORLD_TILES_HEIGHT] = {
-	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 };
 
 static sprite_t* tilemap_sprite = NULL;
@@ -100,7 +95,8 @@ void generate_tilemap(u32 width, u32 height)
 	tilemap_sprite->surface = NULL;
 }
 
-sprite_t* world_map_tile_index(engine_t* engine, rect_t* tile_rect, rect_t* camera)
+sprite_t* world_map_tile_index(engine_t* engine, rect_t* tile_rect,
+			       rect_t* camera)
 {
 	s32 index = tile_rect->x + (tile_rect->y * WORLD_TILES_WIDTH);
 	sprite_t* tile = NULL;
@@ -123,8 +119,10 @@ sprite_t* world_map_tile_index(engine_t* engine, rect_t* tile_rect, rect_t* came
 		// 	break;
 	}
 
-	tile->surface->clip_rect.x = tile_rect->x * tile_rect->w;// - camera->x;
-	tile->surface->clip_rect.y = tile_rect->y * tile_rect->h;// - camera->y;
+	tile->surface->clip_rect.x =
+		tile_rect->x * tile_rect->w; // - camera->x;
+	tile->surface->clip_rect.y =
+		tile_rect->y * tile_rect->h; // - camera->y;
 
 	return tile;
 }
@@ -133,14 +131,14 @@ void update_tilemap(engine_t* engine, rect_t* camera)
 {
 	for (s32 y = 0; y < WORLD_TILES_HEIGHT; y++) {
 		for (s32 x = 0; x < WORLD_TILES_WIDTH; x++) {
-			rect_t tile_rect = { 
+			rect_t tile_rect = {
 				.x = x,
 				.y = y,
 				.w = TILE_WIDTH,
 				.h = TILE_HEIGHT,
 			};
-			sprite_t* tile =
-				world_map_tile_index(engine, &tile_rect, camera);
+			sprite_t* tile = world_map_tile_index(
+				engine, &tile_rect, camera);
 
 			SDL_RenderCopyEx(engine->renderer, tile->texture, NULL,
 					 &tile->surface->clip_rect, 0.0, NULL,
@@ -154,10 +152,14 @@ void print_debug_info(engine_t* engine, f64 dt)
 	if (engine) {
 		s8 r, g, b, a;
 		SDL_GetRenderDrawColor(engine->renderer, &r, &g, &b, &a);
-		SDL_SetRenderDrawColor(engine->renderer, 0x00, 0xdf, 0x00, 0xdd);
-		SDL_RenderDrawRect(engine->renderer, (const SDL_Rect*)&engine->cam_inset);
-		SDL_SetRenderDrawColor(engine->renderer, 0x0bb, 0xdf, 0x40, 0xdd);
-		SDL_RenderDrawRect(engine->renderer, (const SDL_Rect*)&engine->cam_rect);
+		SDL_SetRenderDrawColor(engine->renderer, 0x00, 0xdf, 0x00,
+				       0xdd);
+		SDL_RenderDrawRect(engine->renderer,
+				   (const SDL_Rect*)&engine->cam_inset);
+		SDL_SetRenderDrawColor(engine->renderer, 0x0bb, 0xdf, 0x40,
+				       0xdd);
+		SDL_RenderDrawRect(engine->renderer,
+				   (const SDL_Rect*)&engine->cam_rect);
 		SDL_SetRenderDrawColor(engine->renderer, r, g, b, a);
 		entity_t* player_ent = ent_by_name(engine->ent_list, "player");
 		char time_buf[TEMP_STRING_MAX];
@@ -203,15 +205,6 @@ struct vec_elem {
 
 int main(int argc, char** argv)
 {
-	struct vector v;
-	vector_create(&v);
-	struct vec_elem e1 = { .id = 5, .val = 3.14f };
-	struct vec_elem e2 = { .id = 6, .val = 6.28f };
-	vector_push_back(&v, &e1, sizeof(struct vec_elem));
-	vector_push_back(&v, &e2, sizeof(struct vec_elem));
-	struct vec_elem* e3 = (struct vec_elem*)vector_elem(&v, sizeof(struct vec_elem), 0);
-	struct vec_elem* e4 = (struct vec_elem*)vector_elem(&v, sizeof(struct vec_elem), 1);
-	
 	char s[26] = "\"Main screen turn on...\"";
 	str_upper_no_copy(s, 0);
 	logger(LOG_INFO, "%s\n", s);
@@ -239,7 +232,8 @@ int main(int argc, char** argv)
 	engine->cam_inset.y = 0;
 	engine->cam_inset.w = CAMERA_INSET_WIDTH;
 	engine->cam_inset.h = CAMERA_INSET_HEIGHT;
-	center_in_rect(&engine->cam_inset, &engine->cam_rect, &engine->cam_inset);
+	center_in_rect(&engine->cam_inset, &engine->cam_rect,
+		       &engine->cam_inset);
 	engine->render_scale.x = (f32)WINDOW_WIDTH / (f32)CAMERA_WIDTH;
 	engine->render_scale.y = (f32)WINDOW_HEIGHT / (f32)CAMERA_HEIGHT;
 	engine->target_fps = TARGET_FPS;
@@ -259,15 +253,10 @@ int main(int argc, char** argv)
 	engine->console_bounds.w = engine->cam_rect.w;
 	engine->console_bounds.h = con_height;
 
-	rect_t con_start = {
-		engine->console_bounds.x, engine->console_bounds.y,
-		engine->console_bounds.w, engine->console_bounds.h
-	};
+	rect_t con_start = {engine->console_bounds.x, engine->console_bounds.y,
+			    engine->console_bounds.w, engine->console_bounds.h};
 
-	rect_t con_end = {
-		0, 0,
-		engine->cam_rect.w, con_height
-	};
+	rect_t con_end = {0, 0, engine->cam_rect.w, con_height};
 
 	const u32 app_version =
 		pack_version(APP_VER_MAJ, APP_VER_MIN, APP_VER_REV);
@@ -287,57 +276,57 @@ int main(int argc, char** argv)
 			ent_spawn_player_and_satellite(engine->ent_list,
 						       engine->cam_rect.w,
 						       engine->cam_rect.h);
-			eng_play_sound(engine, "theme_music",
-				       DEFAULT_MUSIC_VOLUME);
+			// eng_play_sound(engine, "theme_music",
+			// 	       DEFAULT_MUSIC_VOLUME);
 			engine->mode = kEngineModePlay;
 			break;
 		}
 		case kEngineModePlay:
 		case kEngineModeConsole: {
-			SDL_SetRenderDrawColor(engine->renderer, 0x20, 0x20,
-					       0x20, 0xFF);
-			SDL_RenderClear(engine->renderer);
-			entity_t* player = ent_by_index(engine->ent_list, 0);
-			rect_t tilemap_cam = { (u32)player->org.x - TILE_WIDTH, (u32)player->org.y - TILE_HEIGHT, 0, 0};
-			update_tilemap(engine, &tilemap_cam);
-				// engine->cam_rect.w / 2 - TILE_WIDTH,
-				// engine->cam_rect.y / 2 - TILE_HEIGHT);
-				// (u32)player->org.x - TILE_WIDTH,
-				// (u32)player->org.y - TILE_HEIGHT);
+			// SDL_SetRenderDrawColor(engine->renderer, 0x20, 0x20,
+			// 		       0x20, 0xFF);
+			// SDL_RenderClear(engine->renderer);
+			// entity_t* player = ent_by_index(engine->ent_list, 0);
+			// rect_t tilemap_cam = { (u32)player->org.x - TILE_WIDTH, (u32)player->org.y - TILE_HEIGHT, 0, 0};
+			// update_tilemap(engine, &tilemap_cam);
+			// engine->cam_rect.w / 2 - TILE_WIDTH,
+			// engine->cam_rect.y / 2 - TILE_HEIGHT);
+			// (u32)player->org.x - TILE_WIDTH,
+			// (u32)player->org.y - TILE_HEIGHT);
 
-			if (engine->debug)
-				print_debug_info(engine, dt);
+			// if (engine->debug)
+			// 	print_debug_info(engine, dt);
 
 			eng_refresh(engine, dt);
 
-			if (engine->mode == kEngineModeConsole) {
-				u8 r, g, b, a;
-				SDL_GetRenderDrawColor(engine->renderer, &r, &g, &b, &a);
-				rgba_t con_color = {0x3d, 0x3a, 0x36, 0xff};
-				if (engine->console) {
-					if (engine->console_bounds.y < con_end.y)
-						engine->console_bounds.y +=
-							CONSOLE_SPEED;
-				} else {
-					if (engine->console_bounds.y > con_start.y)
-						engine->console_bounds.y -=
-							CONSOLE_SPEED;
-					else {
-						engine->mode = kEngineModePlay;
-						engine->inputs->mode =
-							kInputModeGame;
-					}
-				}
-				draw_rect_solid(engine->renderer,
-						&engine->console_bounds,
-						&con_color);
-				SDL_SetRenderDrawColor(engine->renderer, r, g, b, a); // restore color
-				font_print(engine, 
-					engine->console_bounds.x + 8,
-					engine->console_bounds.y +
-					engine->console_bounds.h -
-					20, 1.5, "> hello, world!");
-			}
+			// if (engine->mode == kEngineModeConsole) {
+			// 	u8 r, g, b, a;
+			// 	SDL_GetRenderDrawColor(engine->renderer, &r, &g, &b, &a);
+			// 	rgba_t con_color = {0x3d, 0x3a, 0x36, 0xff};
+			// 	if (engine->console) {
+			// 		if (engine->console_bounds.y < con_end.y)
+			// 			engine->console_bounds.y +=
+			// 				CONSOLE_SPEED;
+			// 	} else {
+			// 		if (engine->console_bounds.y > con_start.y)
+			// 			engine->console_bounds.y -=
+			// 				CONSOLE_SPEED;
+			// 		else {
+			// 			engine->mode = kEngineModePlay;
+			// 			engine->inputs->mode =
+			// 				kInputModeGame;
+			// 		}
+			// 	}
+			// 	draw_rect_solid(engine->renderer,
+			// 			&engine->console_bounds,
+			// 			&con_color);
+			// 	SDL_SetRenderDrawColor(engine->renderer, r, g, b, a); // restore color
+			// 	font_print(engine,
+			// 		engine->console_bounds.x + 8,
+			// 		engine->console_bounds.y +
+			// 		engine->console_bounds.h -
+			// 		20, 1.5, "> hello, world!");
+			// }
 			break;
 		}
 		default:
@@ -356,7 +345,7 @@ int main(int argc, char** argv)
 		} while (dt < engine->target_frametime);
 		//printf("%f\n", dt);
 
-		SDL_RenderPresent(engine->renderer);
+		// SDL_RenderPresent(engine->renderer);
 		engine->frame_count++;
 	}
 

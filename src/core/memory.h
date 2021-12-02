@@ -20,14 +20,14 @@
 #include "core/export.h"
 
 struct memory_allocator {
-	void *(*malloc)(size_t);
-	void *(*realloc)(void *, size_t);
-	void (*free)(void *);
+	void* (*malloc)(size_t);
+	void* (*realloc)(void*, size_t);
+	void (*free)(void*);
 };
 
 BM_EXPORT void* bm_malloc(size_t size);
 BM_EXPORT void* bm_realloc(void* ptr, size_t size);
-BM_EXPORT void  bm_free(void* ptr);
+BM_EXPORT void bm_free(void* ptr);
 
 // Basic linear allocator
 // https://www.gingerbill.org/article/2019/02/08/memory-allocation-strategies-002/

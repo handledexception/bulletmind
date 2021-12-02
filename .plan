@@ -1,4 +1,20 @@
 ---------------------------------
+Paul Hindt's .plan for 12/1/2021
+---------------------------------
+
+Been feeling sick for the last 20+ days. Made some progress on implementing the D3D11 renderer
+in the Bulletmind C code base. Actually have a vertex color shaded quad drawing on the screen
+and manipulating the camera position w/ WASD keys.
+
+con5cend
+desc3nd
+prescience
+descience
+horhizone
+horhizome
+vertigome
+
+---------------------------------
 Paul Hindt's .plan for 10/25/2021
 ---------------------------------
 Issues:

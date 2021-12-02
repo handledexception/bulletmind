@@ -79,8 +79,7 @@ void ent_refresh(engine_t* eng, const f64 dt)
 	if (eng->spawn_timer[0] == 0.0)
 		eng->spawn_timer[0] = eng_get_time_sec() + 2.0;
 	if (eng_get_time_sec() >= eng->spawn_timer[0]) {
-		ent_spawn_enemy(ent_list, eng->cam_rect.w,
-				eng->cam_rect.h);
+		ent_spawn_enemy(ent_list, eng->cam_rect.w, eng->cam_rect.h);
 		eng->spawn_timer[0] = 0.0;
 	}
 
@@ -242,17 +241,20 @@ void ent_refresh_renderables(engine_t* eng, entity_t* e, f64 dt)
 			draw_sprite_sheet(eng->renderer, sprite_sheet, &e->org,
 					  frame_scale, e->angle, flip);
 		} else if (!strcmp(e->name, "satellite")) {
-			game_resource_t* resource = eng_get_resource(eng, "roboid");
-			sprite_sheet_t* sprite_sheet = (sprite_sheet_t*)resource->data;
+			game_resource_t* resource =
+				eng_get_resource(eng, "roboid");
+			sprite_sheet_t* sprite_sheet =
+				(sprite_sheet_t*)resource->data;
 			entity_t* player = ent_by_name(eng->ent_list, "player");
-			vec2f_t sat_to_player = { 0.f, 0.f };
+			vec2f_t sat_to_player = {0.f, 0.f};
 			vec2f_sub(&sat_to_player, e->org, player->org);
 			vec2f_norm(&sat_to_player, sat_to_player);
 			bool flip = false;
 			if (sat_to_player.x > 0.f)
 				flip = true;
 			f64 frame_scale = 1.0;
-			draw_sprite_sheet(eng->renderer, sprite_sheet, &e->org, frame_scale, e->angle, flip);
+			draw_sprite_sheet(eng->renderer, sprite_sheet, &e->org,
+					  frame_scale, e->angle, flip);
 			// rect_t sat_rect = {(s32)e->bbox.min.x,
 			// 		   (s32)e->bbox.min.y, e->size.x,
 			// 		   e->size.y};
@@ -579,8 +581,11 @@ void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 {
 	// Player entity movement
 	vec2f_t p_accel = {0};
-	f32 p_speed = 48.f * kGravity;  // meters/sec
-	f32 friction = 0.015625f * 2.f; // 1 meter / 64 pixels
+	// f32 p_speed = 48.f * kGravity;  // meters/sec
+	f32 p_speed = 320.f;
+	// f32 friction = 0.015625f * 2.f; // 1 meter / 64 pixels
+	// f32 friction = 0.015625f * 10.f; // 1 meter / 64 pixels
+	f32 friction = 0.f;
 	if (cmd_get_state(eng->inputs, kCommandPlayerSpeed) == true) {
 		p_speed *= 2.f;
 	}
@@ -591,13 +596,29 @@ void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 		p_accel.y = p_speed;
 	}
 	if (cmd_get_state(eng->inputs, kCommandPlayerLeft) == true) {
-		p_accel.x = -p_speed;
+		p_accel.x = p_speed;
 	}
 	if (cmd_get_state(eng->inputs, kCommandPlayerRight) == true) {
-		p_accel.x = p_speed;
+		p_accel.x = -p_speed;
 	}
 
 	ent_euler_move(player, p_accel, friction, dt);
+
+	entity_t* e = player;
+	mat4f_t cam_trans;
+	vec2f_t delta = {0.f, 0.f};
+	vec2f_t accel_scaled = {0.f, 0.f};
+	camera_t* cam = &engine->gfx.camera;
+	vec2f_mulf(&accel_scaled, p_accel, dt);
+	vec2f_add(&e->vel, e->vel, accel_scaled);
+	vec2f_friction(&e->vel, e->vel, friction);
+	vec2f_copy(&delta, e->vel);
+	vec2f_mulf(&delta, delta, dt);
+	vec2f_add(&e->org, e->org, delta);
+	const vec4f_t trans_vec = {p_accel.x * 0.00005, 0.f,
+				   p_accel.y * 0.00005, 1.f};
+	mat4f_translate(&cam_trans, &trans_vec);
+	mat4f_mul(&eng->gfx.view_proj, &eng->gfx.view_proj, &cam_trans);
 
 	// screen bounds checking
 	if (player->org.x > (f32)eng->cam_rect.w - 25) {
@@ -621,7 +642,7 @@ void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* eng,
 {
 	static f32 sat_speed = 1000.f;
 	vec2f_t dist = {0.f, 0.f};
-	vec2f_t sat_to_player = { 0.f, 0.f };
+	vec2f_t sat_to_player = {0.f, 0.f};
 	vec2f_sub(&dist, player->org, satellite->org);
 	sat_to_player.x = dist.x;
 	sat_to_player.y = dist.y;
@@ -629,8 +650,8 @@ void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* eng,
 
 	const f32 orbit_dist = 48.f;
 	const f32 orbit_thresh = 72.f;
-	const bool is_orbiting =
-		(fabsf(sat_to_player.x) < orbit_thresh || fabsf(sat_to_player.y) < orbit_thresh);
+	const bool is_orbiting = (fabsf(sat_to_player.x) < orbit_thresh ||
+				  fabsf(sat_to_player.y) < orbit_thresh);
 	if (is_orbiting)
 		satellite->flags |= kSatelliteOrbitCW;
 	else

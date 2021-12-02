@@ -1,0 +1,208 @@
+name: Windows
+
+on:
+  push:
+    branches:
+      - dev
+      - master
+  pull_request:
+    branches:
+      - dev
+      - master
+
+jobs:
+  mingw:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        architecture: [x64, x86]
+        build_type: [Debug, RelWithDebInfo, MinSizeRel, Release] 
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up MinGW
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: ${{ matrix.architecture }}
+
+      - name: CMake
+        run: |
+          cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DTAU_BUILDINTERNALTESTS=On -DTAU_BUILDTHIRDPARTYTESTS=On
+
+      - name: Build
+        run: |
+          cmake --build build --config ${{ matrix.build_type }} --parallel 10
+
+      - name: Test (Internal)
+        run: | 
+          cd build/bin ; dir; ./TauInternalTests
+        
+      - name: Test (ThirdParty)
+        run: |
+          cd build/bin ; dir; ./TauThirdPartyTests_6502
+
+
+  # CMAKE_SYSTEM_VERSION on `windows-2016` _does not_ have version "10.0.18362.0" and hence defaults to a older, but 
+  # buggy version of Windows SDK. Using `10.0.17134.0` works on my computer and should work 
+  MSVC2017:
+    runs-on: windows-2016
+    strategy:
+      matrix:
+        build_type: [Debug, RelWithDebInfo, MinSizeRel, Release] 
+        architecture: [Win32, x64]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: CMake (Release, x64)
+      if: matrix.build_type == 'Release' && matrix.architecture == 'x64'
+      run: |
+        cmake -S . -B build -G "Visual Studio 15 2017" -A ${{ matrix.architecture }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DTAU_BUILDINTERNALTESTS=On -DTAU_BUILDTHIRDPARTYTESTS=On -DCMAKE_EXE_LINKER_FLAGS="/STACK:4000000" -DCMAKE_SYSTEM_VERSION="10.0.18362.0"
+      
+    - name: CMake (Release, !x64)
+      if: matrix.build_type == 'Release' && matrix.architecture != 'x64'
+      run: |
+        cmake -S . -B build -G "Visual Studio 15 2017" -A ${{ matrix.architecture }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DTAU_BUILDINTERNALTESTS=On -DTAU_BUILDTHIRDPARTYTESTS=On -DCMAKE_SYSTEM_VERSION="10.0.18362.0"
+
+    - name: CMake (Default Configs)
+      if: matrix.build_type != 'Release'
+      run: |
+        cmake -S . -B build -G "Visual Studio 15 2017" -A ${{ matrix.architecture }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DTAU_BUILDINTERNALTESTS=On -DTAU_BUILDTHIRDPARTYTESTS=On -DCMAKE_SYSTEM_VERSION="10.0.18362.0"
+
+    - name: Build
+      run: |
+        cmake --build build --config ${{ matrix.build_type }} --parallel 10
+
+    - name: Test (Internal)
+      run: | 
+        cd build/bin/${{ matrix.build_type }} ; dir; ./TauInternalTests
+      
+    - name: Test (ThirdParty)
+      run: |
+        cd build/bin/${{ matrix.build_type }} ; dir; ./TauThirdPartyTests_6502
+
+
+  MSVC2017_latest:
+    runs-on: windows-2016
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: CMake
+      run: |
+        cmake -S . -B build -G "Visual Studio 15 2017" -DCMAKE_BUILD_TYPE=Release -DTAU_BUILDINTERNALTESTS=On -DTAU_BUILDTHIRDPARTYTESTS=On -DCMAKE_C_FLAGS="/permissive- /std:c11 /utf-8 /W4" -DCMAKE_SYSTEM_VERSION="10.0.18362.0"
+
+    - name: Build
+      run: |
+        cmake --build build --config Release --parallel 10
+    
+    - name: Test (Internal)
+      run: | 
+        cd build/bin/Release ; dir; ./TauInternalTests
+      
+    - name: Test (ThirdParty)
+      run: |
+        cd build/bin/Release ; dir; ./TauThirdPartyTests_6502
+
+
+  MSVC2019:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        build_type: [Debug, RelWithDebInfo, MinSizeRel, Release] 
+        architecture: [Win32, x64]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: CMake
+      run: |
+        cmake -S . -B build -G "Visual Studio 16 2019" -A ${{ matrix.architecture }} -DTAU_BUILDINTERNALTESTS=On -DTAU_BUILDTHIRDPARTYTESTS=On -DCMAKE_SYSTEM_VERSION="10.0.18362.0"
+      
+    - name: Build
+      run: |
+        cmake --build build --config ${{ matrix.build_type }} --parallel 10
+
+    - name: Test (Internal)
+      run: | 
+        cd build/bin/${{ matrix.build_type }} ; dir; ./TauInternalTests
+      
+    - name: Test (ThirdParty)
+      run: |
+        cd build/bin/${{ matrix.build_type }} ; dir; ./TauThirdPartyTests_6502
+
+
+  MSVC2019_latest:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: CMake
+      run: |
+        cmake -S . -B build -G "Visual Studio 16 2019" -DTAU_BUILDINTERNALTESTS=On -DTAU_BUILDTHIRDPARTYTESTS=On -DCMAKE_C_FLAGS="/permissive- /std:c++latest /utf-8 /W4" -DCMAKE_SYSTEM_VERSION="10.0.18362.0"
+
+    - name: Build
+      run: |
+        cmake --build build --config Release --parallel 10
+
+    - name: Test (Internal)
+      run: | 
+        cd build/bin/Release ; dir; ./TauInternalTests
+      
+    - name: Test (ThirdParty)
+      run: |
+        cd build/bin/Release ; dir; ./TauThirdPartyTests_6502
+
+
+  Clang-cl-11:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        build_type: [Debug, RelWithDebInfo, MinSizeRel, Release] 
+        architecture: [Win32, x64]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: CMake
+        run: |
+          cmake -S . -B build -G "Visual Studio 16 2019" -A ${{ matrix.architecture }} -T ClangCL -DTAU_BUILDINTERNALTESTS=On -DTAU_BUILDTHIRDPARTYTESTS=On
+
+      - name: Build
+        run: |
+          cmake --build build --config ${{ matrix.build_type }} --parallel 10
+
+      - name: Test (Internal)
+        run: | 
+          cd build/bin/${{ matrix.build_type }} ; dir; ./TauInternalTests
+      
+      - name: Test (ThirdParty)
+        run: |
+          cd build/bin/${{ matrix.build_type }} ; dir; ./TauThirdPartyTests_6502
+
+  
+  # Clang:
+  #   runs-on: windows-latest
+  #   strategy:
+  #     matrix:
+  #       build_type: [Debug, RelWithDebInfo, MinSizeRel, Release]
+  #       version: [10, 11]
+
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Install Clang
+  #       run: |
+  #         curl -fsSL -o LLVM${{ matrix.version }}.exe https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ matrix.version }}.0.0/LLVM-${{ matrix.version }}.0.0-win64.exe ; 7z x LLVM${{ matrix.version }}.exe -y -o"C:/Program Files/LLVM"
+
+  #     - name: CMake
+  #       run: |
+  #         cmake -S . -B build -G"MinGW Makefiles" -DCMAKE_C_COMPILER="C:/Program Files/LLVM/bin/clang.exe" -DCMAKE_CXX_COMPILER="C:/Program Files/LLVM/bin/clang++.exe" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DTAU_BUILDINTERNALTESTS=On -DTAU_BUILDTHIRDPARTYTESTS=On
+
+  #     - name: Build
+  #       run: |
+        #   cmake --build build --parallel 10
+
+      # - name: Test (Internal)
+      #   run: | 
+      #     cd build/bin/${{ matrix.build_type }} ; dir; ./TauInternalTests
+      
+      # - name: Test (ThirdParty)
+      #   run: |
+      #     cd build/bin/${{ matrix.build_type }} ; dir; ./TauThirdPartyTests_6502

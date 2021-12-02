@@ -22,6 +22,8 @@
 
 #include "math/types.h"
 
+#include "gfx/camera.h"
+
 typedef struct SDL_Window SDL_Window;
 typedef struct SDL_Renderer SDL_Renderer;
 typedef struct SDL_Surface SDL_Surface;
@@ -43,6 +45,21 @@ typedef enum {
 #define DEFAULT_SFX_VOLUME 12
 #define DEFAULT_MUSIC_VOLUME 25
 
+typedef struct gfx_system gfx_system_t;
+typedef struct gfx_buffer gfx_buffer_t;
+struct engine_gfx {
+	gfx_system_t* system;
+	camera_t camera;
+	mat4f_t world;
+	mat4f_t view_proj;
+	u32 num_vertices;
+	u32 vertex_stride;
+	gfx_buffer_t* vertex_buffer;
+	gfx_buffer_t* cbuffer; // TODO(paulh): should go with shader(s)?
+	u8* cbuffer_data;
+	size_t cbuffer_size;
+};
+
 typedef struct engine_s engine_t;
 struct engine_s {
 	s32 adapter_index;
@@ -50,6 +67,9 @@ struct engine_s {
 	SDL_Window* window;
 	bool fullscreen;
 	SDL_Renderer* renderer;
+
+	struct engine_gfx gfx;
+
 	// SDL_Surface* scr_surface;
 	// SDL_Texture* scr_texture;
 	rect_t window_rect;

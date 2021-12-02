@@ -47,7 +47,7 @@ typedef enum {
 } entity_caps_t;
 
 typedef enum {
-	kSatelliteStationary =  1 << 0,
+	kSatelliteStationary = 1 << 0,
 	kSatelliteOrbitCW = 1 << 1,
 	kSatelliteOrbitCCW = 1 << 2,
 	kSatelliteTargetNearestEnemy = 1 << 3,
@@ -62,6 +62,10 @@ typedef struct entity_s {
 	s32 flags;
 
 	struct vec3f origin; // top-left
+	struct vec3f velocity;
+	struct vec4f vertex_color;
+	f32 capsule_radius;
+	f32 capsule_height;
 	struct bounds bbox;
 	// struct bounds bounding;
 

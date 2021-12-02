@@ -9,7 +9,16 @@ typedef struct {
 	s32 w, h;
 } rect_t;
 
-static inline void center_in_rect(rect_t* dst, const rect_t* outer, const rect_t* inner)
+static inline void rect_copy(rect_t* dst, const rect_t* src)
+{
+	dst->x = src->x;
+	dst->y = src->y;
+	dst->w = src->w;
+	dst->h = src->h;
+}
+
+static inline void center_in_rect(rect_t* dst, const rect_t* outer,
+				  const rect_t* inner)
 {
 	dst->x = (outer->x + (outer->w / 2)) - (inner->x + (inner->w / 2));
 	dst->y = (outer->y + (outer->h / 2)) - (inner->y + (inner->h / 2));

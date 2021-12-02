@@ -45,13 +45,13 @@ BM_EXPORT char* os_quick_read_utf8_file(const char* path);
 BM_EXPORT s64 os_get_file_size(const char* path);
 
 BM_EXPORT size_t os_utf8_to_wcs(const char* str, size_t len, wchar_t* dst,
-				    size_t dst_size);
+				size_t dst_size);
 BM_EXPORT size_t os_utf8_to_wcs_ptr(const char* str, size_t len,
-					wchar_t** pstr);
+				    wchar_t** pstr);
 BM_EXPORT size_t os_wcs_to_utf8(const wchar_t* str, size_t len, char* dst,
-				    size_t dst_size);
+				size_t dst_size);
 BM_EXPORT size_t os_wcs_to_utf8_ptr(const wchar_t* str, size_t len,
-					char** pstr);
+				    char** pstr);
 
 BM_EXPORT void os_sleep_ms(const u32 duration);
 BM_EXPORT u64 os_get_time_ns(void);
@@ -66,8 +66,8 @@ BM_EXPORT bool os_file_exists(const char* path);
 
 BM_EXPORT long os_atomic_inc_long(volatile long* val);
 BM_EXPORT long os_atomic_dec_long(volatile long* val);
-BM_EXPORT long os_atomic_set_long(volatile long *ptr, long val);
-BM_EXPORT long os_atomic_exchange_long(volatile long *ptr, long val);
+BM_EXPORT long os_atomic_set_long(volatile long* ptr, long val);
+BM_EXPORT long os_atomic_exchange_long(volatile long* ptr, long val);
 
 #ifdef __cplusplus
 }

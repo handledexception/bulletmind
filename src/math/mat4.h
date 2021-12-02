@@ -29,7 +29,7 @@ typedef struct mat4f {
 	vec4f_t w;
 } mat4f_t;
 
-static inline void mat4f_zero(mat4f_t* m)
+static inline void mat4f_zero(struct mat4f* m)
 {
 	vec4f_zero(&m->x);
 	vec4f_zero(&m->y);
@@ -37,7 +37,7 @@ static inline void mat4f_zero(mat4f_t* m)
 	vec4f_zero(&m->w);
 }
 
-static inline void mat4f_identity(mat4f_t* m)
+static inline void mat4f_identity(struct mat4f* m)
 {
 	mat4f_zero(m);
 	m->x.x = 1.f;
@@ -46,18 +46,22 @@ static inline void mat4f_identity(mat4f_t* m)
 	m->w.w = 1.f;
 }
 
-BM_EXPORT void mat4f_transpose(mat4f_t* dst, const mat4f_t* m);
-BM_EXPORT void mat4f_mul(mat4f_t* dst, const mat4f_t* lhs,
-			     const mat4f_t* rhs);
-BM_EXPORT void mat4f_translate_v3(mat4f_t* dst, const vec3f_t* v);
-BM_EXPORT void mat4f_translate(mat4f_t* dst, const vec4f_t* v);
-BM_EXPORT void mat4f_scale_v3(mat4f_t* dst, const vec3f_t* v);
-BM_EXPORT void mat4f_scale(mat4f_t* dst, const vec4f_t* v);
-BM_EXPORT void mat4f_ortho_lh(mat4f_t* dst, f32 width, f32 height,
-				  f32 z_near, f32 z_far);
-BM_EXPORT void mat4f_perspective_fov_lh(mat4f_t* dst, f32 fov, f32 aspect,
-					    f32 z_near, f32 z_far);
-BM_EXPORT void mat4f_look_at_lh(mat4f_t* dst, const vec3f_t* pos,
-				    const vec3f_t* dir, const vec3f_t* up);
+BM_EXPORT void mat4f_transpose(struct mat4f* dst, const struct mat4f* m);
+BM_EXPORT void mat4f_mul(struct mat4f* dst, const struct mat4f* lhs,
+			 const struct mat4f* rhs);
+BM_EXPORT void mat4f_translate_v3(struct mat4f* dst, const vec3f_t* v);
+BM_EXPORT void mat4f_translate(struct mat4f* dst, const vec4f_t* v);
+BM_EXPORT void mat4f_scale_v3(struct mat4f* dst, const vec3f_t* v);
+BM_EXPORT void mat4f_scale(struct mat4f* dst, const vec4f_t* v);
+BM_EXPORT void mat4f_ortho_lh(struct mat4f* dst, f32 width, f32 height,
+			      f32 z_near, f32 z_far);
+BM_EXPORT void mat4f_perspective_fov_lh(struct mat4f* dst, f32 fov, f32 aspect,
+					f32 z_near, f32 z_far);
+BM_EXPORT void mat4f_look_at_lh(struct mat4f* dst, const struct vec3f* eye,
+				const struct vec3f* dir,
+				const struct vec3f* up);
+BM_EXPORT void mat4f_look_at_rh(struct mat4f* dst, const struct vec3f* eye,
+				const struct vec3f* dir,
+				const struct vec3f* up);
 
 #endif

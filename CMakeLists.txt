@@ -30,8 +30,14 @@ endif()
 
 set(BM_INCLUDE_DIRS
     src
+    deps/murmur2
     deps/tomlc99
     deps/SDL2/include)
+
+# murmur2
+set(MURMURHASH2_SOURCES
+    deps/murmur2/MurmurHash2.h
+    deps/murmur2/MurmurHash2.c)
 
 # tomlc99
 set(TOMLC99_SOURCES
@@ -57,6 +63,7 @@ set(BM_CORE_HEADERS
 set(BM_CORE_SOURCES
     src/core/binary.c
     src/core/buffer.c
+    src/core/hashmap.c
     src/core/logger.c
     src/core/mem_align.c
     src/core/memory.c
@@ -175,6 +182,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 set(BM_TARGET_SOURCES
+    ${MURMURHASH2_SOURCES}
     ${TOMLC99_SOURCES}
     ${BM_CORE_HEADERS}
     ${BM_CORE_SOURCES}
@@ -219,7 +227,6 @@ else()
 endif()
 
 set_property(TARGET bulletmind PROPERTY C_STANDARD 11)
-
 target_include_directories(bulletmind PUBLIC ${BM_INCLUDE_DIRS})
 target_link_directories(bulletmind PUBLIC ${BM_LIB_DIRS})
 target_link_libraries(bulletmind PUBLIC ${BM_LIBS})
@@ -303,3 +310,21 @@ add_custom_command(TARGET bulletmind POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_CURRENT_SOURCE_DIR}/config
     $<TARGET_FILE_DIR:${PROJECT_NAME}>/config)
+
+add_executable(bm_tests
+    src/tests.c
+    ${MURMURHASH2_SOURCES}
+    ${TOMLC99_SOURCES}
+    ${BM_CORE_HEADERS}
+    ${BM_CORE_SOURCES}
+    ${BM_MATH_HEADERS}
+    ${BM_MATH_SOURCES}
+    ${BM_PLATFORM_HEADERS}
+    ${BM_PLATFORM_SOURCES})
+set_property(TARGET bm_tests PROPERTY C_STANDARD 11)
+target_include_directories(bm_tests PUBLIC
+    ${BM_INCLUDE_DIRS}
+    deps/tau)
+target_link_directories(bm_tests PUBLIC ${BM_LIB_DIRS})
+target_link_libraries(bm_tests PUBLIC ${BM_LIBS})
+target_link_options(bm_tests PUBLIC ${BM_LINK_OPTS})

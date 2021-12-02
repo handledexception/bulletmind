@@ -11,6 +11,9 @@
             ],
             "includePath": [
                 "${workspaceFolder}/deps",
+                "${workspaceFolder}/deps/tau",
+                "${workspaceFolder}/deps/murmur2",
+                "${workspaceFolder}/deps/tomlc99",
                 "${workspaceFolder}/deps/SDL2/include",
                 "${workspaceFolder}/src"
             ],

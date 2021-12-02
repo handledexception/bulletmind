@@ -25,6 +25,17 @@
             "cwd": "${workspaceFolder}\\ninja-debug-x64",
             "environment": [],
             "console": "integratedTerminal"
+        },
+        {
+            "name": "bm_tests (x64)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}\\ninja-debug-x64\\bm_tests.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}\\ninja-debug-x64",
+            "environment": [],
+            "console": "integratedTerminal"
         }
     ]
 }

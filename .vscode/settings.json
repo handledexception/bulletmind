@@ -61,7 +61,9 @@
         "xlocmon": "cpp",
         "xloctime": "cpp",
         "xtree": "cpp",
-        "gfx_d3d11.h": "c"
+        "gfx_d3d11.h": "c",
+        "murmurhash2.h": "c",
+        "tau.h": "c"
     },
     "cmake.configureOnOpen": false
 }
