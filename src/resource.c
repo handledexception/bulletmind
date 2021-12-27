@@ -28,7 +28,7 @@
 #include <assert.h>
 
 //TODO(paulh): Need to add some string utils like concatenation!
-static const char* kAssetsToml = "config/assets.toml";
+static const char* kAssetsToml = "assets/assets.toml";
 
 //TODO(paulh): Need to add logging!
 bool game_res_init(engine_t* eng)
