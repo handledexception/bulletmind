@@ -53,6 +53,7 @@ set(BM_CORE_HEADERS
     src/core/logger.h
     src/core/mem_align.h
     src/core/memory.h
+    src/core/path.h
     src/core/rect.h
     src/core/scancode.h
     src/core/string.h
@@ -67,6 +68,7 @@ set(BM_CORE_SOURCES
     src/core/logger.c
     src/core/mem_align.c
     src/core/memory.c
+    src/core/path.c
     src/core/random.c
     src/core/string.c
     src/core/utils.c)
@@ -306,10 +308,10 @@ add_custom_command(TARGET bulletmind POST_BUILD
     ${CMAKE_CURRENT_SOURCE_DIR}/assets
     $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets)
 # copy configs
-add_custom_command(TARGET bulletmind POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_CURRENT_SOURCE_DIR}/config
-    $<TARGET_FILE_DIR:${PROJECT_NAME}>/config)
+# add_custom_command(TARGET bulletmind POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_directory
+#     ${CMAKE_CURRENT_SOURCE_DIR}/config
+#     $<TARGET_FILE_DIR:${PROJECT_NAME}>/config)
 
 add_executable(bm_tests
     src/tests.c
