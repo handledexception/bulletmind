@@ -51,12 +51,14 @@ typedef struct arena_s {
 } arena_t;
 
 extern size_t arena_allocated_bytes;
-extern u8* arena_buf;
-extern arena_t g_mem_arena;
+extern u8* mem_arena_backing_buffer;
+extern arena_t mem_arena;
 
 BM_EXPORT void arena_init(arena_t* arena, void* backing_buffer, size_t sz_backing);
 BM_EXPORT void arena_free_all(arena_t* arena);
 BM_EXPORT void* arena_alloc(arena_t* arena, size_t size, size_t align);
+
+#define bm_arena_alloc(_arena, _sz) arena_alloc(_arena, _sz, DEFAULT_ALIGNMENT)
 
 #ifdef __cplusplus
 }

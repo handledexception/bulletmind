@@ -1,5 +1,6 @@
 #include "gfx/gfx.h"
 #include "math/types.h"
+#include "core/memory.h"
 
 u32 gfx_get_bits_per_pixel(enum gfx_pixel_format pf)
 {
@@ -67,4 +68,27 @@ u32 gfx_get_vertex_stride(enum gfx_vertex_type type)
 		break;
 	}
 	return stride;
+}
+
+void gfx_init_sprite(gfx_system_t* gfx, gfx_buffer_t* vertex_buffer)
+{
+	size_t sz = sizeof(struct gfx_vertex_data);
+	struct gfx_vertex_data* vd = (struct gfx_vertex_data*)bm_malloc(sz);
+	memset(vd, 0, sz);
+	vd->num_vertices = 4;
+	size_t sz_positions = sizeof(vec3f_t) * vd->num_vertices;
+	vd->positions = (vec3f_t*)bm_malloc(sz_positions);
+	vd->tex_verts = (struct texture_vertex*)bm_malloc(
+		sizeof(struct texture_vertex));
+	size_t sz_tex_verts = sizeof(vec2f_t) * 4;
+	vd->tex_verts->data = bm_malloc(sz_tex_verts);
+	vd->tex_verts->size = sizeof(vec2f_t);
+	gfx_create_buffer(gfx, vd, sz_positions + sz_tex_verts,
+			  GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DYNAMIC,
+			  &vertex_buffer);
+}
+
+void gfx_draw_sprite(gfx_system_t* gfx, struct gfx_texture* texture, u32 width,
+		     u32 height, u32 flags)
+{
 }

@@ -52,9 +52,10 @@ struct engine_gfx {
 	camera_t camera;
 	mat4f_t world;
 	mat4f_t view_proj;
-	u32 num_vertices;
+	struct gfx_vertex_data* vertices;
 	u32 vertex_stride;
 	gfx_buffer_t* vertex_buffer;
+	u8* vbuffer_data;
 	gfx_buffer_t* cbuffer; // TODO(paulh): should go with shader(s)?
 	u8* cbuffer_data;
 	size_t cbuffer_size;

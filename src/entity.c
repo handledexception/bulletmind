@@ -60,7 +60,7 @@ bool ent_init(entity_t** ent_list, const s32 num_ents)
 		return false;
 
 	const size_t sz_ent_list = sizeof(entity_t) * num_ents;
-	*ent_list = (entity_t*)arena_alloc(&g_mem_arena, sz_ent_list,
+	*ent_list = (entity_t*)arena_alloc(&mem_arena, sz_ent_list,
 					   DEFAULT_ALIGNMENT);
 	memset(*ent_list, 0, sz_ent_list);
 

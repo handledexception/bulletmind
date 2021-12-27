@@ -56,7 +56,7 @@ bool sprite_load(const char* path, sprite_t** out)
 	// absolute most janky file extension comparison
 	const char* file_ext = path_get_extension(path);
 	if (strcmp(file_ext, "tga") == 0) {
-		img = (sprite_t*)arena_alloc(&g_mem_arena, sizeof(sprite_t),
+		img = (sprite_t*)arena_alloc(&mem_arena, sizeof(sprite_t),
 					     DEFAULT_ALIGNMENT);
 		img->type = IMG_TYPE_TARGA;
 
@@ -98,7 +98,7 @@ bool sprite_load(const char* path, sprite_t** out)
 		s32 stride = width * bytes_per_pixel;
 		size_t pixel_size = width * height * bytes_per_pixel;
 
-		img->data = (u8*)arena_alloc(&g_mem_arena, pixel_size,
+		img->data = (u8*)arena_alloc(&mem_arena, pixel_size,
 					     DEFAULT_ALIGNMENT);
 
 		logger(LOG_INFO, "sprite_load - %s, %dx%d %d bytes per pixel\n",
@@ -147,12 +147,12 @@ bool sprite_load(const char* path, sprite_t** out)
 void sprite_create(u8* data, u32 w, u32 h, u32 bpp, u32 stride, u32 format,
 		   sprite_t** out)
 {
-	sprite_t* img = (sprite_t*)arena_alloc(&g_mem_arena, sizeof(sprite_t),
+	sprite_t* img = (sprite_t*)arena_alloc(&mem_arena, sizeof(sprite_t),
 					       DEFAULT_ALIGNMENT);
 	img->type = IMG_TYPE_RAW;
 	size_t pixel_size = w * h * (bpp / 8);
 	img->data =
-		(u8*)arena_alloc(&g_mem_arena, pixel_size, DEFAULT_ALIGNMENT);
+		(u8*)arena_alloc(&mem_arena, pixel_size, DEFAULT_ALIGNMENT);
 	memcpy(img->data, data, pixel_size);
 	img->surface = SDL_CreateRGBSurfaceWithFormatFrom(img->data, w, h, bpp,
 							  stride, format);

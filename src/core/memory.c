@@ -21,9 +21,9 @@
 #include <assert.h>
 #include <malloc.h>
 
-static struct memory_allocator gAllocator = {malloc, realloc, free};
+static struct memory_allocator allocator = {malloc, realloc, free};
 
-// #define BM_TRACK_MEMORY_USAGE 1
+#define BM_TRACK_MEMORY_USAGE 1
 #ifdef BM_TRACK_MEMORY_USAGE
 static uint64_t g_object_count = 0;
 static uint64_t g_bytes_allocated = 0;
@@ -31,9 +31,10 @@ static uint64_t g_min_bytes_allocated = 0;
 static uint64_t g_max_bytes_allocated = 0;
 #endif
 
+// extern from memory.h
 size_t arena_allocated_bytes = 0;
-u8* arena_buf = NULL;
-arena_t g_mem_arena = {NULL, 0, 0, 0};
+u8* mem_arena_backing_buffer = NULL;
+arena_t mem_arena = {NULL, 0, 0, 0};
 
 static void recalculate_usage(size_t new_size)
 {
@@ -54,13 +55,13 @@ void* bm_malloc(size_t size)
 #ifdef BM_TRACK_MEMORY_USAGE
 	// set size before ptr for later recall
 	size_t alloc_size = size + sizeof(size_t);
-	ptr = gAllocator.malloc(alloc_size);
+	ptr = allocator.malloc(alloc_size);
 	*(size_t*)(ptr) = alloc_size;
 	*(u8**)(&ptr) += sizeof(size_t);
 	recalculate_usage(g_bytes_allocated + alloc_size);
 	os_atomic_inc_long(&g_object_count);
 #else
-	ptr = gAllocator.malloc(size);
+	ptr = allocator.malloc(size);
 #endif
 	return ptr;
 }
@@ -73,7 +74,7 @@ void* bm_realloc(void* ptr, size_t size)
 		size_t* hdr = (size_t*)(p) - 1;
 		size_t alloc_size = *hdr;
 #endif
-		gAllocator.realloc(ptr, size);
+		allocator.realloc(ptr, size);
 #ifdef BM_TRACK_MEMORY_USAGE
 		size_t bytes_allocated = g_bytes_allocated + (abs(alloc_size - size));
 		recalculate_usage(bytes_allocated);
@@ -92,11 +93,11 @@ void bm_free(void* ptr)
 		size_t alloc_size = *hdr;
 		size_t obj_size = alloc_size - sizeof(size_t);
 		p -= sizeof(size_t);
-		gAllocator.free(p);
+		allocator.free(p);
 		recalculate_usage(g_bytes_allocated - alloc_size);
 		os_atomic_dec_long(&g_object_count);
 #else
-		gAllocator.free(ptr);
+		allocator.free(ptr);
 #endif
 	}
 }

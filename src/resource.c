@@ -61,7 +61,7 @@ bool game_res_init(engine_t* eng)
 	logger(LOG_INFO, "Found %d assets in game resources config.",
 	       num_assets);
 
-	eng->game_resources = (game_resource_t**)arena_alloc(&g_mem_arena,
+	eng->game_resources = (game_resource_t**)arena_alloc(&mem_arena,
 					  sizeof(game_resource_t*) * num_assets,
 					  DEFAULT_ALIGNMENT);
 
@@ -153,7 +153,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 		sprite_t* sprite = NULL;
 		if (sprite_load(asset_path, &sprite) &&
 		    sprite_create_texture(eng->renderer, sprite)) {
-			resource = arena_alloc(&g_mem_arena,
+			resource = arena_alloc(&mem_arena,
 					       sizeof(game_resource_t),
 					       DEFAULT_ALIGNMENT);
 			sprintf(resource->name, "%s", asset_name);
@@ -182,7 +182,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 				(size_t)toml_array_nelem(frames);
 
 			sprite_sheet_t* sprite_sheet = arena_alloc(
-				&g_mem_arena, sizeof(sprite_sheet_t),
+				&mem_arena, sizeof(sprite_sheet_t),
 				DEFAULT_ALIGNMENT);
 
 			//TODO(paulh): need a filesystem path string processor to get base dir of path
@@ -196,7 +196,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 			sprite_sheet->backing_sprite = sprite;
 			sprite_sheet->num_frames = num_frames;
 			sprite_sheet->frames = (ss_frame_t*)arena_alloc(
-				&g_mem_arena, sizeof(ss_frame_t) * num_frames,
+				&mem_arena, sizeof(ss_frame_t) * num_frames,
 				DEFAULT_ALIGNMENT);
 
 			// Load frame array from sprite sheet asset file
@@ -224,7 +224,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 				ss_frame->duration = (f32)duration;
 			}
 
-			resource = arena_alloc(&g_mem_arena,
+			resource = arena_alloc(&mem_arena,
 					       sizeof(game_resource_t),
 					       DEFAULT_ALIGNMENT);
 
@@ -237,7 +237,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 		   asset_type == kAssetTypeMusic) {
 		audio_chunk_t* audio_chunk = NULL;
 		if (audio_load_sound(asset_path, &audio_chunk)) {
-			resource = arena_alloc(&g_mem_arena,
+			resource = arena_alloc(&mem_arena,
 					       sizeof(game_resource_t),
 					       DEFAULT_ALIGNMENT);
 
@@ -273,7 +273,11 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 			if (type == GFX_SHADER_VERTEX)
 				gfx_create_shader_input_layout(eng->gfx.system, shader, vertex_type);
 		}
-		resource = bm_malloc(sizeof(game_resource_t));
+		resource = arena_alloc(&mem_arena,
+				sizeof(game_resource_t),
+				DEFAULT_ALIGNMENT);
+		sprintf(resource->name, "%s", asset_name);
+		sprintf(resource->path, "%s", asset_path);
 		resource->type = asset_type;
 		resource->data = (void*)shader;
 

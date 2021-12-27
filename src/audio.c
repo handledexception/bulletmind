@@ -29,7 +29,7 @@ bool audio_load_sound(const char* path, audio_chunk_t** data)
 	if (!wav_file)
 		return false;
 	audio_chunk_t* chunk = (audio_chunk_t*)arena_alloc(
-		&g_mem_arena, sizeof(audio_chunk_t), DEFAULT_ALIGNMENT);
+		&mem_arena, sizeof(audio_chunk_t), DEFAULT_ALIGNMENT);
 	// audio_chunk_t* chunk = (audio_chunk_t*)malloc(sizeof(audio_chunk_t));
 	chunk->allocated = (bool)wav_file->allocated;
 	chunk->data = wav_file->abuf;

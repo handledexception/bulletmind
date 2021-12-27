@@ -754,7 +754,7 @@ void gfx_render_begin(gfx_system_t* gfx)
 {
 	if (gfx && gfx->ctx) {
 		// render scene begin
-		u32 vertex_count = 12;
+		u32 vertex_count = BM_GFX_MAX_VERTICES;
 		u32 start_vertex = 0;
 		ID3D11DeviceContext1_VSSetShader(
 			gfx->ctx,
@@ -774,28 +774,28 @@ void gfx_render_end(gfx_system_t* gfx, bool vsync, u32 flags)
 	IDXGISwapChain1_Present(gfx->dxgi_swap_chain, (UINT)vsync, flags);
 }
 
-void gfx_init_sprite(gfx_system_t* gfx, gfx_buffer_t* vertex_buffer)
-{
-	size_t sz = sizeof(struct gfx_vertex_data);
-	struct gfx_vertex_data* vd = (struct gfx_vertex_data*)bm_malloc(sz);
-	memset(vd, 0, sz);
-	vd->num_vertices = 4;
-	size_t sz_positions = sizeof(vec3f_t) * vd->num_vertices;
-	vd->positions = (vec3f_t*)bm_malloc(sz_positions);
-	vd->tex_verts = (struct texture_vertex*)bm_malloc(
-		sizeof(struct texture_vertex));
-	size_t sz_tex_verts = sizeof(vec2f_t) * 4;
-	vd->tex_verts->data = bm_malloc(sz_tex_verts);
-	vd->tex_verts->size = sizeof(vec2f_t);
-	gfx_create_buffer(gfx, vd, sz_positions + sz_tex_verts,
-			  GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DYNAMIC,
-			  &vertex_buffer);
-}
+// void gfx_init_sprite(gfx_system_t* gfx, gfx_buffer_t* vertex_buffer)
+// {
+// 	size_t sz = sizeof(struct gfx_vertex_data);
+// 	struct gfx_vertex_data* vd = (struct gfx_vertex_data*)bm_malloc(sz);
+// 	memset(vd, 0, sz);
+// 	vd->num_vertices = 4;
+// 	size_t sz_positions = sizeof(vec3f_t) * vd->num_vertices;
+// 	vd->positions = (vec3f_t*)bm_malloc(sz_positions);
+// 	vd->tex_verts = (struct texture_vertex*)bm_malloc(
+// 		sizeof(struct texture_vertex));
+// 	size_t sz_tex_verts = sizeof(vec2f_t) * 4;
+// 	vd->tex_verts->data = bm_malloc(sz_tex_verts);
+// 	vd->tex_verts->size = sizeof(vec2f_t);
+// 	gfx_create_buffer(gfx, vd, sz_positions + sz_tex_verts,
+// 			  GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DYNAMIC,
+// 			  &vertex_buffer);
+// }
 
-void gfx_draw_sprite(gfx_system_t* gfx, struct gfx_texture* texture, u32 width,
-		     u32 height, u32 flags)
-{
-}
+// void gfx_draw_sprite(gfx_system_t* gfx, struct gfx_texture* texture, u32 width,
+// 		     u32 height, u32 flags)
+// {
+// }
 
 //
 // gfx buffer

@@ -205,12 +205,12 @@ int main(int argc, char** argv)
 	logger(LOG_INFO, "%s\n", s);
 
 	// Allocate memory arena - 8MiB
-	arena_buf = (u8*)malloc(ARENA_TOTAL_BYTES);
-	arena_init(&g_mem_arena, (void*)arena_buf, (size_t)ARENA_TOTAL_BYTES);
+	mem_arena_backing_buffer = (u8*)bm_malloc(ARENA_TOTAL_BYTES);
+	arena_init(&mem_arena, (void*)mem_arena_backing_buffer, (size_t)ARENA_TOTAL_BYTES);
 
 	size_t sz_engine = sizeof(engine_t);
-	engine = (engine_t*)arena_alloc(&g_mem_arena, sz_engine,
-					DEFAULT_ALIGNMENT);
+	engine = (engine_t*)bm_arena_alloc(&mem_arena, sz_engine);
+
 	memset(engine, 0, sizeof(engine_t));
 	engine->adapter_index = -1; // SDL default to first available
 	engine->window_rect.x = -1; // SDL window position centered
@@ -344,8 +344,8 @@ int main(int argc, char** argv)
 
 	eng_shutdown(engine);
 	engine = NULL;
-	bm_free(arena_buf);
-	arena_buf = NULL;
+	bm_free(mem_arena_backing_buffer);
+	mem_arena_backing_buffer = NULL;
 
 	return 0;
 }

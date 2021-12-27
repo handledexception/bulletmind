@@ -67,12 +67,13 @@ game_resource_t* eng_get_resource(engine_t* eng, const char* name)
 {
 	game_resource_t* rsrc = NULL;
 	for (size_t rdx = 0; rdx < MAX_GAME_RESOURCES; rdx++) {
-		if (!strcmp(eng->game_resources[rdx]->name, name)) {
+		if (eng->game_resources[rdx] &&
+			eng->game_resources[rdx]->name &&
+			!strcmp(eng->game_resources[rdx]->name, name)) {
 			rsrc = eng->game_resources[rdx];
 			break;
 		}
 	}
-
 	return rsrc;
 }
 
@@ -138,6 +139,11 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	//     CAMERA_WIDTH,
 	//     CAMERA_HEIGHT
 	// );
+
+	if (!audio_init(BM_NUM_AUDIO_CHANNELS, BM_AUDIO_SAMPLE_RATE,
+		BM_AUDIO_CHUNK_SIZE))
+	return false;
+
 #if defined(BM_WINDOWS)
 	// gui_init();
 	// gui_window_t* wnd =
@@ -194,7 +200,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 
 	if (!game_res_init(eng))
 		return false;
-		
+
 	game_resource_t* resource =
 		eng_get_resource(eng, "pos_color_vs");
 	gfx_shader_t* hlsl_vs = (gfx_shader_t*)resource->data;
@@ -247,68 +253,34 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	memcpy(&engine->gfx.cbuffer_data[(sizeof(mat4f_t) + 15) & ~15],
 	       (const void*)&engine->gfx.view_proj, sizeof(mat4f_t));
 
-	struct gfx_vertex_data* vertices = bm_malloc(sizeof(*vertices));
-	// u32 num_verts = 12;
-	engine->gfx.num_vertices = 6;
+	engine->gfx.vertices = bm_malloc(sizeof(*engine->gfx.vertices));
 	engine->gfx.vertex_stride = gfx_get_vertex_stride(GFX_VERTEX_POS_COLOR);
-	vertices->num_vertices = engine->gfx.num_vertices;
-	vertices->positions =
-		bm_malloc(sizeof(vec3f_t) * engine->gfx.num_vertices);
-	vertices->colors =
-		bm_malloc(sizeof(vec4f_t) * engine->gfx.num_vertices);
-	// vertices->positions[0]   = (vec3f_t){ -0.5f,  0.f,  1.f };
-	// vertices->positions[1]   = (vec3f_t){  0.5f,  0.f,  1.f };
-	// vertices->positions[2]   = (vec3f_t){  0.f,   1.f,  1.f };
-	// vertices->positions[3]   = (vec3f_t){ -0.5f,  0.f,  2.f };
-	// vertices->positions[4]   = (vec3f_t){  0.5f,  0.f,  2.f };
-	// vertices->positions[5]   = (vec3f_t){  0.f,   1.f,  2.f };
-	// vertices->positions[6]   = (vec3f_t){ -0.5f,  0.f,  3.f };
-	// vertices->positions[7]   = (vec3f_t){  0.5f,  0.f,  3.f };
-	// vertices->positions[8]   = (vec3f_t){  0.f,   1.f,  3.f };
-	// vertices->positions[9]   = (vec3f_t){ -0.5f,  0.f,  4.f };
-	// vertices->positions[10]  = (vec3f_t){  0.5f,  0.f,  4.f };
-	// vertices->positions[11]  = (vec3f_t){  0.f,   1.f,  4.f };
-	// vertices->colors[0] = (vec4f_t){ 1.f, 0.f, 0.f, 1.f };
-	// vertices->colors[1] = (vec4f_t){ 0.f, 1.f, 0.f, 1.f };
-	// vertices->colors[2] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
-	// vertices->colors[3] = (vec4f_t){ 1.f, 0.f, 0.f, 1.f };
-	// vertices->colors[4] = (vec4f_t){ 0.f, 1.f, 0.f, 1.f };
-	// vertices->colors[5] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
-	// vertices->colors[6] = (vec4f_t){ 1.f, 0.f, 0.f, 1.f };
-	// vertices->colors[7] = (vec4f_t){ 0.f, 1.f, 0.f, 1.f };
-	// vertices->colors[8] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
-	// vertices->colors[9] =  (vec4f_t){ 1.f, 0.f, 0.f, 1.f };
-	// vertices->colors[10] = (vec4f_t){ 0.f, 1.f, 0.f, 1.f };
-	// vertices->colors[11] = (vec4f_t){ 0.f, 0.f, 1.f, 1.f };
-	vertices->positions[0] = (vec3f_t){-0.5f, 0.f, -0.5f};
-	vertices->positions[1] = (vec3f_t){0.5f, 0.f, -0.5f};
-	vertices->positions[2] = (vec3f_t){0.5f, 0.f, 0.5f};
-	vertices->positions[3] = (vec3f_t){-0.5f, 0.f, -0.5f};
-	vertices->positions[4] = (vec3f_t){0.5f, 0.f, 0.5f};
-	vertices->positions[5] = (vec3f_t){-0.5f, 0.f, 0.5f};
-	vertices->colors[0] = (vec4f_t){1.f, 0.f, 0.f, 1.f};
-	vertices->colors[1] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
-	vertices->colors[2] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
-	vertices->colors[3] = (vec4f_t){1.f, 0.f, 0.f, 1.f};
-	vertices->colors[4] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
-	vertices->colors[5] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
+	engine->gfx.vertices->num_vertices = 6;
+	engine->gfx.vertices->positions =
+		bm_malloc(sizeof(vec3f_t) * 6);
+	engine->gfx.vertices->colors =
+		bm_malloc(sizeof(vec4f_t) * 6);
+	engine->gfx.vertices->positions[0] = (vec3f_t){-0.5f, 0.f, -0.5f};
+	engine->gfx.vertices->positions[1] = (vec3f_t){0.5f, 0.f, -0.5f};
+	engine->gfx.vertices->positions[2] = (vec3f_t){0.5f, 0.f, 0.5f};
+	engine->gfx.vertices->positions[3] = (vec3f_t){-0.5f, 0.f, -0.5f};
+	engine->gfx.vertices->positions[4] = (vec3f_t){0.5f, 0.f, 0.5f};
+	engine->gfx.vertices->positions[5] = (vec3f_t){-0.5f, 0.f, 0.5f};
+	engine->gfx.vertices->colors[0] = (vec4f_t){1.f, 0.f, 0.f, 1.f};
+	engine->gfx.vertices->colors[1] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
+	engine->gfx.vertices->colors[2] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
+	engine->gfx.vertices->colors[3] = (vec4f_t){1.f, 0.f, 0.f, 1.f};
+	engine->gfx.vertices->colors[4] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
+	engine->gfx.vertices->colors[5] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
 
-	size_t vbd_size = (sizeof(vec3f_t) * engine->gfx.num_vertices) +
-			  (sizeof(vec4f_t) * engine->gfx.num_vertices);
-	u8* vertex_data = (u8*)bm_malloc(vbd_size);
-	size_t offset = 0;
-	for (u32 i = 0; i < engine->gfx.num_vertices; i++) {
-		memcpy((void*)&vertex_data[offset],
-		       (const void*)&vertices->positions[i],
-		       sizeof(struct vec3f));
-		offset += sizeof(struct vec3f);
-		memcpy((void*)&vertex_data[offset],
-		       (const void*)&vertices->colors[i], sizeof(struct vec4f));
-		offset += sizeof(struct vec4f);
-	}
+	size_t vbd_size = (sizeof(vec3f_t) * 6) +
+			  (sizeof(vec4f_t) * 6);
+	eng->gfx.vbuffer_data = (u8*)bm_malloc(vbd_size);
 
-	gfx_create_buffer(engine->gfx.system, (const void*)vertex_data,
-			  vbd_size, GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DEFAULT,
+	size_t vertex_buffer_size = (sizeof(vec3f_t) * BM_GFX_MAX_VERTICES) +
+			  (sizeof(vec4f_t) * BM_GFX_MAX_VERTICES);
+	gfx_create_buffer(engine->gfx.system, NULL,
+			  vertex_buffer_size, GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DYNAMIC,
 			  &engine->gfx.vertex_buffer);
 
 	gfx_init_sampler_state(engine->gfx.system);
@@ -316,17 +288,14 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 
 #endif
 
-	eng->inputs = (input_state_t*)arena_alloc(
-		&g_mem_arena, sizeof(input_state_t), DEFAULT_ALIGNMENT);
+	eng->inputs = (input_state_t*)bm_arena_alloc(
+		&mem_arena, sizeof(input_state_t));
 	memset(eng->inputs, 0, sizeof(input_state_t));
 
-	eng->audio = (audio_state_t*)arena_alloc(
-		&g_mem_arena, sizeof(audio_state_t), DEFAULT_ALIGNMENT);
+	eng->audio = (audio_state_t*)bm_arena_alloc(
+		&mem_arena, sizeof(audio_state_t));
 	memset(eng->audio, 0, sizeof(audio_state_t));
 
-	if (!audio_init(BM_NUM_AUDIO_CHANNELS, BM_AUDIO_SAMPLE_RATE,
-			BM_AUDIO_CHUNK_SIZE))
-		return false;
 	if (!inp_init(eng->inputs))
 		return false;
 	// cmd_init();
@@ -359,34 +328,53 @@ void eng_refresh(engine_t* eng, f64 dt)
 	cmd_refresh(eng);
 	ent_refresh(eng, dt);
 
-	memcpy(&engine->gfx.cbuffer_data[0], (const void*)&engine->gfx.world,
+	// This is our "scene" .. copy its vertex data into the vertex buffer.
+	size_t offset = 0;
+	for (u32 i = 0; i < 6; i++) {
+		memcpy((void*)&eng->gfx.vbuffer_data[offset],
+		       (const void*)&eng->gfx.vertices->positions[i],
+		       sizeof(struct vec3f));
+		offset += sizeof(struct vec3f);
+		memcpy((void*)&eng->gfx.vbuffer_data[offset],
+		       (const void*)&eng->gfx.vertices->colors[i], sizeof(struct vec4f));
+		offset += sizeof(struct vec4f);
+	}
+	size_t vbd_size = (sizeof(vec3f_t) * 6) +
+			(sizeof(vec4f_t) * 6);
+	gfx_buffer_copy_data(eng->gfx.system, eng->gfx.vertex_buffer, eng->gfx.vbuffer_data, vbd_size);
+
+	// Copy constant buffer data (AKA shader vars) into the constant buffer
+	offset = 0;
+	memcpy(&eng->gfx.cbuffer_data[offset], (const void*)&eng->gfx.world,
 	       sizeof(mat4f_t));
-	memcpy(&engine->gfx.cbuffer_data[(sizeof(mat4f_t) + 15) & ~15],
-	       (const void*)&engine->gfx.view_proj, sizeof(mat4f_t));
+	offset = (sizeof(mat4f_t) + 15) & ~15;
+	memcpy(&eng->gfx.cbuffer_data[offset],
+	       (const void*)&eng->gfx.view_proj, sizeof(mat4f_t));
+
 	rgba_t clear_color = {
 		.r = 0,
 		.g = 0,
 		.b = 0,
 		.a = 255,
 	};
-	gfx_render_clear(engine->gfx.system, &clear_color);
-	gfx_system_bind_render_target(engine->gfx.system);
+	gfx_render_clear(eng->gfx.system, &clear_color);
+	gfx_system_bind_render_target(eng->gfx.system);
 	bool zstencil_enabled = true;
-	gfx_toggle_zstencil(engine->gfx.system, zstencil_enabled);
-	gfx_bind_vertex_buffer(engine->gfx.system, engine->gfx.vertex_buffer,
-			       engine->gfx.vertex_stride, 0);
-	gfx_bind_primitive_topology(engine->gfx.system,
+	gfx_toggle_zstencil(eng->gfx.system, zstencil_enabled);
+	gfx_bind_vertex_buffer(eng->gfx.system, eng->gfx.vertex_buffer,
+			       eng->gfx.vertex_stride, 0);
+	gfx_bind_primitive_topology(eng->gfx.system,
 				    GFX_TOPOLOGY_TRIANGLE_LIST);
-	gfx_bind_vertex_shader_input_layout(engine->gfx.system);
-	gfx_bind_rasterizer(engine->gfx.system);
-	gfx_bind_sampler_state(engine->gfx.system, NULL, 0);
-	gfx_buffer_copy_data(engine->gfx.system, engine->gfx.cbuffer,
-			     engine->gfx.cbuffer_data,
-			     engine->gfx.cbuffer_size);
-	gfx_upload_constant_buffer(engine->gfx.system, engine->gfx.cbuffer,
+	gfx_bind_vertex_shader_input_layout(eng->gfx.system);
+	gfx_bind_rasterizer(eng->gfx.system);
+	gfx_bind_sampler_state(eng->gfx.system, NULL, 0);
+	gfx_buffer_copy_data(eng->gfx.system, eng->gfx.cbuffer,
+			     eng->gfx.cbuffer_data,
+			     eng->gfx.cbuffer_size);
+	gfx_upload_constant_buffer(eng->gfx.system, eng->gfx.cbuffer,
 				   GFX_SHADER_VERTEX);
-	gfx_render_begin(engine->gfx.system);
-	gfx_render_end(engine->gfx.system, false, 0);
+	gfx_render_begin(eng->gfx.system);
+	gfx_render_end(eng->gfx.system, false, 0);
 }
 
 void eng_shutdown(engine_t* eng)

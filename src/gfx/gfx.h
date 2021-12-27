@@ -11,6 +11,7 @@ extern "C" {
 #define Z_NEAR 0.0f
 #define Z_FAR 100.f
 #define FOV_Y 90.f
+#define BM_GFX_MAX_VERTICES 1024
 
 typedef struct vec2f vec2f_t;
 typedef struct vec3f vec3f_t;
