@@ -151,10 +151,10 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	engine->gfx.system = gfx_system_init(&gfx_cfg, gfx_sys_flags);
 
 	gfx_shader_t* hlsl_vs = gfx_compile_shader_from_file(
-		"assets/pos_color.vs.hlsl", "VSMain", kDX11VertexShaderTarget,
+		"assets/shader/pos_color.vs.hlsl", "VSMain", kDX11VertexShaderTarget,
 		GFX_SHADER_VERTEX);
 	gfx_shader_t* hlsl_ps = gfx_compile_shader_from_file(
-		"assets/pos_color.ps.hlsl", "PSMain", kDX11PixelShaderTarget,
+		"assets/shader/pos_color.ps.hlsl", "PSMain", kDX11PixelShaderTarget,
 		GFX_SHADER_PIXEL);
 	gfx_build_shader(engine->gfx.system, hlsl_vs);
 	gfx_create_shader_input_layout(engine->gfx.system, hlsl_vs,
