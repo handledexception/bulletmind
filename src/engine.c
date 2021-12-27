@@ -79,7 +79,6 @@ game_resource_t* eng_get_resource(engine_t* eng, const char* name)
 bool eng_init(const char* name, s32 version, engine_t* eng)
 {
 	u64 init_start = os_get_time_ns();
-
 	eng->frame_count = 0;
 
 	// build window title
@@ -108,7 +107,37 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 		       SDL_GetError());
 		return false;
 	}
+	eng->renderer = SDL_CreateRenderer(eng->window, eng->adapter_index,
+					   SDL_RENDERER_ACCELERATED);
+	if (eng->renderer == NULL) {
+		logger(LOG_ERROR, "error creating engine renderer: %s\n",
+		       SDL_GetError());
+		return false;
+	}
 
+	// SDL_RenderSetViewport(eng->renderer, (SDL_Rect*)&eng->scr_bounds);
+	SDL_RenderSetLogicalSize(eng->renderer, eng->cam_rect.w,
+				 eng->cam_rect.h);
+
+	// SDL_RenderSetIntegerScale(eng->renderer, true);
+
+	// eng->scr_surface = SDL_CreateRGBSurface(
+	//     0,
+	//     CAMERA_WIDTH,
+	//     CAMERA_HEIGHT,
+	//     32,
+	//     0xFF000000,
+	//     0x00FF0000,
+	//     0x0000FF00,
+	//     0x000000FF
+	// );
+	// eng->scr_texture = SDL_CreateTexture(
+	//     eng->renderer,
+	//     SDL_PIXELFORMAT_RGBA8888,
+	//     SDL_TEXTUREACCESS_TARGET,
+	//     CAMERA_WIDTH,
+	//     CAMERA_HEIGHT
+	// );
 #if defined(BM_WINDOWS)
 	// gui_init();
 	// gui_window_t* wnd =
@@ -121,7 +150,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	SDL_VERSION(&wm_info.version); // must call to get valid HWND??
 	SDL_GetWindowWMInfo(eng->window, &wm_info);
 	HWND hwnd = wm_info.info.win.window;
-	const struct gfx_config gfx_cfg = {.adapter = 0,
+	const struct gfx_config gfx_cfg = {.adapter = 1,
 					   .width = eng->window_rect.w,
 					   .height = eng->window_rect.h,
 					   //    .width = wnd->w,
@@ -150,6 +179,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 			    (zstencil_enabled ? BM_GFX_USE_ZBUFFER : 0);
 	engine->gfx.system = gfx_system_init(&gfx_cfg, gfx_sys_flags);
 
+/*
 	gfx_shader_t* hlsl_vs = gfx_compile_shader_from_file(
 		"assets/pos_color.vs.hlsl", "VSMain", kDX11VertexShaderTarget,
 		GFX_SHADER_VERTEX);
@@ -160,6 +190,16 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	gfx_create_shader_input_layout(engine->gfx.system, hlsl_vs,
 				       GFX_VERTEX_POS_COLOR);
 	gfx_build_shader(engine->gfx.system, hlsl_ps);
+*/
+
+	if (!game_res_init(eng))
+		return false;
+		
+	game_resource_t* resource =
+		eng_get_resource(eng, "pos_color_vs");
+	gfx_shader_t* hlsl_vs = (gfx_shader_t*)resource->data;
+	resource = eng_get_resource(eng, "pos_color_ps");
+	gfx_shader_t* hlsl_ps = (gfx_shader_t*)resource->data;
 	gfx_set_vertex_shader(engine->gfx.system, hlsl_vs);
 	gfx_set_pixel_shader(engine->gfx.system, hlsl_ps);
 
@@ -274,112 +314,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	gfx_init_sampler_state(engine->gfx.system);
 	gfx_init_rasterizer(engine->gfx.system, GFX_CULLING_NONE, 0);
 
-	/*
-	uint64_t frame_num = 0;
-	SDL_Event event;
-	bool done = false;
-	while (!done) {
-		if (SDL_PollEvent(&event) != 0) {
-			if (event.type == SDL_QUIT) {
-				done = true;
-				break;
-			}
-			if (event.type == SDL_KEYDOWN) {
-				if (event.key.keysym.scancode == SDL_SCANCODE_W) {
-					printf("w\n");
-					mat4f_t trans_fwd;
-					const vec4f_t trans_vec = { 0.f, 0.f, -0.1f, 1.f };
-					mat4f_translate(&trans_fwd, &trans_vec);
-					mat4f_mul(&view_proj_matrix, &view_proj_matrix, &trans_fwd);
-				} else if (event.key.keysym.scancode == SDL_SCANCODE_S) {
-					printf("s\n");
-					mat4f_t trans_bkwd;
-					const vec4f_t trans_vec = { 0.f, 0.f, 0.1f, 1.f };
-					mat4f_translate(&trans_bkwd, &trans_vec);
-					mat4f_mul(&view_proj_matrix, &view_proj_matrix, &trans_bkwd);
-				} else if (event.key.keysym.scancode == SDL_SCANCODE_A) {
-					printf("a\n");
-					mat4f_t trans_left;
-					const vec4f_t trans_vec = { -0.1f, 0.f, 0.f, 1.f };
-					mat4f_translate(&trans_left, &trans_vec);
-					mat4f_mul(&view_proj_matrix, &view_proj_matrix, &trans_left);
-				} else if (event.key.keysym.scancode == SDL_SCANCODE_D) {
-					printf("d\n");
-					mat4f_t trans_right;
-					const vec4f_t trans_vec = { 0.1f, 0.f, 0.f, 1.f };
-					mat4f_translate(&trans_right, &trans_vec);
-					mat4f_mul(&view_proj_matrix, &view_proj_matrix, &trans_right);
-				} else if (event.key.keysym.sym == SDLK_ESCAPE) {
-					done = true;
-					break;
-				}
-			}
-		}
-		// memcpy((void*)vs_vars[0].data, (const void*)&world_matrix, sizeof(mat4f_t));
-		// memcpy((void*)vs_vars[1].data, (const void*)&view_proj_matrix, sizeof(mat4f_t));
-		// memcpy(&cbuffer_data[0], vs_vars[1].data, sizeof(mat4f_t));
-		// memcpy(&cbuffer_data[(sizeof(mat4f_t) + 15) & ~15], vs_vars[0].data, sizeof(mat4f_t));
-
-		memcpy(&cbuffer_data[0], (const void*)&world_matrix, sizeof(mat4f_t));
-		memcpy(&cbuffer_data[(sizeof(mat4f_t) + 15) & ~15], (const void*)&view_proj_matrix, sizeof(mat4f_t));
-		rgba_t clear_color = {
-			.r = 0,
-			.g = 0,
-			.b = 0,
-			.a = 255,
-		};
-		gfx_render_clear(engine->gfx.system, &clear_color);
-		gfx_system_bind_render_target(engine->gfx.system);
-		gfx_toggle_zstencil(engine->gfx.system, zstencil_enabled);
-		gfx_bind_vertex_buffer(engine->gfx.system, vertex_buffer, vertex_stride, 0);
-		gfx_bind_primitive_topology(engine->gfx.system, GFX_TOPOLOGY_TRIANGLE_LIST);
-		gfx_bind_input_layout(engine->gfx.system, hlsl_vs);
-		gfx_bind_rasterizer(engine->gfx.system);
-		gfx_bind_sampler_state(engine->gfx.system, NULL, 0);
-		gfx_buffer_copy_data(engine->gfx.system, cbuffer, cbuffer_data, cbuffer_size);
-		gfx_upload_constant_buffer(engine->gfx.system, cbuffer, GFX_SHADER_VERTEX);
-		gfx_render_begin(engine->gfx.system);
-		gfx_render_end(engine->gfx.system, false, 0);
-		SDL_Delay((Uint32)16.667);
-		printf("frame: %lld\n", frame_num++);
-	}
-	*/
-	// gfx_system_shutdown(gfx_sys);
-	// SDL_Quit();
-	// exit(0);
 #endif
-
-	eng->renderer = SDL_CreateRenderer(eng->window, eng->adapter_index,
-					   SDL_RENDERER_ACCELERATED);
-	if (eng->renderer == NULL) {
-		logger(LOG_ERROR, "error creating engine renderer: %s\n",
-		       SDL_GetError());
-		return false;
-	}
-
-	// SDL_RenderSetViewport(eng->renderer, (SDL_Rect*)&eng->scr_bounds);
-	SDL_RenderSetLogicalSize(eng->renderer, eng->cam_rect.w,
-				 eng->cam_rect.h);
-
-	// SDL_RenderSetIntegerScale(eng->renderer, true);
-
-	// eng->scr_surface = SDL_CreateRGBSurface(
-	//     0,
-	//     CAMERA_WIDTH,
-	//     CAMERA_HEIGHT,
-	//     32,
-	//     0xFF000000,
-	//     0x00FF0000,
-	//     0x0000FF00,
-	//     0x000000FF
-	// );
-	// eng->scr_texture = SDL_CreateTexture(
-	//     eng->renderer,
-	//     SDL_PIXELFORMAT_RGBA8888,
-	//     SDL_TEXTUREACCESS_TARGET,
-	//     CAMERA_WIDTH,
-	//     CAMERA_HEIGHT
-	// );
 
 	eng->inputs = (input_state_t*)arena_alloc(
 		&g_mem_arena, sizeof(input_state_t), DEFAULT_ALIGNMENT);
@@ -393,8 +328,6 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 			BM_AUDIO_CHUNK_SIZE))
 		return false;
 	if (!inp_init(eng->inputs))
-		return false;
-	if (!game_res_init(eng))
 		return false;
 	// cmd_init();
 	if (!ent_init(&eng->ent_list, MAX_ENTITIES))

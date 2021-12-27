@@ -103,7 +103,7 @@ void mat4f_translate(struct mat4f* dst, const struct vec4f* v)
 
 void mat4f_scale_v3(struct mat4f* dst, const struct vec3f* v)
 {
-	struct vec3f v4;
+	struct vec4f v4;
 	vec4f_from_vec3(&v4, v);
 	mat4f_scale(dst, &v4);
 }

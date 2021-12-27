@@ -1,3 +1,4 @@
+#include "core/memory.h"
 #include "gfx/gfx.h"
 #include "gfx/camera.h"
 

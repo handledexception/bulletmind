@@ -20,8 +20,6 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
-const char* file_extension(const char* filename);
-
 u32 pack_version(u8 maj, u8 min, u8 rev);
 
 void version_string(const u32 version, char* ver_str);

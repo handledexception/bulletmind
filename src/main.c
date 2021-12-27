@@ -198,18 +198,11 @@ void print_debug_info(engine_t* engine, f64 dt)
 	}
 }
 
-struct vec_elem {
-	int id;
-	float val;
-};
-
 int main(int argc, char** argv)
 {
 	char s[26] = "\"Main screen turn on...\"";
 	str_upper_no_copy(s, 0);
 	logger(LOG_INFO, "%s\n", s);
-
-	generate_tilemap(WORLD_TILES_WIDTH, WORLD_TILES_HEIGHT);
 
 	// Allocate memory arena - 8MiB
 	arena_buf = (u8*)malloc(ARENA_TOTAL_BYTES);
@@ -350,7 +343,9 @@ int main(int argc, char** argv)
 	}
 
 	eng_shutdown(engine);
-
 	engine = NULL;
+	bm_free(arena_buf);
+	arena_buf = NULL;
+
 	return 0;
 }

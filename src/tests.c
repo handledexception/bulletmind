@@ -75,10 +75,19 @@ TEST(core_hashmap_suite, basic)
 	strcpy(td2.name, "test_data_2");
 	td1.data = 3.14f;
 	td2.data = 6.28f;
-	hashmap_insert(&map, "foo", &td1, sizeof(struct test_data));
-	hashmap_insert(&map, "bar", &td2, sizeof(struct test_data));
+	hash_key_t k1 = {
+		"foo",
+		strlen("foo"),
+	};
+	hash_key_t k2 = {
+		"bar",
+		strlen("bar"),
+	};
+	hashmap_insert(&map, &k1, &td1, sizeof(struct test_data));
+	hashmap_insert(&map, &k2, &td2, sizeof(struct test_data));
 	struct test_data* found = NULL;
-	hashmap_find(&map, "bar", (struct test_data*)&found);
+	hashmap_find(&map, &k2, (struct test_data*)&found);
+	CHECK_EQ(td2.id, found->id);
 }
 // TEST(core_vector_suite, basic_tests2) {
 //     int a = 42;

@@ -1,13 +1,5 @@
 #include "core/utils.h"
 
-const char* file_extension(const char* filename)
-{
-	const char* dot = strrchr(filename, '.');
-	if (!dot || dot == filename)
-		return "";
-	return dot + 1;
-}
-
 u32 pack_version(u8 maj, u8 min, u8 rev)
 {
 	return (u32)((maj << 16) + (min << 8) + rev);

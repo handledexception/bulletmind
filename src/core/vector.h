@@ -45,7 +45,6 @@ static inline void vector_ensure_capacity(struct vector* vec, size_t elem_size,
 	if (vec->elems) {
 		if (vec->capacity)
 			memcpy(ptr, vec->elems, elem_size * vec->capacity);
-
 		bm_free(vec->elems);
 	}
 	vec->elems = ptr;

@@ -17,7 +17,7 @@
 #include "sprite.h"
 #include "core/logger.h"
 #include "core/memory.h"
-#include "core/utils.h"
+#include "core/path.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,7 +54,7 @@ bool sprite_load(const char* path, sprite_t** out)
 		return false;
 
 	// absolute most janky file extension comparison
-	const char* file_ext = file_extension(path);
+	const char* file_ext = path_get_extension(path);
 	if (strcmp(file_ext, "tga") == 0) {
 		img = (sprite_t*)arena_alloc(&g_mem_arena, sizeof(sprite_t),
 					     DEFAULT_ALIGNMENT);

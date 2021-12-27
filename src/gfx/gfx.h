@@ -223,6 +223,7 @@ typedef struct {
 	void* data;
 } gfx_shader_var_t;
 
+BM_EXPORT enum gfx_vertex_type gfx_vertex_type_from_string(const char* s);
 // system
 BM_EXPORT result gfx_enumerate_adapters(gfx_system_t* gfx, u32 adapter_index,
 					u32* count);
@@ -241,7 +242,8 @@ BM_EXPORT void gfx_destroy_device_dependent_resources(gfx_system_t* gfx);
 BM_EXPORT void gfx_render_clear(gfx_system_t* gfx, const rgba_t* color);
 BM_EXPORT void gfx_render_begin(gfx_system_t* gfx);
 BM_EXPORT void gfx_render_end(gfx_system_t* gfx, bool vsync, u32 flags);
-BM_EXPORT void gfx_init_sprite(gfx_system_t* gfx);
+BM_EXPORT void gfx_init_sprite(gfx_system_t* gfx, gfx_buffer_t* vertex_buffer);
+BM_EXPORT void gfx_init_cube(gfx_system_t* gfx, gfx_buffer_t* vertex_buffer);
 BM_EXPORT void gfx_draw_sprite(gfx_system_t* gfx, gfx_texture_t* texture,
 			       u32 width, u32 height, u32 flags);
 

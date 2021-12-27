@@ -21,14 +21,17 @@
 
 #include "core/logger.h"
 #include "core/memory.h"
-#include "core/utils.h"
+#include "core/path.h"
+#include "core/string.h"
 
 #include "platform/platform.h"
+
+#include "gfx/gfx.h"
 
 #include <assert.h>
 
 //TODO(paulh): Need to add some string utils like concatenation!
-static const char* kAssetsToml = "config/assets.toml";
+static const char* kAssetsToml = "assets/assets.toml";
 
 //TODO(paulh): Need to add logging!
 bool game_res_init(engine_t* eng)
@@ -58,7 +61,7 @@ bool game_res_init(engine_t* eng)
 	logger(LOG_INFO, "Found %d assets in game resources config.",
 	       num_assets);
 
-	eng->game_resources = arena_alloc(&g_mem_arena,
+	eng->game_resources = (game_resource_t**)arena_alloc(&g_mem_arena,
 					  sizeof(game_resource_t*) * num_assets,
 					  DEFAULT_ALIGNMENT);
 
@@ -100,15 +103,17 @@ bool game_res_init(engine_t* eng)
 			asset_type_from_string(asset_type_str);
 
 		eng->game_resources[asset_idx] = make_game_resource(
-			eng, asset_name, asset_path, asset_type);
+			eng, asset_name, asset_path, asset_type, asset);
 
 		if (asset_type == kAssetTypeSprite) {
 			s32 sprite_scale = 1;
 			if (!read_table_int32(asset, "scale", &sprite_scale))
 				sprite_scale = 1;
-			sprite_t* s =
-				(sprite_t*)eng->game_resources[asset_idx]->data;
-			s->scaling = sprite_scale;
+			if (eng->game_resources[asset_idx]) {
+				sprite_t* s =
+					(sprite_t*)eng->game_resources[asset_idx]->data;
+				s->scaling = sprite_scale;
+			}
 		}
 
 		logger(LOG_INFO, "Loaded game resource: %s (%s)\n", asset_name,
@@ -132,7 +137,8 @@ bool game_res_init(engine_t* eng)
 
 game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 				    const char* asset_path,
-				    asset_type_t asset_type)
+				    asset_type_t asset_type,
+					const toml_table_t* toml)
 {
 	game_resource_t* resource = NULL;
 
@@ -240,7 +246,38 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 			resource->type = asset_type;
 			resource->data = (void*)audio_chunk;
 		}
-	} else
+	} else if (asset_type == kAssetTypeShader) {
+		const char* file_ext = path_get_extension(asset_path);
+		const char* entrypoint = NULL;
+		const char* target = NULL;
+		const char* vertex_type_str = NULL;
+		enum gfx_shader_type type = GFX_SHADER_UNKNOWN;
+		enum gfx_vertex_type vertex_type = GFX_VERTEX_UNKNOWN;
+		if (!strcmp(file_ext, "hlsl")) {
+			if (str_contains(asset_path, ".vs")) {
+				entrypoint = "VSMain";
+				target = "vs_5_0";
+				type = GFX_SHADER_VERTEX;
+				read_table_string(toml, "vertex_type", &vertex_type_str);
+				vertex_type = gfx_vertex_type_from_string(vertex_type_str);
+			} else if (str_contains(asset_path, ".ps")) {
+				entrypoint = "PSMain";
+				target = "ps_5_0";
+				type = GFX_SHADER_PIXEL;
+			}
+		}
+		gfx_shader_t* shader = gfx_compile_shader_from_file(
+			asset_path, entrypoint, target, type);
+		if (shader) {
+			gfx_build_shader(eng->gfx.system, shader);
+			if (type == GFX_SHADER_VERTEX)
+				gfx_create_shader_input_layout(eng->gfx.system, shader, vertex_type);
+		}
+		resource = bm_malloc(sizeof(game_resource_t));
+		resource->type = asset_type;
+		resource->data = (void*)shader;
+
+	}else
 		logger(LOG_WARNING, "Unknown asset type %d!\n",
 		       (int)asset_type);
 
@@ -259,6 +296,8 @@ asset_type_t asset_type_from_string(const char* asset_type_str)
 		return kAssetTypeSoundEffect;
 	if (!strcmp(asset_type_str, "music"))
 		return kAssetTypeMusic;
+	if (!strcmp(asset_type_str, "shader"))
+		return kAssetTypeShader;
 	return kAssetTypeMax;
 }
 
@@ -275,6 +314,8 @@ const char* asset_type_to_string(asset_type_t type)
 		return "Sound Effect";
 	case kAssetTypeMusic:
 		return "Music";
+	case kAssetTypeShader:
+		return "Shader";
 	case kAssetTypeMax:
 		return NULL;
 	}

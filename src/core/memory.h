@@ -14,10 +14,15 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#pragma once
+#ifndef H_BM_MEMORY
+#define H_BM_MEMORY
 
 #include "core/types.h"
 #include "core/export.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct memory_allocator {
 	void* (*malloc)(size_t);
@@ -49,6 +54,12 @@ extern size_t arena_allocated_bytes;
 extern u8* arena_buf;
 extern arena_t g_mem_arena;
 
-void arena_init(arena_t* arena, void* backing_buffer, size_t sz_backing);
-void arena_free_all(arena_t* arena);
-void* arena_alloc(arena_t* arena, size_t size, size_t align);
+BM_EXPORT void arena_init(arena_t* arena, void* backing_buffer, size_t sz_backing);
+BM_EXPORT void arena_free_all(arena_t* arena);
+BM_EXPORT void* arena_alloc(arena_t* arena, size_t size, size_t align);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

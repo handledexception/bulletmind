@@ -98,9 +98,9 @@ void ent_refresh(engine_t* eng, const f64 dt)
 		}
 		ent_center_rect(e);
 		ent_refresh_movers(eng, e, dt);
-		ent_refresh_colliders(eng, e, dt);
-		ent_refresh_emitters(eng, e, dt);
-		ent_refresh_renderables(eng, e, dt);
+		// ent_refresh_colliders(eng, e, dt);
+		// ent_refresh_emitters(eng, e, dt);
+		// ent_refresh_renderables(eng, e, dt);
 	}
 
 	// logger(LOG_INFO, "engine time: %f", eng_get_time_sec());

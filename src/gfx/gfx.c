@@ -36,6 +36,15 @@ u32 gfx_get_bits_per_pixel(enum gfx_pixel_format pf)
 	return bpp;
 }
 
+enum gfx_vertex_type gfx_vertex_type_from_string(const char* s)
+{
+	if (!strcmp(s, "posuv"))
+		return GFX_VERTEX_POS_UV;
+	else if (!strcmp(s, "poscol"))
+		return GFX_VERTEX_POS_COLOR;
+	return GFX_VERTEX_UNKNOWN;
+}
+
 u32 gfx_get_vertex_stride(enum gfx_vertex_type type)
 {
 	u32 stride = 0;
@@ -59,9 +68,3 @@ u32 gfx_get_vertex_stride(enum gfx_vertex_type type)
 	}
 	return stride;
 }
-
-// gfx_swapchain_t* gfx_swapchain_create(const struct gfx_config* cfg)
-// {
-//     struct gfx_config new_cfg = *cfg;
-//     gfx_system_t* gfx_sys = thread_gfx;
-// }

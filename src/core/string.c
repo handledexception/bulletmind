@@ -5,6 +5,29 @@
 static const char* astr_empty = "";
 static const wchar_t* wstr_empty = L"";
 
+bool str_contains(const char* s, const char* substring)
+{
+	if (s == substring)
+		return true;
+	if (!s || !substring)
+		return false;
+	size_t sub_len = strlen(substring);
+	if (strlen(s) < sub_len)
+		return false;
+	for (size_t i = 0; i < strlen(s); i++) {
+		size_t matches = 0;
+		for (size_t j = 0; j < sub_len; j++) {
+			if (s[i+matches] != substring[j])
+				break;
+			else
+				matches++;
+			if (matches == sub_len)
+				return true;
+		}
+	}
+	return false;
+}
+
 void str_upper_no_copy(char* s, size_t len)
 {
 	size_t slen = len ? len : strlen(s);
@@ -23,12 +46,22 @@ void str_lower_no_copy(char* s, size_t len)
 	}
 }
 
-s32 str_first_index_of(const char* s, size_t len, const char c)
+int str_first_index_of(const char* s, size_t len, const char c)
 {
 	size_t slen = len ? len : strlen(s);
 	for (size_t i = 0; i < slen; i++) {
 		if (s[i] == c)
-			return (s32)i;
+			return (int)i;
+	}
+	return -1;
+}
+
+int str_last_index_of(const char* s, size_t len, const char c)
+{
+	size_t slen = len ? len : strlen(s);
+	for (size_t i = slen; i >= 0; i--) {
+		if (s[i] == c)
+			return (int)i;
 	}
 	return -1;
 }
