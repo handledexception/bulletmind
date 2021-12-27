@@ -84,5 +84,5 @@ xcopy /Y %ASSETS_PATH%\bullet_ps.tga %BUILD_OUT_PATH%\assets\
 xcopy /Y %ASSETS_PATH%\bullet_rgba.tga %BUILD_OUT_PATH%\assets\
 xcopy /Y %ASSETS_PATH%\primary_fire.wav %BUILD_OUT_PATH%\assets\
 xcopy /Y %ASSETS_PATH%\tiled_wall_16x16.tga %BUILD_OUT_PATH%\assets\
-xcopy /Y %CONFIG_PATH%\assets.toml %BUILD_OUT_PATH%\config\
+xcopy /Y %ASSETS_PATH%\assets.toml %BUILD_OUT_PATH%\assets\
 ECHO.
