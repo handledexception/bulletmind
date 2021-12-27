@@ -63,7 +63,8 @@
         "xtree": "cpp",
         "gfx_d3d11.h": "c",
         "murmurhash2.h": "c",
-        "tau.h": "c"
+        "tau.h": "c",
+        "memory.h": "c"
     },
     "cmake.configureOnOpen": false
 }
