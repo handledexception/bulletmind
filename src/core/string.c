@@ -5,19 +5,19 @@
 static const char* astr_empty = "";
 static const wchar_t* wstr_empty = L"";
 
-bool str_contains(const char* s, const char* substring)
+bool str_contains(const char* str, const char* substring)
 {
-	if (s == substring)
+	if (str == substring)
 		return true;
-	if (!s || !substring)
+	if (!str || !substring)
 		return false;
 	size_t sub_len = strlen(substring);
-	if (strlen(s) < sub_len)
+	if (strlen(str) < sub_len)
 		return false;
-	for (size_t i = 0; i < strlen(s); i++) {
+	for (size_t i = 0; i < strlen(str); i++) {
 		size_t matches = 0;
 		for (size_t j = 0; j < sub_len; j++) {
-			if (s[i+matches] != substring[j])
+			if (str[i+matches] != substring[j])
 				break;
 			else
 				matches++;
@@ -28,39 +28,57 @@ bool str_contains(const char* s, const char* substring)
 	return false;
 }
 
-void str_upper_no_copy(char* s, size_t len)
+char* str_upper_no_copy(char* str, size_t len)
 {
-	size_t slen = len ? len : strlen(s);
+	if (!str)
+		return str;
+	if (!*str)
+		return str;
+	size_t slen = len ? len : strlen(str);
 	for (size_t i = 0; i < slen; i++) {
-		if (s[i] >= 'a' && s[i] <= 'z')
-			s[i] -= 0x20;
+		if (str[i] >= 'a' && str[i] <= 'z')
+			str[i] -= 0x20;
 	}
 }
 
-void str_lower_no_copy(char* s, size_t len)
+char* str_lower_no_copy(char* str, size_t len)
 {
-	size_t slen = len ? len : strlen(s);
+	if (!str)
+		return str;
+	if (!*str)
+		return str;
+	char* tmp = str;
+	size_t slen = len ? len : strlen(tmp);
 	for (size_t i = 0; i < slen; i++) {
-		if (s[i] >= 'A' && s[i] <= 'Z')
-			s[i] += 0x20;
+		if (tmp[i] >= 'A' && tmp[i] <= 'Z')
+			tmp[i] += 0x20;
 	}
+	return tmp;
 }
 
-int str_first_index_of(const char* s, size_t len, const char c)
+int str_first_index_of(const char* str, size_t len, const char c)
 {
-	size_t slen = len ? len : strlen(s);
+	if (!str)
+		return str;
+	if (!*str)
+		return str;
+	size_t slen = len ? len : strlen(str);
 	for (size_t i = 0; i < slen; i++) {
-		if (s[i] == c)
+		if (str[i] == c)
 			return (int)i;
 	}
 	return -1;
 }
 
-int str_last_index_of(const char* s, size_t len, const char c)
+int str_last_index_of(const char* str, size_t len, const char c)
 {
-	size_t slen = len ? len : strlen(s);
+	if (!str)
+		return str;
+	if (!*str)
+		return str;
+	size_t slen = len ? len : strlen(str);
 	for (size_t i = slen; i >= 0; i--) {
-		if (s[i] == c)
+		if (str[i] == c)
 			return (int)i;
 	}
 	return -1;
@@ -78,7 +96,6 @@ int astrcmp_n(const char* str1, const char* str2, size_t n)
 	do {
 		char ch1 = *str1;
 		char ch2 = *str2;
-
 		if (ch1 < ch2)
 			return -1;
 		else if (ch1 > ch2)
@@ -96,11 +113,9 @@ int wstrcmp_n(const wchar_t* str1, const wchar_t* str2, size_t n)
 		str1 = wstr_empty;
 	if (!str2)
 		str2 = wstr_empty;
-
 	do {
 		wchar_t ch1 = *str1;
 		wchar_t ch2 = *str2;
-
 		if (ch1 < ch2)
 			return -1;
 		else if (ch1 > ch2)

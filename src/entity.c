@@ -29,6 +29,8 @@
 #include "core/time_convert.h"
 #include "core/utils.h"
 
+#include "gfx/scene.h"
+
 #include "math/utils.h"
 
 #include "platform/platform.h"
@@ -618,7 +620,12 @@ void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 	const vec4f_t trans_vec = {p_accel.x * 0.00005, 0.f,
 				   p_accel.y * 0.00005, 1.f};
 	mat4f_translate(&cam_trans, &trans_vec);
-	mat4f_mul(&eng->gfx.view_proj, &eng->gfx.view_proj, &cam_trans);
+	struct gfx_scene* scene = eng->gfx.scene;
+	gfx_shader_var_t* world_var = vector_elem(&scene->shader_vars, sizeof(gfx_shader_var_t), 0);
+	gfx_shader_var_t* view_proj_var = vector_elem(&scene->shader_vars, sizeof(gfx_shader_var_t), 1);
+	struct mat4f* world_matrix = (struct mat4f*)world_var->data;
+	struct mat4f* view_proj_matrix = (struct mat4f*)view_proj_var->data;
+	mat4f_mul(view_proj_matrix, view_proj_matrix, &cam_trans);
 
 	// screen bounds checking
 	if (player->org.x > (f32)eng->cam_rect.w - 25) {

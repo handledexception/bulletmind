@@ -47,13 +47,12 @@ typedef enum {
 
 typedef struct gfx_system gfx_system_t;
 typedef struct gfx_buffer gfx_buffer_t;
+struct gfx_scene;
+
 struct engine_gfx {
 	gfx_system_t* system;
 	camera_t camera;
-	mat4f_t world;
-	mat4f_t view_proj;
-	struct gfx_vertex_data* vertices;
-	u32 vertex_stride;
+	struct gfx_scene* scene;
 	gfx_buffer_t* vertex_buffer;
 	u8* vbuffer_data;
 	gfx_buffer_t* cbuffer; // TODO(paulh): should go with shader(s)?

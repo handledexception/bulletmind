@@ -233,40 +233,25 @@ void gfx_activate_d3d11_debug_info(gfx_system_t* gfx)
 			nfo_q, D3D11_MESSAGE_SEVERITY_CORRUPTION, TRUE);
 		ID3D11InfoQueue_SetBreakOnSeverity(
 			nfo_q, D3D11_MESSAGE_SEVERITY_ERROR, TRUE);
-
 		ID3D11InfoQueue_Release(nfo_q);
 	}
 }
 
 result gfx_com_release_d3d11(gfx_system_t* gfx)
 {
-	COM_RELEASE(gfx->dxgi_factory);
-	COM_RELEASE(gfx->dxgi_adapter);
-	COM_RELEASE(gfx->dxgi_device);
+	COM_RELEASE(gfx->sampler_state);
+	COM_RELEASE(gfx->raster_state);
 	COM_RELEASE(gfx->dxgi_swap_chain);
-
-	COM_RELEASE(gfx->device);
+	COM_RELEASE(gfx->dxgi_device);
 	COM_RELEASE(gfx->ctx);
-
+	COM_RELEASE(gfx->device);
+	COM_RELEASE(gfx->dxgi_adapter);
+	COM_RELEASE(gfx->dxgi_factory);
 	// COM_RELEASE(gfx->render_target);
 	// COM_RELEASE(gfx->rtv);
-
 	// COM_RELEASE(gfx->zstencil_target);
 	// COM_RELEASE(gfx->dsv);
 	// COM_RELEASE(gfx->dss);
-
-	COM_RELEASE(gfx->sampler_state);
-	COM_RELEASE(gfx->raster_state);
-
-	if (gfx->dxgi_dll) {
-		FreeModule(gfx->dxgi_dll);
-		gfx->dxgi_dll = NULL;
-	}
-	if (gfx->d3d11_dll) {
-		FreeModule(gfx->d3d11_dll);
-		gfx->d3d11_dll = NULL;
-	}
-
 	return kResultOk;
 }
 
@@ -477,7 +462,7 @@ gfx_system_t* gfx_system_init(const struct gfx_config* cfg, s32 flags)
 	memset(gfx, 0, sizeof(*gfx));
 
 	if (gfx_create_device_dependent_resources(gfx, cfg->adapter) !=
-	    kResultOk) {
+		kResultOk) {
 		gfx_com_release_d3d11(gfx);
 		bm_free((void*)gfx);
 		gfx = NULL;
@@ -675,7 +660,6 @@ result gfx_create_device_dependent_resources(gfx_system_t* gfx, s32 adapter)
 				   D3D11_SDK_VERSION,
 				   (ID3D11Device**)&gfx->device, &feature_level,
 				   (ID3D11DeviceContext**)&gfx->ctx);
-
 	if (FAILED(hr)) {
 		res = kResultError;
 		goto cleanup;
@@ -704,7 +688,7 @@ result gfx_create_device_dependent_resources(gfx_system_t* gfx, s32 adapter)
 
 cleanup:
 	if (res != kResultOk) {
-		gfx_com_release_d3d11(gfx);
+		gfx_system_shutdown(gfx);
 	}
 
 	return res;

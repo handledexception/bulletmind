@@ -2,6 +2,33 @@
 #include "math/types.h"
 #include "core/memory.h"
 
+size_t gfx_get_shader_var_size(enum gfx_shader_var_type type)
+{
+	switch(type) {
+	case GFX_SHADER_PARAM_BOOL:
+		return sizeof(bool);
+	case GFX_SHADER_PARAM_S32:
+		return sizeof(s32);
+	case GFX_SHADER_PARAM_U32:
+		return sizeof(u32);
+	case GFX_SHADER_PARAM_F32:
+		return sizeof(f32);
+	case GFX_SHADER_PARAM_F64:
+		return sizeof(f64);
+	case GFX_SHADER_PARAM_VEC2:
+		return sizeof(struct vec2f);
+	case GFX_SHADER_PARAM_VEC3:
+		return sizeof(struct vec3f);
+	case GFX_SHADER_PARAM_VEC4:
+		return sizeof(struct vec4f);
+	case GFX_SHADER_PARAM_MAT4:
+		return sizeof(struct mat4f);
+	case GFX_SHADER_PARAM_TEX:
+		return sizeof(void*);
+	}
+	return 0;
+}
+
 u32 gfx_get_bits_per_pixel(enum gfx_pixel_format pf)
 {
 	u32 bpp = 0;

@@ -141,7 +141,6 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 					const toml_table_t* toml)
 {
 	game_resource_t* resource = NULL;
-
 	const size_t sz_path = strlen(asset_path) + 1;
 	assert(sz_path <= BM_MAX_PATH);
 	if (sz_path > BM_MAX_PATH)
@@ -246,7 +245,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 			resource->type = asset_type;
 			resource->data = (void*)audio_chunk;
 		}
-	} else if (asset_type == kAssetTypeShader) {
+	} else if (asset_type == kAssetTypeShader && eng->gfx.system != NULL) {
 		const char* file_ext = path_get_extension(asset_path);
 		const char* entrypoint = NULL;
 		const char* target = NULL;

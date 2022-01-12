@@ -1,4 +1,23 @@
 [[assets]]
+name = "solid_ps"
+path = "assets/shader/solid.ps.hlsl"
+type = "shader"
+[[assets]]
+name = "solid_vs"
+path = "assets/shader/solid.vs.hlsl"
+type = "shader"
+vertex_type = "posuv"
+[[assets]]
+name = "pos_color_ps"
+path = "assets/shader/pos_color.ps.hlsl"
+type = "shader"
+[[assets]]
+name = "pos_color_vs"
+path = "assets/shader/pos_color.vs.hlsl"
+type = "shader"
+vertex_type = "poscol"
+
+[[assets]]
 name = "font_7px"
 path = "assets/font_7px_rgba.tga"
 type = "sprite_font"
@@ -57,22 +76,3 @@ type = "sfx"
 name = "theme_music"
 path = "assets/theme.ogg"
 type = "music"
-
-[[assets]]
-name = "solid_ps"
-path = "assets/shader/solid.ps.hlsl"
-type = "shader"
-[[assets]]
-name = "solid_vs"
-path = "assets/shader/solid.vs.hlsl"
-type = "shader"
-vertex_type = "posuv"
-[[assets]]
-name = "pos_color_ps"
-path = "assets/shader/pos_color.ps.hlsl"
-type = "shader"
-[[assets]]
-name = "pos_color_vs"
-path = "assets/shader/pos_color.vs.hlsl"
-type = "shader"
-vertex_type = "poscol"

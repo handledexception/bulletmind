@@ -97,10 +97,12 @@ set(BM_PLATFORM_SOURCES
 # gfx
 set(BM_GFX_HEADERS
     src/gfx/gfx.h
-    src/gfx/camera.h)
+    src/gfx/camera.h
+    src/gfx/scene.h)
 set(BM_GFX_SOURCES
     src/gfx/gfx.c
-    src/gfx/camera.c)
+    src/gfx/camera.c
+    src/gfx/scene.c)
 
 # gui
 set(BM_GUI_HEADERS

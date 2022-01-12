@@ -184,15 +184,6 @@ struct texture_vertex {
 	void* data;
 };
 
-struct gfx_vertex_data {
-	struct vec3f* positions;
-	struct vec3f* normals;
-	struct vec3f* tangents;
-	struct vec4f* colors;
-	struct texture_vertex* tex_verts;
-	size_t num_vertices;
-};
-
 enum gfx_vertex_type {
 	GFX_VERTEX_POS_UV = 0,
 	GFX_VERTEX_FIRST = GFX_VERTEX_POS_UV,
@@ -201,6 +192,16 @@ enum gfx_vertex_type {
 	GFX_VERTEX_POS_NORM_COLOR = 3,
 	GFX_VERTEX_UNKNOWN = 4,
 	GFX_VERTEX_LAST = GFX_VERTEX_UNKNOWN
+};
+
+struct gfx_vertex_data {
+	enum gfx_vertex_type type;
+	struct vec3f* positions;
+	struct vec3f* normals;
+	struct vec3f* tangents;
+	struct vec4f* colors;
+	struct texture_vertex* tex_verts;
+	size_t num_vertices;
 };
 
 enum gfx_shader_var_type {
@@ -219,10 +220,12 @@ enum gfx_shader_var_type {
 typedef struct {
 	const char* name;
 	enum gfx_shader_var_type type;
-	size_t size;   // size of the variable (16-byte aligned)
+	// size_t size;   // size of the variable (16-byte aligned)
+	// use get_shader_var_size
 	size_t offset; // offset inside of constant buffer
 	void* data;
 } gfx_shader_var_t;
+BM_EXPORT size_t gfx_get_shader_var_size(enum gfx_shader_var_type type);
 
 BM_EXPORT enum gfx_vertex_type gfx_vertex_type_from_string(const char* s);
 // system
