@@ -4,6 +4,9 @@
 
 #include <math.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef struct {
 	s32 x, y;
 	s32 w, h;
@@ -32,3 +35,7 @@ static inline f32 radius_of_circle_in_rect(rect_t r)
 	f32 b = (f32)(r.h - r.y);
 	return 0.5f * (sqrtf((a * a) + (b * b)));
 }
+
+#ifdef __cplusplus
+}
+#endif

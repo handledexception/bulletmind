@@ -15,9 +15,8 @@ bool audio_init(s32 num_channels, s32 sample_rate, s32 chunk_size)
 			  chunk_size) == -1)
 		return false;
 	Mix_AllocateChannels(32);
-	logger(LOG_INFO,
-	       "Initialized audio: Channels: %d | Sample rate %d | Chunk Size: %d",
-	       num_channels, sample_rate, chunk_size);
+	info("Initialized audio: Channels: %d | Sample rate %d | Chunk Size: %d",
+		num_channels, sample_rate, chunk_size);
 
 	return true;
 }
@@ -28,7 +27,7 @@ bool audio_load_sound(const char* path, audio_chunk_t** data)
 	Mix_Chunk* wav_file = Mix_LoadWAV(path);
 	if (!wav_file)
 		return false;
-	audio_chunk_t* chunk = (audio_chunk_t*)arena_alloc(
+	audio_chunk_t* chunk = (audio_chunk_t*)mem_arena_alloc(
 		&mem_arena, sizeof(audio_chunk_t), DEFAULT_ALIGNMENT);
 	// audio_chunk_t* chunk = (audio_chunk_t*)malloc(sizeof(audio_chunk_t));
 	chunk->allocated = (bool)wav_file->allocated;

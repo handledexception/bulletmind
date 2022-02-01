@@ -1,4 +1,6 @@
 /*
+ * Portions of this code:
+ *
  * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -20,9 +22,7 @@
 #include "core/string.h"
 #include "core/time_convert.h"
 
-#if defined(BM_DARWIN) || defined(BM_LINUX)
-#include <sys/errno.h>
-#endif
+#include <errno.h>
 
 FILE* os_wfopen(const wchar_t* path, const char* mode)
 {

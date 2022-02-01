@@ -31,7 +31,7 @@ void cmd_init(void)
 {
 	// for (size_t cdx = (size_t)kCommandFirst; cdx < (size_t)kCommandMax; cdx++)
 	// 	kActiveCommands[(command_t)cdx] = false;
-	logger(LOG_INFO, "cmd_init OK\n");
+	info("cmd_init OK\n");
 }
 
 //TODO(paulh): This should probably be redesigned to return the state as an output param
@@ -92,7 +92,7 @@ void cmd_refresh(engine_t* eng)
 	cmd_toggle_bool(eng->inputs, kCommandToggleFullscreen, &fullscreen);
 	if (fullscreen != eng->fullscreen) {
 		eng->fullscreen = fullscreen;
-		logger(LOG_DEBUG, "Fullscreen toggled: %d", fullscreen);
+		debug("Fullscreen toggled: %d", fullscreen);
 	}
 	eng_toggle_fullscreen(eng, eng->fullscreen);
 
@@ -113,7 +113,7 @@ void cmd_refresh(engine_t* eng)
 
 void cmd_shutdown(void)
 {
-	logger(LOG_INFO, "cmd_shutdown OK\n");
+	info("cmd_shutdown OK\n");
 }
 
 const char* cmd_get_name(command_t cmd)

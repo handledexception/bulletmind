@@ -37,10 +37,13 @@ TEST(core_vector_suite, basic)
 	vector_push_back(&v, &a, sizeof(int));
 	vector_push_back(&v, &b, sizeof(int));
 	CHECK_EQ(v.num_elems, 2);
-	int* f = (int*)vector_find(&v, sizeof(int), &b);
-	CHECK_NOT_NULL(f);
-	if (f != NULL)
-		CHECK_EQ(*f, 13);
+	size_t b_index = vector_find(&v, sizeof(int), &b, 1);
+	CHECK_EQ(b_index, 1);
+	if (b_index == 1) {
+		int b_elem = *(int*)vector_elem(&v, sizeof(int), 1);
+		if (b_elem != NULL)
+			CHECK_EQ(b_elem, 13);
+	}
 	vector_pop_back(&v, sizeof(int));
 	CHECK_EQ(v.num_elems, 1);
 	vector_pop_back(&v, sizeof(int));

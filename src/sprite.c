@@ -56,7 +56,7 @@ bool sprite_load(const char* path, sprite_t** out)
 	// absolute most janky file extension comparison
 	const char* file_ext = path_get_extension(path);
 	if (strcmp(file_ext, "tga") == 0) {
-		img = (sprite_t*)arena_alloc(&mem_arena, sizeof(sprite_t),
+		img = (sprite_t*)mem_arena_alloc(&mem_arena, sizeof(sprite_t),
 					     DEFAULT_ALIGNMENT);
 		img->type = IMG_TYPE_TARGA;
 
@@ -66,12 +66,12 @@ bool sprite_load(const char* path, sprite_t** out)
 		fseek(file_ptr, 0, SEEK_SET);
 		file_buf = (u8*)malloc(fsize);
 		if (file_ptr == NULL) {
-			logger(LOG_ERROR,
+			error(
 			       "sprite_load - file %s has no data!\n", path);
 			return false;
 		} else if (fread(file_buf, sizeof(u8), fsize, file_ptr) !=
 			   fsize) {
-			logger(LOG_ERROR,
+			error(
 			       "sprite_load - could not read to end of file %s\n",
 			       path);
 			free(file_buf);
@@ -84,7 +84,7 @@ bool sprite_load(const char* path, sprite_t** out)
 		// make sure we have a valid minimal TGA header and raw unmapped RGB data
 		if (tga_header_size != 18 || header->color_map_type > 0 ||
 		    header->image_type != 2) {
-			logger(LOG_ERROR,
+			error(
 			       "sprite_load - Incorrect TGA header size! (%zu bytes) Should be 18 bytes.\n",
 			       tga_header_size);
 			free(file_buf);
@@ -98,10 +98,10 @@ bool sprite_load(const char* path, sprite_t** out)
 		s32 stride = width * bytes_per_pixel;
 		size_t pixel_size = width * height * bytes_per_pixel;
 
-		img->data = (u8*)arena_alloc(&mem_arena, pixel_size,
+		img->data = (u8*)mem_arena_alloc(&mem_arena, pixel_size,
 					     DEFAULT_ALIGNMENT);
 
-		logger(LOG_INFO, "sprite_load - %s, %dx%d %d bytes per pixel\n",
+		info("sprite_load - %s, %dx%d %d bytes per pixel\n",
 		       path, width, height, bytes_per_pixel);
 
 		u8* tga_pixels = file_buf + tga_header_size;
@@ -147,12 +147,12 @@ bool sprite_load(const char* path, sprite_t** out)
 void sprite_create(u8* data, u32 w, u32 h, u32 bpp, u32 stride, u32 format,
 		   sprite_t** out)
 {
-	sprite_t* img = (sprite_t*)arena_alloc(&mem_arena, sizeof(sprite_t),
+	sprite_t* img = (sprite_t*)mem_arena_alloc(&mem_arena, sizeof(sprite_t),
 					       DEFAULT_ALIGNMENT);
 	img->type = IMG_TYPE_RAW;
 	size_t pixel_size = w * h * (bpp / 8);
 	img->data =
-		(u8*)arena_alloc(&mem_arena, pixel_size, DEFAULT_ALIGNMENT);
+		(u8*)mem_arena_alloc(&mem_arena, pixel_size, DEFAULT_ALIGNMENT);
 	memcpy(img->data, data, pixel_size);
 	img->surface = SDL_CreateRGBSurfaceWithFormatFrom(img->data, w, h, bpp,
 							  stride, format);
@@ -202,6 +202,6 @@ void sprite_shutdown(sprite_t* img)
 			SDL_DestroyTexture(img->texture);
 			img->texture = NULL;
 		}
-		logger(LOG_INFO, "imagefile_shutdown: OK!\n");
+		info("imagefile_shutdown: OK!\n");
 	}
 }

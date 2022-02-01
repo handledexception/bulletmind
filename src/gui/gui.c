@@ -1,31 +1,42 @@
 #include "gui/gui.h"
+#include "gui/gui_usb_hid.h"
 
+#include "core/logger.h"
 #include "core/types.h"
+#include "core/memory.h"
 
-static gui_platform_t* gui = NULL;
+gui_platform_t* gui = NULL;
 
 bool gui_init(void)
 {
-	bool result = false;
+	info("gui_init: Initializing GUI subsystem...");
 
-	if (gui) {
-		free(gui);
-		gui = NULL;
-	}
+	if (gui)
+		gui_shutdown();
 
-	gui = calloc(1, sizeof(*gui));
+	gui = (gui_platform_t*)mem_alloc(sizeof(*gui));
+	memset(gui, 0, sizeof(*gui));
+	vec_init(gui->events);
 
-#ifdef BM_WINDOWS
-	result = gui_init_win32(gui);
-#elif BM_MACOS
-	result = gui_init_macos(gui);
-#elif BM_LINUX
-	result = gui_init_linux(gui);
+#if defined(_WIN32)
+	return gui_init_win32(gui);
+#elif defined(__APPLE__)
+	return gui_init_macos(gui);
+#elif defined(__linux__)
+	return gui_init_linux(gui);
 #endif
-	return result;
+
+	return RESULT_NOT_IMPL;
 }
 
-void gui_shutdown(void) {}
+void gui_shutdown(void)
+{
+	if (gui) {
+		vec_free(gui->events);
+		mem_free(gui);
+		gui = NULL;
+	}
+}
 
 gui_display_t* gui_create_display(s32 index)
 {
@@ -38,15 +49,13 @@ void gui_destroy_display(gui_display_t* display) {}
 gui_window_t* gui_create_window(const char* title, s32 x, s32 y, s32 w, s32 h,
 				s32 flags, gui_window_t* parent)
 {
-	if (!gui) {
-		if (!gui_init())
-			return NULL;
-	}
+	if (!gui)
+		return NULL;
 
-	gui_window_t* window = NULL;
+	gui_window_t* window = (gui_window_t*)mem_alloc(sizeof(*window));
+	memset(window, 0, sizeof(*window));
 
-	window = (gui_window_t*)calloc(1, sizeof(*window));
-
+	// TODO(paulh): Fix mem_realloc...
 	window->title = realloc(window->title, sizeof(title));
 	strcpy(window->title, title);
 	window->x = x;
@@ -65,40 +74,55 @@ gui_window_t* gui_create_window(const char* title, s32 x, s32 y, s32 w, s32 h,
 
 	window->destroy_me = false;
 
-	if (!gui->create_window(gui, window))
-		gui->destroy_window(gui, window);
+	if (!gui->create_window(window))
+		gui->destroy_window(window);
+
+	vec_push_back(gui->windows, &window);
 
 	return window;
 }
 
 void gui_destroy_window(gui_window_t* window)
 {
-	if (!gui)
+	if (!gui || !window)
 		return;
 
+	for (int i = 0; i < gui->windows.num_elems; i++) {
+		gui_window_t* wnd = (gui_window_t*)vec_elem(gui->windows, i);
+		if (wnd && wnd == window)
+			vec_erase(gui->windows, i);
+	}
 	window->destroy_me = true;
 	if (window->title) {
 		free(window->title);
 		window->title = NULL;
 	}
 
-	gui->destroy_window(gui, window);
-
-	free(window);
+	gui->destroy_window(window);
+	mem_free(window);
 	window = NULL;
 }
 
 void gui_show_window(gui_window_t* window, bool shown)
 {
-	if (!gui)
+	if (!gui || !window)
 		return;
 
-	gui->show_window(gui, window, shown);
+	gui->show_window(window, shown);
 }
 
 void* gui_get_window_handle(gui_window_t* window)
 {
 	if (window && window->data)
-		return gui->get_handle(gui, window);
+		return gui->get_handle(window);
 	return NULL;
+}
+
+void gui_clear_key_state(u8* key_state)
+{
+    if (!key_state)
+        return;
+    for (int i = 0; i < GUI_NUM_SCANCODES; i++) {
+        key_state[i] = 0;
+    }
 }

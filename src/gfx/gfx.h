@@ -20,10 +20,10 @@ typedef struct mat4f mat4f_t;
 typedef struct rgba rgba_t;
 
 typedef enum {
-	BM_GFX_D3D11 = 1 << 0,
-	BM_GFX_OPENGL = 1 << 1,
-	BM_GFX_USE_ZBUFFER = 1 << 2,
-	BM_GFX_INVALID = 1 << 3
+	GFX_D3D11 = 1 << 0,
+	GFX_OPENGL = 1 << 1,
+	GFX_USE_ZBUFFER = 1 << 2,
+	GFX_INVALID = 1 << 3
 } gfx_system_flags;
 
 struct gfx_system;
@@ -217,7 +217,7 @@ enum gfx_shader_var_type {
 	GFX_SHADER_PARAM_TEX
 };
 
-typedef struct {
+typedef struct gfx_shader_var {
 	const char* name;
 	enum gfx_shader_var_type type;
 	// size_t size;   // size of the variable (16-byte aligned)
@@ -225,6 +225,8 @@ typedef struct {
 	size_t offset; // offset inside of constant buffer
 	void* data;
 } gfx_shader_var_t;
+
+
 BM_EXPORT size_t gfx_get_shader_var_size(enum gfx_shader_var_type type);
 
 BM_EXPORT enum gfx_vertex_type gfx_vertex_type_from_string(const char* s);

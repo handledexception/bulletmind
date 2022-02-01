@@ -163,9 +163,9 @@ void print_debug_info(engine_t* engine, f64 dt)
 		SDL_SetRenderDrawColor(engine->renderer, r, g, b, a);
 		entity_t* player_ent = ent_by_name(engine->ent_list, "player");
 		char time_buf[TEMP_STRING_MAX];
-#if defined BM_WINDOWS
+#if defined _WIN32
 		_strtime(time_buf);
-#elif defined BM_DARWIN
+#elif defined __APPLE__
 		time_t raw_time;
 		struct tm* info;
 		time(&raw_time);
@@ -202,15 +202,14 @@ int main(int argc, char** argv)
 {
 	char s[26] = "\"Main screen turn on...\"";
 	str_upper_no_copy(s, 0);
-	logger(LOG_INFO, "%s\n", s);
+	info("%s\n", s);
 
 	// Allocate memory arena - 8MiB
-	mem_arena_backing_buffer = (u8*)bm_malloc(ARENA_TOTAL_BYTES);
-	arena_init(&mem_arena, (void*)mem_arena_backing_buffer, (size_t)ARENA_TOTAL_BYTES);
+	mem_arena_backing_buffer = (u8*)mem_alloc(ARENA_TOTAL_BYTES);
+	mem_arena_init(&mem_arena, (void*)mem_arena_backing_buffer, (size_t)ARENA_TOTAL_BYTES);
 
 	size_t sz_engine = sizeof(engine_t);
-	engine = (engine_t*)bm_arena_alloc(&mem_arena, sz_engine);
-
+	engine = (engine_t*)bm_mem_arena_alloc(&mem_arena, sz_engine);
 	memset(engine, 0, sizeof(engine_t));
 	engine->adapter_index = -1; // SDL default to first available
 	engine->window_rect.x = -1; // SDL window position centered
@@ -255,7 +254,7 @@ int main(int argc, char** argv)
 		pack_version(APP_VER_MAJ, APP_VER_MIN, APP_VER_REV);
 
 	if (!eng_init(APP_NAME, app_version, engine)) {
-		logger(LOG_ERROR, "Something went wrong!\n");
+		error("Something went wrong!\n");
 		return -1;
 	}
 
@@ -344,7 +343,7 @@ int main(int argc, char** argv)
 
 	eng_shutdown(engine);
 	engine = NULL;
-	bm_free(mem_arena_backing_buffer);
+	mem_free(mem_arena_backing_buffer);
 	mem_arena_backing_buffer = NULL;
 
 	return 0;

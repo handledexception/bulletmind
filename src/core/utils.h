@@ -18,6 +18,9 @@
 
 #include "core/types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
 u32 pack_version(u8 maj, u8 min, u8 rev);
@@ -33,3 +36,7 @@ void version_string(const u32 version, char* ver_str);
 #define ENUM_CASE_RETURN_STR(enum_name) \
 	case (enum_name):               \
 		return #enum_name;
+
+#ifdef __cplusplus
+}
+#endif

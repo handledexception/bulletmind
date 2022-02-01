@@ -45,7 +45,7 @@ bool game_res_init(engine_t* eng)
 	if (!read_toml_config(kAssetsToml, &conf))
 		return false;
 
-	logger(LOG_INFO, "Opened game resources config: %s\n", kAssetsToml);
+	info("Opened game resources config: %s\n", kAssetsToml);
 
 	asset_list = toml_array_in(conf, "assets");
 	if (asset_list == NULL)
@@ -53,15 +53,15 @@ bool game_res_init(engine_t* eng)
 
 	const size_t num_assets = toml_array_nelem(asset_list);
 	if (num_assets > MAX_GAME_RESOURCES) {
-		logger(LOG_ERROR, "Too many assets specified in config %s\n",
+		error("Too many assets specified in config %s\n",
 		       kAssetsToml);
 		return false;
 	}
 
-	logger(LOG_INFO, "Found %d assets in game resources config.",
+	info("Found %d assets in game resources config.",
 	       num_assets);
 
-	eng->game_resources = (game_resource_t**)arena_alloc(&mem_arena,
+	eng->game_resources = (game_resource_t**)mem_arena_alloc(&mem_arena,
 					  sizeof(game_resource_t*) * num_assets,
 					  DEFAULT_ALIGNMENT);
 
@@ -71,7 +71,7 @@ bool game_res_init(engine_t* eng)
 	for (size_t asset_idx = 0; asset_idx < num_assets; asset_idx++) {
 		toml_table_t* asset = toml_table_at(asset_list, asset_idx);
 		if (asset == NULL) {
-			logger(LOG_ERROR, "Error reading asset config %zu\n",
+			error("Error reading asset config %zu\n",
 			       asset_idx);
 			return false;
 		}
@@ -88,13 +88,13 @@ bool game_res_init(engine_t* eng)
 						    &asset_type_str);
 
 		if (!attr_ok) {
-			logger(LOG_ERROR,
+			error(
 			       "Error reading attributes from TOML!\n");
 			return false;
 		}
 
 		if (!os_file_exists(asset_path)) {
-			logger(LOG_ERROR, "Game resource file not found: %s\n",
+			error("Game resource file not found: %s\n",
 			       asset_path);
 			return false;
 		}
@@ -116,20 +116,20 @@ bool game_res_init(engine_t* eng)
 			}
 		}
 
-		logger(LOG_INFO, "Loaded game resource: %s (%s)\n", asset_name,
+		info("Loaded game resource: %s (%s)\n", asset_name,
 		       asset_type_to_string(asset_type));
 
 		num_assets_loaded += 1;
 	}
 
 	if (num_assets_loaded != num_assets) {
-		logger(LOG_ERROR,
+		error(
 		       "Error loading assets! %zu/%zu assets loaded.\n",
 		       num_assets_loaded, num_assets);
 		return false;
 	}
 
-	logger(LOG_INFO, "Successfully loaded %zu/%zu assets.\n",
+	info("Successfully loaded %zu/%zu assets.\n",
 	       num_assets_loaded, num_assets);
 
 	return true;
@@ -152,7 +152,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 		sprite_t* sprite = NULL;
 		if (sprite_load(asset_path, &sprite) &&
 		    sprite_create_texture(eng->renderer, sprite)) {
-			resource = arena_alloc(&mem_arena,
+			resource = mem_arena_alloc(&mem_arena,
 					       sizeof(game_resource_t),
 					       DEFAULT_ALIGNMENT);
 			sprintf(resource->name, "%s", asset_name);
@@ -180,7 +180,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 			const size_t num_frames =
 				(size_t)toml_array_nelem(frames);
 
-			sprite_sheet_t* sprite_sheet = arena_alloc(
+			sprite_sheet_t* sprite_sheet = mem_arena_alloc(
 				&mem_arena, sizeof(sprite_sheet_t),
 				DEFAULT_ALIGNMENT);
 
@@ -194,7 +194,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 			sprite_sheet->height = sheet_height;
 			sprite_sheet->backing_sprite = sprite;
 			sprite_sheet->num_frames = num_frames;
-			sprite_sheet->frames = (ss_frame_t*)arena_alloc(
+			sprite_sheet->frames = (ss_frame_t*)mem_arena_alloc(
 				&mem_arena, sizeof(ss_frame_t) * num_frames,
 				DEFAULT_ALIGNMENT);
 
@@ -223,7 +223,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 				ss_frame->duration = (f32)duration;
 			}
 
-			resource = arena_alloc(&mem_arena,
+			resource = mem_arena_alloc(&mem_arena,
 					       sizeof(game_resource_t),
 					       DEFAULT_ALIGNMENT);
 
@@ -236,7 +236,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 		   asset_type == kAssetTypeMusic) {
 		audio_chunk_t* audio_chunk = NULL;
 		if (audio_load_sound(asset_path, &audio_chunk)) {
-			resource = arena_alloc(&mem_arena,
+			resource = mem_arena_alloc(&mem_arena,
 					       sizeof(game_resource_t),
 					       DEFAULT_ALIGNMENT);
 
@@ -272,7 +272,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 			if (type == GFX_SHADER_VERTEX)
 				gfx_create_shader_input_layout(eng->gfx.system, shader, vertex_type);
 		}
-		resource = arena_alloc(&mem_arena,
+		resource = mem_arena_alloc(&mem_arena,
 				sizeof(game_resource_t),
 				DEFAULT_ALIGNMENT);
 		sprintf(resource->name, "%s", asset_name);
@@ -281,7 +281,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 		resource->data = (void*)shader;
 
 	}else
-		logger(LOG_WARNING, "Unknown asset type %d!\n",
+		warn( "Unknown asset type %d!\n",
 		       (int)asset_type);
 
 	return resource;

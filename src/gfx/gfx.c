@@ -4,7 +4,7 @@
 
 size_t gfx_get_shader_var_size(enum gfx_shader_var_type type)
 {
-	switch(type) {
+	switch (type) {
 	case GFX_SHADER_PARAM_BOOL:
 		return sizeof(bool);
 	case GFX_SHADER_PARAM_S32:
@@ -100,15 +100,15 @@ u32 gfx_get_vertex_stride(enum gfx_vertex_type type)
 void gfx_init_sprite(gfx_system_t* gfx, gfx_buffer_t* vertex_buffer)
 {
 	size_t sz = sizeof(struct gfx_vertex_data);
-	struct gfx_vertex_data* vd = (struct gfx_vertex_data*)bm_malloc(sz);
+	struct gfx_vertex_data* vd = (struct gfx_vertex_data*)mem_alloc(sz);
 	memset(vd, 0, sz);
 	vd->num_vertices = 4;
 	size_t sz_positions = sizeof(vec3f_t) * vd->num_vertices;
-	vd->positions = (vec3f_t*)bm_malloc(sz_positions);
-	vd->tex_verts = (struct texture_vertex*)bm_malloc(
+	vd->positions = (vec3f_t*)mem_alloc(sz_positions);
+	vd->tex_verts = (struct texture_vertex*)mem_alloc(
 		sizeof(struct texture_vertex));
 	size_t sz_tex_verts = sizeof(vec2f_t) * 4;
-	vd->tex_verts->data = bm_malloc(sz_tex_verts);
+	vd->tex_verts->data = mem_alloc(sz_tex_verts);
 	vd->tex_verts->size = sizeof(vec2f_t);
 	gfx_create_buffer(gfx, vd, sz_positions + sz_tex_verts,
 			  GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DYNAMIC,

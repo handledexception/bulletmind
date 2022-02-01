@@ -34,11 +34,11 @@
 #include <time.h>
 
 #ifndef BM_MAX_PATH
-#if defined(BM_WINDOWS)
+#if defined(_WIN32)
 #define BM_MAX_PATH 256
-#elif defined(BM_DARWIN)
+#elif defined(__APPLE__)
 #define BM_MAX_PATH 1024
-#elif defined(BM_LINUX)
+#elif defined(__linux__)
 #define BM_MAX_PATH 4096
 #endif
 #endif
@@ -57,14 +57,14 @@ typedef float f32;
 typedef double f64;
 
 typedef enum {
-	kResultOk = 0,
-	kResultError = 1,
-	kResultIoError = 2,
-	kResultNotFound = 3,
-	kResultNull = 4,
-	kResultOutOfMemory = 5,
-	kResultNotImplemented = 6,
-	kResultUnknown = 7
+	RESULT_OK = 0,
+	RESULT_ERROR = 1,
+	RESULT_IO_ERROR = 2,
+	RESULT_NOT_FOUND = 3,
+	RESULT_NULL = 4,
+	RESULT_OOM = 5,
+	RESULT_NOT_IMPL = 6,
+	RESULT_UNKNOWN
 } result;
 
 #define UNUSED_PARAMETER(param) (void)param

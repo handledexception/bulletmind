@@ -252,7 +252,7 @@ result gfx_com_release_d3d11(gfx_system_t* gfx)
 	// COM_RELEASE(gfx->zstencil_target);
 	// COM_RELEASE(gfx->dsv);
 	// COM_RELEASE(gfx->dss);
-	return kResultOk;
+	return RESULT_OK;
 }
 
 void gfx_bind_vertex_shader_input_layout(gfx_system_t* gfx)
@@ -269,7 +269,7 @@ result gfx_enumerate_adapters(gfx_system_t* gfx, u32 adapter_index, u32* count)
 {
 	UINT i = 0;
 
-	result res = kResultNotFound;
+	result res = RESULT_NOT_FOUND;
 
 	for (i = 0; IDXGIFactory2_EnumAdapters1(gfx->dxgi_factory, i,
 						&gfx->dxgi_adapter) == S_OK;
@@ -286,15 +286,15 @@ result gfx_enumerate_adapters(gfx_system_t* gfx, u32 adapter_index, u32* count)
 
 		os_wcs_to_utf8(desc.Description, 0, adapter_name,
 			       sizeof adapter_name);
-		logger(LOG_INFO, "\033[7mgfx\033[m\tDXGI Adapter %u: %s", i,
+		info("\033[7mgfx\033[m\tDXGI Adapter %u: %s", i,
 		       (const char*)&adapter_name[0]);
-		logger(LOG_INFO, "     \tDedicated VRAM: %u",
+		info("     \tDedicated VRAM: %u",
 		       desc.DedicatedVideoMemory);
-		logger(LOG_INFO, "     \tShared VRAM:    %u",
+		info("     \tShared VRAM:    %u",
 		       desc.SharedSystemMemory);
-		logger(LOG_INFO, "     \tPCI ID:         %x:%x", desc.VendorId,
+		info("     \tPCI ID:         %x:%x", desc.VendorId,
 		       desc.DeviceId);
-		logger(LOG_INFO, "     \tRevision:       %u", desc.Revision);
+		info("     \tRevision:       %u", desc.Revision);
 
 		LARGE_INTEGER umd;
 		if (SUCCEEDED(IDXGIAdapter1_CheckInterfaceSupport(
@@ -304,18 +304,18 @@ result gfx_enumerate_adapters(gfx_system_t* gfx, u32 adapter_index, u32* count)
 			const u16 bb = (version >> 32) & 0xffff;
 			const u16 ccccc = (version >> 16) & 0xffff;
 			const u64 ddddd = version & 0xffff;
-			logger(LOG_INFO, "     \tDriver Version: %u.%u.%u.%u",
+			info("     \tDriver Version: %u.%u.%u.%u",
 			       aa, bb, ccccc, ddddd);
 		} else {
-			logger(LOG_WARNING, "     \tDriver Version: Unknown");
+			warn( "     \tDriver Version: Unknown");
 		}
 
 		if (adapter_index == i) {
-			res = kResultOk;
+			res = RESULT_OK;
 			break;
 		}
 
-		logger(LOG_INFO, "[gfx] Monitors");
+		info("[gfx] Monitors");
 		gfx_enumerate_adapter_monitors(gfx);
 
 		(*count)++;
@@ -334,10 +334,10 @@ static bool gfx_get_monitor_target(const MONITORINFOEX* info,
 	if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &num_paths,
 					&num_modes) == ERROR_SUCCESS) {
 		DISPLAYCONFIG_PATH_INFO* paths =
-			(DISPLAYCONFIG_PATH_INFO*)bm_malloc(
+			(DISPLAYCONFIG_PATH_INFO*)mem_alloc(
 				num_paths * (sizeof(DISPLAYCONFIG_PATH_INFO)));
 		DISPLAYCONFIG_MODE_INFO* modes =
-			(DISPLAYCONFIG_MODE_INFO*)bm_malloc(
+			(DISPLAYCONFIG_MODE_INFO*)mem_alloc(
 				num_modes * (sizeof(DISPLAYCONFIG_MODE_INFO)));
 		if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &num_paths, paths,
 				       &num_modes, modes,
@@ -376,8 +376,8 @@ static bool gfx_get_monitor_target(const MONITORINFOEX* info,
 				}
 			}
 		}
-		bm_free(paths);
-		bm_free(modes);
+		mem_free(paths);
+		mem_free(modes);
 		paths = NULL;
 		modes = NULL;
 	}
@@ -387,7 +387,7 @@ static bool gfx_get_monitor_target(const MONITORINFOEX* info,
 result gfx_enumerate_adapter_monitors(gfx_system_t* gfx)
 {
 	if (!gfx && !gfx->dxgi_adapter)
-		return kResultNull;
+		return RESULT_NULL;
 
 	IDXGIOutput* dxgi_output = NULL;
 	u32 output_index = 0;
@@ -424,21 +424,21 @@ result gfx_enumerate_adapter_monitors(gfx_system_t* gfx)
 			os_wcs_to_utf8(target.monitorFriendlyDeviceName, 0,
 				       friendly_name,
 				       sizeof target.monitorFriendlyDeviceName);
-			logger(LOG_INFO, "     \tOutput %u:     %s",
+			info("     \tOutput %u:     %s",
 			       output_index, device_name);
-			logger(LOG_INFO, "     \tFriendly Name: %s",
+			info("     \tFriendly Name: %s",
 			       friendly_name);
-			logger(LOG_INFO, "     \tPosition:      %d, %d",
+			info("     \tPosition:      %d, %d",
 			       rect.left, rect.top);
-			logger(LOG_INFO, "     \tSize:          %d, %d",
+			info("     \tSize:          %d, %d",
 			       rect.right - rect.left, rect.bottom - rect.top);
-			logger(LOG_INFO, "     \tAttached:      %s",
+			info("     \tAttached:      %s",
 			       desc.AttachedToDesktop ? "true" : "false");
-			logger(LOG_INFO, "     \tRefresh Rate:  %uhz",
+			info("     \tRefresh Rate:  %uhz",
 			       refresh_rate);
 		}
 	}
-	return kResultOk;
+	return RESULT_OK;
 }
 
 void gfx_set_viewport(gfx_system_t* gfx, u32 width, u32 height)
@@ -458,40 +458,40 @@ void gfx_set_viewport(gfx_system_t* gfx, u32 width, u32 height)
 // TODO(paulh): Refactor to initialize D3D11 once, and allow instantiating multple swap chains
 gfx_system_t* gfx_system_init(const struct gfx_config* cfg, s32 flags)
 {
-	gfx_system_t* gfx = (gfx_system_t*)bm_malloc(sizeof(gfx_system_t));
+	gfx_system_t* gfx = (gfx_system_t*)mem_alloc(sizeof(gfx_system_t));
 	memset(gfx, 0, sizeof(*gfx));
 
 	if (gfx_create_device_dependent_resources(gfx, cfg->adapter) !=
-		kResultOk) {
+	    RESULT_OK) {
 		gfx_com_release_d3d11(gfx);
-		bm_free((void*)gfx);
+		mem_free((void*)gfx);
 		gfx = NULL;
 		return gfx;
 	}
-	logger(LOG_INFO,
+	info(
 	       "\033[7mgfx\033[m Created device dependent resources\n");
 
 	gfx_activate_d3d11_debug_info(gfx);
 
-	if (gfx_create_swap_chain(gfx, cfg) != kResultOk) {
+	if (gfx_create_swap_chain(gfx, cfg) != RESULT_OK) {
 		gfx_com_release_d3d11(gfx);
-		bm_free((void*)gfx);
+		mem_free((void*)gfx);
 		gfx = NULL;
 		return gfx;
 	}
-	logger(LOG_INFO, "\033[7mgfx\033[m Created swap chain\n");
+	info("\033[7mgfx\033[m Created swap chain\n");
 
 	if (gfx_init_render_target(gfx, cfg->width, cfg->height,
-				   cfg->pix_fmt) != kResultOk ||
+				   cfg->pix_fmt) != RESULT_OK ||
 	    gfx_init_zstencil(gfx, cfg->width, cfg->height,
 			      GFX_FORMAT_DEPTH_U24,
-			      flags & BM_GFX_USE_ZBUFFER) != kResultOk) {
+			      flags & GFX_USE_ZBUFFER) != RESULT_OK) {
 		gfx_com_release_d3d11(gfx);
-		bm_free((void*)gfx);
+		mem_free((void*)gfx);
 		gfx = NULL;
 		return gfx;
 	}
-	logger(LOG_INFO,
+	info(
 	       "\033[7mgfx\033[m Created render target and zbuffer\n");
 
 	gfx_set_render_target(gfx, gfx->render_target, gfx->zstencil_target);
@@ -506,7 +506,7 @@ void gfx_system_shutdown(gfx_system_t* gfx)
 	if (gfx) {
 		gfx_com_release_d3d11(gfx);
 		gfx_destroy_device_dependent_resources(gfx);
-		bm_free(gfx);
+		mem_free(gfx);
 		gfx = NULL;
 	}
 }
@@ -518,7 +518,7 @@ void gfx_system_bind_render_target(gfx_system_t* gfx)
 
 result gfx_create_swap_chain(gfx_system_t* gfx, const struct gfx_config* cfg)
 {
-	result res = kResultOk;
+	result res = RESULT_OK;
 
 	if (gfx->device && gfx->dxgi_factory) {
 		HWND hwnd = (HWND)cfg->window.hwnd;
@@ -573,36 +573,36 @@ result gfx_create_swap_chain(gfx_system_t* gfx, const struct gfx_config* cfg)
 						DXGI_MWA_NO_ALT_ENTER |
 							DXGI_MWA_NO_WINDOW_CHANGES);
 			} else {
-				res = kResultNull;
+				res = RESULT_NULL;
 			}
 
 			IDXGISwapChain1_Release(dxgi_swap_chain);
 		} else {
-			res = kResultNull;
+			res = RESULT_NULL;
 		}
 	}
 
-	if (res == kResultNull)
-		logger(LOG_ERROR, "[gfx] Error creating swap chain!");
+	if (res == RESULT_NULL)
+		error("[gfx] Error creating swap chain!");
 
 	return res;
 }
 
 result gfx_create_device_dependent_resources(gfx_system_t* gfx, s32 adapter)
 {
-	result res = kResultOk;
+	result res = RESULT_OK;
 	HRESULT hr = S_OK;
 
 	gfx->dxgi_dll = os_dlopen("dxgi.dll");
 	if (!gfx->dxgi_dll) {
-		res = kResultNull;
+		res = RESULT_NULL;
 		goto cleanup;
 	}
 
 	PFN_CREATE_DXGI_FACTORY2 CreateDXGIFactory2Func =
 		os_dlsym(gfx->dxgi_dll, "CreateDXGIFactory2");
 	if (!CreateDXGIFactory2Func) {
-		res = kResultNull;
+		res = RESULT_NULL;
 		goto cleanup;
 	}
 
@@ -614,25 +614,25 @@ result gfx_create_device_dependent_resources(gfx_system_t* gfx, s32 adapter)
 	hr = CreateDXGIFactory2Func(dxgi_flags, &BM_IID_IDXGIFactory2,
 				    (void**)&gfx->dxgi_factory);
 	if (FAILED(hr)) {
-		res = kResultError;
+		res = RESULT_ERROR;
 		goto cleanup;
 	}
 
 	u32 adapter_count = 0;
 	res = gfx_enumerate_adapters(gfx, adapter, &adapter_count);
-	if (res == kResultNotFound)
+	if (res == RESULT_NOT_FOUND)
 		goto cleanup;
 
 	gfx->d3d11_dll = os_dlopen("d3d11.dll");
 	if (!gfx->d3d11_dll) {
-		res = kResultNull;
+		res = RESULT_NULL;
 		goto cleanup;
 	}
 
 	PFN_D3D11_CREATE_DEVICE D3D11CreateDeviceFunc =
 		os_dlsym(gfx->d3d11_dll, "D3D11CreateDevice");
 	if (!D3D11CreateDeviceFunc) {
-		res = kResultNull;
+		res = RESULT_NULL;
 		goto cleanup;
 	}
 
@@ -661,33 +661,33 @@ result gfx_create_device_dependent_resources(gfx_system_t* gfx, s32 adapter)
 				   (ID3D11Device**)&gfx->device, &feature_level,
 				   (ID3D11DeviceContext**)&gfx->ctx);
 	if (FAILED(hr)) {
-		res = kResultError;
+		res = RESULT_ERROR;
 		goto cleanup;
 	}
 
 	hr = ID3D11Device_QueryInterface(gfx->device, &BM_IID_ID3D11Device1,
 					 (void**)&gfx->device);
 	if (FAILED(hr)) {
-		res = kResultError;
+		res = RESULT_ERROR;
 		goto cleanup;
 	}
 
 	hr = ID3D11DeviceContext_QueryInterface(
 		gfx->ctx, &BM_IID_ID3D11DeviceContext1, (void**)&gfx->ctx);
 	if (FAILED(hr)) {
-		res = kResultError;
+		res = RESULT_ERROR;
 		goto cleanup;
 	}
 
 	hr = ID3D11Device_QueryInterface(gfx->device, &BM_IID_IDXGIDevice1,
 					 (void**)&gfx->dxgi_device);
 	if (FAILED(hr)) {
-		res = kResultError;
+		res = RESULT_ERROR;
 		goto cleanup;
 	}
 
 cleanup:
-	if (res != kResultOk) {
+	if (res != RESULT_OK) {
 		gfx_system_shutdown(gfx);
 	}
 
@@ -761,15 +761,15 @@ void gfx_render_end(gfx_system_t* gfx, bool vsync, u32 flags)
 // void gfx_init_sprite(gfx_system_t* gfx, gfx_buffer_t* vertex_buffer)
 // {
 // 	size_t sz = sizeof(struct gfx_vertex_data);
-// 	struct gfx_vertex_data* vd = (struct gfx_vertex_data*)bm_malloc(sz);
+// 	struct gfx_vertex_data* vd = (struct gfx_vertex_data*)mem_alloc(sz);
 // 	memset(vd, 0, sz);
 // 	vd->num_vertices = 4;
 // 	size_t sz_positions = sizeof(vec3f_t) * vd->num_vertices;
-// 	vd->positions = (vec3f_t*)bm_malloc(sz_positions);
-// 	vd->tex_verts = (struct texture_vertex*)bm_malloc(
+// 	vd->positions = (vec3f_t*)mem_alloc(sz_positions);
+// 	vd->tex_verts = (struct texture_vertex*)mem_alloc(
 // 		sizeof(struct texture_vertex));
 // 	size_t sz_tex_verts = sizeof(vec2f_t) * 4;
-// 	vd->tex_verts->data = bm_malloc(sz_tex_verts);
+// 	vd->tex_verts->data = mem_alloc(sz_tex_verts);
 // 	vd->tex_verts->size = sizeof(vec2f_t);
 // 	gfx_create_buffer(gfx, vd, sz_positions + sz_tex_verts,
 // 			  GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DYNAMIC,
@@ -789,9 +789,9 @@ result gfx_create_buffer(gfx_system_t* gfx, const void* data, size_t size,
 			 gfx_buffer_t** buffer)
 {
 	if (!gfx || !gfx->device)
-		return kResultNull;
+		return RESULT_NULL;
 
-	gfx_buffer_t* buf = bm_malloc(sizeof(gfx_buffer_t));
+	gfx_buffer_t* buf = mem_alloc(sizeof(gfx_buffer_t));
 	buf->usage = usage;
 	buf->type = type;
 
@@ -812,7 +812,7 @@ result gfx_create_buffer(gfx_system_t* gfx, const void* data, size_t size,
 		break;
 	default:
 	case GFX_BUFFER_UNKNOWN:
-		return kResultUnknown;
+		return RESULT_UNKNOWN;
 	}
 
 	D3D11_BUFFER_DESC desc = {
@@ -839,36 +839,36 @@ result gfx_create_buffer(gfx_system_t* gfx, const void* data, size_t size,
 	}
 
 	if (FAILED(hr))
-		return kResultNull;
+		return RESULT_NULL;
 
 	*buffer = buf;
 
-	return kResultOk;
+	return RESULT_OK;
 }
 
 result gfx_buffer_copy_data(gfx_system_t* gfx, gfx_buffer_t* buffer,
 			    const void* data, size_t size)
 {
 	if (!gfx || !buffer || !data || size == 0)
-		return kResultNull;
+		return RESULT_NULL;
 
 	D3D11_MAPPED_SUBRESOURCE sr = {
 		.DepthPitch = 0,
 		.pData = NULL,
 		.RowPitch = 0,
 	};
-	
+
 	if (FAILED(ID3D11DeviceContext1_Map(gfx->ctx,
 					    (ID3D11Resource*)buffer->buffer, 0,
 					    D3D11_MAP_WRITE_DISCARD, 0, &sr)))
-		return kResultError;
+		return RESULT_ERROR;
 
 	memcpy(sr.pData, data, size);
 
 	ID3D11DeviceContext1_Unmap(gfx->ctx, (ID3D11Resource*)buffer->buffer,
 				   0);
 
-	return kResultOk;
+	return RESULT_OK;
 }
 
 void gfx_bind_vertex_buffer(gfx_system_t* gfx, gfx_buffer_t* vb, u32 stride,
@@ -915,7 +915,7 @@ gfx_shader_t* gfx_compile_shader_from_file(const char* path,
 				target, 0, 0, &blob, &blob_error);
 
 	if (SUCCEEDED(hr)) {
-		shader = (gfx_shader_t*)bm_malloc(sizeof(gfx_shader_t));
+		shader = (gfx_shader_t*)mem_alloc(sizeof(gfx_shader_t));
 		shader->blob = blob;
 		shader->type = type;
 	} else {
@@ -923,7 +923,7 @@ gfx_shader_t* gfx_compile_shader_from_file(const char* path,
 			const char* err_msg =
 				(const char*)ID3D10Blob_GetBufferPointer(
 					blob_error);
-			logger(LOG_ERROR,
+			error(
 			       "[gfx] Failed to compile shader %s. Error: %s",
 			       path, err_msg);
 		}
@@ -931,7 +931,7 @@ gfx_shader_t* gfx_compile_shader_from_file(const char* path,
 		ID3D10Blob_Release(shader->blob);
 		ID3D10Blob_Release(blob_error);
 
-		bm_free(shader);
+		mem_free(shader);
 	}
 
 	return shader;
@@ -940,7 +940,7 @@ gfx_shader_t* gfx_compile_shader_from_file(const char* path,
 result gfx_build_shader(gfx_system_t* gfx, gfx_shader_t* shader)
 {
 	if (!gfx || !gfx->device)
-		return kResultNull;
+		return RESULT_NULL;
 
 	if (shader->blob) {
 		if (shader->type == GFX_SHADER_VERTEX) {
@@ -950,7 +950,7 @@ result gfx_build_shader(gfx_system_t* gfx, gfx_shader_t* shader)
 				    ID3D10Blob_GetBufferSize(shader->blob),
 				    NULL,
 				    (ID3D11VertexShader**)&shader->shader))) {
-				logger(LOG_DEBUG,
+				debug(
 				       "[gfx] Failed to build vertex shader!");
 
 				ID3D11VertexShader_Release(
@@ -964,7 +964,7 @@ result gfx_build_shader(gfx_system_t* gfx, gfx_shader_t* shader)
 				    ID3D10Blob_GetBufferSize(shader->blob),
 				    NULL,
 				    (ID3D11PixelShader**)&shader->shader))) {
-				logger(LOG_DEBUG,
+				debug(
 				       "[gfx] Failed to build pixel shader!");
 
 				ID3D11PixelShader_Release(
@@ -974,7 +974,7 @@ result gfx_build_shader(gfx_system_t* gfx, gfx_shader_t* shader)
 		}
 	}
 
-	return kResultOk;
+	return RESULT_OK;
 }
 
 result gfx_create_shader_input_layout(gfx_system_t* gfx, gfx_shader_t* vs,
@@ -1010,11 +1010,11 @@ result gfx_create_shader_input_layout(gfx_system_t* gfx, gfx_shader_t* vs,
 		if (FAILED(ID3D11Device1_CreateInputLayout(
 			    gfx->device, descs, (UINT)num_elems, data, size,
 			    &vs->input_layout))) {
-			return kResultNull;
+			return RESULT_NULL;
 		}
 	}
 
-	return kResultOk;
+	return RESULT_OK;
 }
 
 void gfx_bind_primitive_topology(gfx_system_t* gfx, enum gfx_topology topo)
@@ -1051,7 +1051,7 @@ void gfx_set_pixel_shader(gfx_system_t* gfx, gfx_shader_t* ps)
 result gfx_init_sampler_state(gfx_system_t* gfx)
 {
 	if (!gfx || !gfx->device)
-		return kResultNull;
+		return RESULT_NULL;
 
 	D3D11_SAMPLER_DESC sd = {
 		.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
@@ -1068,15 +1068,15 @@ result gfx_init_sampler_state(gfx_system_t* gfx)
 
 	if (FAILED(ID3D11Device1_CreateSamplerState(gfx->device, &sd,
 						    &gfx->sampler_state))) {
-		logger(LOG_DEBUG, "[gfx] Failed to create sampler state!");
+		debug("[gfx] Failed to create sampler state!");
 
 		ID3D11SamplerState_Release(gfx->sampler_state);
 		gfx->sampler_state = NULL;
 
-		return kResultError;
+		return RESULT_ERROR;
 	}
 
-	return kResultOk;
+	return RESULT_OK;
 }
 
 void gfx_bind_sampler_state(gfx_system_t* gfx, gfx_texture_t* texture, u32 slot)
@@ -1131,11 +1131,11 @@ result gfx_init_rasterizer(gfx_system_t* gfx, enum gfx_culling_mode culling,
 		};
 		if (FAILED(ID3D11Device1_CreateRasterizerState(
 			    gfx->device, &desc, &gfx->raster_state))) {
-			return kResultNull;
+			return RESULT_NULL;
 		}
 	}
 
-	return kResultOk;
+	return RESULT_OK;
 }
 
 void gfx_bind_rasterizer(gfx_system_t* gfx)
@@ -1153,10 +1153,10 @@ result gfx_create_texture2d(gfx_system_t* gfx, const u8* data,
 			    gfx_texture_t** texture)
 {
 	if (!texture || !*texture)
-		return kResultNull;
+		return RESULT_NULL;
 
 	gfx_texture_t* tex = *texture;
-	tex->impl = bm_malloc(sizeof(struct gfx_texture2d));
+	tex->impl = mem_alloc(sizeof(struct gfx_texture2d));
 	struct gfx_texture2d* tex2d = (struct gfx_texture2d*)tex->impl;
 
 	DXGI_FORMAT dxgi_format =
@@ -1204,7 +1204,7 @@ result gfx_create_texture2d(gfx_system_t* gfx, const u8* data,
 	u32 stride = desc->width * (gfx_get_bits_per_pixel(desc->pix_fmt) / 8);
 	tex->size = desc->height * stride;
 	if (data) {
-		tex->data = (u8*)bm_malloc(tex->size);
+		tex->data = (u8*)mem_alloc(tex->size);
 		memcpy(tex->data, data, tex->size);
 
 		D3D11_SUBRESOURCE_DATA srd = {
@@ -1215,11 +1215,11 @@ result gfx_create_texture2d(gfx_system_t* gfx, const u8* data,
 
 		if (FAILED(ID3D11Device1_CreateTexture2D(
 			    gfx->device, &tex_desc, &srd, &tex2d->texture)))
-			return kResultNull;
+			return RESULT_NULL;
 	} else {
 		if (FAILED(ID3D11Device1_CreateTexture2D(
 			    gfx->device, &tex_desc, NULL, &tex2d->texture)))
-			return kResultNull;
+			return RESULT_NULL;
 	}
 
 	// z-buffer
@@ -1233,7 +1233,7 @@ result gfx_create_texture2d(gfx_system_t* gfx, const u8* data,
 		if (FAILED(ID3D11Device_CreateDepthStencilView(
 			    gfx->device, (ID3D11Resource*)tex2d->texture,
 			    &dsv_desc, &tex2d->dsv)))
-			return kResultNull;
+			return RESULT_NULL;
 		// shader texture
 	} else {
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {
@@ -1246,19 +1246,19 @@ result gfx_create_texture2d(gfx_system_t* gfx, const u8* data,
 		if (FAILED(ID3D11Device1_CreateShaderResourceView(
 			    gfx->device, (ID3D11Resource*)tex2d->texture,
 			    &srv_desc, &tex2d->srv)))
-			return kResultNull;
+			return RESULT_NULL;
 	}
 
-	return kResultOk;
+	return RESULT_OK;
 }
 
 result gfx_create_texture(gfx_system_t* gfx, const u8* data,
 			  const struct gfx_texture_desc* desc,
 			  gfx_texture_t** texture)
 {
-	result res = kResultOk;
+	result res = RESULT_OK;
 
-	gfx_texture_t* tex = (gfx_texture_t*)bm_malloc(sizeof(*tex));
+	gfx_texture_t* tex = (gfx_texture_t*)mem_alloc(sizeof(*tex));
 
 	switch (desc->type) {
 	case GFX_TEXTURE_2D:
@@ -1268,14 +1268,14 @@ result gfx_create_texture(gfx_system_t* gfx, const u8* data,
 	case GFX_TEXTURE_3D:
 	case GFX_TEXTURE_CUBE:
 	default:
-		res = kResultNotImplemented;
+		res = RESULT_NOT_IMPL;
 		break;
 	}
 
-	if (res == kResultOk) {
+	if (res == RESULT_OK) {
 		*texture = tex;
 	} else {
-		bm_free(tex);
+		mem_free(tex);
 		tex = NULL;
 	}
 
@@ -1287,10 +1287,10 @@ result gfx_init_render_target(gfx_system_t* gfx, u32 width, u32 height,
 			      enum gfx_pixel_format pf)
 {
 	if (!gfx || !gfx->device || !gfx->dxgi_swap_chain)
-		return kResultNull;
+		return RESULT_NULL;
 
 	gfx->render_target =
-		(gfx_texture_t*)bm_malloc(sizeof(*gfx->render_target));
+		(gfx_texture_t*)mem_alloc(sizeof(*gfx->render_target));
 
 	struct gfx_texture_desc desc = {
 		.type = GFX_TEXTURE_2D,
@@ -1302,24 +1302,24 @@ result gfx_init_render_target(gfx_system_t* gfx, u32 width, u32 height,
 	};
 
 	if (gfx_create_texture2d(gfx, NULL, &desc, &gfx->render_target) ==
-	    kResultOk) {
+	    RESULT_OK) {
 		struct gfx_texture2d* tex =
 			(struct gfx_texture2d*)gfx->render_target->impl;
 		HRESULT hr = IDXGISwapChain2_GetBuffer(gfx->dxgi_swap_chain, 0,
 						       &BM_IID_ID3D11Texture2D,
 						       (void**)&tex->texture);
 		if (FAILED(hr))
-			return kResultNull;
+			return RESULT_NULL;
 
 		// D3D11_RENDER_TARGET_VIEW_DESC rtv_desc; // TODO?
 		hr = ID3D11Device1_CreateRenderTargetView(
 			gfx->device, (ID3D11Resource*)tex->texture, NULL,
 			&tex->rtv);
 		if (FAILED(hr))
-			return kResultNull;
+			return RESULT_NULL;
 	}
 
-	return kResultOk;
+	return RESULT_OK;
 }
 
 void gfx_set_render_target(gfx_system_t* gfx, gfx_texture_t* texture,
@@ -1346,11 +1346,11 @@ result gfx_create_zstencil_state(gfx_system_t* gfx, bool enable,
 				 struct gfx_zstencil_state** state)
 {
 	if (!gfx || !gfx->device || !state)
-		return kResultNull;
+		return RESULT_NULL;
 
 	struct gfx_zstencil_state* zss = *state;
 	if (!zss)
-		return kResultNull;
+		return RESULT_NULL;
 
 	zss->enabled = enable;
 
@@ -1374,9 +1374,9 @@ result gfx_create_zstencil_state(gfx_system_t* gfx, bool enable,
 
 	if (FAILED(ID3D11Device1_CreateDepthStencilState(gfx->device, &desc,
 							 &zss->dss)))
-		return kResultNull;
+		return RESULT_NULL;
 
-	return kResultOk;
+	return RESULT_OK;
 }
 
 // TODO(paulh): Release stuff if failed!!!!!
@@ -1384,10 +1384,10 @@ result gfx_init_zstencil(gfx_system_t* gfx, u32 width, u32 height,
 			 enum gfx_pixel_format pix_fmt, bool enabled)
 {
 	if (!gfx || !gfx->device)
-		return kResultNull;
+		return RESULT_NULL;
 
 	gfx->zstencil_target =
-		(gfx_texture_t*)bm_malloc(sizeof(*gfx->zstencil_target));
+		(gfx_texture_t*)mem_alloc(sizeof(*gfx->zstencil_target));
 
 	struct gfx_texture_desc desc = {
 		.type = GFX_TEXTURE_2D,
@@ -1401,27 +1401,27 @@ result gfx_init_zstencil(gfx_system_t* gfx, u32 width, u32 height,
 
 	// TODO(paulh): Add more zstencil state options eventually
 	gfx->zstencil_state_enabled =
-		bm_malloc(sizeof(*gfx->zstencil_state_enabled));
+		mem_alloc(sizeof(*gfx->zstencil_state_enabled));
 	gfx->zstencil_state_disabled =
-		bm_malloc(sizeof(*gfx->zstencil_state_disabled));
+		mem_alloc(sizeof(*gfx->zstencil_state_disabled));
 	gfx_create_zstencil_state(gfx, false, &gfx->zstencil_state_disabled);
 	gfx_create_zstencil_state(gfx, true, &gfx->zstencil_state_enabled);
 	gfx_toggle_zstencil(gfx, enabled);
 
-	return kResultOk;
+	return RESULT_OK;
 }
 
 void gfx_destroy_zstencil(gfx_system_t* gfx)
 {
 	if (gfx && gfx->zstencil_state_enabled &&
 	    gfx->zstencil_state_disabled && gfx->zstencil_target) {
-		bm_free(gfx->zstencil_state_enabled);
+		mem_free(gfx->zstencil_state_enabled);
 		gfx->zstencil_state_enabled = NULL;
-		bm_free(gfx->zstencil_state_disabled);
+		mem_free(gfx->zstencil_state_disabled);
 		gfx->zstencil_state_disabled = NULL;
 
-		bm_free(gfx->zstencil_target);
-		bm_free(gfx->zstencil_target->impl);
+		mem_free(gfx->zstencil_target);
+		mem_free(gfx->zstencil_target->impl);
 		gfx->zstencil_target->impl = NULL;
 		gfx->zstencil_target = NULL;
 	}

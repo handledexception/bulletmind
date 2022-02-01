@@ -62,11 +62,11 @@ bool ent_init(entity_t** ent_list, const s32 num_ents)
 		return false;
 
 	const size_t sz_ent_list = sizeof(entity_t) * num_ents;
-	*ent_list = (entity_t*)arena_alloc(&mem_arena, sz_ent_list,
+	*ent_list = (entity_t*)mem_arena_alloc(&mem_arena, sz_ent_list,
 					   DEFAULT_ALIGNMENT);
 	memset(*ent_list, 0, sz_ent_list);
 
-	logger(LOG_INFO, "ent_init OK\n");
+	info("ent_init OK\n");
 
 	return true;
 }
@@ -105,7 +105,7 @@ void ent_refresh(engine_t* eng, const f64 dt)
 		// ent_refresh_renderables(eng, e, dt);
 	}
 
-	// logger(LOG_INFO, "engine time: %f", eng_get_time_sec());
+	// info("engine time: %f", eng_get_time_sec());
 }
 
 void ent_refresh_movers(engine_t* eng, entity_t* e, f64 dt)
@@ -145,7 +145,7 @@ void ent_refresh_colliders(engine_t* eng, entity_t* e, f64 dt)
 			if (ent_has_caps(c, kEntityCollider)) {
 				if (bounds_intersects(&e->bbox, &c->bbox,
 						      EPSILON)) {
-					logger(LOG_DEBUG,
+					debug(
 					       "%s (min {%f, %f, %f} max {%f, %f, %f}) intersects %s (min {%f, %f, %f} max {%f, %f, %f})",
 					       e->name, e->bbox.min.x,
 					       e->bbox.min.y, e->bbox.min.z,
@@ -188,7 +188,7 @@ void ent_refresh_emitters(engine_t* eng, entity_t* e, f64 dt)
 			}
 			if (cmd_get_state(eng->inputs, kCommandPlayerAltFire) ==
 			    true) {
-				logger(LOG_INFO,
+				info(
 				       "eng_refresh - kCommandPlayerAltFire triggered!\n");
 			}
 
@@ -312,7 +312,7 @@ void ent_refresh_renderables(engine_t* eng, entity_t* e, f64 dt)
 
 void ent_shutdown(entity_t* ent_list)
 {
-	logger(LOG_INFO, "ent_shutdown OK\n");
+	info("ent_shutdown OK\n");
 }
 
 entity_t* ent_new(entity_t* ent_list)
@@ -323,12 +323,12 @@ entity_t* ent_new(entity_t* ent_list)
 	for (s32 edx = 0; edx < MAX_ENTITIES; edx++) {
 		e = ent_by_index(ent_list, edx);
 		if (e == NULL) {
-			logger(LOG_WARNING, "Entity slot %d is NULL!\n", edx);
+			warn( "Entity slot %d is NULL!\n", edx);
 			continue;
 		}
 
 		if (ent_has_no_caps(e)) {
-			logger(LOG_INFO,
+			info(
 			       "ent_new: found empty slot %d for entity\n",
 			       edx);
 			memset(e, 0, sizeof(entity_t));
@@ -344,7 +344,7 @@ entity_t* ent_by_index(entity_t* ent_list, const s32 idx)
 {
 	entity_t* e = &ent_list[idx];
 	if (e == NULL) {
-		logger(LOG_WARNING, "ent_by_index - NULL entity at index %d\n",
+		warn( "ent_by_index - NULL entity at index %d\n",
 		       idx);
 	}
 
@@ -411,10 +411,10 @@ entity_t* ent_spawn(entity_t* ent_list, const char* name, const vec2f_t org,
 		else
 			e->lifetime = e->timestamp + lifetime;
 
-		logger(LOG_INFO, "ent_spawn: (%f) \"%s\" with caps %d\n",
+		info("ent_spawn: (%f) \"%s\" with caps %d\n",
 		       e->timestamp, e->name, caps);
 	} else
-		logger(LOG_WARNING,
+		warn(
 		       "ent_spawn: no slots found to spawn entity %s\n", name);
 
 	return e;
@@ -430,7 +430,7 @@ void ent_lifetime_update(entity_t* e)
 {
 	// kill entities that have a fixed lifetime
 	if (e->lifetime > 0.0 && (eng_get_time_sec() >= e->lifetime)) {
-		logger(LOG_INFO, "Entity %s lifetime expired\n", e->name);
+		info("Entity %s lifetime expired\n", e->name);
 		e->caps = 0;
 	}
 }
@@ -539,7 +539,7 @@ bool ent_spawn_player_and_satellite(entity_t* ent_list, s32 cam_width,
 				     player_size, &player_color, kPlayerCaps,
 				     FOREVER);
 	if (player == NULL) {
-		logger(LOG_ERROR,
+		error(
 		       "ent_init - failed to initialize player entity!\n");
 		return false;
 	}
@@ -555,7 +555,7 @@ bool ent_spawn_player_and_satellite(entity_t* ent_list, s32 cam_width,
 					sat_size, &sat_color, kSatelliteCaps,
 					FOREVER);
 	if (satellite == NULL) {
-		logger(LOG_ERROR,
+		error(
 		       "ent_init - failed to initialize satellite entity!\n");
 		return false;
 	}
@@ -572,7 +572,7 @@ bool ent_spawn_enemy(entity_t* ent_list, s32 cam_width, s32 cam_height)
 	entity_t* enemy = ent_spawn(ent_list, "enemy", org, size, &color,
 				    kEnemyCaps, FOREVER);
 	if (enemy == NULL) {
-		logger(LOG_ERROR, "ent_init - failed to spawn enemy!");
+		error("ent_init - failed to spawn enemy!");
 		return false;
 	}
 
@@ -620,9 +620,9 @@ void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 	const vec4f_t trans_vec = {p_accel.x * 0.00005, 0.f,
 				   p_accel.y * 0.00005, 1.f};
 	mat4f_translate(&cam_trans, &trans_vec);
-	struct gfx_scene* scene = eng->gfx.scene;
-	gfx_shader_var_t* world_var = vector_elem(&scene->shader_vars, sizeof(gfx_shader_var_t), 0);
-	gfx_shader_var_t* view_proj_var = vector_elem(&scene->shader_vars, sizeof(gfx_shader_var_t), 1);
+	struct gfx_scene* scene = *(struct gfx_scene**)vec_begin(eng->gfx.scenes);
+	gfx_shader_var_t* world_var = vector_elem(&eng->gfx.shader_vars, sizeof(gfx_shader_var_t), 0);
+	gfx_shader_var_t* view_proj_var = vector_elem(&eng->gfx.shader_vars, sizeof(gfx_shader_var_t), 1);
 	struct mat4f* world_matrix = (struct mat4f*)world_var->data;
 	struct mat4f* view_proj_matrix = (struct mat4f*)view_proj_var->data;
 	mat4f_mul(view_proj_matrix, view_proj_matrix, &cam_trans);

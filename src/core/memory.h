@@ -30,9 +30,9 @@ struct memory_allocator {
 	void (*free)(void*);
 };
 
-BM_EXPORT void* bm_malloc(size_t size);
-BM_EXPORT void* bm_realloc(void* ptr, size_t size);
-BM_EXPORT void bm_free(void* ptr);
+BM_EXPORT void* mem_alloc(size_t size);
+BM_EXPORT void* mem_realloc(void* ptr, size_t size);
+BM_EXPORT void mem_free(void* ptr);
 
 // Basic linear allocator
 // https://www.gingerbill.org/article/2019/02/08/memory-allocation-strategies-002/
@@ -50,15 +50,16 @@ typedef struct arena_s {
 	size_t curr_offset;
 } arena_t;
 
-extern size_t arena_allocated_bytes;
+extern size_t mem_arena_allocated_bytes;
 extern u8* mem_arena_backing_buffer;
 extern arena_t mem_arena;
 
-BM_EXPORT void arena_init(arena_t* arena, void* backing_buffer, size_t sz_backing);
-BM_EXPORT void arena_free_all(arena_t* arena);
-BM_EXPORT void* arena_alloc(arena_t* arena, size_t size, size_t align);
+BM_EXPORT void mem_arena_init(arena_t* arena, void* backing_buffer, size_t sz_backing);
+BM_EXPORT void mem_arena_free(arena_t* arena);
+BM_EXPORT void* mem_arena_alloc(arena_t* arena, size_t size, size_t align);
 
-#define bm_arena_alloc(_arena, _sz) arena_alloc(_arena, _sz, DEFAULT_ALIGNMENT)
+#define bm_mem_arena_alloc(_arena, _sz) \
+	mem_arena_alloc(_arena, _sz, DEFAULT_ALIGNMENT)
 
 #ifdef __cplusplus
 }

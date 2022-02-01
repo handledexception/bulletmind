@@ -57,6 +57,6 @@ BM_DECLARE_HANDLE(HMENU);
 
 #undef BM_DECLARE_HANDLE
 
-#ifdef BM_WINDOWS
+#ifdef _WIN32
 typedef HWND AcceleratedWidget;
 #endif

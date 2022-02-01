@@ -19,7 +19,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#if defined(BM_WINDOWS)
+#if defined(_WIN32)
 #define ALIGNED_MALLOC 1
 #endif
 

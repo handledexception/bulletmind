@@ -67,7 +67,12 @@
         "memory.h": "c",
         "bitset": "c",
         "initializer_list": "c",
-        "list": "c"
+        "list": "c",
+        "io.h": "c",
+        "corecrt_io.h": "c",
+        "corecrt_wio.h": "c",
+        "dinput.h": "c",
+        "winuser.h": "c"
     },
     "cmake.configureOnOpen": false
 }

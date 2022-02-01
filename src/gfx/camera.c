@@ -5,7 +5,7 @@
 void gfx_camera_init(camera_t* cam)
 {
 	if (cam == NULL)
-		cam = (camera_t*)bm_malloc(sizeof(*cam));
+		cam = (camera_t*)mem_alloc(sizeof(*cam));
 	vec3f_zero(&cam->eye);
 	vec3f_zero(&cam->dir);
 	vec3f_zero(&cam->up);

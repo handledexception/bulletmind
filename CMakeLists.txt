@@ -2,6 +2,37 @@ project (bulletmind)
 
 cmake_minimum_required(VERSION 3.18)
 
+message(STATUS "Platform: ${CMAKE_SYSTEM_NAME}")
+message(STATUS "Arch: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID}")
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    message(STATUS "Windows API Version: ${CMAKE_SYSTEM_VERSION}")
+    string(REPLACE "." ";" AJA_WIN_API_VER "${CMAKE_SYSTEM_VERSION}")
+    list(GET AJA_WIN_API_VER 0 AJA_WIN_API_VER_MAJOR)
+    list(GET AJA_WIN_API_VER 1 AJA_WIN_API_VER_MINOR)
+    list(GET AJA_WIN_API_VER 2 AJA_WIN_API_VER_BUILD)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    message (STATUS "macOS Architectures: ${CMAKE_OSX_ARCHITECTURES}")
+    message (STATUS "macOS Deployment Target: ${CMAKE_OSX_DEPLOYMENT_TARGET}")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+else()
+    message(FATAL_ERROR "Unsupported platform: ${CMAKE_SYSTEM_NAME}")
+endif()
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(BITS 64)
+    message(STATUS "Bits: 64-bit")
+else()
+    set(BITS 32)
+    message(STATUS "Bits: 32-bit")
+endif()
+
+message(STATUS "cmake install destinations (when running cmake --install):\n\
+    CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}\n\
+    CMAKE_INSTALL_INCLUDEDIR = ${CMAKE_INSTALL_INCLUDEDIR}\n\
+    CMAKE_INSTALL_LIBDIR = ${CMAKE_INSTALL_LIBDIR}\n\
+    CMAKE_INSTALL_BINDIR = ${CMAKE_INSTALL_BINDIR}")
+
 option(BM_BUILD_32BIT "build bulletmind as 32-bit" OFF)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL MSVC)
@@ -28,7 +59,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL Clang OR CMAKE_CXX_COMPILER_ID STREQUAL GN
     endif()
 endif()
 
-set(BM_INCLUDE_DIRS
+set(TARGET_INCLUDE_DIRS
     src
     deps/murmur2
     deps/tomlc99
@@ -49,6 +80,7 @@ set(BM_CORE_HEADERS
     src/core/binary.h
     src/core/bitfield.h
     src/core/buffer.h
+    src/core/console.h
     src/core/export.h
     src/core/logger.h
     src/core/mem_align.h
@@ -106,7 +138,8 @@ set(BM_GFX_SOURCES
 
 # gui
 set(BM_GUI_HEADERS
-    src/gui/gui.h)
+    src/gui/gui.h
+    src/gui/gui_scancode.h)
 set(BM_GUI_SOURCES
     src/gui/gui.c)
 
@@ -136,7 +169,7 @@ set(BM_GAME_SOURCES
     src/toml_config.c)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    add_definitions(
+    set(TARGET_COMPILE_DEFINES
         -DUNICODE
         -D_UNICODE
         -DBM_WINDOWS
@@ -158,30 +191,30 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         src/gui/gui_win32.c)
 
     if (BM_BUILD_32BIT)
-        set(BM_LIB_DIRS
+        set(TARGET_LINK_DIRS
             deps/SDL2/lib/x86)
         set(BM_ARCH "x86")
     else()
-        set(BM_LIB_DIRS
+        set(TARGET_LINK_DIRS
             deps/SDL2/lib/x64)
         set(BM_ARCH "x64")
     endif()
 
-    set(BM_LIBS
+    set(TARGET_LINK_LIBS
         SDL2main.lib
         SDL2.lib
         SDL2_image.lib
         SDL2_mixer.lib
         kernel32)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    add_definitions(
+    set(TARGET_COMPILE_DEFINES
         -DBM_DARWIN)
     set(BM_PLATFORM_SOURCES
         ${BM_PLATFORM_SOURCES}
         src/platform/platform-darwin.c
         src/platform/platform-posix.c)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    add_definitions(
+    set(TARGET_COMPILE_DEFINES
         -DBM_LINUX)
 endif()
 
@@ -201,12 +234,11 @@ set(BM_TARGET_SOURCES
     ${BM_GAME_HEADERS}
     ${BM_GAME_SOURCES})
 
+add_executable(bulletmind WIN32 ${BM_TARGET_SOURCES})
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    add_executable(bulletmind WIN32 ${BM_TARGET_SOURCES})
     set_target_properties(bulletmind PROPERTIES LINK_FLAGS_DEBUG "-Xlinker /SUBSYSTEM:CONSOLE")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    add_executable(bulletmind ${BM_TARGET_SOURCES})
-
     find_library(SDL2_LIBRARY NAME SDL2 REQUIRED)
     find_library(SDL2_MIXER_LIBRARY NAME SDL2_mixer REQUIRED)
     find_library(SDL2_IMAGE_LIBRARY NAME SDL2_image REQUIRED)
@@ -215,14 +247,13 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(SDL2_MIXER_INCLUDE_DIR /Library/Frameworks/SDL2_mixer.framework/Headers)
     set(SDL2_IMAGE_INCLUDE_DIR /Library/Frameworks/SDL2_image.framework/Headers)
 
-    set(BM_INCLUDE_DIRS
-        ${BM_INCLUDE_DIRS}
+    set(TARGET_INCLUDE_DIRS
+        ${TARGET_INCLUDE_DIRS}
         ${SDL2_INCLUDE_DIR}
         ${SDL2_MIXER_INCLUDE_DIR}
         ${SDL2_IMAGE_INCLUDE_DIR})
-
-    set(BM_LIBS
-        ${BM_LIBS}
+    set(TARGET_LINK_LIBS
+        ${TARGET_LINK_LIBS}
         ${SDL2_LIBRARY}
         ${SDL2_MIXER_LIBRARY}
         ${SDL2_IMAGE_LIBRARY})
@@ -231,10 +262,11 @@ else()
 endif()
 
 set_property(TARGET bulletmind PROPERTY C_STANDARD 11)
-target_include_directories(bulletmind PUBLIC ${BM_INCLUDE_DIRS})
-target_link_directories(bulletmind PUBLIC ${BM_LIB_DIRS})
-target_link_libraries(bulletmind PUBLIC ${BM_LIBS})
-target_link_options(bulletmind PUBLIC ${BM_LINK_OPTS})
+target_compile_definitions(bulletmind PUBLIC ${TARGET_COMPILE_DEFINES})
+target_include_directories(bulletmind PUBLIC ${TARGET_INCLUDE_DIRS})
+target_link_directories(bulletmind PUBLIC ${TARGET_LINK_DIRS})
+target_link_libraries(bulletmind PUBLIC ${TARGET_LINK_LIBS})
+target_link_options(bulletmind PUBLIC ${TARGET_LINK_OPTS})
 
 # post-build commands
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -327,8 +359,8 @@ add_executable(bm_tests
     ${BM_PLATFORM_SOURCES})
 set_property(TARGET bm_tests PROPERTY C_STANDARD 11)
 target_include_directories(bm_tests PUBLIC
-    ${BM_INCLUDE_DIRS}
+    ${TARGET_INCLUDE_DIRS}
     deps/tau)
-target_link_directories(bm_tests PUBLIC ${BM_LIB_DIRS})
-target_link_libraries(bm_tests PUBLIC ${BM_LIBS})
-target_link_options(bm_tests PUBLIC ${BM_LINK_OPTS})
+target_link_directories(bm_tests PUBLIC ${TARGET_LINK_DIRS})
+target_link_libraries(bm_tests PUBLIC ${TARGET_LINK_LIBS})
+target_link_options(bm_tests PUBLIC ${TARGET_LINK_OPTS})

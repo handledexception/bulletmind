@@ -20,9 +20,12 @@
 #include "font.h"
 #include "sprite.h"
 
+#include "core/vector.h"
+
 #include "math/types.h"
 
 #include "gfx/camera.h"
+#include "gfx/gfx.h"
 
 typedef struct SDL_Window SDL_Window;
 typedef struct SDL_Renderer SDL_Renderer;
@@ -47,12 +50,14 @@ typedef enum {
 
 typedef struct gfx_system gfx_system_t;
 typedef struct gfx_buffer gfx_buffer_t;
+typedef struct gfx_shader_var gfx_shader_var_t;
 struct gfx_scene;
 
 struct engine_gfx {
 	gfx_system_t* system;
 	camera_t camera;
-	struct gfx_scene* scene;
+	VECTOR(struct gfx_scene*) scenes;
+	VECTOR(gfx_shader_var_t) shader_vars;
 	gfx_buffer_t* vertex_buffer;
 	u8* vbuffer_data;
 	gfx_buffer_t* cbuffer; // TODO(paulh): should go with shader(s)?

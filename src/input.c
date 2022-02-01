@@ -31,24 +31,24 @@ bool inp_init(input_state_t* inputs)
 
 	bool ok = inp_init_gamepads(inputs);
 	if (!ok) {
-		logger(LOG_ERROR, "Error initializing gamepads!");
+		error("Error initializing gamepads!");
 		return false;
 	}
-	logger(LOG_INFO, "Initialized gamepads OK");
+	info("Initialized gamepads OK");
 
 	ok = inp_init_keyboard(inputs);
 	if (!ok) {
-		logger(LOG_ERROR, "Error initializing keyboard!");
+		error("Error initializing keyboard!");
 		return ok;
 	}
-	logger(LOG_INFO, "Initialized keyboard OK");
+	info("Initialized keyboard OK");
 
 	ok = inp_init_mouse(inputs);
 	if (!ok) {
-		logger(LOG_ERROR, "Error initializing mouse!");
+		error("Error initializing mouse!");
 		return ok;
 	}
-	logger(LOG_INFO, "Initialized mouse OK");
+	info("Initialized mouse OK");
 
 	for (size_t i = 0; i < kCommandMax; i++) {
 		inputs->buttons[i].name = NULL;
@@ -86,7 +86,7 @@ bool inp_init(input_state_t* inputs)
 	inp_bind_virtual_mouse_button(inputs, kCommandPlayerAltFire,
 				      SDL_BUTTON_RIGHT);
 
-	logger(LOG_INFO, "inp_init OK\n");
+	info("inp_init OK\n");
 
 	return true;
 }
@@ -173,13 +173,13 @@ void inp_refresh_pressed(input_state_t* inputs, const SDL_Event* evt)
 			//printf("Controller Button Up - Button: %d\n", evt->cbutton.button);
 			break;
 		case SDL_CONTROLLERDEVICEADDED:
-			logger(LOG_DEBUG, "Controller Device Added\n");
+			debug("Controller Device Added\n");
 			break;
 		case SDL_CONTROLLERDEVICEREMOVED:
-			logger(LOG_DEBUG, "Controller Device Removed\n");
+			debug("Controller Device Removed\n");
 			break;
 		case SDL_CONTROLLERDEVICEREMAPPED:
-			logger(LOG_DEBUG, "Controller Device Remapped\n");
+			debug("Controller Device Remapped\n");
 			break;
 		}
 	}
@@ -187,7 +187,7 @@ void inp_refresh_pressed(input_state_t* inputs, const SDL_Event* evt)
 
 void inp_shutdown(input_state_t* inputs)
 {
-	logger(LOG_INFO, "inp_shutdown OK\n");
+	info("inp_shutdown OK\n");
 }
 
 bool inp_init_keyboard(input_state_t* inputs)
@@ -238,7 +238,7 @@ bool inp_init_gamepads(input_state_t* inputs)
 		if (gc == NULL) {
 			const char* sdl_err = SDL_GetError();
 			if (sdl_err != NULL && sdl_err[0] != '\0')
-				logger(LOG_ERROR,
+				error(
 				       "SDL_GameControllerOpen error: %s\n",
 				       sdl_err);
 			gamepad_err = true;
@@ -261,7 +261,7 @@ bool inp_init_gamepads(input_state_t* inputs)
 
 		inputs->gamepads[gdx] = gamepad;
 
-		logger(LOG_INFO,
+		info(
 		       "Gamepad %s connected | Product ID: %d | Vendor ID: %d | Version: %d\n",
 		       gamepad.name, gamepad.product_id, gamepad.vendor_id,
 		       gamepad.version);
@@ -479,7 +479,7 @@ bool inp_enumerate_gamepad_buttons(gamepad_t* gamepad)
 		gamepad->buttons[kind].name = button_name;
 		gamepad->buttons[kind].timestamp = os_get_time_ns();
 
-		logger(LOG_INFO, "Enumerated gamepad button %s\n", button_name);
+		info("Enumerated gamepad button %s\n", button_name);
 	}
 
 	return btn_err;
@@ -503,7 +503,7 @@ bool inp_enumerate_gamepad_axes(gamepad_t* gamepad)
 		if (axis_value == 0) {
 			const char* err = SDL_GetError();
 			if (err != NULL && err[0] != '\0') {
-				logger(LOG_INFO,
+				info(
 				       "SDL_GameControllerGetAxis error: %s\n",
 				       err);
 				axis_err = true;
@@ -518,7 +518,7 @@ bool inp_enumerate_gamepad_axes(gamepad_t* gamepad)
 		gamepad->axes[kind].kind = kind;
 		gamepad->axes[kind].timestamp = os_get_time_ns();
 
-		logger(LOG_INFO, "Enumerated gamepad axis %s\n", axis_name);
+		info("Enumerated gamepad axis %s\n", axis_name);
 	}
 
 	return axis_err;
@@ -562,7 +562,7 @@ bool inp_bind_virtual_key(input_state_t* inputs, command_t cmd, u16 scancode)
 	if (cmd < MAX_VIRTUAL_BUTTONS && scancode < kScancodeMax) {
 		inputs->buttons[cmd].state = 0;
 		inputs->buttons[cmd].keyboard_key = &inputs->keys[scancode];
-		logger(LOG_INFO, "Command %s bound to key %d\n",
+		info("Command %s bound to key %d\n",
 		       cmd_get_name(cmd), scancode);
 		return true;
 	}
@@ -577,7 +577,7 @@ bool inp_bind_virtual_mouse_button(input_state_t* inputs, command_t cmd,
 		inputs->buttons[cmd].state = 0;
 		inputs->buttons[cmd].mouse_button =
 			&inputs->mouse.buttons[mouse_button];
-		logger(LOG_INFO, "Command %s bound to mouse button %d\n",
+		info("Command %s bound to mouse button %d\n",
 		       cmd_get_name(cmd), mouse_button);
 		return true;
 	}
@@ -593,7 +593,7 @@ bool inp_bind_virtual_gamepad_button(input_state_t* inputs, command_t cmd,
 		inputs->buttons[cmd].gamepad_button =
 			&inputs->gamepads[gamepad].buttons[button];
 
-		logger(LOG_INFO,
+		info(
 		       "Command %s bound to gamepad %d/button %d (%s)\n",
 		       cmd_get_name(cmd), gamepad, button,
 		       inputs->gamepads[gamepad].buttons[button].name);

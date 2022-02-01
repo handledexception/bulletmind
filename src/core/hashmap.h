@@ -3,6 +3,10 @@
 
 #include "core/vector.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef u32 (*hash_func_t)(u32 val);
 
 typedef struct hash_key {
@@ -35,5 +39,9 @@ void hashmap_insert(hashmap_t* map, hash_key_t* key, const void* elem,
 void hashmap_remove(hashmap_t* map, hash_key_t* key);
 
 void hashmap_ensure_capacity(hashmap_t* map, size_t elem_size, size_t capacity);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

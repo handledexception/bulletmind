@@ -32,7 +32,7 @@
 #include "gfx/camera.h"
 #include "gfx/scene.h"
 
-#if defined(BM_WINDOWS)
+#if defined(_WIN32)
 #include "gfx/gfx_d3d11.h"
 #include "gui/gui.h"
 #include <SDL_syswm.h>
@@ -90,11 +90,11 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	sprintf(window_title, "%s v%s", name, ver_str);
 
 	if (SDL_Init(SDL_FLAGS) != 0) {
-		logger(LOG_ERROR, "Error initializing SDL2!\n");
+		error("Error initializing SDL2!\n");
 		SDL_Quit();
 		return false;
 	}
-	logger(LOG_INFO, "SDL2 initialized OK\n");
+	info("SDL2 initialized OK\n");
 
 	s32 window_pos_x = eng->window_rect.x;
 	s32 window_pos_y = eng->window_rect.y;
@@ -107,14 +107,14 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 				       eng->window_rect.w, eng->window_rect.h,
 				       SDL_WINDOW_SHOWN);
 	if (eng->window == NULL) {
-		logger(LOG_ERROR, "error creating engine window: %s\n",
+		error("error creating engine window: %s\n",
 		       SDL_GetError());
 		return false;
 	}
 	eng->renderer = SDL_CreateRenderer(eng->window, eng->adapter_index,
 					   SDL_RENDERER_ACCELERATED);
 	if (eng->renderer == NULL) {
-		logger(LOG_ERROR, "error creating engine renderer: %s\n",
+		error("error creating engine renderer: %s\n",
 		       SDL_GetError());
 		return false;
 	}
@@ -143,13 +143,16 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	//     CAMERA_HEIGHT
 	// );
 
-#if defined(BM_WINDOWS)
-	// gui_init();
-	// gui_window_t* wnd =
-	// 	gui_create_window("bm window", 100, 100, 640, 480, 0, NULL);
-	// gui_window_t* wnd2 =
-	// 	gui_create_window("bm view", 0, 0, 640, 480, 0, wnd);
-	// HWND hwnd = gui_get_window_handle(wnd2);
+#if defined(_WIN32)
+	gui_init();
+	gui_window_t* wnd =
+		gui_create_window("bm window", 100, 100, 640, 480, 0, NULL);
+	gui_window_t* wnd2 =
+		gui_create_window("bm view", 0, 0, 640, 480, 0, wnd);
+	HWND view_hwnd = gui_get_window_handle(wnd2);
+	// gui_destroy_window(wnd2);
+	// gui_destroy_window(wnd);
+	// gui_shutdown();
 
 	SDL_SysWMinfo wm_info;
 	SDL_VERSION(&wm_info.version); // must call to get valid HWND??
@@ -178,15 +181,15 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	gfx_camera_init(&eng->gfx.camera);
 	gfx_camera_persp(&eng->gfx.camera, &cam_eye, &cam_dir, &cam_up,
 			 &viewport, 60.f, Z_NEAR, Z_FAR);
-	logger(LOG_INFO, "\033[7mgfx\033[m Viewport: %dx%d\nCreated perspective camera...\n", viewport.w, viewport.h);
+	info("\033[7mgfx\033[m Viewport: %dx%d\nCreated perspective camera...\n", viewport.w, viewport.h);
 
 	bool zstencil_enabled = true;
-	u32 gfx_sys_flags = BM_GFX_D3D11 |
-			    (zstencil_enabled ? BM_GFX_USE_ZBUFFER : 0);
+	u32 gfx_sys_flags = GFX_D3D11 |
+			    (zstencil_enabled ? GFX_USE_ZBUFFER : 0);
 	eng->gfx.system = gfx_system_init(&gfx_cfg, gfx_sys_flags);
 	if (eng->gfx.system == NULL) {
 		gfx_system_shutdown(eng->gfx.system);
-		logger(LOG_INFO, "\033[7mgfx\033[m Error initializing gfx system!");
+		info("\033[7mgfx\033[m Error initializing gfx system!");
 	}
 
 	if (!game_res_init(eng))
@@ -204,13 +207,13 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	gfx_shader_var_t world_var;
 	world_var.name = "world";
 	world_var.type = GFX_SHADER_PARAM_MAT4;
-	world_var.data = bm_malloc(sizeof(struct mat4f));
+	world_var.data = mem_alloc(sizeof(struct mat4f));
 	world_var.offset = 0;
 
 	gfx_shader_var_t view_proj_var;
 	view_proj_var.name = "view_proj";
 	view_proj_var.type = GFX_SHADER_PARAM_MAT4;
-	view_proj_var.data = bm_malloc(sizeof(struct mat4f));
+	view_proj_var.data = mem_alloc(sizeof(struct mat4f));
 	view_proj_var.offset = sizeof(struct mat4f);
 
 	struct mat4f* world_matrix = (struct mat4f*)world_var.data;
@@ -235,14 +238,15 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	gfx_create_buffer(eng->gfx.system, NULL, cbuffer_size,
 			  GFX_BUFFER_CONSTANT, GFX_BUFFER_USAGE_DYNAMIC,
 			  &eng->gfx.cbuffer);
-	eng->gfx.cbuffer_data = (u8*)bm_malloc(cbuffer_size);
+	eng->gfx.cbuffer_data = (u8*)mem_alloc(cbuffer_size);
 	memcpy(&eng->gfx.cbuffer_data[0], (const void*)world_matrix,
 	       sizeof(mat4f_t));
 	memcpy(&eng->gfx.cbuffer_data[(sizeof(mat4f_t) + 15) & ~15],
 	       (const void*)view_proj_matrix, sizeof(mat4f_t));
 
-	eng->gfx.scene = gfx_scene_new(6, 2, GFX_VERTEX_POS_COLOR);
-	struct gfx_scene* scene = eng->gfx.scene;
+	vec_init(eng->gfx.scenes);
+	vec_init(eng->gfx.shader_vars);
+	struct gfx_scene* scene = gfx_scene_new(6, 2, GFX_VERTEX_POS_COLOR);
 	scene->vert_data->positions[0] = (vec3f_t){-0.5f, 0.f, -0.5f};
 	scene->vert_data->positions[1] = (vec3f_t){0.5f, 0.f, -0.5f};
 	scene->vert_data->positions[2] = (vec3f_t){0.5f, 0.f, 0.5f};
@@ -255,11 +259,21 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	scene->vert_data->colors[3] = (vec4f_t){1.f, 0.f, 0.f, 1.f};
 	scene->vert_data->colors[4] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
 	scene->vert_data->colors[5] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
-	size_t vbd_size = (sizeof(vec3f_t) * 6) +
-			  (sizeof(vec4f_t) * 6);
-	eng->gfx.vbuffer_data = (u8*)bm_malloc(vbd_size);
-	vector_push_back(&scene->shader_vars, &world_var, sizeof(gfx_shader_var_t));
-	vector_push_back(&scene->shader_vars, &view_proj_var, sizeof(gfx_shader_var_t));
+	
+	struct gfx_scene* scene2 = gfx_scene_new(3, 2, GFX_VERTEX_POS_COLOR);
+	scene2->vert_data->positions[0] = (vec3f_t){-0.5f, 0.f, 0.5f};
+	scene2->vert_data->positions[1] = (vec3f_t){0.5f, 0.f, 0.5f};
+	scene2->vert_data->positions[2] = (vec3f_t){0.f, 0.5f, 0.5f};
+	scene2->vert_data->colors[0] = (vec4f_t){1.f, 0.f, 0.f, 1.f};
+	scene2->vert_data->colors[1] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
+	scene2->vert_data->colors[2] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
+	size_t vbd_size = (sizeof(vec3f_t) * 9) +
+			  (sizeof(vec4f_t) * 9);
+	eng->gfx.vbuffer_data = (u8*)mem_alloc(vbd_size);
+	vec_push_back(eng->gfx.shader_vars, &world_var);
+	vec_push_back(eng->gfx.shader_vars, &view_proj_var);
+	vec_push_back(eng->gfx.scenes, &scene);
+	vec_push_back(eng->gfx.scenes, &scene2);
 
 	size_t vertex_buffer_size = (sizeof(vec3f_t) * BM_GFX_MAX_VERTICES) +
 			  (sizeof(vec4f_t) * BM_GFX_MAX_VERTICES);
@@ -271,10 +285,10 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	gfx_init_rasterizer(eng->gfx.system, GFX_CULLING_NONE, 0);
 #endif
 
-	eng->inputs = (input_state_t*)bm_arena_alloc(
+	eng->inputs = (input_state_t*)bm_mem_arena_alloc(
 		&mem_arena, sizeof(input_state_t));
 	memset(eng->inputs, 0, sizeof(input_state_t));
-	eng->audio = (audio_state_t*)bm_arena_alloc(
+	eng->audio = (audio_state_t*)bm_mem_arena_alloc(
 		&mem_arena, sizeof(audio_state_t));
 	memset(eng->audio, 0, sizeof(audio_state_t));
 
@@ -294,7 +308,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	eng->mode = kEngineModeStartup;
 
 	f64 init_end_msec = nsec_to_msec_f64(os_get_time_ns() - init_start);
-	logger(LOG_INFO, "eng_init OK [%fms]\n", init_end_msec);
+	info("eng_init OK [%fms]\n", init_end_msec);
 
 	return true;
 }
@@ -313,25 +327,30 @@ void eng_refresh(engine_t* eng, f64 dt)
 	ent_refresh(eng, dt);
 
 	// This is our "scene" .. copy its vertex data into the vertex buffer.
-	struct gfx_scene* scene = eng->gfx.scene;
-	u32 vertex_stride = gfx_get_vertex_stride(scene->vert_data->type);
 	size_t offset = 0;
-	for (u32 i = 0; i < scene->vert_data->num_vertices; i++) {
-		memcpy((void*)&eng->gfx.vbuffer_data[offset],
-		       (const void*)&scene->vert_data->positions[i],
-		       sizeof(struct vec3f));
-		offset += sizeof(struct vec3f);
-		memcpy((void*)&eng->gfx.vbuffer_data[offset],
-		       (const void*)&scene->vert_data->colors[i], sizeof(struct vec4f));
-		offset += sizeof(struct vec4f);
+	size_t vbd_size = 0;
+	u32 vertex_stride = 0;
+	for (size_t i = 0; i < eng->gfx.scenes.num_elems; i++) {
+		struct gfx_scene* scene = *(struct gfx_scene**)vec_elem(eng->gfx.scenes, i);
+		vertex_stride = gfx_get_vertex_stride(scene->vert_data->type);
+		for (u32 i = 0; i < scene->vert_data->num_vertices; i++) {
+			memcpy((void*)&eng->gfx.vbuffer_data[offset],
+				(const void*)&scene->vert_data->positions[i],
+				sizeof(struct vec3f));
+			offset += sizeof(struct vec3f);
+			memcpy((void*)&eng->gfx.vbuffer_data[offset],
+				(const void*)&scene->vert_data->colors[i], sizeof(struct vec4f));
+			offset += sizeof(struct vec4f);
+		}
+		vbd_size += (sizeof(vec3f_t) * scene->vert_data->num_vertices) +
+				(sizeof(vec4f_t) * scene->vert_data->num_vertices);
 	}
-	size_t vbd_size = (sizeof(vec3f_t) * scene->vert_data->num_vertices) +
-			(sizeof(vec4f_t) * scene->vert_data->num_vertices);
+
 	gfx_buffer_copy_data(eng->gfx.system, eng->gfx.vertex_buffer, eng->gfx.vbuffer_data, vbd_size);
 
 	// Copy constant buffer data (AKA shader vars) into the constant buffer
-	gfx_shader_var_t* world_var = vector_elem(&scene->shader_vars, sizeof(gfx_shader_var_t), 0);
-	gfx_shader_var_t* view_proj_var = vector_elem(&scene->shader_vars, sizeof(gfx_shader_var_t), 1);
+	gfx_shader_var_t* world_var = vector_elem(&eng->gfx.shader_vars, sizeof(gfx_shader_var_t), 0);
+	gfx_shader_var_t* view_proj_var = vector_elem(&eng->gfx.shader_vars, sizeof(gfx_shader_var_t), 1);
 	struct mat4f* world_matrix = (struct mat4f*)world_var->data;
 	struct mat4f* view_proj_matrix = (struct mat4f*)view_proj_var->data;
 	offset = 0;
@@ -387,7 +406,7 @@ void eng_shutdown(engine_t* eng)
 
 	SDL_Quit();
 
-	logger(LOG_INFO, "eng_shutdown OK\n\nGoodbye!\n");
+	info("eng_shutdown OK\n\nGoodbye!\n");
 }
 
 void eng_play_sound(engine_t* eng, const char* name, s32 volume)
@@ -400,7 +419,7 @@ void eng_play_sound(engine_t* eng, const char* name, s32 volume)
 			int play_ok =
 				Mix_PlayChannel(-1, (Mix_Chunk*)sound_chunk, 0);
 			if (play_ok < 0)
-				logger(LOG_ERROR, "Error playing sound: %s",
+				error("Error playing sound: %s",
 				       resource->name);
 		} else if (resource->type == kAssetTypeMusic) {
 			if (eng->audio->music == NULL) {

@@ -23,6 +23,9 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef enum {
 	kScancodeUnknown = 0,
 
@@ -390,3 +393,7 @@ typedef enum {
 	kScancodeMax = 512 /**< not a key, just marks the number of scancodes
                                  for array bounds */
 } scancode_t;
+
+#ifdef __cplusplus
+}
+#endif

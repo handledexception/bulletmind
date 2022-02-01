@@ -5,13 +5,11 @@
 #include "core/vector.h"
 
 struct gfx_scene {
-    struct gfx_vertex_data* vert_data;
-    struct vector shader_vars;
-    size_t num_shader_vars;
+	struct gfx_vertex_data* vert_data;
 };
 
-BM_EXPORT struct gfx_scene* gfx_scene_new(u32 num_verts, u32 num_vars, enum gfx_vertex_type vert_type);
-BM_EXPORT void gfx_scene_add_shader_var(struct gfx_scene* scene, gfx_shader_var_t* var);
+BM_EXPORT struct gfx_scene* gfx_scene_new(u32 num_verts, u32 num_vars,
+					  enum gfx_vertex_type vert_type);
 BM_EXPORT void gfx_scene_free(struct gfx_scene* scene);
 
 #endif

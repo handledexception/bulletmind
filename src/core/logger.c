@@ -1,11 +1,11 @@
 #include "core/logger.h"
+#include "core/console.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 static void* g_log_param = NULL;
 
-static void default_log_handler(enum LOG_LEVEL level, const char* fmt,
+static void default_log_handler(enum log_level level, const char* fmt,
 				va_list args, void* param)
 {
 	(void)param;
@@ -15,33 +15,35 @@ static void default_log_handler(enum LOG_LEVEL level, const char* fmt,
 	switch (level) {
 	case LOG_DEBUG:
 #ifdef BM_DEBUG
-		fprintf(stdout, "debug: %s\n", msg);
-		fflush(stdout);
+		con_print(LOG_COLOR_CYAN, stdout, "debug: %s\n", msg);
 #endif
 		break;
 	case LOG_INFO:
-		fprintf(stdout, "info: %s\n", msg);
-		fflush(stdout);
+		con_print(LOG_COLOR_DEFAULT, stdout, "info: %s\n", msg);
 		break;
 	case LOG_WARNING:
-		fprintf(stdout, "warning: %s\n", msg);
-		fflush(stdout);
+		con_print(LOG_COLOR_YELLOW, stdout, "warn: %s\n", msg);
 		break;
 	case LOG_ERROR:
-		fprintf(stdout, "error: %s\n", msg);
-		fflush(stdout);
+		con_print(LOG_COLOR_RED, stdout, "error: %s\n", msg);
+		break;
+	case LOG_PASS:
+		con_print(LOG_COLOR_BRIGHTGREEN, stdout, "pass: %s\n", msg);
+		break;
+	case LOG_FAIL:
+		con_print(LOG_COLOR_BRIGHTRED, stdout, "fail: %s\n", msg);
 		break;
 	}
 }
 
 static log_handler_t g_log_handler = default_log_handler;
 
-void log_va(enum LOG_LEVEL level, const char* fmt, va_list args)
+void log_va(enum log_level level, const char* fmt, va_list args)
 {
 	g_log_handler(level, fmt, args, g_log_param);
 }
 
-void logger(enum LOG_LEVEL level, const char* fmt, ...)
+void logger(enum log_level level, const char* fmt, ...)
 {
 	va_list args;
 

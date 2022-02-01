@@ -2,6 +2,9 @@
 
 #include "core/types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 struct string {
 	char* data;
 	size_t length;
@@ -18,3 +21,7 @@ int str_first_index_of(const char* str, size_t len, const char c);
 int str_last_index_of(const char* str, size_t len, const char c);
 int astrcmp_n(const char* str1, const char* str2, size_t n);
 int wstrcmp_n(const wchar_t* str1, const wchar_t* str2, size_t n);
+
+#ifdef __cplusplus
+}
+#endif
