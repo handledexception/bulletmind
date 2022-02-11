@@ -1,4 +1,6 @@
 /*
+ * Portions of this code adapted or borrowed from Open Broadcaster (OBS).
+ *
  * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any

@@ -110,7 +110,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	}
 
 // #if defined(BM_WINDOWS)
-#if 1
+#if 0
 	// gui_init();
 	// gui_window_t* wnd =
 	// 	gui_create_window("bm window", 100, 100, 640, 480, 0, NULL);
@@ -280,7 +280,6 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	SDL_Quit();
 	exit(0);
 #endif
-
 	eng->renderer = SDL_CreateRenderer(eng->window, eng->adapter_index,
 					   SDL_RENDERER_ACCELERATED);
 	if (eng->renderer == NULL) {
