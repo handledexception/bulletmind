@@ -55,12 +55,6 @@ typedef enum {
 } gui_key_mod_t;
 
 typedef enum {
-    GUI_KEY_PRESSED,
-    GUI_KEY_DOWN,
-    GUI_KEY_UP
-} gui_key_action_t;
-
-typedef enum {
     GUI_SCANCODE_NONE = 0,
     /* From Universal Serial Bus HID Usage Tables, Keyboard Page 0x07 */
     GUI_SCANCODE_A = 4,

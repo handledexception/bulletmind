@@ -27,7 +27,7 @@ bool read_toml_config(const char* path, toml_table_t** toml)
 
 	fp = fopen(path, "r");
 	if (fp == NULL) {
-		error("Error opening TOML file %s: %d\n", path,
+		logger(LOG_ERROR,"Error opening TOML file %s: %d\n", path,
 		       errno);
 		return false;
 	}
@@ -37,7 +37,7 @@ bool read_toml_config(const char* path, toml_table_t** toml)
 	fclose(fp);
 
 	if (!conf) {
-		error("Error parsing TOML file %s: %s\n", path,
+		logger(LOG_ERROR,"Error parsing TOML file %s: %s\n", path,
 		       err_buf);
 		return false;
 	}

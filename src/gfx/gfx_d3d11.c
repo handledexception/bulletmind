@@ -271,12 +271,13 @@ result gfx_enumerate_adapters(gfx_system_t* gfx, u32 adapter_index, u32* count)
 
 	result res = RESULT_NOT_FOUND;
 
+	IDXGIAdapter1* dxgi_adapter = NULL;
 	for (i = 0; IDXGIFactory2_EnumAdapters1(gfx->dxgi_factory, i,
-						&gfx->dxgi_adapter) == S_OK;
+						&dxgi_adapter) == S_OK;
 	     i++) {
 		DXGI_ADAPTER_DESC desc;
 
-		IDXGIAdapter1_GetDesc(gfx->dxgi_adapter, &desc);
+		IDXGIAdapter1_GetDesc(dxgi_adapter, &desc);
 
 		/* ignore Microsoft's 'basic' renderer */
 		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c)
@@ -286,36 +287,37 @@ result gfx_enumerate_adapters(gfx_system_t* gfx, u32 adapter_index, u32* count)
 
 		os_wcs_to_utf8(desc.Description, 0, adapter_name,
 			       sizeof adapter_name);
-		info("\033[7mgfx\033[m\tDXGI Adapter %u: %s", i,
+		logger(LOG_INFO, "\033[7mgfx\033[m\tDXGI Adapter %u: %s", i,
 		       (const char*)&adapter_name[0]);
-		info("     \tDedicated VRAM: %u",
+		logger(LOG_INFO, "     \tDedicated VRAM: %u",
 		       desc.DedicatedVideoMemory);
-		info("     \tShared VRAM:    %u",
+		logger(LOG_INFO, "     \tShared VRAM:    %u",
 		       desc.SharedSystemMemory);
-		info("     \tPCI ID:         %x:%x", desc.VendorId,
+		logger(LOG_INFO, "     \tPCI ID:         %x:%x", desc.VendorId,
 		       desc.DeviceId);
-		info("     \tRevision:       %u", desc.Revision);
+		logger(LOG_INFO, "     \tRevision:       %u", desc.Revision);
 
 		LARGE_INTEGER umd;
 		if (SUCCEEDED(IDXGIAdapter1_CheckInterfaceSupport(
-			    gfx->dxgi_adapter, &BM_IID_IDXGIDevice, &umd))) {
+			    dxgi_adapter, &BM_IID_IDXGIDevice, &umd))) {
 			const u64 version = umd.QuadPart;
 			const u16 aa = (version >> 48) & 0xffff;
 			const u16 bb = (version >> 32) & 0xffff;
 			const u16 ccccc = (version >> 16) & 0xffff;
 			const u64 ddddd = version & 0xffff;
-			info("     \tDriver Version: %u.%u.%u.%u",
+			logger(LOG_INFO, "     \tDriver Version: %u.%u.%u.%u",
 			       aa, bb, ccccc, ddddd);
 		} else {
-			warn( "     \tDriver Version: Unknown");
+			logger(LOG_WARNING, "     \tDriver Version: Unknown");
 		}
 
 		if (adapter_index == i) {
 			res = RESULT_OK;
-			break;
+			gfx->dxgi_adapter = dxgi_adapter;
+			// break;
 		}
 
-		info("[gfx] Monitors");
+		logger(LOG_INFO, "[gfx] Monitors");
 		gfx_enumerate_adapter_monitors(gfx);
 
 		(*count)++;
@@ -424,17 +426,17 @@ result gfx_enumerate_adapter_monitors(gfx_system_t* gfx)
 			os_wcs_to_utf8(target.monitorFriendlyDeviceName, 0,
 				       friendly_name,
 				       sizeof target.monitorFriendlyDeviceName);
-			info("     \tOutput %u:     %s",
+			logger(LOG_INFO, "     \tOutput %u:     %s",
 			       output_index, device_name);
-			info("     \tFriendly Name: %s",
+			logger(LOG_INFO, "     \tFriendly Name: %s",
 			       friendly_name);
-			info("     \tPosition:      %d, %d",
+			logger(LOG_INFO, "     \tPosition:      %d, %d",
 			       rect.left, rect.top);
-			info("     \tSize:          %d, %d",
+			logger(LOG_INFO, "     \tSize:          %d, %d",
 			       rect.right - rect.left, rect.bottom - rect.top);
-			info("     \tAttached:      %s",
+			logger(LOG_INFO, "     \tAttached:      %s",
 			       desc.AttachedToDesktop ? "true" : "false");
-			info("     \tRefresh Rate:  %uhz",
+			logger(LOG_INFO, "     \tRefresh Rate:  %uhz",
 			       refresh_rate);
 		}
 	}
@@ -468,7 +470,7 @@ gfx_system_t* gfx_system_init(const struct gfx_config* cfg, s32 flags)
 		gfx = NULL;
 		return gfx;
 	}
-	info(
+	logger(LOG_INFO,
 	       "\033[7mgfx\033[m Created device dependent resources\n");
 
 	gfx_activate_d3d11_debug_info(gfx);
@@ -479,7 +481,7 @@ gfx_system_t* gfx_system_init(const struct gfx_config* cfg, s32 flags)
 		gfx = NULL;
 		return gfx;
 	}
-	info("\033[7mgfx\033[m Created swap chain\n");
+	logger(LOG_INFO, "\033[7mgfx\033[m Created swap chain\n");
 
 	if (gfx_init_render_target(gfx, cfg->width, cfg->height,
 				   cfg->pix_fmt) != RESULT_OK ||
@@ -491,7 +493,7 @@ gfx_system_t* gfx_system_init(const struct gfx_config* cfg, s32 flags)
 		gfx = NULL;
 		return gfx;
 	}
-	info(
+	logger(LOG_INFO,
 	       "\033[7mgfx\033[m Created render target and zbuffer\n");
 
 	gfx_set_render_target(gfx, gfx->render_target, gfx->zstencil_target);
@@ -583,7 +585,7 @@ result gfx_create_swap_chain(gfx_system_t* gfx, const struct gfx_config* cfg)
 	}
 
 	if (res == RESULT_NULL)
-		error("[gfx] Error creating swap chain!");
+		logger(LOG_ERROR, "[gfx] Error creating swap chain!");
 
 	return res;
 }
@@ -923,7 +925,7 @@ gfx_shader_t* gfx_compile_shader_from_file(const char* path,
 			const char* err_msg =
 				(const char*)ID3D10Blob_GetBufferPointer(
 					blob_error);
-			error(
+			logger(LOG_ERROR,
 			       "[gfx] Failed to compile shader %s. Error: %s",
 			       path, err_msg);
 		}
@@ -950,7 +952,7 @@ result gfx_build_shader(gfx_system_t* gfx, gfx_shader_t* shader)
 				    ID3D10Blob_GetBufferSize(shader->blob),
 				    NULL,
 				    (ID3D11VertexShader**)&shader->shader))) {
-				debug(
+				logger(LOG_DEBUG,
 				       "[gfx] Failed to build vertex shader!");
 
 				ID3D11VertexShader_Release(
@@ -964,7 +966,7 @@ result gfx_build_shader(gfx_system_t* gfx, gfx_shader_t* shader)
 				    ID3D10Blob_GetBufferSize(shader->blob),
 				    NULL,
 				    (ID3D11PixelShader**)&shader->shader))) {
-				debug(
+				logger(LOG_DEBUG,
 				       "[gfx] Failed to build pixel shader!");
 
 				ID3D11PixelShader_Release(
@@ -1068,7 +1070,7 @@ result gfx_init_sampler_state(gfx_system_t* gfx)
 
 	if (FAILED(ID3D11Device1_CreateSamplerState(gfx->device, &sd,
 						    &gfx->sampler_state))) {
-		debug("[gfx] Failed to create sampler state!");
+		logger(LOG_DEBUG, "[gfx] Failed to create sampler state!");
 
 		ID3D11SamplerState_Release(gfx->sampler_state);
 		gfx->sampler_state = NULL;

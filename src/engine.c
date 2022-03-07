@@ -89,75 +89,16 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	char window_title[TEMP_STRING_MAX];
 	sprintf(window_title, "%s v%s", name, ver_str);
 
-	if (SDL_Init(SDL_FLAGS) != 0) {
-		error("Error initializing SDL2!\n");
-		SDL_Quit();
-		return false;
-	}
-	info("SDL2 initialized OK\n");
-
-	s32 window_pos_x = eng->window_rect.x;
-	s32 window_pos_y = eng->window_rect.y;
-	if (window_pos_x == -1)
-		window_pos_x = SDL_WINDOWPOS_CENTERED;
-	if (window_pos_y == -1)
-		window_pos_y = SDL_WINDOWPOS_CENTERED;
-
-	eng->window = SDL_CreateWindow(window_title, window_pos_x, window_pos_y,
-				       eng->window_rect.w, eng->window_rect.h,
-				       SDL_WINDOW_SHOWN);
-	if (eng->window == NULL) {
-		error("error creating engine window: %s\n",
-		       SDL_GetError());
-		return false;
-	}
-	eng->renderer = SDL_CreateRenderer(eng->window, eng->adapter_index,
-					   SDL_RENDERER_ACCELERATED);
-	if (eng->renderer == NULL) {
-		error("error creating engine renderer: %s\n",
-		       SDL_GetError());
-		return false;
-	}
-
-	// SDL_RenderSetViewport(eng->renderer, (SDL_Rect*)&eng->scr_bounds);
-	SDL_RenderSetLogicalSize(eng->renderer, eng->cam_rect.w,
-				 eng->cam_rect.h);
-
-	// SDL_RenderSetIntegerScale(eng->renderer, true);
-
-	// eng->scr_surface = SDL_CreateRGBSurface(
-	//     0,
-	//     CAMERA_WIDTH,
-	//     CAMERA_HEIGHT,
-	//     32,
-	//     0xFF000000,
-	//     0x00FF0000,
-	//     0x0000FF00,
-	//     0x000000FF
-	// );
-	// eng->scr_texture = SDL_CreateTexture(
-	//     eng->renderer,
-	//     SDL_PIXELFORMAT_RGBA8888,
-	//     SDL_TEXTUREACCESS_TARGET,
-	//     CAMERA_WIDTH,
-	//     CAMERA_HEIGHT
-	// );
-
-#if defined(_WIN32)
 	gui_init();
-	gui_window_t* wnd =
+	gui_window_t* main_window =
 		gui_create_window("bm window", 100, 100, 640, 480, 0, NULL);
-	gui_window_t* wnd2 =
-		gui_create_window("bm view", 0, 0, 640, 480, 0, wnd);
-	HWND view_hwnd = gui_get_window_handle(wnd2);
-	// gui_destroy_window(wnd2);
-	// gui_destroy_window(wnd);
-	// gui_shutdown();
+	gui_window_t* view_window =
+		gui_create_window("bm view", 0, 0, 640, 480, 0, main_window);
+	HWND view_hwnd = gui_get_window_handle(view_window);
+	vec_init(eng->windows);
+	vec_push_back(eng->windows, &main_window);
+	vec_push_back(eng->windows, &view_window);
 
-	SDL_SysWMinfo wm_info;
-	SDL_VERSION(&wm_info.version); // must call to get valid HWND??
-	SDL_GetWindowWMInfo(eng->window, &wm_info);
-	HWND hwnd = wm_info.info.win.window;
 	const struct gfx_config gfx_cfg = {
 					   .adapter = 0,
 					   .width = eng->window_rect.w,
@@ -168,7 +109,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 					   .fps_den = 1,
 					   .pix_fmt = GFX_FORMAT_BGRA,
 					   .fullscreen = false,
-					   .window = {hwnd}};
+					   .window = {view_hwnd}};
 
 	rect_t viewport = {
 		.x = 0, .y = 0, .w = eng->window_rect.w, .h = eng->window_rect.h,
@@ -181,7 +122,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	gfx_camera_init(&eng->gfx.camera);
 	gfx_camera_persp(&eng->gfx.camera, &cam_eye, &cam_dir, &cam_up,
 			 &viewport, 60.f, Z_NEAR, Z_FAR);
-	info("\033[7mgfx\033[m Viewport: %dx%d\nCreated perspective camera...\n", viewport.w, viewport.h);
+	logger(LOG_INFO,  "\033[7mgfx\033[m Viewport: %dx%d\nCreated perspective camera...\n", viewport.w, viewport.h);
 
 	bool zstencil_enabled = true;
 	u32 gfx_sys_flags = GFX_D3D11 |
@@ -189,11 +130,17 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	eng->gfx.system = gfx_system_init(&gfx_cfg, gfx_sys_flags);
 	if (eng->gfx.system == NULL) {
 		gfx_system_shutdown(eng->gfx.system);
-		info("\033[7mgfx\033[m Error initializing gfx system!");
+		logger(LOG_INFO,  "\033[7mgfx\033[m Error initializing gfx system!");
 	}
 
-	if (!game_res_init(eng))
+	if (!game_res_init(eng)) {
+		logger(LOG_ERROR,  "error initializing game resources!");
 		return false;
+	}
+	if (!ent_init(&eng->ent_list, MAX_ENTITIES)) {
+		logger(LOG_ERROR,  "error initializing entities!");
+		return false;
+	}
 
 	game_resource_t* resource =
 		eng_get_resource(eng, "pos_color_vs");
@@ -259,7 +206,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	scene->vert_data->colors[3] = (vec4f_t){1.f, 0.f, 0.f, 1.f};
 	scene->vert_data->colors[4] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
 	scene->vert_data->colors[5] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
-	
+
 	struct gfx_scene* scene2 = gfx_scene_new(3, 2, GFX_VERTEX_POS_COLOR);
 	scene2->vert_data->positions[0] = (vec3f_t){-0.5f, 0.f, 0.5f};
 	scene2->vert_data->positions[1] = (vec3f_t){0.5f, 0.f, 0.5f};
@@ -283,46 +230,36 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 
 	gfx_init_sampler_state(eng->gfx.system);
 	gfx_init_rasterizer(eng->gfx.system, GFX_CULLING_NONE, 0);
-#endif
 
-	eng->inputs = (input_state_t*)bm_mem_arena_alloc(
-		&mem_arena, sizeof(input_state_t));
-	memset(eng->inputs, 0, sizeof(input_state_t));
-	eng->audio = (audio_state_t*)bm_mem_arena_alloc(
-		&mem_arena, sizeof(audio_state_t));
-	memset(eng->audio, 0, sizeof(audio_state_t));
-
-	if (!audio_init(BM_NUM_AUDIO_CHANNELS, BM_AUDIO_SAMPLE_RATE,
-		BM_AUDIO_CHUNK_SIZE))
-		return false;
-	if (!inp_init(eng->inputs))
-		return false;
-	// cmd_init();
-	if (!ent_init(&eng->ent_list, MAX_ENTITIES))
-		return false;
-	eng_init_time();
-
-	eng->font.rsrc = eng_get_resource(eng, "font_7px");
-	eng->font.sprite = (sprite_t*)eng->font.rsrc->data;
 	eng->target_frametime = FRAME_TIME(eng->target_fps);
 	eng->mode = kEngineModeStartup;
-
 	f64 init_end_msec = nsec_to_msec_f64(os_get_time_ns() - init_start);
-	info("eng_init OK [%fms]\n", init_end_msec);
+	logger(LOG_INFO,  "eng_init OK [%fms]\n", init_end_msec);
 
 	return true;
 }
 
 void eng_refresh(engine_t* eng, f64 dt)
 {
-	inp_refresh_mouse(&eng->inputs->mouse, eng->render_scale.x,
-			  eng->render_scale.y);
+	// inp_refresh_mouse(&eng->inputs->mouse, eng->render_scale.x,
+	// 		  eng->render_scale.y);
 
-	SDL_Event event;
-	while (SDL_PollEvent(&event)) {
-		inp_refresh_pressed(eng->inputs, &event);
+	// SDL_Event event;
+	// while (SDL_PollEvent(&event)) {
+	// 	inp_refresh_pressed(eng->inputs, &event);
+	// }
+	gui_event_t evt;
+	while(gui_poll_event(&evt)) {
+
 	}
+	if (evt.keyboard.keys[GUI_SCANCODE_W].state == GUI_KEY_DOWN)
+		printf("W DOWN\n");
 
+	MSG msg;
+	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
 	cmd_refresh(eng);
 	ent_refresh(eng, dt);
 
@@ -388,65 +325,52 @@ void eng_refresh(engine_t* eng, f64 dt)
 
 void eng_shutdown(engine_t* eng)
 {
-	ent_shutdown(eng->ent_list);
-	cmd_shutdown();
-	inp_shutdown(eng->inputs);
-	audio_shutdown();
-
-	// SDL_FreeSurface(eng->scr_surface);
-	// SDL_DestroyTexture(eng->scr_texture);
-	SDL_DestroyRenderer(eng->renderer);
-	SDL_DestroyWindow(eng->window);
-
-	// eng->scr_texture = NULL;
-	eng->renderer = NULL;
-	eng->window = NULL;
-
 	gfx_system_shutdown(eng->gfx.system);
-
-	SDL_Quit();
-
-	info("eng_shutdown OK\n\nGoodbye!\n");
+	for (size_t i = 0; i < eng->windows.num_elems; i++) {
+		gui_destroy_window((gui_window_t*)vec_elem(eng->windows, i));
+	}
+	gui_shutdown();
+	logger(LOG_INFO,  "eng_shutdown OK\n\nGoodbye!\n");
 }
 
 void eng_play_sound(engine_t* eng, const char* name, s32 volume)
 {
 	game_resource_t* resource = eng_get_resource(engine, name);
 	if (resource != NULL) {
-		audio_chunk_t* sound_chunk = (audio_chunk_t*)resource->data;
-		if (resource->type == kAssetTypeSoundEffect) {
-			sound_chunk->volume = volume;
-			int play_ok =
-				Mix_PlayChannel(-1, (Mix_Chunk*)sound_chunk, 0);
-			if (play_ok < 0)
-				error("Error playing sound: %s",
-				       resource->name);
-		} else if (resource->type == kAssetTypeMusic) {
-			if (eng->audio->music == NULL) {
-				eng->audio->music =
-					(Mix_Music*)Mix_LoadMUS(resource->path);
-			}
-			if (!eng->audio->music_playing) {
-				Mix_VolumeMusic(volume);
-				Mix_FadeInMusic(eng->audio->music, -1, 150);
-				eng->audio->music_volume = volume;
-				eng->audio->music_playing = true;
-			}
-		}
+		// audio_chunk_t* sound_chunk = (audio_chunk_t*)resource->data;
+		// if (resource->type == kAssetTypeSoundEffect) {
+		// 	sound_chunk->volume = volume;
+		// 	int play_ok =
+		// 		Mix_PlayChannel(-1, (Mix_Chunk*)sound_chunk, 0);
+		// 	if (play_ok < 0)
+		// 		logger(LOG_ERROR,  "Error playing sound: %s",
+		// 		       resource->name);
+		// } else if (resource->type == kAssetTypeMusic) {
+		// 	if (eng->audio->music == NULL) {
+		// 		eng->audio->music =
+		// 			(Mix_Music*)Mix_LoadMUS(resource->path);
+		// 	}
+		// 	if (!eng->audio->music_playing) {
+		// 		Mix_VolumeMusic(volume);
+		// 		Mix_FadeInMusic(eng->audio->music, -1, 150);
+		// 		eng->audio->music_volume = volume;
+		// 		eng->audio->music_playing = true;
+		// 	}
+		// }
 	}
 }
 
 void eng_stop_music(engine_t* eng)
 {
-	if (eng->audio && eng->audio->music_playing)
-		Mix_HaltMusic();
+	// if (eng->audio && eng->audio->music_playing)
+	// 	Mix_HaltMusic();
 }
 
 void eng_toggle_fullscreen(engine_t* eng, bool fullscreen)
 {
 	// bool is_fullscreen = SDL_GetWindowFlags(eng->window) & SDL_WINDOW_FULLSCREEN;
-	SDL_SetWindowFullscreen(eng->window,
-				fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
+	// SDL_SetWindowFullscreen(eng->window,
+	// 			fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
 
 	// SDL_ShowCursor(is_fullscreen);
 }

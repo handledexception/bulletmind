@@ -55,8 +55,8 @@ void font_print(engine_t* eng, s32 x, s32 y, f32 scale, const char* str, ...)
 					FONT_CEL_SIZE_PX};
 			SDL_Rect dst = {x, y, FONT_CEL_SIZE_PX * scale,
 					FONT_CEL_SIZE_PX * scale};
-			SDL_RenderCopy((SDL_Renderer*)eng->renderer,
-				       eng->font.sprite->texture, &src, &dst);
+			// SDL_RenderCopy((SDL_Renderer*)eng->renderer,
+			// 	       eng->font.sprite->texture, &src, &dst);
 			x += FONT_CEL_SIZE_PX * scale;
 		}
 		c++;

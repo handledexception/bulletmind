@@ -38,15 +38,15 @@ gui_scancode_t win32_virtual_key_to_scancode(WPARAM wp, LPARAM lp)
     int vk = (int)wp;
     int sc = ((UINT)lp & 0x00ff0000) >> 16u;
     int s2vk = (int)MapVirtualKey(sc, MAPVK_VSC_TO_VK_EX);
-    assert(s2vk == vk);
+    // assert(s2vk == vk);
     bool is_extended = (lp & (1 << 24)) != 0;
-    debug("SCANCODE: %d VK: %d MapVirtualKey: %d Extended: %s",
+    logger(LOG_DEBUG,  "SCANCODE: %d VK: %d MapVirtualKey: %d Extended: %s",
         sc, vk, s2vk, is_extended ? "true":"false");
     if (sc <= 127)
         scancode = win32_scancode_lut[sc];
     else
         scancode = 0xfdfdfdfd;
-    debug("SCAN: %d, SC: %d VK: %d MapVirtualKey: %d Extended: %s",
+    logger(LOG_DEBUG,  "SCAN: %d, SC: %d VK: %d MapVirtualKey: %d Extended: %s",
         scancode, sc, vk, s2vk, is_extended ? "true":"false");
     // switch (vk) {
     //     case 
@@ -64,27 +64,20 @@ LRESULT gui_process_keyboard_msg_win32(UINT msg, WPARAM wp, LPARAM lp)
         return RESULT_NULL;
 
     LRESULT result = 0;
-    bool key_down = false;
-    gui_event_t evt = {
-        .ctx = NULL,
-        .index = 0,
-        .type = GUI_EVENT_KEY,
-        .keyboard.action = GUI_KEY_UP,
-        .keyboard.scancode = 0,
-        .keyboard.modifier = GUI_KEY_MOD_NONE,
-    };
+    u8 key_state = 0;
+    gui_event_t evt;
+    memset(&evt, 0, sizeof(gui_event_t));
 
     switch (msg) {
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
-        key_down = true;
         result = 1;
-        evt.keyboard.action = GUI_KEY_DOWN;
+        key_state = GUI_KEY_DOWN;
         break;
     case WM_KEYUP:
     case WM_SYSKEYUP:
     default:
-        evt.keyboard.action = GUI_KEY_UP;
+        key_state = GUI_KEY_UP;
         break;
     }
 
@@ -92,17 +85,19 @@ LRESULT gui_process_keyboard_msg_win32(UINT msg, WPARAM wp, LPARAM lp)
     // SHORT async_key_state = GetAsyncKeyState(VK_LCONTROL);
     // gui->keyboard.key_states[]
     gui_scancode_t scancode = win32_virtual_key_to_scancode(wp, lp);
+    evt.keyboard.keys[scancode].state = key_state;
+    evt.keyboard.keys[scancode].scancode = scancode;
     // info("Scan Code: %d", (int)scancode);
     // info("MapVirtualKey: %d", vk);
     // info("GetAsyncKeyState: %d", async_key_state);
 
-//     switch(vk) {
-//         case VK_LSHIFT: evt.keyboard.modifier = GUI_KEY_MOD_LSHIFT; break;     // 0xA0
-//         case VK_RSHIFT: evt.keyboard.modifier = GUI_KEY_MOD_RSHIFT; break;     // 0xA1
-//         case VK_LCONTROL: evt.keyboard.modifier = GUI_KEY_MOD_LCTRL; break; // 0xA2
-//         case VK_RCONTROL: evt.keyboard.modifier = GUI_KEY_MOD_RCTRL; break; // 0xA3
-//         case VK_LMENU: evt.keyboard.modifier = GUI_KEY_MOD_LMETA; break;       // 0xA4
-//         case VK_RMENU: evt.keyboard.modifier = GUI_KEY_MOD_RMETA; break;       // 0xA5
+//     switch(wp) {
+//         case VK_LSHIFT: evt.keyboard.keys[scancode].modifier = GUI_KEY_MOD_LSHIFT; break;     // 0xA0
+//         case VK_RSHIFT: evt.keyboard.keys[scancode].modifier = GUI_KEY_MOD_RSHIFT; break;     // 0xA1
+//         case VK_LCONTROL: evt.keyboard.keys[scancode].modifier = GUI_KEY_MOD_LCTRL; break; // 0xA2
+//         case VK_RCONTROL: evt.keyboard.keys[scancode].modifier = GUI_KEY_MOD_RCTRL; break; // 0xA3
+//         case VK_LMENU: evt.keyboard.keys[scancode].modifier = GUI_KEY_MOD_LMETA; break;       // 0xA4
+//         case VK_RMENU: evt.keyboard.keys[scancode].modifier = GUI_KEY_MOD_RMETA; break;       // 0xA5
 // #if(_WIN32_WINNT >= 0x0500)
 //         case VK_BROWSER_BACK: break;        // 0xA6
 //         case VK_BROWSER_FORWARD: break;     // 0xA7
@@ -125,10 +120,10 @@ LRESULT gui_process_keyboard_msg_win32(UINT msg, WPARAM wp, LPARAM lp)
 // #endif
 //     }
 
-    if (!key_down) {
+    if (key_state == GUI_KEY_UP) {
     }
 
-    // vec_push_back(gui->events, &evt);
+    vec_push_back(gui->events, &evt);
 
     return result;
 }

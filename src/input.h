@@ -30,13 +30,13 @@
 #define KEY_DOWN true
 #define KEY_UP false
 
-#define MAX_GAMEPADS 8
-#define MAX_GAMEPAD_BUTTONS 16
-#define MAX_GAMEPAD_AXES 6
-#define MAX_MOUSE_BUTTONS 16
-#define MAX_KEYBOARD_KEYS kScancodeMax
-#define MAX_VIRTUAL_BUTTONS \
-	(MAX_KEYBOARD_KEYS + MAX_MOUSE_BUTTONS + MAX_GAMEPAD_BUTTONS)
+#define BM_MAX_GAMEPADS 8
+#define BM_MAX_GAMEPAD_BUTTONS 16
+#define BM_MAX_GAMEPAD_AXES 6
+#define BM_MAX_MOUSE_BUTTONS 16
+#define BM_MAX_KEYBOARD_KEYS kScancodeMax
+#define BM_MAX_VIRTUAL_BUTTONS \
+	(BM_MAX_KEYBOARD_KEYS + BM_MAX_MOUSE_BUTTONS + BM_MAX_GAMEPAD_BUTTONS)
 
 typedef enum { kInputModeGame = 0, kInputModeConsole = 1 } input_mode_t;
 
@@ -105,7 +105,7 @@ typedef struct gamepad_s {
 	u16 product_id;
 	u16 vendor_id;
 	u16 version;
-	gamepad_button_t buttons[MAX_GAMEPAD_BUTTONS];
+	gamepad_button_t buttons[BM_MAX_GAMEPAD_BUTTONS];
 	gamepad_axis_t axes[kGamepadAxisMax];
 } gamepad_t;
 
@@ -125,7 +125,7 @@ typedef struct mouse_s {
 	vec2i_t screen_pos; // mouse position on the screen
 	vec2i_t window_pos; // mouse position within the window
 	vec2i_t wheel;      // mouse wheel vector
-	mouse_button_t buttons[MAX_MOUSE_BUTTONS]; // array of mouse buttons
+	mouse_button_t buttons[BM_MAX_MOUSE_BUTTONS]; // array of mouse buttons
 } mouse_t;
 
 typedef struct virtual_button_s {
@@ -138,10 +138,10 @@ typedef struct virtual_button_s {
 } virtual_button_t;
 
 typedef struct input_state_s {
-	gamepad_t gamepads[MAX_GAMEPADS]; // array of gamepad states
-	kbkey_t keys[MAX_KEYBOARD_KEYS];  // array of keyboard key states
+	gamepad_t gamepads[BM_MAX_GAMEPADS]; // array of gamepad states
+	kbkey_t keys[BM_MAX_KEYBOARD_KEYS];  // array of keyboard key states
 	mouse_t mouse;                    // mouse state
-	virtual_button_t buttons[MAX_VIRTUAL_BUTTONS];
+	virtual_button_t buttons[BM_MAX_VIRTUAL_BUTTONS];
 	input_mode_t mode;
 } input_state_t;
 

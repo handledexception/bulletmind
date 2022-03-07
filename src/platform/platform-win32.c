@@ -84,7 +84,7 @@ void* os_dlopen(const char* path)
 
 	module = LoadLibraryW(path_wide);
 	if (!module) {
-		info("LoadLibrary error %s", path);
+		logger(LOG_INFO, "LoadLibrary error %s", path);
 		return NULL;
 	}
 

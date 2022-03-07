@@ -66,7 +66,7 @@ bool ent_init(entity_t** ent_list, const s32 num_ents)
 					   DEFAULT_ALIGNMENT);
 	memset(*ent_list, 0, sz_ent_list);
 
-	info("ent_init OK\n");
+	logger(LOG_INFO,  "ent_init OK\n");
 
 	return true;
 }
@@ -105,7 +105,7 @@ void ent_refresh(engine_t* eng, const f64 dt)
 		// ent_refresh_renderables(eng, e, dt);
 	}
 
-	// info("engine time: %f", eng_get_time_sec());
+	// logger(LOG_INFO,  "engine time: %f", eng_get_time_sec());
 }
 
 void ent_refresh_movers(engine_t* eng, entity_t* e, f64 dt)
@@ -145,7 +145,7 @@ void ent_refresh_colliders(engine_t* eng, entity_t* e, f64 dt)
 			if (ent_has_caps(c, kEntityCollider)) {
 				if (bounds_intersects(&e->bbox, &c->bbox,
 						      EPSILON)) {
-					debug(
+					logger(LOG_DEBUG,  
 					       "%s (min {%f, %f, %f} max {%f, %f, %f}) intersects %s (min {%f, %f, %f} max {%f, %f, %f})",
 					       e->name, e->bbox.min.x,
 					       e->bbox.min.y, e->bbox.min.z,
@@ -169,150 +169,150 @@ void ent_refresh_colliders(engine_t* eng, entity_t* e, f64 dt)
 
 void ent_refresh_emitters(engine_t* eng, entity_t* e, f64 dt)
 {
-	if (ent_has_caps(e, kEntityShooter)) {
-		vec2f_t mouse_pos = {0.f, 0.f};
-		mouse_pos.x = (f32)eng->inputs->mouse.window_pos.x;
-		mouse_pos.y = (f32)eng->inputs->mouse.window_pos.y;
-		entity_t* ent_list = eng->ent_list;
-		if (!strcmp(e->name, "player")) {
-			static bool is_shooting = false;
-			if (cmd_get_state(eng->inputs,
-					  kCommandPlayerPrimaryFire) == true) {
-				if (!is_shooting) {
-					is_shooting = true;
-				}
-			} else if (cmd_get_state(eng->inputs,
-						 kCommandPlayerPrimaryFire) ==
-				   false) {
-				is_shooting = false;
-			}
-			if (cmd_get_state(eng->inputs, kCommandPlayerAltFire) ==
-			    true) {
-				info(
-				       "eng_refresh - kCommandPlayerAltFire triggered!\n");
-			}
+	// if (ent_has_caps(e, kEntityShooter)) {
+	// 	vec2f_t mouse_pos = {0.f, 0.f};
+	// 	mouse_pos.x = (f32)eng->inputs->mouse.window_pos.x;
+	// 	mouse_pos.y = (f32)eng->inputs->mouse.window_pos.y;
+	// 	entity_t* ent_list = eng->ent_list;
+	// 	if (!strcmp(e->name, "player")) {
+	// 		static bool is_shooting = false;
+	// 		if (cmd_get_state(eng->inputs,
+	// 				  kCommandPlayerPrimaryFire) == true) {
+	// 			if (!is_shooting) {
+	// 				is_shooting = true;
+	// 			}
+	// 		} else if (cmd_get_state(eng->inputs,
+	// 					 kCommandPlayerPrimaryFire) ==
+	// 			   false) {
+	// 			is_shooting = false;
+	// 		}
+	// 		if (cmd_get_state(eng->inputs, kCommandPlayerAltFire) ==
+	// 		    true) {
+	// 			logger(LOG_INFO,  
+	// 			       "eng_refresh - kCommandPlayerAltFire triggered!\n");
+	// 		}
 
-			f32 fire_rate = 0.100f;
-			static f64 shot_time = 0.0;
-			if (is_shooting && os_get_time_sec() >= shot_time) {
-				shot_time = os_get_time_sec() + fire_rate;
-				entity_t* player = ent_by_index(
-					ent_list, PLAYER_ENTITY_INDEX);
-				vec2f_t bullet_org = player->org;
-				const vec2i_t bullet_size = {8, 8};
-				const rgba_t bullet_color = {0xf5, 0xa4, 0x42,
-							     0xff};
-				entity_t* bullet = ent_spawn(
-					ent_list, "bullet", bullet_org,
-					bullet_size, &bullet_color, kBulletCaps,
-					(f64)BASIC_BULLET_LIFETIME);
-				ent_set_mouse_org(bullet, mouse_pos);
+	// 		f32 fire_rate = 0.100f;
+	// 		static f64 shot_time = 0.0;
+	// 		if (is_shooting && os_get_time_sec() >= shot_time) {
+	// 			shot_time = os_get_time_sec() + fire_rate;
+	// 			entity_t* player = ent_by_index(
+	// 				ent_list, PLAYER_ENTITY_INDEX);
+	// 			vec2f_t bullet_org = player->org;
+	// 			const vec2i_t bullet_size = {8, 8};
+	// 			const rgba_t bullet_color = {0xf5, 0xa4, 0x42,
+	// 						     0xff};
+	// 			entity_t* bullet = ent_spawn(
+	// 				ent_list, "bullet", bullet_org,
+	// 				bullet_size, &bullet_color, kBulletCaps,
+	// 				(f64)BASIC_BULLET_LIFETIME);
+	// 			ent_set_mouse_org(bullet, mouse_pos);
 
-				eng_play_sound(eng, "snd_primary_fire",
-					       DEFAULT_SFX_VOLUME);
-			}
-		}
-	}
+	// 			eng_play_sound(eng, "snd_primary_fire",
+	// 				       DEFAULT_SFX_VOLUME);
+	// 		}
+	// 	}
+	// }
 }
 
 void ent_refresh_renderables(engine_t* eng, entity_t* e, f64 dt)
 {
-	if (ent_has_caps(e, kEntityRenderable)) {
-		vec2f_t mouse_pos = {0.f, 0.f};
-		mouse_pos.x = (f32)eng->inputs->mouse.window_pos.x;
-		mouse_pos.y = (f32)eng->inputs->mouse.window_pos.y;
-		if (!strcmp(e->name, "player")) {
-			game_resource_t* resource =
-				eng_get_resource(eng, "player");
-			sprite_sheet_t* sprite_sheet =
-				(sprite_sheet_t*)resource->data;
+	// if (ent_has_caps(e, kEntityRenderable)) {
+	// 	vec2f_t mouse_pos = {0.f, 0.f};
+	// 	mouse_pos.x = (f32)eng->inputs->mouse.window_pos.x;
+	// 	mouse_pos.y = (f32)eng->inputs->mouse.window_pos.y;
+	// 	if (!strcmp(e->name, "player")) {
+	// 		game_resource_t* resource =
+	// 			eng_get_resource(eng, "player");
+	// 		sprite_sheet_t* sprite_sheet =
+	// 			(sprite_sheet_t*)resource->data;
 
-			// Flip sprite on X axis depending on mouse pos
-			vec2f_t player_to_mouse = {0.f, 0.f};
-			vec2f_t pm_temp = {0.f, 0.f};
-			vec2f_sub(&pm_temp, e->org, mouse_pos);
-			vec2f_norm(&player_to_mouse, pm_temp);
-			bool flip = false;
-			if (player_to_mouse.x > 0.f)
-				flip = true;
+	// 		// Flip sprite on X axis depending on mouse pos
+	// 		vec2f_t player_to_mouse = {0.f, 0.f};
+	// 		vec2f_t pm_temp = {0.f, 0.f};
+	// 		vec2f_sub(&pm_temp, e->org, mouse_pos);
+	// 		vec2f_norm(&player_to_mouse, pm_temp);
+	// 		bool flip = false;
+	// 		if (player_to_mouse.x > 0.f)
+	// 			flip = true;
 
-			f64 frame_scale = 1.0;
-			vec2f_t vel_tmp = {0.f, 0.f};
-			vec2f_fabsf(&vel_tmp, e->vel);
-			frame_scale = MAX(vel_tmp.x, vel_tmp.y);
-			draw_sprite_sheet(eng->renderer, sprite_sheet, &e->org,
-					  frame_scale, e->angle, flip);
-		} else if (!strcmp(e->name, "satellite")) {
-			game_resource_t* resource =
-				eng_get_resource(eng, "roboid");
-			sprite_sheet_t* sprite_sheet =
-				(sprite_sheet_t*)resource->data;
-			entity_t* player = ent_by_name(eng->ent_list, "player");
-			vec2f_t sat_to_player = {0.f, 0.f};
-			vec2f_sub(&sat_to_player, e->org, player->org);
-			vec2f_norm(&sat_to_player, sat_to_player);
-			bool flip = false;
-			if (sat_to_player.x > 0.f)
-				flip = true;
-			f64 frame_scale = 1.0;
-			draw_sprite_sheet(eng->renderer, sprite_sheet, &e->org,
-					  frame_scale, e->angle, flip);
-			// rect_t sat_rect = {(s32)e->bbox.min.x,
-			// 		   (s32)e->bbox.min.y, e->size.x,
-			// 		   e->size.y};
-			// draw_rect_solid(eng->renderer, &sat_rect, &e->color);
-		} else if (!strcmp(e->name, "bullet")) {
-			//TODO(paulh): Need a game_resource_t method for get_resource_by_name
-			game_resource_t* resource =
-				eng_get_resource(eng, "bullet");
-			sprite_t* sprite = (sprite_t*)resource->data;
-			SDL_Rect dst = {e->bbox.min.x, e->bbox.min.y,
-					sprite->surface->clip_rect.w,
-					sprite->surface->clip_rect.h};
-			// calculate angle of rotation between mouse and bullet origins
-			if (e->angle == 0.f) {
-				vec2f_t mouse_to_bullet = {0.f, 0.f};
-				vec2f_sub(&mouse_to_bullet, e->mouse_org,
-					  e->org);
-				vec2f_norm(&mouse_to_bullet, mouse_to_bullet);
-				e->angle = RAD_TO_DEG(atan2f(
-					mouse_to_bullet.y, mouse_to_bullet.x));
-			}
-			SDL_RenderCopyEx(eng->renderer, sprite->texture, NULL,
-					 &dst, e->angle, NULL, SDL_FLIP_NONE);
-		} else {
-			rect_t r = {(s32)e->bbox.min.x, (s32)e->bbox.min.y,
-				    e->size.x, e->size.y};
-			draw_rect_solid(eng->renderer, &r, &e->color);
-		}
+	// 		f64 frame_scale = 1.0;
+	// 		vec2f_t vel_tmp = {0.f, 0.f};
+	// 		vec2f_fabsf(&vel_tmp, e->vel);
+	// 		frame_scale = MAX(vel_tmp.x, vel_tmp.y);
+	// 		draw_sprite_sheet(eng->renderer, sprite_sheet, &e->org,
+	// 				  frame_scale, e->angle, flip);
+	// 	} else if (!strcmp(e->name, "satellite")) {
+	// 		game_resource_t* resource =
+	// 			eng_get_resource(eng, "roboid");
+	// 		sprite_sheet_t* sprite_sheet =
+	// 			(sprite_sheet_t*)resource->data;
+	// 		entity_t* player = ent_by_name(eng->ent_list, "player");
+	// 		vec2f_t sat_to_player = {0.f, 0.f};
+	// 		vec2f_sub(&sat_to_player, e->org, player->org);
+	// 		vec2f_norm(&sat_to_player, sat_to_player);
+	// 		bool flip = false;
+	// 		if (sat_to_player.x > 0.f)
+	// 			flip = true;
+	// 		f64 frame_scale = 1.0;
+	// 		draw_sprite_sheet(eng->renderer, sprite_sheet, &e->org,
+	// 				  frame_scale, e->angle, flip);
+	// 		// rect_t sat_rect = {(s32)e->bbox.min.x,
+	// 		// 		   (s32)e->bbox.min.y, e->size.x,
+	// 		// 		   e->size.y};
+	// 		// draw_rect_solid(eng->renderer, &sat_rect, &e->color);
+	// 	} else if (!strcmp(e->name, "bullet")) {
+	// 		//TODO(paulh): Need a game_resource_t method for get_resource_by_name
+	// 		game_resource_t* resource =
+	// 			eng_get_resource(eng, "bullet");
+	// 		sprite_t* sprite = (sprite_t*)resource->data;
+	// 		SDL_Rect dst = {e->bbox.min.x, e->bbox.min.y,
+	// 				sprite->surface->clip_rect.w,
+	// 				sprite->surface->clip_rect.h};
+	// 		// calculate angle of rotation between mouse and bullet origins
+	// 		if (e->angle == 0.f) {
+	// 			vec2f_t mouse_to_bullet = {0.f, 0.f};
+	// 			vec2f_sub(&mouse_to_bullet, e->mouse_org,
+	// 				  e->org);
+	// 			vec2f_norm(&mouse_to_bullet, mouse_to_bullet);
+	// 			e->angle = RAD_TO_DEG(atan2f(
+	// 				mouse_to_bullet.y, mouse_to_bullet.x));
+	// 		}
+	// 		SDL_RenderCopyEx(eng->renderer, sprite->texture, NULL,
+	// 				 &dst, e->angle, NULL, SDL_FLIP_NONE);
+	// 	} else {
+	// 		rect_t r = {(s32)e->bbox.min.x, (s32)e->bbox.min.y,
+	// 			    e->size.x, e->size.y};
+	// 		draw_rect_solid(eng->renderer, &r, &e->color);
+	// 	}
 
-		// Draw debug overlays
-		if (eng->debug) {
-			rgba_t debug_outline_color = {
-				.r = 0xaa,
-				.g = 0xff,
-				.b = 0xaa,
-				.a = 0xff,
-			};
-			rect_t debug_rect = {
-				.x = (s32)e->bbox.min.x,
-				.y = (s32)e->bbox.min.y,
-				.w = e->size.x,
-				.h = e->size.y,
-			};
-			draw_rect_outline(eng->renderer, &debug_rect,
-					  &debug_outline_color);
-			SDL_SetRenderDrawColor(eng->renderer, 0xff, 0xff, 0xff,
-					       0xff);
-			// f32 rad = radius_of_circle_in_rect(e->rect);
-			// draw_circle(eng->renderer, (f32)e->org.x, (f32)e->org.y, rad);
-		}
-	}
+	// 	// Draw debug overlays
+	// 	if (eng->debug) {
+	// 		rgba_t debug_outline_color = {
+	// 			.r = 0xaa,
+	// 			.g = 0xff,
+	// 			.b = 0xaa,
+	// 			.a = 0xff,
+	// 		};
+	// 		rect_t debug_rect = {
+	// 			.x = (s32)e->bbox.min.x,
+	// 			.y = (s32)e->bbox.min.y,
+	// 			.w = e->size.x,
+	// 			.h = e->size.y,
+	// 		};
+	// 		draw_rect_outline(eng->renderer, &debug_rect,
+	// 				  &debug_outline_color);
+	// 		SDL_SetRenderDrawColor(eng->renderer, 0xff, 0xff, 0xff,
+	// 				       0xff);
+	// 		// f32 rad = radius_of_circle_in_rect(e->rect);
+	// 		// draw_circle(eng->renderer, (f32)e->org.x, (f32)e->org.y, rad);
+	// 	}
+	// }
 }
 
 void ent_shutdown(entity_t* ent_list)
 {
-	info("ent_shutdown OK\n");
+	logger(LOG_INFO,  "ent_shutdown OK\n");
 }
 
 entity_t* ent_new(entity_t* ent_list)
@@ -323,12 +323,12 @@ entity_t* ent_new(entity_t* ent_list)
 	for (s32 edx = 0; edx < MAX_ENTITIES; edx++) {
 		e = ent_by_index(ent_list, edx);
 		if (e == NULL) {
-			warn( "Entity slot %d is NULL!\n", edx);
+			logger(LOG_WARNING,   "Entity slot %d is NULL!\n", edx);
 			continue;
 		}
 
 		if (ent_has_no_caps(e)) {
-			info(
+			logger(LOG_INFO,  
 			       "ent_new: found empty slot %d for entity\n",
 			       edx);
 			memset(e, 0, sizeof(entity_t));
@@ -344,7 +344,7 @@ entity_t* ent_by_index(entity_t* ent_list, const s32 idx)
 {
 	entity_t* e = &ent_list[idx];
 	if (e == NULL) {
-		warn( "ent_by_index - NULL entity at index %d\n",
+		logger(LOG_WARNING,   "ent_by_index - NULL entity at index %d\n",
 		       idx);
 	}
 
@@ -411,10 +411,10 @@ entity_t* ent_spawn(entity_t* ent_list, const char* name, const vec2f_t org,
 		else
 			e->lifetime = e->timestamp + lifetime;
 
-		info("ent_spawn: (%f) \"%s\" with caps %d\n",
+		logger(LOG_INFO,  "ent_spawn: (%f) \"%s\" with caps %d\n",
 		       e->timestamp, e->name, caps);
 	} else
-		warn(
+		logger(LOG_WARNING,  
 		       "ent_spawn: no slots found to spawn entity %s\n", name);
 
 	return e;
@@ -430,7 +430,7 @@ void ent_lifetime_update(entity_t* e)
 {
 	// kill entities that have a fixed lifetime
 	if (e->lifetime > 0.0 && (eng_get_time_sec() >= e->lifetime)) {
-		info("Entity %s lifetime expired\n", e->name);
+		logger(LOG_INFO,  "Entity %s lifetime expired\n", e->name);
 		e->caps = 0;
 	}
 }
@@ -539,7 +539,7 @@ bool ent_spawn_player_and_satellite(entity_t* ent_list, s32 cam_width,
 				     player_size, &player_color, kPlayerCaps,
 				     FOREVER);
 	if (player == NULL) {
-		error(
+		logger(LOG_ERROR,  
 		       "ent_init - failed to initialize player entity!\n");
 		return false;
 	}
@@ -555,7 +555,7 @@ bool ent_spawn_player_and_satellite(entity_t* ent_list, s32 cam_width,
 					sat_size, &sat_color, kSatelliteCaps,
 					FOREVER);
 	if (satellite == NULL) {
-		error(
+		logger(LOG_ERROR,  
 		       "ent_init - failed to initialize satellite entity!\n");
 		return false;
 	}
@@ -572,7 +572,7 @@ bool ent_spawn_enemy(entity_t* ent_list, s32 cam_width, s32 cam_height)
 	entity_t* enemy = ent_spawn(ent_list, "enemy", org, size, &color,
 				    kEnemyCaps, FOREVER);
 	if (enemy == NULL) {
-		error("ent_init - failed to spawn enemy!");
+		logger(LOG_ERROR,  "ent_init - failed to spawn enemy!");
 		return false;
 	}
 
@@ -588,21 +588,21 @@ void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 	// f32 friction = 0.015625f * 2.f; // 1 meter / 64 pixels
 	// f32 friction = 0.015625f * 10.f; // 1 meter / 64 pixels
 	f32 friction = 0.f;
-	if (cmd_get_state(eng->inputs, kCommandPlayerSpeed) == true) {
-		p_speed *= 2.f;
-	}
-	if (cmd_get_state(eng->inputs, kCommandPlayerUp) == true) {
-		p_accel.y = -p_speed;
-	}
-	if (cmd_get_state(eng->inputs, kCommandPlayerDown) == true) {
-		p_accel.y = p_speed;
-	}
-	if (cmd_get_state(eng->inputs, kCommandPlayerLeft) == true) {
-		p_accel.x = p_speed;
-	}
-	if (cmd_get_state(eng->inputs, kCommandPlayerRight) == true) {
-		p_accel.x = -p_speed;
-	}
+	// if (cmd_get_state(eng->inputs, kCommandPlayerSpeed) == true) {
+	// 	p_speed *= 2.f;
+	// }
+	// if (cmd_get_state(eng->inputs, kCommandPlayerUp) == true) {
+	// 	p_accel.y = -p_speed;
+	// }
+	// if (cmd_get_state(eng->inputs, kCommandPlayerDown) == true) {
+	// 	p_accel.y = p_speed;
+	// }
+	// if (cmd_get_state(eng->inputs, kCommandPlayerLeft) == true) {
+	// 	p_accel.x = p_speed;
+	// }
+	// if (cmd_get_state(eng->inputs, kCommandPlayerRight) == true) {
+	// 	p_accel.x = -p_speed;
+	// }
 
 	ent_euler_move(player, p_accel, friction, dt);
 

@@ -4,12 +4,20 @@
 #include "core/types.h"
 #include "core/export.h"
 #include "core/vector.h"
-
-#include "gui/gui_usb_hid.h"
+#include "math/vec2.h"
+#include "gui/gui_scancode.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define MAX_GAMEPADS 8
+#define MAX_GAMEPAD_BUTTONS 16
+#define MAX_GAMEPAD_AXES 6
+#define MAX_MOUSE_BUTTONS 16
+#define MAX_KEYBOARD_KEYS GUI_SCANCODE_MAX
+#define MAX_VIRTUAL_BUTTONS \
+	(MAX_KEYBOARD_KEYS + MAX_MOUSE_BUTTONS + MAX_GAMEPAD_BUTTONS)
 
 #define BM_WINDOW_POS_UNDEFINED_MASK 0x1fff0000u
 #define BM_WINDOW_POS_UNDEFINED_DO_MASK(x) (BM_WINDOW_POS_UNDEFINED_MASK | (x))
@@ -54,17 +62,31 @@ typedef enum {
     GUI_ORIENTATION_UNKNOWN
 } gui_display_orientation_t;
 
-typedef struct {
-    gui_scancode_t scancode;
-    gui_key_action_t action;
-    gui_key_mod_t modifier;
-} gui_key_event_t;
+enum key_state {
+    GUI_KEY_UP = 0,
+    GUI_KEY_DOWN = 1,
+};
 
 typedef struct {
-    enum mouse_button button;
-    enum mouse_action action;
-    int x;
-    int y;
+    gui_scancode_t scancode; /* keyboard scancode */
+    gui_key_mod_t modifier;  /* key modifier */
+    u8 state;                /* key pressed or released state */
+} gui_key_t;
+
+typedef struct {
+    gui_key_t keys[MAX_KEYBOARD_KEYS]; /* keyboard key array */
+} gui_keyboard_event_t;
+
+typedef struct {
+	u16 button; /* mouse button number */
+	u8 state;   /* mouse button up/down state */
+} gui_mouse_button_t;
+
+typedef struct {
+    gui_mouse_button_t buttons[MAX_MOUSE_BUTTONS]; /* mouse button array */
+    struct vec2i screen_pos;                       /* mouse position on virtual screen */
+    struct vec2i window_pos;                       /* mouse position in foreground window */
+    struct vec2i wheel;                            /* mouse wheel position */
 } gui_mouse_event_t;
 
 typedef enum {
@@ -79,9 +101,10 @@ typedef enum {
 typedef struct gui_event {
     u32 index;
     gui_event_type_t type;
+    u64 timestamp;
     void* ctx;
     union {
-        gui_key_event_t keyboard;
+        gui_keyboard_event_t keyboard;
         gui_mouse_event_t mouse;
     };
 } gui_event_t;
@@ -148,6 +171,8 @@ BM_EXPORT void gui_destroy_window(gui_window_t* window);
 BM_EXPORT void gui_show_window(gui_window_t* window, bool shown);
 BM_EXPORT void* gui_get_window_handle(gui_window_t* window);
 BM_EXPORT void gui_clear_key_state(u8* key_state);
+
+BM_EXPORT bool gui_poll_event(gui_event_t* event);
 
 #ifdef __cplusplus
 }

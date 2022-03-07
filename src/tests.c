@@ -40,9 +40,9 @@ TEST(core_vector_suite, basic)
 	size_t b_index = vector_find(&v, sizeof(int), &b, 1);
 	CHECK_EQ(b_index, 1);
 	if (b_index == 1) {
-		int b_elem = *(int*)vector_elem(&v, sizeof(int), 1);
+		int* b_elem = (int*)vector_elem(&v, sizeof(int), 1);
 		if (b_elem != NULL)
-			CHECK_EQ(b_elem, 13);
+			CHECK_EQ(*b_elem, 13);
 	}
 	vector_pop_back(&v, sizeof(int));
 	CHECK_EQ(v.num_elems, 1);

@@ -19,9 +19,27 @@ void set_log_handler(log_handler_t* handler, void* param);
 void log_va(enum log_level level, const char* fmt, va_list args);
 void logger(enum log_level level, const char* fmt, ...);
 
-#define warn(fmt, ...) logger(LOG_WARNING, fmt, __VA_ARGS__)
-#define error(fmt, ...) logger(LOG_ERROR, fmt, __VA_ARGS__)
-#define info(fmt, ...) logger(LOG_INFO, fmt, __VA_ARGS__)
-#define debug(fmt, ...) logger(LOG_DEBUG, fmt, __VA_ARGS__)
-#define pass(fmt, ...) logger(LOG_PASS, fmt, __VA_ARGS__)
-#define fail(fmt, ...) logger(LOG_FAIL, fmt, __VA_ARGS__)
+// #ifndef log_warn
+// 	#define log_warn(fmt, ...) \
+// 		do { logger(LOG_WARNING, fmt, __VA_ARGS__); } while(0)
+// #endif
+// #ifndef log_error
+// 	#define logger_error(LOG_ERROR,  fmt, ...) \
+// 		do { logger(LOG_ERROR, fmt, __VA_ARGS__); } while(0)
+// #endif
+// #ifndef log_info
+// 	#define log_info(LOG_INFO,  fmt, ...) \
+// 		do {  logger(LOG_INFO, fmt, __VA_ARGS__); } while(0)
+// #endif
+// #ifndef log_debug
+// 	#define logger(LOG_DEBUG,  fmt, ...) \
+// 		do { logger(LOG_DEBUG, fmt, __VA_ARGS__); } while(0)
+// #endif
+// #ifndef log_pass
+// 	#define log_pass(fmt, ...) \
+// 		do {  logger(LOG_PASS, fmt, __VA_ARGS__); } while(0)
+// #endif
+// #ifndef log_fail
+// 	#define log_fail(fmt, ...) \
+// 		do {  logger(LOG_FAIL, fmt, __VA_ARGS__); } while(0)
+// #endif

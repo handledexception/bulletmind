@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.18)
 message(STATUS "Platform: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Arch: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID}")
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     message(STATUS "Windows API Version: ${CMAKE_SYSTEM_VERSION}")
     string(REPLACE "." ";" AJA_WIN_API_VER "${CMAKE_SYSTEM_VERSION}")
     list(GET AJA_WIN_API_VER 0 AJA_WIN_API_VER_MAJOR)
@@ -35,7 +35,8 @@ message(STATUS "cmake install destinations (when running cmake --install):\n\
 
 option(BM_BUILD_32BIT "build bulletmind as 32-bit" OFF)
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL MSVC)
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     if (CMAKE_BUILD_TYPE STREQUAL "Debug")
         add_definitions(-DBM_DEBUG)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Od /Zi")
@@ -168,7 +169,7 @@ set(BM_GAME_SOURCES
     src/sprite.c
     src/toml_config.c)
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     set(TARGET_COMPILE_DEFINES
         -DUNICODE
         -D_UNICODE
@@ -236,7 +237,7 @@ set(BM_TARGET_SOURCES
 
 add_executable(bulletmind WIN32 ${BM_TARGET_SOURCES})
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     set_target_properties(bulletmind PROPERTIES LINK_FLAGS_DEBUG "-Xlinker /SUBSYSTEM:CONSOLE")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_library(SDL2_LIBRARY NAME SDL2 REQUIRED)
@@ -269,7 +270,7 @@ target_link_libraries(bulletmind PUBLIC ${TARGET_LINK_LIBS})
 target_link_options(bulletmind PUBLIC ${TARGET_LINK_OPTS})
 
 # post-build commands
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     # copy SDL2 DLLs
     add_custom_command(TARGET bulletmind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy

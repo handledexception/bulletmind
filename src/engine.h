@@ -52,6 +52,7 @@ typedef struct gfx_system gfx_system_t;
 typedef struct gfx_buffer gfx_buffer_t;
 typedef struct gfx_shader_var gfx_shader_var_t;
 struct gfx_scene;
+struct gui_window;
 
 struct engine_gfx {
 	gfx_system_t* system;
@@ -68,32 +69,22 @@ struct engine_gfx {
 typedef struct engine_s engine_t;
 struct engine_s {
 	s32 adapter_index;
-	char window_title[TEMP_STRING_MAX];
-	SDL_Window* window;
+	f32 target_fps;
+	f64 target_frametime;
+	u64 frame_count;
+	VECTOR(struct gui_window*) windows;
 	bool fullscreen;
-	SDL_Renderer* renderer;
-
 	struct engine_gfx gfx;
-
-	// SDL_Surface* scr_surface;
-	// SDL_Texture* scr_texture;
 	rect_t window_rect;
 	rect_t cam_rect;
 	rect_t cam_inset;
 	vec2f_t render_scale;
-	f32 target_fps;
-	f64 target_frametime;
-	u64 frame_count;
 	f64 spawn_timer[MAX_SPAWN_TIMERS];
 	engine_mode_t mode;
 	bool debug;
 	bool console;
-	rect_t console_bounds;
 	entity_t* ent_list;
 	game_resource_t** game_resources;
-	font_t font;
-	input_state_t* inputs;
-	audio_state_t* audio;
 };
 
 extern engine_t* engine;

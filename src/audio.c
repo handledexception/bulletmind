@@ -15,7 +15,7 @@ bool audio_init(s32 num_channels, s32 sample_rate, s32 chunk_size)
 			  chunk_size) == -1)
 		return false;
 	Mix_AllocateChannels(32);
-	info("Initialized audio: Channels: %d | Sample rate %d | Chunk Size: %d",
+	logger(LOG_INFO,"Initialized audio: Channels: %d | Sample rate %d | Chunk Size: %d",
 		num_channels, sample_rate, chunk_size);
 
 	return true;

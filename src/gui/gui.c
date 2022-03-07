@@ -1,5 +1,5 @@
 #include "gui/gui.h"
-#include "gui/gui_usb_hid.h"
+#include "gui/gui_scancode.h"
 
 #include "core/logger.h"
 #include "core/types.h"
@@ -9,7 +9,7 @@ gui_platform_t* gui = NULL;
 
 bool gui_init(void)
 {
-	info("gui_init: Initializing GUI subsystem...");
+	logger(LOG_INFO,  "gui_init: Initializing GUI subsystem...");
 
 	if (gui)
 		gui_shutdown();
@@ -125,4 +125,15 @@ void gui_clear_key_state(u8* key_state)
     for (int i = 0; i < GUI_NUM_SCANCODES; i++) {
         key_state[i] = 0;
     }
+}
+
+bool gui_poll_event(gui_event_t* event)
+{
+	if (!gui || gui->events.num_elems == 0)
+		return 0;
+
+	gui_event_t* evt = (gui_event_t*)vec_begin(gui->events);
+	memcpy(event, evt, sizeof(gui_event_t));
+	vec_erase(gui->events, 0);
+	return true;
 }

@@ -39,11 +39,11 @@ arena_t mem_arena = {NULL, 0, 0, 0};
 static void recalculate_usage(size_t new_size)
 {
 #ifdef BM_TRACK_MEMORY_USAGE
-	os_atomic_set_long(&bytes_allocated, new_size);
+	os_atomic_set_long((long*)&bytes_allocated, (long)new_size);
 	if (bytes_allocated > max_bytes_allocated)
-		os_atomic_set_long(&max_bytes_allocated, bytes_allocated);
+		os_atomic_set_long((long*)&max_bytes_allocated, (long)bytes_allocated);
 	if (bytes_allocated <= min_bytes_allocated || min_bytes_allocated == 0)
-		os_atomic_set_long(&min_bytes_allocated, bytes_allocated);
+		os_atomic_set_long((long*)&min_bytes_allocated, (long)bytes_allocated);
 #else
 	(void)new_size;
 #endif
@@ -59,7 +59,7 @@ void* mem_alloc(size_t size)
 	*(size_t*)(ptr) = alloc_size;
 	*(u8**)(&ptr) += sizeof(size_t);
 	recalculate_usage(bytes_allocated + alloc_size);
-	os_atomic_inc_long(&alloc_count);
+	os_atomic_inc_long((long*)&alloc_count);
 #else
 	ptr = allocator.malloc(size);
 #endif
@@ -69,7 +69,7 @@ void* mem_alloc(size_t size)
 void* mem_realloc(void* ptr, size_t size)
 {
 	if (!ptr)
-		os_atomic_inc_long(&alloc_count);
+		os_atomic_inc_long((long*)&alloc_count);
 #ifdef BM_TRACK_MEMORY_USAGE
 		ptr = mem_alloc(sizeof(size_t));
 		u8* p = (u8*)ptr;
@@ -96,7 +96,7 @@ void mem_free(void* ptr)
 		p -= sizeof(size_t);
 		allocator.free(p);
 		recalculate_usage(bytes_allocated - alloc_size);
-		os_atomic_dec_long(&alloc_count);
+		os_atomic_dec_long((long*)&alloc_count);
 #else
 		allocator.free(ptr);
 #endif
@@ -106,7 +106,7 @@ void mem_free(void* ptr)
 static void log_memory_usage()
 {
 #ifdef BM_TRACK_MEMORY_USAGE
-	info("Current: %zu | Max: %zu | Min: %zu | Objects: %zu",
+	logger(LOG_INFO,  "Current: %zu | Max: %zu | Min: %zu | Objects: %zu",
 		bytes_allocated, max_bytes_allocated, min_bytes_allocated, alloc_count);
 #endif
 }
@@ -146,7 +146,7 @@ void* mem_arena_alloc(arena_t* arena, size_t size, size_t align)
 
 		mem_arena_allocated_bytes = arena->curr_offset;
 
-		debug(
+		logger(LOG_DEBUG,  
 		       "mem_arena_alloc - this: %zu bytes | used: %zu bytes | remain: %zu bytes | arena size: %zu bytes\n",
 		       arena->curr_offset - arena->prev_offset,
 		       mem_arena_allocated_bytes,
@@ -154,7 +154,7 @@ void* mem_arena_alloc(arena_t* arena, size_t size, size_t align)
 		       (size_t)ARENA_TOTAL_BYTES);
 		return ptr;
 	} else {
-		error("Out of arena memory!\n");
+		logger(LOG_ERROR,  "Out of arena memory!\n");
 	}
 
 	return NULL;

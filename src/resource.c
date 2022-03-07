@@ -45,7 +45,7 @@ bool game_res_init(engine_t* eng)
 	if (!read_toml_config(kAssetsToml, &conf))
 		return false;
 
-	info("Opened game resources config: %s\n", kAssetsToml);
+	logger(LOG_INFO,  "Opened game resources config: %s\n", kAssetsToml);
 
 	asset_list = toml_array_in(conf, "assets");
 	if (asset_list == NULL)
@@ -53,12 +53,12 @@ bool game_res_init(engine_t* eng)
 
 	const size_t num_assets = toml_array_nelem(asset_list);
 	if (num_assets > MAX_GAME_RESOURCES) {
-		error("Too many assets specified in config %s\n",
+		logger(LOG_ERROR,  "Too many assets specified in config %s\n",
 		       kAssetsToml);
 		return false;
 	}
 
-	info("Found %d assets in game resources config.",
+	logger(LOG_INFO,  "Found %d assets in game resources config.",
 	       num_assets);
 
 	eng->game_resources = (game_resource_t**)mem_arena_alloc(&mem_arena,
@@ -71,7 +71,7 @@ bool game_res_init(engine_t* eng)
 	for (size_t asset_idx = 0; asset_idx < num_assets; asset_idx++) {
 		toml_table_t* asset = toml_table_at(asset_list, asset_idx);
 		if (asset == NULL) {
-			error("Error reading asset config %zu\n",
+			logger(LOG_ERROR,  "Error reading asset config %zu\n",
 			       asset_idx);
 			return false;
 		}
@@ -88,13 +88,13 @@ bool game_res_init(engine_t* eng)
 						    &asset_type_str);
 
 		if (!attr_ok) {
-			error(
+			logger(LOG_ERROR,  
 			       "Error reading attributes from TOML!\n");
 			return false;
 		}
 
 		if (!os_file_exists(asset_path)) {
-			error("Game resource file not found: %s\n",
+			logger(LOG_ERROR,  "Game resource file not found: %s\n",
 			       asset_path);
 			return false;
 		}
@@ -116,20 +116,20 @@ bool game_res_init(engine_t* eng)
 			}
 		}
 
-		info("Loaded game resource: %s (%s)\n", asset_name,
+		logger(LOG_INFO,  "Loaded game resource: %s (%s)\n", asset_name,
 		       asset_type_to_string(asset_type));
 
 		num_assets_loaded += 1;
 	}
 
 	if (num_assets_loaded != num_assets) {
-		error(
+		logger(LOG_ERROR,  
 		       "Error loading assets! %zu/%zu assets loaded.\n",
 		       num_assets_loaded, num_assets);
 		return false;
 	}
 
-	info("Successfully loaded %zu/%zu assets.\n",
+	logger(LOG_INFO,  "Successfully loaded %zu/%zu assets.\n",
 	       num_assets_loaded, num_assets);
 
 	return true;
@@ -150,16 +150,16 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 	if (asset_type == kAssetTypeSprite ||
 	    asset_type == kAssetTypeSpriteFont) {
 		sprite_t* sprite = NULL;
-		if (sprite_load(asset_path, &sprite) &&
-		    sprite_create_texture(eng->renderer, sprite)) {
-			resource = mem_arena_alloc(&mem_arena,
-					       sizeof(game_resource_t),
-					       DEFAULT_ALIGNMENT);
-			sprintf(resource->name, "%s", asset_name);
-			sprintf(resource->path, "%s", asset_path);
-			resource->type = asset_type;
-			resource->data = sprite;
-		}
+		// if (sprite_load(asset_path, &sprite) &&
+		//     sprite_create_texture(eng->renderer, sprite)) {
+		// 	resource = mem_arena_alloc(&mem_arena,
+		// 			       sizeof(game_resource_t),
+		// 			       DEFAULT_ALIGNMENT);
+		// 	sprintf(resource->name, "%s", asset_name);
+		// 	sprintf(resource->path, "%s", asset_path);
+		// 	resource->type = asset_type;
+		// 	resource->data = sprite;
+		// }
 	} else if (asset_type == kAssetTypeSpriteSheet) {
 		toml_table_t* nfo = NULL;
 		// NOTE: Sprite sheet configs originated from Aseprite JSON massaged into a TOML file
@@ -187,7 +187,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 			//TODO(paulh): need a filesystem path string processor to get base dir of path
 			sprite_t* sprite = NULL;
 			sprite_load(sprite_path, &sprite);
-			sprite_create_texture(eng->renderer, sprite);
+			// sprite_create_texture(eng->renderer, sprite);
 			sprite->scaling = frame_scale_factor;
 
 			sprite_sheet->width = sheet_width;
@@ -281,7 +281,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 		resource->data = (void*)shader;
 
 	}else
-		warn( "Unknown asset type %d!\n",
+		logger(LOG_WARNING, "Unknown asset type %d!\n",
 		       (int)asset_type);
 
 	return resource;
