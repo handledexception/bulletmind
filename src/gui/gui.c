@@ -29,6 +29,17 @@ bool gui_init(void)
 	return RESULT_NOT_IMPL;
 }
 
+void gui_refresh(void)
+{
+#if defined(_WIN32)
+	return gui_refresh_win32(gui);
+#elif defined(__APPLE__)
+	return gui_init_macos(gui);
+#elif defined(__linux__)
+	return gui_init_linux(gui);
+#endif
+}
+
 void gui_shutdown(void)
 {
 	if (gui) {
@@ -130,10 +141,14 @@ void gui_clear_key_state(u8* key_state)
 bool gui_poll_event(gui_event_t* event)
 {
 	if (!gui || gui->events.num_elems == 0)
-		return 0;
+		return false;
 
 	gui_event_t* evt = (gui_event_t*)vec_begin(gui->events);
+	if (evt == NULL)
+		return false;
+
 	memcpy(event, evt, sizeof(gui_event_t));
 	vec_erase(gui->events, 0);
+
 	return true;
 }

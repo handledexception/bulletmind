@@ -85,6 +85,7 @@ LRESULT gui_process_keyboard_msg_win32(UINT msg, WPARAM wp, LPARAM lp)
     // SHORT async_key_state = GetAsyncKeyState(VK_LCONTROL);
     // gui->keyboard.key_states[]
     gui_scancode_t scancode = win32_virtual_key_to_scancode(wp, lp);
+    gui->keyboard.key_states[scancode] = key_state;
     evt.keyboard.keys[scancode].state = key_state;
     evt.keyboard.keys[scancode].scancode = scancode;
     // info("Scan Code: %d", (int)scancode);
@@ -119,9 +120,6 @@ LRESULT gui_process_keyboard_msg_win32(UINT msg, WPARAM wp, LPARAM lp)
 //         case VK_LAUNCH_APP2: break;         // 0xB7
 // #endif
 //     }
-
-    if (key_state == GUI_KEY_UP) {
-    }
 
     vec_push_back(gui->events, &evt);
 
@@ -281,8 +279,18 @@ bool gui_init_win32(gui_platform_t* gs)
     return true;
 }
 
+void gui_refresh_win32(gui_platform_t* gs)
+{
+	MSG msg;
+	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+}
+
 gui_scancode_t convert_scancode(void* sc)
 {
+    return GUI_SCANCODE_NONE;
     // switch(sc) {
 
     // }

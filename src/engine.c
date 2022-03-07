@@ -248,18 +248,16 @@ void eng_refresh(engine_t* eng, f64 dt)
 	// while (SDL_PollEvent(&event)) {
 	// 	inp_refresh_pressed(eng->inputs, &event);
 	// }
+	gui_refresh();
+
 	gui_event_t evt;
 	while(gui_poll_event(&evt)) {
 
 	}
-	if (evt.keyboard.keys[GUI_SCANCODE_W].state == GUI_KEY_DOWN)
+	// if (evt.keyboard.keys[GUI_SCANCODE_W].state == GUI_KEY_DOWN)
+	if (gui->keyboard.key_states[GUI_SCANCODE_W] == GUI_KEY_DOWN)
 		printf("W DOWN\n");
 
-	MSG msg;
-	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
 	cmd_refresh(eng);
 	ent_refresh(eng, dt);
 
@@ -286,8 +284,8 @@ void eng_refresh(engine_t* eng, f64 dt)
 	gfx_buffer_copy_data(eng->gfx.system, eng->gfx.vertex_buffer, eng->gfx.vbuffer_data, vbd_size);
 
 	// Copy constant buffer data (AKA shader vars) into the constant buffer
-	gfx_shader_var_t* world_var = vector_elem(&eng->gfx.shader_vars, sizeof(gfx_shader_var_t), 0);
-	gfx_shader_var_t* view_proj_var = vector_elem(&eng->gfx.shader_vars, sizeof(gfx_shader_var_t), 1);
+	gfx_shader_var_t* world_var = vec_elem(eng->gfx.shader_vars, 0);
+	gfx_shader_var_t* view_proj_var = vec_elem(eng->gfx.shader_vars, 1);
 	struct mat4f* world_matrix = (struct mat4f*)world_var->data;
 	struct mat4f* view_proj_matrix = (struct mat4f*)view_proj_var->data;
 	offset = 0;

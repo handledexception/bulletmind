@@ -152,14 +152,18 @@ struct gui_display {
 };
 
 BM_EXPORT bool gui_init(void);
+BM_EXPORT void gui_refresh(void);
 BM_EXPORT void gui_shutdown(void);
 
 #if defined(_WIN32)
 BM_EXPORT bool gui_init_win32(gui_platform_t* gs);
+BM_EXPORT void gui_refresh_win32(gui_platform_t* gs);
 #elif defined(__APPLE__)
 BM_EXPORT bool gui_init_macos(gui_platform_t* gs);
+BM_EXPORT void gui_refresh_macos(gui_platform_t* gs);
 #elif defined(__linux__)
 BM_EXPORT bool gui_init_linux(gui_platform_t* gs);
+BM_EXPORT void gui_refresh_linux(gui_platform_t* gs);
 #endif
 
 BM_EXPORT gui_display_t* gui_create_display(s32 index);
@@ -173,6 +177,7 @@ BM_EXPORT void* gui_get_window_handle(gui_window_t* window);
 BM_EXPORT void gui_clear_key_state(u8* key_state);
 
 BM_EXPORT bool gui_poll_event(gui_event_t* event);
+BM_EXPORT void gui_refresh_win32(gui_platform_t* gs);
 
 #ifdef __cplusplus
 }
