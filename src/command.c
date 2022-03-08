@@ -46,7 +46,7 @@ bool cmd_get_state(input_state_t* inputs, command_t cmd)
 		if (!vb)
 			return false;
 
-		kbkey_t* key = vb->keyboard_key;
+		keyboard_key_t* key = vb->keyboard_key;
 		gamepad_button_t* gb = vb->gamepad_button;
 		mouse_button_t* mb = vb->mouse_button;
 		u8 key_state = 0;

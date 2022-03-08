@@ -19,21 +19,21 @@ extern "C" {
 #define MAX_VIRTUAL_BUTTONS \
 	(MAX_KEYBOARD_KEYS + MAX_MOUSE_BUTTONS + MAX_GAMEPAD_BUTTONS)
 
-#define BM_WINDOW_POS_UNDEFINED_MASK 0x1fff0000u
-#define BM_WINDOW_POS_UNDEFINED_DO_MASK(x) (BM_WINDOW_POS_UNDEFINED_MASK | (x))
-#define BM_WINDOW_POS_UNDEFINED BM_WINDOW_POS_UNDEFINED_DO_MASK(0)
-#define BM_WINDOW_POS_IS_UNDEFINED(x) \
-    (((x)&0xFFFF0000) == BM_WINDOW_POS_UNDEFINED_MASK)
+#define GUI_WINDOW_POS_UNDEFINED_MASK 0x1fff0000u
+#define GUI_WINDOW_POS_UNDEFINED_DO_MASK(x) (GUI_WINDOW_POS_UNDEFINED_MASK | (x))
+#define GUI_WINDOW_POS_UNDEFINED GUI_WINDOW_POS_UNDEFINED_DO_MASK(0)
+#define GUI_WINDOW_POS_IS_UNDEFINED(x) \
+    (((x)&0xFFFF0000) == GUI_WINDOW_POS_UNDEFINED_MASK)
 
-#define BM_WINDOW_POS_CENTERED_MASK 0x2fff0000u
-#define BM_WINDOW_POS_CENTERED_DO_MASK(x) (BM_WINDOW_POS_CENTERED_MASK | (x))
-#define BM_WINDOW_POS_CENTERED BM_WINDOW_POS_CENTERED_DO_MASK(0)
-#define BM_WINDOW_POS_IS_CENTERED(x) \
-    (((x)&0xFFFF0000) == BM_WINDOW_POS_CENTERED_MASK)
+#define GUI_WINDOW_POS_CENTERED_MASK 0x2fff0000u
+#define GUI_WINDOW_POS_CENTERED_DO_MASK(x) (GUI_WINDOW_POS_CENTERED_MASK | (x))
+#define GUI_WINDOW_POS_CENTERED GUI_WINDOW_POS_CENTERED_DO_MASK(0)
+#define GUI_WINDOW_POS_IS_CENTERED(x) \
+    (((x)&0xFFFF0000) == GUI_WINDOW_POS_CENTERED_MASK)
 
 typedef struct gui_window gui_window_t;
 typedef struct gui_window_data gui_window_data_t;
-typedef struct gui_subsystem gui_platform_t;
+typedef struct gui_platform gui_platform_t;
 typedef struct gui_display gui_display_t;
 
 extern gui_platform_t* gui;
@@ -77,6 +77,14 @@ typedef struct {
     gui_key_t keys[MAX_KEYBOARD_KEYS]; /* keyboard key array */
 } gui_keyboard_event_t;
 
+enum mouse_button {
+    GUI_MOUSE_BUTTON_LEFT = 0,
+    GUI_MOUSE_BUTTON_RIGHT = 1,
+    GUI_MOUSE_BUTTON_MIDDLE = 2,
+    GUI_MOUSE_BUTTON_X1 = 3,
+    GUI_MOUSE_BUTTON_X2 = 4,
+};
+
 typedef struct {
 	u16 button; /* mouse button number */
 	u8 state;   /* mouse button up/down state */
@@ -90,6 +98,7 @@ typedef struct {
 } gui_mouse_event_t;
 
 typedef enum {
+    GUI_EVENT_NONE,
     GUI_EVENT_MOUSE,
     GUI_EVENT_KEY,
     GUI_EVENT_TEXT,
@@ -132,14 +141,29 @@ struct gui_keyboard {
     int (*read_key_states)();
 };
 
-struct gui_subsystem {
-    VECTOR(gui_window_t*) windows;
-    VECTOR(gui_event_t) events;
-    struct gui_keyboard keyboard;
+struct gui_mouse_button {
+    u16 button;
+    u8 state;
+};
+
+struct gui_mouse {
+    struct vec2i screen_pos;
+    struct vec2i window_pos;
+    struct vec2i wheel;
+    gui_window_t* window;
+    struct gui_mouse_button buttons[MAX_MOUSE_BUTTONS];
+};
+
+struct gui_platform {
+    VECTOR(gui_window_t*) windows;                          /* window list */
+    VECTOR(gui_event_t) events;                             /* GUI events */
+    struct gui_keyboard keyboard;                           /* raw keyboard state */
+    struct gui_mouse mouse;                                 /* raw mouse state */
     bool (*create_window)(gui_window_t* window);
     void (*destroy_window)(gui_window_t* window);
     void (*show_window)(gui_window_t* window, bool shown);
     void* (*get_handle)(gui_window_t* window);
+    void (*get_global_mouse_state)(struct gui_mouse* mouse);
 };
 
 struct gui_display {
@@ -156,14 +180,14 @@ BM_EXPORT void gui_refresh(void);
 BM_EXPORT void gui_shutdown(void);
 
 #if defined(_WIN32)
-BM_EXPORT bool gui_init_win32(gui_platform_t* gs);
-BM_EXPORT void gui_refresh_win32(gui_platform_t* gs);
+BM_EXPORT bool gui_init_win32(gui_platform_t* gp);
+BM_EXPORT void gui_refresh_win32(gui_platform_t* gp);
 #elif defined(__APPLE__)
-BM_EXPORT bool gui_init_macos(gui_platform_t* gs);
-BM_EXPORT void gui_refresh_macos(gui_platform_t* gs);
+BM_EXPORT bool gui_init_macos(gui_platform_t* gp);
+BM_EXPORT void gui_refresh_macos(gui_platform_t* gp);
 #elif defined(__linux__)
-BM_EXPORT bool gui_init_linux(gui_platform_t* gs);
-BM_EXPORT void gui_refresh_linux(gui_platform_t* gs);
+BM_EXPORT bool gui_init_linux(gui_platform_t* gp);
+BM_EXPORT void gui_refresh_linux(gui_platform_t* gp);
 #endif
 
 BM_EXPORT gui_display_t* gui_create_display(s32 index);
@@ -174,10 +198,12 @@ BM_EXPORT gui_window_t* gui_create_window(const char* title, s32 x, s32 y, s32 w
 BM_EXPORT void gui_destroy_window(gui_window_t* window);
 BM_EXPORT void gui_show_window(gui_window_t* window, bool shown);
 BM_EXPORT void* gui_get_window_handle(gui_window_t* window);
+BM_EXPORT gui_window_t* gui_get_window_by_handle(void* handle);
 BM_EXPORT void gui_clear_key_state(u8* key_state);
+BM_EXPORT void gui_get_global_mouse_state(struct gui_mouse* mouse);
 
 BM_EXPORT bool gui_poll_event(gui_event_t* event);
-BM_EXPORT void gui_refresh_win32(gui_platform_t* gs);
+BM_EXPORT void gui_refresh_win32(gui_platform_t* gp);
 
 #ifdef __cplusplus
 }

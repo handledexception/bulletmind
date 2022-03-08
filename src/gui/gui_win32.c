@@ -12,11 +12,11 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 
-#define BM_WIN32_CLASS_STYLE CS_DBLCLKS
-#define BM_WIN32_WINDOW_STYLE (WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN)
-#define BM_WIN32_WINDOW_CHILD_STYLE \
+#define GUI_WIN32_CLASS_STYLE CS_DBLCLKS
+#define GUI_WIN32_WINDOW_STYLE (WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN)
+#define GUI_WIN32_WINDOW_CHILD_STYLE \
     (WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS)
-#define BM_WIN32_WINDOW_STYLE_EX                     \
+#define GUI_WIN32_WINDOW_STYLE_EX                     \
     (WS_EX_APPWINDOW | WS_EX_OVERLAPPEDWINDOW) & \
         ~(WS_EX_DLGMODALFRAME | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
 
@@ -49,7 +49,7 @@ gui_scancode_t win32_virtual_key_to_scancode(WPARAM wp, LPARAM lp)
     logger(LOG_DEBUG,  "SCAN: %d, SC: %d VK: %d MapVirtualKey: %d Extended: %s",
         scancode, sc, vk, s2vk, is_extended ? "true":"false");
     // switch (vk) {
-    //     case 
+    //     case
     // }
     // int sc = (lp >> 16) & 0xFF;
     // assert(sc == scancode);
@@ -58,7 +58,38 @@ gui_scancode_t win32_virtual_key_to_scancode(WPARAM wp, LPARAM lp)
     return scancode;
 }
 
-LRESULT gui_process_keyboard_msg_win32(UINT msg, WPARAM wp, LPARAM lp)
+LRESULT gui_process_mouse_move_win32(UINT msg, WPARAM wp, LPARAM lp)
+{
+    POINT p = { .x = 0, .y = 0 };
+    GetCursorPos(&p);
+    gui->mouse.screen_pos.x = p.x;
+    gui->mouse.screen_pos.y = p.y;
+
+    gui_event_t evt;
+    memset(&evt, 0, sizeof(gui_event_t));
+    evt.type = GUI_EVENT_MOUSE;
+    evt.mouse.screen_pos.x = p.x;
+    evt.mouse.screen_pos.y = p.y;
+    vec_push_back(gui->events, &evt);
+
+    return 0;
+}
+
+LRESULT gui_process_mouse_activate_win32(UINT msg, WPARAM wp, LPARAM lp)
+{
+    return 0;
+}
+
+LRESULT gui_process_mouse_capture_win32(UINT msg, WPARAM wp, LPARAM lp)
+{
+    if (!gui || !lp)
+        return 1;
+    HWND captured = (HWND)lp;
+    gui->mouse.window = gui_get_window_by_handle((void*)captured);\
+    return 0;
+}
+
+LRESULT gui_process_keyboard_win32(UINT msg, WPARAM wp, LPARAM lp)
 {
     if (!gui)
         return RESULT_NULL;
@@ -174,11 +205,17 @@ LRESULT CALLBACK gui_win32_wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_ACTIVATEAPP:
         gui_clear_key_state(&gui->keyboard.key_states[0]);
         break;
+    case WM_MOUSEMOVE:
+        return gui_process_mouse_move_win32(msg, wp, lp);
+    // case WM_CAPTURECHANGED:
+    //     return gui_process_mouse_capture_win32(msg, wp, lp);
+    case WM_MOUSEACTIVATE:
+        return gui_process_mouse_activate_win32(msg, wp, lp);
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
     case WM_KEYUP:
     case WM_SYSKEYUP:
-        return gui_process_keyboard_msg_win32(msg, wp, lp);
+        return gui_process_keyboard_win32(msg, wp, lp);
     default:
         data = (gui_window_data_t*)get_window_user_data(hwnd);
     }
@@ -195,11 +232,11 @@ bool gui_create_window_win32(gui_window_t* window)
     HWND parent_hwnd = NULL;
     HMENU menu = NULL;
 
-    DWORD style = BM_WIN32_WINDOW_STYLE;
-    DWORD style_ex = BM_WIN32_WINDOW_STYLE_EX;
+    DWORD style = GUI_WIN32_WINDOW_STYLE;
+    DWORD style_ex = GUI_WIN32_WINDOW_STYLE_EX;
 
     if (window->parent && window->parent->data) {
-        style = BM_WIN32_WINDOW_CHILD_STYLE;
+        style = GUI_WIN32_WINDOW_CHILD_STYLE;
         parent_hwnd = window->parent->data->hwnd;
     }
 
@@ -251,7 +288,26 @@ void* gui_get_window_handle_win32(gui_window_t* window)
     return (void*)window->data->hwnd;
 }
 
-bool gui_init_win32(gui_platform_t* gs)
+void gui_get_global_mouse_state_win32(struct gui_mouse* mouse)
+{
+    u32 key_state = 0;
+    POINT p = { 0, 0 };
+    GetCursorPos(&p);
+    mouse->screen_pos.x = p.x;
+    mouse->screen_pos.y = p.y;
+    mouse->buttons[GUI_MOUSE_BUTTON_LEFT].button = GUI_MOUSE_BUTTON_LEFT;
+    mouse->buttons[GUI_MOUSE_BUTTON_RIGHT].button = GUI_MOUSE_BUTTON_RIGHT;
+    mouse->buttons[GUI_MOUSE_BUTTON_MIDDLE].button = GUI_MOUSE_BUTTON_MIDDLE;
+    mouse->buttons[GUI_MOUSE_BUTTON_X1].button = GUI_MOUSE_BUTTON_X1;
+    mouse->buttons[GUI_MOUSE_BUTTON_X2].button = GUI_MOUSE_BUTTON_X2;
+    mouse->buttons[GUI_MOUSE_BUTTON_LEFT].state = GetAsyncKeyState(VK_LBUTTON) & 0x8000 ? 1 : 0;
+    mouse->buttons[GUI_MOUSE_BUTTON_RIGHT].state = GetAsyncKeyState(VK_RBUTTON) & 0x8000 ? 1 : 0;
+    mouse->buttons[GUI_MOUSE_BUTTON_MIDDLE].state = GetAsyncKeyState(VK_MBUTTON) & 0x8000 ? 1 : 0;
+    mouse->buttons[GUI_MOUSE_BUTTON_X1].state = GetAsyncKeyState(VK_XBUTTON1) & 0x8000 ? 1 : 0;
+    mouse->buttons[GUI_MOUSE_BUTTON_X2].state = GetAsyncKeyState(VK_XBUTTON2) & 0x8000 ? 1 : 0;
+}
+
+bool gui_init_win32(gui_platform_t* gp)
 {
     g_hinstance = get_module_from_wndproc(gui_win32_wndproc);
 
@@ -262,7 +318,7 @@ bool gui_init_win32(gui_platform_t* gs)
     wcex.hIconSm = NULL;
     wcex.lpszMenuName = NULL;
     wcex.lpszClassName = g_classname;
-    wcex.style = BM_WIN32_CLASS_STYLE;
+    wcex.style = GUI_WIN32_CLASS_STYLE;
     wcex.hbrBackground = NULL;
     wcex.lpfnWndProc = gui_win32_wndproc;
     wcex.hInstance = g_hinstance;
@@ -271,18 +327,19 @@ bool gui_init_win32(gui_platform_t* gs)
     g_atom = RegisterClassEx(&wcex);
 
     /* function pointerz */
-    gs->create_window = gui_create_window_win32;
-    gs->destroy_window = gui_destroy_window_win32;
-    gs->show_window = gui_show_window_win32;
-    gs->get_handle = gui_get_window_handle_win32;
+    gp->create_window = gui_create_window_win32;
+    gp->destroy_window = gui_destroy_window_win32;
+    gp->show_window = gui_show_window_win32;
+    gp->get_handle = gui_get_window_handle_win32;
+    gp->get_global_mouse_state = gui_get_global_mouse_state_win32;
 
     return true;
 }
 
-void gui_refresh_win32(gui_platform_t* gs)
+void gui_refresh_win32(gui_platform_t* gp)
 {
-	MSG msg;
-	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+    MSG msg;
+    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }

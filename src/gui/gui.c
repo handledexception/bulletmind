@@ -79,8 +79,8 @@ gui_window_t* gui_create_window(const char* title, s32 x, s32 y, s32 w, s32 h,
 	window->bounds.w = window->w;
 	window->bounds.h = window->h;
 	window->parent = parent;
-	if (BM_WINDOW_POS_IS_UNDEFINED(window->x) ||
-	    BM_WINDOW_POS_IS_UNDEFINED(window->y)) {
+	if (GUI_WINDOW_POS_IS_UNDEFINED(window->x) ||
+	    GUI_WINDOW_POS_IS_UNDEFINED(window->y)) {
 	}
 
 	window->destroy_me = false;
@@ -129,6 +129,22 @@ void* gui_get_window_handle(gui_window_t* window)
 	return NULL;
 }
 
+gui_window_t* gui_get_window_by_handle(void* handle)
+{
+	if (!gui)
+		return NULL;
+	gui_window_t* window = NULL;
+	for (size_t i = 0; i < gui->windows.num_elems; i++) {
+		window = vec_elem(gui->windows, i);
+		if (window) {
+			void* hnd = gui->get_handle(window);
+			if (hnd == handle)
+				break;
+		}
+	}
+	return window;
+}
+
 void gui_clear_key_state(u8* key_state)
 {
     if (!key_state)
@@ -138,10 +154,20 @@ void gui_clear_key_state(u8* key_state)
     }
 }
 
+void gui_get_global_mouse_state(struct gui_mouse* mouse)
+{
+	if (!gui || !mouse)
+		return;
+	gui->get_global_mouse_state(mouse);
+}
+
 bool gui_poll_event(gui_event_t* event)
 {
 	if (!gui || gui->events.num_elems == 0)
 		return false;
+
+	if (gui->events.num_elems > 0)
+		logger(LOG_DEBUG, "events: %zu\n", gui->events.num_elems);
 
 	gui_event_t* evt = (gui_event_t*)vec_begin(gui->events);
 	if (evt == NULL)
