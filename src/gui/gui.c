@@ -99,7 +99,7 @@ void gui_destroy_window(gui_window_t* window)
 		return;
 
 	for (int i = 0; i < gui->windows.num_elems; i++) {
-		gui_window_t* wnd = (gui_window_t*)vec_elem(gui->windows, i);
+		gui_window_t* wnd = *(gui_window_t**)vec_elem(gui->windows, i);
 		if (wnd && wnd == window)
 			vec_erase(gui->windows, i);
 	}

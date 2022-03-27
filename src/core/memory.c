@@ -68,20 +68,23 @@ void* mem_alloc(size_t size)
 
 void* mem_realloc(void* ptr, size_t size)
 {
+#ifdef BM_TRACK_MEMORY_USAGE
 	if (!ptr)
 		os_atomic_inc_long((long*)&alloc_count);
-#ifdef BM_TRACK_MEMORY_USAGE
-		ptr = mem_alloc(sizeof(size_t));
-		u8* p = (u8*)ptr;
-		size_t* hdr = (size_t*)(p) - 1;
-		size_t sz_hdr = *hdr;
+	ptr = mem_alloc(sizeof(size_t));
+	u8* p = (u8*)ptr;
+	size_t* hdr = (size_t*)(p) - 1;
+	size_t sz_hdr = *hdr;
+	allocator.realloc(ptr, size + sz_hdr);
+#else
+	allocator.realloc(ptr, size);
 #endif
-		allocator.realloc(ptr, size + sz_hdr);
 #ifdef BM_TRACK_MEMORY_USAGE
-		size_t realloc_size = sz_hdr - size;
-		size_t new_bytes_allocated = bytes_allocated + realloc_size;
-		recalculate_usage(new_bytes_allocated);
+	size_t realloc_size = sz_hdr - size;
+	size_t new_bytes_allocated = bytes_allocated + realloc_size;
+	recalculate_usage(new_bytes_allocated);
 #endif
+	return ptr;
 }
 
 void mem_free(void* ptr)

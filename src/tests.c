@@ -2,11 +2,11 @@
 #include "core/hashmap.h"
 #include "core/vector.h"
 
-// struct foobar {
-//     s32 id;
-//     const char* name;
-//     f32 value;
-// };
+struct foobar {
+    s32 id;
+    f32 value;
+    char name[256];
+};
 
 // int main(int argc, char* argv[])
 // {
@@ -57,6 +57,34 @@ TEST(core_vector_suite, basic)
 	}
 	CHECK_EQ(v.num_elems, 256);
 	CHECK_EQ(v.capacity, 256);
+
+	struct foobar foo;
+	struct foobar bar;
+	struct foobar* baz = (struct foobar*)malloc(sizeof(*baz));
+	foo.id = 5;
+	bar.id = 99;
+	baz->id = 42;
+	foo.value = 3.14159f;
+	bar.value = (3.14159f * 2.f);
+	baz->value = 1.234f;
+	strcpy(foo.name, "foo");
+	strcpy(bar.name, "bar");
+	strcpy(baz->name, "baz_ptr");
+	VECTOR(struct foobar) foo_list;
+	vec_init(foo_list);
+	vec_push_back(foo_list, &foo);
+	vec_push_back(foo_list, baz);
+	vec_push_back(foo_list, &bar);
+
+	struct foobar* foo_get = (struct foobar*)vec_elem(foo_list, 0);
+	struct foobar* baz_get = (struct foobar*)vec_elem(foo_list, 1);
+	struct foobar* bar_get = (struct foobar*)vec_elem(foo_list, 2);
+	CHECK(foo_get->id == foo.id);
+	CHECK(bar_get->id == bar.id);
+	CHECK(foo_get->value == foo.value);
+	CHECK(bar_get->value == bar.value);
+	// CHECK(strcmp(foo_get->name, foo.name) == 0)
+	vec_free(foo_list);
 }
 
 struct test_data {

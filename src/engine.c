@@ -252,20 +252,21 @@ void eng_refresh(engine_t* eng, f64 dt)
 
 	gui_event_t evt;
 	while(gui_poll_event(&evt)) {
-
+		if (evt.keyboard.keys[GUI_SCANCODE_ESCAPE].state == GUI_KEY_DOWN)
+			eng->mode = kEngineModeQuit;
 	}
 
 	struct gui_mouse mouse;
 	gui_get_global_mouse_state(&mouse);
 	
-	logger(LOG_DEBUG, "mouse pos %d, %d butttons %d %d %d %d %d\n",
-		mouse.screen_pos.x,
-		mouse.screen_pos.y,
-		mouse.buttons[GUI_MOUSE_BUTTON_LEFT].state,
-		mouse.buttons[GUI_MOUSE_BUTTON_RIGHT].state,
-		mouse.buttons[GUI_MOUSE_BUTTON_MIDDLE].state,
-		mouse.buttons[GUI_MOUSE_BUTTON_X1].state,
-		mouse.buttons[GUI_MOUSE_BUTTON_X2].state);
+	// logger(LOG_DEBUG, "mouse pos %d, %d butttons %d %d %d %d %d\n",
+	// 	mouse.screen_pos.x,
+	// 	mouse.screen_pos.y,
+	// 	mouse.buttons[GUI_MOUSE_BUTTON_LEFT].state,
+	// 	mouse.buttons[GUI_MOUSE_BUTTON_RIGHT].state,
+	// 	mouse.buttons[GUI_MOUSE_BUTTON_MIDDLE].state,
+	// 	mouse.buttons[GUI_MOUSE_BUTTON_X1].state,
+	// 	mouse.buttons[GUI_MOUSE_BUTTON_X2].state);
 	// if (evt.keyboard.keys[GUI_SCANCODE_W].state == GUI_KEY_DOWN)
 	// if (gui->keyboard.key_states[GUI_SCANCODE_W] == GUI_KEY_DOWN)
 	// 	printf("W DOWN\n");
@@ -339,7 +340,8 @@ void eng_shutdown(engine_t* eng)
 {
 	gfx_system_shutdown(eng->gfx.system);
 	for (size_t i = 0; i < eng->windows.num_elems; i++) {
-		gui_destroy_window((gui_window_t*)vec_elem(eng->windows, i));
+		gui_window_t* window = (gui_window_t*)vec_elem(eng->windows, i);
+		gui_destroy_window(window);
 	}
 	gui_shutdown();
 	logger(LOG_INFO,  "eng_shutdown OK\n\nGoodbye!\n");
