@@ -17,6 +17,7 @@
 #include "audio.h"
 #include "command.h"
 #include "engine.h"
+#include "entity.h"
 #include "font.h"
 #include "input.h"
 #include "resource.h"
@@ -142,6 +143,11 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 		return false;
 	}
 
+	if (!inp_init(eng->inputs)) {
+		logger(LOG_ERROR, "error initializing inputs!");
+		return false;
+	}
+
 	game_resource_t* resource =
 		eng_get_resource(eng, "pos_color_vs");
 	gfx_shader_t* hlsl_vs = (gfx_shader_t*)resource->data;
@@ -149,7 +155,6 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	gfx_shader_t* hlsl_ps = (gfx_shader_t*)resource->data;
 	gfx_set_vertex_shader(eng->gfx.system, hlsl_vs);
 	gfx_set_pixel_shader(eng->gfx.system, hlsl_ps);
-
 	u32 num_shader_vars = 2;
 	gfx_shader_var_t world_var;
 	world_var.name = "world";
@@ -182,7 +187,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	size_t cbuffer_size = ((sizeof(mat4f_t) * num_shader_vars) + 15) &
 			      0xfffffff0;
 	eng->gfx.cbuffer_size = cbuffer_size;
-	gfx_create_buffer(eng->gfx.system, NULL, cbuffer_size,
+	gfx_buffer_create(eng->gfx.system, NULL, cbuffer_size,
 			  GFX_BUFFER_CONSTANT, GFX_BUFFER_USAGE_DYNAMIC,
 			  &eng->gfx.cbuffer);
 	eng->gfx.cbuffer_data = (u8*)mem_alloc(cbuffer_size);
@@ -194,6 +199,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	vec_init(eng->gfx.scenes);
 	vec_init(eng->gfx.shader_vars);
 	struct gfx_scene* scene = gfx_scene_new(6, 2, GFX_VERTEX_POS_COLOR);
+	vec_init(scene->shader_vars);
 	scene->vert_data->positions[0] = (vec3f_t){-0.5f, 0.f, -0.5f};
 	scene->vert_data->positions[1] = (vec3f_t){0.5f, 0.f, -0.5f};
 	scene->vert_data->positions[2] = (vec3f_t){0.5f, 0.f, 0.5f};
@@ -208,6 +214,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	scene->vert_data->colors[5] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
 
 	struct gfx_scene* scene2 = gfx_scene_new(3, 2, GFX_VERTEX_POS_COLOR);
+	vec_init(scene2->shader_vars);
 	scene2->vert_data->positions[0] = (vec3f_t){-0.5f, 0.f, 0.5f};
 	scene2->vert_data->positions[1] = (vec3f_t){0.5f, 0.f, 0.5f};
 	scene2->vert_data->positions[2] = (vec3f_t){0.f, 0.5f, 0.5f};
@@ -217,14 +224,18 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	size_t vbd_size = (sizeof(vec3f_t) * 9) +
 			  (sizeof(vec4f_t) * 9);
 	eng->gfx.vbuffer_data = (u8*)mem_alloc(vbd_size);
-	vec_push_back(eng->gfx.shader_vars, &world_var);
-	vec_push_back(eng->gfx.shader_vars, &view_proj_var);
+	// gfx_shader_add_var(hlsl_vs, &world_var);
+	// gfx_shader_add_var(hlsl_vs, &view_proj_var);
+	vec_push_back(scene->shader_vars, &world_var);
+	vec_push_back(scene->shader_vars, &view_proj_var);
+	vec_push_back(scene2->shader_vars, &world_var);
+	vec_push_back(scene2->shader_vars, &view_proj_var);
 	vec_push_back(eng->gfx.scenes, &scene);
 	vec_push_back(eng->gfx.scenes, &scene2);
 
 	size_t vertex_buffer_size = (sizeof(vec3f_t) * BM_GFX_MAX_VERTICES) +
 			  (sizeof(vec4f_t) * BM_GFX_MAX_VERTICES);
-	gfx_create_buffer(eng->gfx.system, NULL,
+	gfx_buffer_create(eng->gfx.system, NULL,
 			  vertex_buffer_size, GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DYNAMIC,
 			  &eng->gfx.vertex_buffer);
 
@@ -239,26 +250,49 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	return true;
 }
 
+void eng_refresh_commands(engine_t* eng)
+{
+	inp_cmd_toggle(eng->inputs, kCommandDebugMode, &eng->debug);
+
+	// toggle fullscreen
+	static bool fullscreen = false;
+	inp_cmd_toggle(eng->inputs, kCommandToggleFullscreen, &fullscreen);
+	if (fullscreen != eng->fullscreen) {
+		eng->fullscreen = fullscreen;
+		logger(LOG_DEBUG, "Fullscreen toggled: %d", fullscreen);
+	}
+	eng_toggle_fullscreen(eng, eng->fullscreen);
+
+	// toggle console
+	inp_cmd_toggle(eng->inputs, kCommandConsole, &eng->console);
+	if (eng->console) {
+		eng->mode = kEngineModeConsole;
+		eng->inputs->mode = kInputModeConsole;
+	}
+
+	if (inp_cmd_get_state(eng->inputs, kCommandQuit))
+		eng->mode = kEngineModeQuit;
+	if (inp_cmd_get_state(eng->inputs, kCommandSetFpsHigh) == true)
+		eng->target_frametime = FRAME_TIME(eng->target_fps);
+	if (inp_cmd_get_state(eng->inputs, kCommandSetFpsLow) == true)
+		eng->target_frametime = FRAME_TIME(10);
+}
+
 void eng_refresh(engine_t* eng, f64 dt)
 {
 	// inp_refresh_mouse(&eng->inputs->mouse, eng->render_scale.x,
 	// 		  eng->render_scale.y);
 
-	// SDL_Event event;
-	// while (SDL_PollEvent(&event)) {
-	// 	inp_refresh_pressed(eng->inputs, &event);
-	// }
 	gui_refresh();
 
 	gui_event_t evt;
 	while(gui_poll_event(&evt)) {
-		if (evt.keyboard.keys[GUI_SCANCODE_ESCAPE].state == GUI_KEY_DOWN)
-			eng->mode = kEngineModeQuit;
+		inp_refresh_pressed(eng->inputs, &evt);
 	}
 
-	struct gui_mouse mouse;
+	struct mouse_device mouse;
 	gui_get_global_mouse_state(&mouse);
-	
+
 	// logger(LOG_DEBUG, "mouse pos %d, %d butttons %d %d %d %d %d\n",
 	// 	mouse.screen_pos.x,
 	// 	mouse.screen_pos.y,
@@ -273,75 +307,91 @@ void eng_refresh(engine_t* eng, f64 dt)
 
 	// printf("mx = %d, my = %d\n", gui->mouse.screen_pos.x, gui->mouse.screen_pos.y);
 
-	cmd_refresh(eng);
+	eng_refresh_commands(eng);
 	ent_refresh(eng, dt);
 
 	// This is our "scene" .. copy its vertex data into the vertex buffer.
-	size_t offset = 0;
+	rgba_t clear_color = {
+			.r = 0,
+			.g = 0,
+			.b = 0,
+			.a = 255,
+		};
+	gfx_render_clear(eng->gfx.system, &clear_color);
+	
+	size_t vbd_offset = 0;
 	size_t vbd_size = 0;
-	u32 vertex_stride = 0;
+	size_t cbd_offset = 0;
 	for (size_t i = 0; i < eng->gfx.scenes.num_elems; i++) {
-		struct gfx_scene* scene = *(struct gfx_scene**)vec_elem(eng->gfx.scenes, i);
-		vertex_stride = gfx_get_vertex_stride(scene->vert_data->type);
+		struct gfx_scene* scene = (struct gfx_scene*)eng->gfx.scenes.elems[i];
+		u32 vertex_stride = gfx_get_vertex_stride(scene->vert_data->type);
+		// Copy vertex buffer data
 		for (u32 i = 0; i < scene->vert_data->num_vertices; i++) {
-			memcpy((void*)&eng->gfx.vbuffer_data[offset],
+			memcpy((void*)&eng->gfx.vbuffer_data[vbd_offset],
 				(const void*)&scene->vert_data->positions[i],
 				sizeof(struct vec3f));
-			offset += sizeof(struct vec3f);
-			memcpy((void*)&eng->gfx.vbuffer_data[offset],
+			vbd_offset += sizeof(struct vec3f);
+			memcpy((void*)&eng->gfx.vbuffer_data[vbd_offset],
 				(const void*)&scene->vert_data->colors[i], sizeof(struct vec4f));
-			offset += sizeof(struct vec4f);
+			vbd_offset += sizeof(struct vec4f);
 		}
 		vbd_size += (sizeof(vec3f_t) * scene->vert_data->num_vertices) +
 				(sizeof(vec4f_t) * scene->vert_data->num_vertices);
+
+		// Copy constant buffer data (AKA shader vars) into the constant buffer
+		for (size_t vdx = 0; vdx < scene->shader_vars.num_elems; vdx++) {
+			gfx_shader_var_t* shader_var = &scene->shader_vars.elems[vdx];
+			size_t shader_var_size = gfx_get_shader_var_size(shader_var->type);
+			memcpy(&eng->gfx.cbuffer_data[cbd_offset],
+				(const void*) shader_var->data,
+				shader_var_size);
+			cbd_offset += (shader_var_size + 15) & ~15;
+		}
 	}
+	gfx_buffer_copy(eng->gfx.system, eng->gfx.vertex_buffer,
+				eng->gfx.vbuffer_data, vbd_size);
 
-	gfx_buffer_copy_data(eng->gfx.system, eng->gfx.vertex_buffer, eng->gfx.vbuffer_data, vbd_size);
-
-	// Copy constant buffer data (AKA shader vars) into the constant buffer
-	gfx_shader_var_t* world_var = vec_elem(eng->gfx.shader_vars, 0);
-	gfx_shader_var_t* view_proj_var = vec_elem(eng->gfx.shader_vars, 1);
-	struct mat4f* world_matrix = (struct mat4f*)world_var->data;
-	struct mat4f* view_proj_matrix = (struct mat4f*)view_proj_var->data;
-	offset = 0;
-	memcpy(&eng->gfx.cbuffer_data[offset], (const void*)world_matrix,
-	       sizeof(mat4f_t));
-	offset = (sizeof(mat4f_t) + 15) & ~15;
-	memcpy(&eng->gfx.cbuffer_data[offset],
-	       (const void*)view_proj_matrix, sizeof(mat4f_t));
-
-	rgba_t clear_color = {
-		.r = 0,
-		.g = 0,
-		.b = 0,
-		.a = 255,
-	};
-	gfx_render_clear(eng->gfx.system, &clear_color);
 	gfx_system_bind_render_target(eng->gfx.system);
-	bool zstencil_enabled = true;
-	gfx_toggle_zstencil(eng->gfx.system, zstencil_enabled);
-	gfx_bind_vertex_buffer(eng->gfx.system, eng->gfx.vertex_buffer,
-			       vertex_stride, 0);
-	gfx_bind_primitive_topology(eng->gfx.system,
-				    GFX_TOPOLOGY_TRIANGLE_LIST);
+	gfx_toggle_zstencil(eng->gfx.system, true);
+	gfx_shader_bind_primitive_topology(eng->gfx.system,
+					GFX_TOPOLOGY_TRIANGLE_LIST);
 	gfx_bind_vertex_shader_input_layout(eng->gfx.system);
 	gfx_bind_rasterizer(eng->gfx.system);
 	gfx_bind_sampler_state(eng->gfx.system, NULL, 0);
-	gfx_buffer_copy_data(eng->gfx.system, eng->gfx.cbuffer,
-			     eng->gfx.cbuffer_data,
-			     eng->gfx.cbuffer_size);
-	gfx_upload_constant_buffer(eng->gfx.system, eng->gfx.cbuffer,
-				   GFX_SHADER_VERTEX);
+
+	gfx_bind_vertex_buffer(eng->gfx.system, eng->gfx.vertex_buffer,
+				eng->gfx.vertex_buffer, 0);
+	gfx_buffer_copy(eng->gfx.system, eng->gfx.cbuffer,
+				eng->gfx.cbuffer_data,
+				eng->gfx.cbuffer_size);
+	gfx_buffer_upload_constants(eng->gfx.system, eng->gfx.cbuffer,
+				GFX_SHADER_VERTEX);
 	gfx_render_begin(eng->gfx.system);
 	gfx_render_end(eng->gfx.system, false, 0);
+
+
+
+
+	// Copy constant buffer data (AKA shader vars) into the constant buffer
+	// gfx_shader_var_t* world_var = (gfx_shader_var_t*)&eng->gfx.shader_vars.elems[0];
+	// gfx_shader_var_t* view_proj_var = (gfx_shader_var_t*)&eng->gfx.shader_vars.elems[1];
+	// struct mat4f* world_matrix = (struct mat4f*)world_var->data;
+	// struct mat4f* view_proj_matrix = (struct mat4f*)view_proj_var->data;
+	// offset = 0;
+	// memcpy(&eng->gfx.cbuffer_data[offset], (const void*)world_matrix,
+	//        sizeof(mat4f_t));
+	// offset = (sizeof(mat4f_t) + 15) & ~15;
+	// memcpy(&eng->gfx.cbuffer_data[offset],
+	//        (const void*)view_proj_matrix, sizeof(mat4f_t));
+
+
 }
 
 void eng_shutdown(engine_t* eng)
 {
 	gfx_system_shutdown(eng->gfx.system);
 	for (size_t i = 0; i < eng->windows.num_elems; i++) {
-		gui_window_t* window = (gui_window_t*)vec_elem(eng->windows, i);
-		gui_destroy_window(window);
+		vec_erase(eng->windows, i--);
 	}
 	gui_shutdown();
 	logger(LOG_INFO,  "eng_shutdown OK\n\nGoodbye!\n");

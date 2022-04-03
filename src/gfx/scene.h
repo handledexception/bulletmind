@@ -5,6 +5,7 @@
 #include "core/vector.h"
 
 struct gfx_scene {
+	VECTOR(gfx_shader_var_t) shader_vars;
 	struct gfx_vertex_data* vert_data;
 };
 

@@ -39,6 +39,7 @@ char* str_upper_no_copy(char* str, size_t len)
 		if (str[i] >= 'a' && str[i] <= 'z')
 			str[i] -= 0x20;
 	}
+	return str;
 }
 
 char* str_lower_no_copy(char* str, size_t len)
@@ -59,9 +60,9 @@ char* str_lower_no_copy(char* str, size_t len)
 int str_first_index_of(const char* str, size_t len, const char c)
 {
 	if (!str)
-		return str;
+		return -1;
 	if (!*str)
-		return str;
+		return -1;
 	size_t slen = len ? len : strlen(str);
 	for (size_t i = 0; i < slen; i++) {
 		if (str[i] == c)
@@ -73,9 +74,9 @@ int str_first_index_of(const char* str, size_t len, const char c)
 int str_last_index_of(const char* str, size_t len, const char c)
 {
 	if (!str)
-		return str;
+		return -1;
 	if (!*str)
-		return str;
+		return -1;
 	size_t slen = len ? len : strlen(str);
 	for (size_t i = slen; i >= 0; i--) {
 		if (str[i] == c)

@@ -16,11 +16,7 @@
 
 #pragma once
 
-#include "engine.h"
-
 #include "core/types.h"
-
-typedef struct input_state_s input_state_t;
 
 typedef enum {
 	kCommandFirst = 0,
@@ -41,9 +37,4 @@ typedef enum {
 	kCommandMax = kCommandNone
 } command_t;
 
-void cmd_init(void);
-bool cmd_get_state(input_state_t* inputs, command_t cmd);
-void cmd_toggle_bool(input_state_t* inputs, command_t cmd, bool* value);
-void cmd_refresh(engine_t* engine);
-void cmd_shutdown(void);
 const char* cmd_get_name(command_t cmd);

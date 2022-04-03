@@ -51,7 +51,7 @@ bool game_res_init(engine_t* eng)
 	if (asset_list == NULL)
 		return false;
 
-	const size_t num_assets = toml_array_nelem(asset_list);
+	const int num_assets = toml_array_nelem(asset_list);
 	if (num_assets > MAX_GAME_RESOURCES) {
 		logger(LOG_ERROR,  "Too many assets specified in config %s\n",
 		       kAssetsToml);
@@ -67,8 +67,8 @@ bool game_res_init(engine_t* eng)
 
 	// Load the assets into game resource objects
 	bool attr_ok = false;
-	size_t num_assets_loaded = 0;
-	for (size_t asset_idx = 0; asset_idx < num_assets; asset_idx++) {
+	int num_assets_loaded = 0;
+	for (int asset_idx = 0; asset_idx < num_assets; asset_idx++) {
 		toml_table_t* asset = toml_table_at(asset_list, asset_idx);
 		if (asset == NULL) {
 			logger(LOG_ERROR,  "Error reading asset config %zu\n",
@@ -199,7 +199,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 				DEFAULT_ALIGNMENT);
 
 			// Load frame array from sprite sheet asset file
-			for (size_t i = 0; i < num_frames; i++) {
+			for (int i = 0; i < num_frames; i++) {
 				ss_frame_t* ss_frame = &sprite_sheet->frames[i];
 				toml_table_t* frame_nfo =
 					toml_table_at(frames, i);
@@ -216,10 +216,10 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 				read_table_f64(frame_nfo, "duration",
 					       &duration);
 
-				ss_frame->bbox.min.x = x;
-				ss_frame->bbox.min.y = y;
-				ss_frame->bbox.max.x = width;
-				ss_frame->bbox.max.y = height;
+				ss_frame->bbox.min.x = (f32)x;
+				ss_frame->bbox.min.y = (f32)y;
+				ss_frame->bbox.max.x = (f32)width;
+				ss_frame->bbox.max.y = (f32)height;
 				ss_frame->duration = (f32)duration;
 			}
 
@@ -249,7 +249,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 		const char* file_ext = path_get_extension(asset_path);
 		const char* entrypoint = NULL;
 		const char* target = NULL;
-		const char* vertex_type_str = NULL;
+		char* vertex_type_str = NULL;
 		enum gfx_shader_type type = GFX_SHADER_UNKNOWN;
 		enum gfx_vertex_type vertex_type = GFX_VERTEX_UNKNOWN;
 		if (!strcmp(file_ext, "hlsl")) {
@@ -265,12 +265,12 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 				type = GFX_SHADER_PIXEL;
 			}
 		}
-		gfx_shader_t* shader = gfx_compile_shader_from_file(
+		gfx_shader_t* shader = gfx_shader_create_from_file(
 			asset_path, entrypoint, target, type);
 		if (shader) {
-			gfx_build_shader(eng->gfx.system, shader);
+			gfx_shader_build(eng->gfx.system, shader);
 			if (type == GFX_SHADER_VERTEX)
-				gfx_create_shader_input_layout(eng->gfx.system, shader, vertex_type);
+				gfx_shader_create_input_layout(eng->gfx.system, shader, vertex_type);
 		}
 		resource = mem_arena_alloc(&mem_arena,
 				sizeof(game_resource_t),

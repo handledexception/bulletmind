@@ -125,12 +125,7 @@ bool ent_spawn_player_and_satellite(entity_t* ent_list, s32 cam_width,
 				    s32 cam_height);
 bool ent_spawn_enemy(entity_t* ent_list, s32 cam_width, s32 cam_height);
 void ent_move_player(entity_t* player, engine_t* eng, const f64 dt);
-
 void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* eng,
 			const f64 dt);
-
 void ent_move_bullet(entity_t* bullet, engine_t* eng, const f64 dt);
-
 void ent_move_enemy(entity_t* enemy, entity_t* player, engine_t* eng, f64 dt);
-
-// void ent_spawn_tile(entity_t* ent_list, )

@@ -76,9 +76,9 @@ TEST(core_vector_suite, basic)
 	vec_push_back(foo_list, baz);
 	vec_push_back(foo_list, &bar);
 
-	struct foobar* foo_get = (struct foobar*)vec_elem(foo_list, 0);
-	struct foobar* baz_get = (struct foobar*)vec_elem(foo_list, 1);
-	struct foobar* bar_get = (struct foobar*)vec_elem(foo_list, 2);
+	struct foobar* foo_get = (struct foobar*)&foo_list.elems[0];
+	struct foobar* baz_get = (struct foobar*)&foo_list.elems[1];
+	struct foobar* bar_get = (struct foobar*)&foo_list.elems[2];
 	CHECK(foo_get->id == foo.id);
 	CHECK(bar_get->id == bar.id);
 	CHECK(foo_get->value == foo.value);

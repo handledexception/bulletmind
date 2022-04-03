@@ -13,7 +13,7 @@ u32 hash_ptr(void* p)
 {
 	u32 hash = 0;
 	u32* addr = (u32*)p;
-	hash = murmur_u32((u32)addr);
+	hash = murmur_u32((u32)*addr);
 	return hash;
 }
 

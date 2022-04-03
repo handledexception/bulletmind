@@ -72,7 +72,20 @@
         "corecrt_io.h": "c",
         "corecrt_wio.h": "c",
         "dinput.h": "c",
-        "winuser.h": "c"
+        "winuser.h": "c",
+        "ntv2enums.h": "c",
+        "scancode.h": "c",
+        "keyboard.h": "c",
+        "mouse.h": "c",
+        "input.h": "c",
+        "buffer.h": "c",
+        "logger.h": "c",
+        "sprite.h": "c",
+        "keyboard-scancode.h": "c",
+        "ratio": "c",
+        "tuple": "c",
+        "utility": "c",
+        "xtr1common": "c"
     },
     "cmake.configureOnOpen": false
 }

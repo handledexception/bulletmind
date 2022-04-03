@@ -24,7 +24,6 @@
 #define APP_VER_REV 0
 #define APP_VER_KIND "dev"
 
-#include "core/buffer.h"
 #include "core/logger.h"
 #include "core/memory.h"
 #include "core/string.h"
@@ -33,6 +32,7 @@
 #include "core/vector.h"
 
 #include "math/vec2.h"
+#include "math/utils.h"
 
 #include "platform/platform.h"
 
@@ -43,7 +43,6 @@
 #include "engine.h"
 #include "resource.h"
 #include "render.h"
-
 #include <SDL.h>
 
 #define WINDOW_WIDTH 960
@@ -140,6 +139,7 @@ int main(int argc, char** argv)
 	size_t sz_engine = sizeof(engine_t);
 	engine = (engine_t*)bm_mem_arena_alloc(&mem_arena, sz_engine);
 	memset(engine, 0, sizeof(engine_t));
+	engine->inputs = bm_mem_arena_alloc(&mem_arena, sizeof(struct input_state));
 	engine->adapter_index = -1; // SDL default to first available
 	engine->window_rect.x = -1; // SDL window position centered
 	engine->window_rect.y = -1; // ""

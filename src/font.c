@@ -49,15 +49,15 @@ void font_print(engine_t* eng, s32 x, s32 y, f32 scale, const char* str, ...)
 	while (text[c] != '\0') {
 		if (text[c] >= ASCII_BASE && text[c] < ASCII_NULL) {
 			fx = text[c] - ASCII_BASE;
-			tu = (f32)(fx % FONT_NUM_COLS) * FONT_CEL_SIZE_PX;
-			tv = (f32)(fx / FONT_NUM_COLS) * FONT_CEL_SIZE_PX;
+			tu = (s32)((f32)(fx % FONT_NUM_COLS) * FONT_CEL_SIZE_PX);
+			tv = (s32)((f32)(fx / FONT_NUM_COLS) * FONT_CEL_SIZE_PX);
 			SDL_Rect src = {tu, tv, FONT_CEL_SIZE_PX,
 					FONT_CEL_SIZE_PX};
-			SDL_Rect dst = {x, y, FONT_CEL_SIZE_PX * scale,
-					FONT_CEL_SIZE_PX * scale};
+			SDL_Rect dst = {x, y, (int)(FONT_CEL_SIZE_PX * scale),
+					(int)(FONT_CEL_SIZE_PX * scale)};
 			// SDL_RenderCopy((SDL_Renderer*)eng->renderer,
 			// 	       eng->font.sprite->texture, &src, &dst);
-			x += FONT_CEL_SIZE_PX * scale;
+			x += (s32)((f32)FONT_CEL_SIZE_PX * scale);
 		}
 		c++;
 	}

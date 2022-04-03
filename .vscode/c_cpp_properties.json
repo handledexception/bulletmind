@@ -11,6 +11,7 @@
             ],
             "includePath": [
                 "${workspaceFolder}/deps",
+                "${workspaceFolder}/deps/aja/ajalibraries",
                 "${workspaceFolder}/deps/tau",
                 "${workspaceFolder}/deps/murmur2",
                 "${workspaceFolder}/deps/tomlc99",

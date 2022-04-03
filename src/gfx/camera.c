@@ -40,7 +40,7 @@ void gfx_camera_ortho(camera_t* cam, const vec3f_t* eye, const vec3f_t* dir,
 	cam->z_far = z_far;
 
 	mat4f_look_at_lh(&cam->view_matrix, eye, dir, up);
-	mat4f_ortho_lh(&cam->proj_matrix, viewport->w, viewport->h, z_near,
+	mat4f_ortho_lh(&cam->proj_matrix, (f32)viewport->w, (f32)viewport->h, z_near,
 		       z_far);
 }
 

@@ -42,9 +42,9 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Od /Zi")
     endif()
     if (BM_BUILD_32BIT)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MACHINE:X86")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MACHINE:X86")
     else()
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MACHINE:X64")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MACHINE:X64")
     endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL Clang OR CMAKE_CXX_COMPILER_ID STREQUAL GNU)
     message("Compiler: ${CMAKE_CXX_COMPILER_ID}")
@@ -62,6 +62,7 @@ endif()
 
 set(TARGET_INCLUDE_DIRS
     src
+    deps/aja/ajalibraries
     deps/murmur2
     deps/tomlc99
     deps/SDL2/include)
@@ -121,6 +122,10 @@ set(BM_MATH_SOURCES
 
 # platform
 set(BM_PLATFORM_HEADERS
+    src/platform/gamepad.h
+    src/platform/keyboard.h
+    src/platform/keyboard-scancode.h
+    src/platform/mouse.h
     src/platform/platform.h
     src/platform/utf8.h)
 set(BM_PLATFORM_SOURCES
@@ -139,8 +144,7 @@ set(BM_GFX_SOURCES
 
 # gui
 set(BM_GUI_HEADERS
-    src/gui/gui.h
-    src/gui/gui_scancode.h)
+    src/gui/gui.h)
 set(BM_GUI_SOURCES
     src/gui/gui.c)
 
@@ -174,9 +178,12 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
         -DUNICODE
         -D_UNICODE
         -DBM_WINDOWS
-        -D_CRT_SECURE_NO_WARNINGS)
+        -D_CRT_SECURE_NO_WARNINGS
+        -DMSWindows)
         # -DSDL_AUDIODRIVER=dsound)
-
+    set(BM_PLATFORM_HEADERS
+        ${BM_PLATFORM_HEADERS}
+        src/platform/keyboard-vkey-win32.h)
     set(BM_PLATFORM_SOURCES
         ${BM_PLATFORM_SOURCES}
         src/platform/platform-win32.c)
@@ -235,9 +242,9 @@ set(BM_TARGET_SOURCES
     ${BM_GAME_HEADERS}
     ${BM_GAME_SOURCES})
 
-add_executable(bulletmind WIN32 ${BM_TARGET_SOURCES})
 
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+    add_executable(bulletmind WIN32 ${BM_TARGET_SOURCES})
     set_target_properties(bulletmind PROPERTIES LINK_FLAGS_DEBUG "-Xlinker /SUBSYSTEM:CONSOLE")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_library(SDL2_LIBRARY NAME SDL2 REQUIRED)
@@ -258,16 +265,48 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         ${SDL2_LIBRARY}
         ${SDL2_MIXER_LIBRARY}
         ${SDL2_IMAGE_LIBRARY})
+    add_executable(bulletmind ${BM_TARGET_SOURCES})
 else()
     add_executable(bulletmind ${BM_TARGET_SOURCES})
 endif()
 
 set_property(TARGET bulletmind PROPERTY C_STANDARD 11)
-target_compile_definitions(bulletmind PUBLIC ${TARGET_COMPILE_DEFINES})
-target_include_directories(bulletmind PUBLIC ${TARGET_INCLUDE_DIRS})
-target_link_directories(bulletmind PUBLIC ${TARGET_LINK_DIRS})
-target_link_libraries(bulletmind PUBLIC ${TARGET_LINK_LIBS})
-target_link_options(bulletmind PUBLIC ${TARGET_LINK_OPTS})
+target_compile_definitions(bulletmind PRIVATE ${TARGET_COMPILE_DEFINES})
+target_include_directories(bulletmind PRIVATE ${TARGET_INCLUDE_DIRS})
+target_link_directories(bulletmind PRIVATE ${TARGET_LINK_DIRS})
+target_link_libraries(bulletmind PRIVATE ${TARGET_LINK_LIBS})
+target_link_options(bulletmind PRIVATE ${TARGET_LINK_OPTS})
+
+
+# set(LIBVV_TARGET_SOURCES
+#     ${MURMURHASH2_SOURCES}
+#     ${BM_CORE_HEADERS}
+#     ${BM_CORE_SOURCES}
+#     ${BM_MATH_HEADERS}
+#     ${BM_MATH_SOURCES}
+#     ${BM_PLATFORM_HEADERS}
+#     ${BM_PLATFORM_SOURCES}
+#     ${BM_GFX_HEADERS}
+#     ${BM_GFX_SOURCES}
+#     ${BM_GUI_HEADERS}
+#     ${BM_GUI_SOURCES})
+# if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+#     set(TARGET_COMPILE_DEFS
+#         -DUNICODE
+#         -D_UNICODE
+#         -D_CRT_SECURE_NO_WARNINGS)
+# endif()
+# add_library(libvv ${LIBVV_TARGET_SOURCES})
+# set_property(TARGET libvv PROPERTY C_STANDARD 11)
+# target_compile_definitions(libvv PRIVATE ${TARGET_COMPILE_DEFS})
+# target_include_directories(libvv PRIVATE src deps/murmur2)
+
+# add_executable(bulletmind-cpp
+#     cpp/main.cpp)
+# add_dependencies(bulletmind-cpp libvv)
+# target_include_directories(bulletmind-cpp PRIVATE src cpp)
+# target_link_libraries(bulletmind-cpp PRIVATE libvv kernel32)
+# set_property(TARGET bulletmind-cpp PROPERTY CXX_STANDARD 17)
 
 # post-build commands
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
@@ -359,9 +398,10 @@ add_executable(bm_tests
     ${BM_PLATFORM_HEADERS}
     ${BM_PLATFORM_SOURCES})
 set_property(TARGET bm_tests PROPERTY C_STANDARD 11)
-target_include_directories(bm_tests PUBLIC
+target_compile_definitions(bm_tests PRIVATE -D_CRT_SECURE_NO_WARNINGS)
+target_include_directories(bm_tests PRIVATE
     ${TARGET_INCLUDE_DIRS}
     deps/tau)
-target_link_directories(bm_tests PUBLIC ${TARGET_LINK_DIRS})
-target_link_libraries(bm_tests PUBLIC ${TARGET_LINK_LIBS})
-target_link_options(bm_tests PUBLIC ${TARGET_LINK_OPTS})
+target_link_directories(bm_tests PRIVATE ${TARGET_LINK_DIRS})
+target_link_libraries(bm_tests PRIVATE ${TARGET_LINK_LIBS})
+target_link_options(bm_tests PRIVATE ${TARGET_LINK_OPTS})

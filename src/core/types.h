@@ -21,9 +21,9 @@
 #define NOMINMAX
 #endif
 
-#if defined(_MSC_VER)
-#define inline __inline
-#endif
+// #if defined(_MSC_VER)
+// #define inline __inline
+// #endif
 
 #include <stddef.h>
 #include <stdio.h>

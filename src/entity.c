@@ -16,6 +16,7 @@
 
 #include "audio.h"
 #include "command.h"
+#include "engine.h"
 #include "entity.h"
 #include "font.h"
 #include "input.h"
@@ -176,17 +177,17 @@ void ent_refresh_emitters(engine_t* eng, entity_t* e, f64 dt)
 	// 	entity_t* ent_list = eng->ent_list;
 	// 	if (!strcmp(e->name, "player")) {
 	// 		static bool is_shooting = false;
-	// 		if (cmd_get_state(eng->inputs,
+	// 		if (inp_cmd_get_state(eng->inputs,
 	// 				  kCommandPlayerPrimaryFire) == true) {
 	// 			if (!is_shooting) {
 	// 				is_shooting = true;
 	// 			}
-	// 		} else if (cmd_get_state(eng->inputs,
+	// 		} else if (inp_cmd_get_state(eng->inputs,
 	// 					 kCommandPlayerPrimaryFire) ==
 	// 			   false) {
 	// 			is_shooting = false;
 	// 		}
-	// 		if (cmd_get_state(eng->inputs, kCommandPlayerAltFire) ==
+	// 		if (inp_cmd_get_state(eng->inputs, kCommandPlayerAltFire) ==
 	// 		    true) {
 	// 			logger(LOG_INFO,  
 	// 			       "eng_refresh - kCommandPlayerAltFire triggered!\n");
@@ -490,7 +491,7 @@ void ent_set_pos(entity_t* e, const vec2f_t org)
 void ent_set_vel(entity_t* e, const vec2f_t vel, const f32 ang)
 {
 	vec2f_copy(&e->vel, vel);
-	e->angle = atan(vec2f_dot(e->org, e->vel));
+	e->angle = (f32)atan(vec2f_dot(e->org, e->vel));
 }
 
 // void ent_set_rect(entity_t* e, const rect_t* r)
@@ -511,12 +512,11 @@ void ent_euler_move(entity_t* e, const vec2f_t accel, const f32 friction,
 {
 	vec2f_t delta = {0.f, 0.f};
 	vec2f_t accel_scaled = {0.f, 0.f};
-
-	vec2f_mulf(&accel_scaled, accel, dt);
+	vec2f_mulf(&accel_scaled, accel, (f32)dt);
 	vec2f_add(&e->vel, e->vel, accel_scaled);
 	vec2f_friction(&e->vel, e->vel, friction);
 	vec2f_copy(&delta, e->vel);
-	vec2f_mulf(&delta, delta, dt);
+	vec2f_mulf(&delta, delta, (f32)dt);
 	vec2f_add(&e->org, e->org, delta);
 }
 
@@ -588,21 +588,21 @@ void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 	// f32 friction = 0.015625f * 2.f; // 1 meter / 64 pixels
 	// f32 friction = 0.015625f * 10.f; // 1 meter / 64 pixels
 	f32 friction = 0.f;
-	// if (cmd_get_state(eng->inputs, kCommandPlayerSpeed) == true) {
-	// 	p_speed *= 2.f;
-	// }
-	// if (cmd_get_state(eng->inputs, kCommandPlayerUp) == true) {
-	// 	p_accel.y = -p_speed;
-	// }
-	// if (cmd_get_state(eng->inputs, kCommandPlayerDown) == true) {
-	// 	p_accel.y = p_speed;
-	// }
-	// if (cmd_get_state(eng->inputs, kCommandPlayerLeft) == true) {
-	// 	p_accel.x = p_speed;
-	// }
-	// if (cmd_get_state(eng->inputs, kCommandPlayerRight) == true) {
-	// 	p_accel.x = -p_speed;
-	// }
+	if (inp_cmd_get_state(eng->inputs, kCommandPlayerSpeed) == true) {
+		p_speed *= 2.f;
+	}
+	if (inp_cmd_get_state(eng->inputs, kCommandPlayerUp) == true) {
+		p_accel.y = -p_speed;
+	}
+	if (inp_cmd_get_state(eng->inputs, kCommandPlayerDown) == true) {
+		p_accel.y = p_speed;
+	}
+	if (inp_cmd_get_state(eng->inputs, kCommandPlayerLeft) == true) {
+		p_accel.x = p_speed;
+	}
+	if (inp_cmd_get_state(eng->inputs, kCommandPlayerRight) == true) {
+		p_accel.x = -p_speed;
+	}
 
 	ent_euler_move(player, p_accel, friction, dt);
 
@@ -611,18 +611,18 @@ void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 	vec2f_t delta = {0.f, 0.f};
 	vec2f_t accel_scaled = {0.f, 0.f};
 	camera_t* cam = &engine->gfx.camera;
-	vec2f_mulf(&accel_scaled, p_accel, dt);
+	vec2f_mulf(&accel_scaled, p_accel, (f32)dt);
 	vec2f_add(&e->vel, e->vel, accel_scaled);
 	vec2f_friction(&e->vel, e->vel, friction);
 	vec2f_copy(&delta, e->vel);
-	vec2f_mulf(&delta, delta, dt);
+	vec2f_mulf(&delta, delta, (f32)dt);
 	vec2f_add(&e->org, e->org, delta);
-	const vec4f_t trans_vec = {p_accel.x * 0.00005, 0.f,
-				   p_accel.y * 0.00005, 1.f};
+	const vec4f_t trans_vec = {p_accel.x * 0.00005f, 0.f,
+				   p_accel.y * 0.00005f, 1.f};
 	mat4f_translate(&cam_trans, &trans_vec);
-	struct gfx_scene* scene = *(struct gfx_scene**)vec_begin(eng->gfx.scenes);
-	gfx_shader_var_t* world_var = vector_elem(&eng->gfx.shader_vars, sizeof(gfx_shader_var_t), 0);
-	gfx_shader_var_t* view_proj_var = vector_elem(&eng->gfx.shader_vars, sizeof(gfx_shader_var_t), 1);
+	struct gfx_scene* scene = (struct gfx_scene*)eng->gfx.scenes.elems[0];
+	gfx_shader_var_t* world_var = &scene->shader_vars.elems[0];
+	gfx_shader_var_t* view_proj_var = &scene->shader_vars.elems[1];
 	struct mat4f* world_matrix = (struct mat4f*)world_var->data;
 	struct mat4f* view_proj_matrix = (struct mat4f*)view_proj_var->data;
 	mat4f_mul(view_proj_matrix, view_proj_matrix, &cam_trans);
@@ -672,13 +672,13 @@ void ent_move_satellite(entity_t* satellite, entity_t* player, engine_t* eng,
 		f32 px = player->org.x;
 		f32 py = player->org.y;
 
-		orbit_ring.x = (px + cos(orbit_angle) * orbit_dist);
-		orbit_ring.y = (py + sin(orbit_angle) * orbit_dist);
+		orbit_ring.x = (px + cosf(orbit_angle) * orbit_dist);
+		orbit_ring.y = (py + sinf(orbit_angle) * orbit_dist);
 		vec2f_sub(&orbit_vec, player->org, orbit_ring);
 
 		// orbit_angle += DEG_TO_RAD((f32)(dt * 360.f));
-		orbit_angle += DEG_TO_RAD(3.0f);
-		if (orbit_angle > DEG_TO_RAD(360.f))
+		orbit_angle += (f32)DEG_TO_RAD(3.0f);
+		if (orbit_angle > (f32)DEG_TO_RAD(360.f))
 			orbit_angle = 0.f;
 
 		vec2f_mulf(&dist, dist, sat_speed);

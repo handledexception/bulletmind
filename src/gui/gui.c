@@ -1,5 +1,5 @@
 #include "gui/gui.h"
-#include "gui/gui_scancode.h"
+#include "platform/keyboard-scancode.h"
 
 #include "core/logger.h"
 #include "core/types.h"
@@ -32,17 +32,22 @@ bool gui_init(void)
 void gui_refresh(void)
 {
 #if defined(_WIN32)
-	return gui_refresh_win32(gui);
+	gui_refresh_win32(gui);
 #elif defined(__APPLE__)
-	return gui_init_macos(gui);
+	gui_init_macos(gui);
 #elif defined(__linux__)
-	return gui_init_linux(gui);
+	gui_init_linux(gui);
 #endif
 }
 
 void gui_shutdown(void)
 {
 	if (gui) {
+		for (size_t i = 0; i < gui->windows.num_elems; i++) {
+			gui_window_t* window = (gui_window_t*)gui->windows.elems[i];
+			gui_destroy_window(window);
+		}
+		vec_free(gui->windows);
 		vec_free(gui->events);
 		mem_free(gui);
 		gui = NULL;
@@ -67,7 +72,8 @@ gui_window_t* gui_create_window(const char* title, s32 x, s32 y, s32 w, s32 h,
 	memset(window, 0, sizeof(*window));
 
 	// TODO(paulh): Fix mem_realloc...
-	window->title = realloc(window->title, sizeof(title));
+	// window->title = mem_alloc(window->title, sizeof(title));
+	memset(window->title, 0, 4096);
 	strcpy(window->title, title);
 	window->x = x;
 	window->y = y;
@@ -98,16 +104,16 @@ void gui_destroy_window(gui_window_t* window)
 	if (!gui || !window)
 		return;
 
-	for (int i = 0; i < gui->windows.num_elems; i++) {
-		gui_window_t* wnd = *(gui_window_t**)vec_elem(gui->windows, i);
-		if (wnd && wnd == window)
-			vec_erase(gui->windows, i);
-	}
+	// for (int i = 0; i < gui->windows.num_elems; i++) {
+	// 	gui_window_t* wnd = (gui_window_t*)gui->windows.elems[i];
+	// 	if (wnd && wnd == window)
+	// 		vec_erase(gui->windows, i);
+	// }
 	window->destroy_me = true;
-	if (window->title) {
-		free(window->title);
-		window->title = NULL;
-	}
+	// if (window->title) {
+	// 	mem_free(window->title);
+	// 	window->title = NULL;
+	// }
 
 	gui->destroy_window(window);
 	mem_free(window);
@@ -135,7 +141,7 @@ gui_window_t* gui_get_window_by_handle(void* handle)
 		return NULL;
 	gui_window_t* window = NULL;
 	for (size_t i = 0; i < gui->windows.num_elems; i++) {
-		window = vec_elem(gui->windows, i);
+		window = gui->windows.elems[i];
 		if (window) {
 			void* hnd = gui->get_handle(window);
 			if (hnd == handle)
@@ -145,16 +151,15 @@ gui_window_t* gui_get_window_by_handle(void* handle)
 	return window;
 }
 
-void gui_clear_key_state(u8* key_state)
+void gui_clear_key_state()
 {
-    if (!key_state)
-        return;
-    for (int i = 0; i < GUI_NUM_SCANCODES; i++) {
-        key_state[i] = 0;
-    }
+    if (!gui)
+		return;
+	for (size_t i = 0; i < SCANCODE_MAX; i++)
+		gui->keyboard[i].state = KEY_UP;
 }
 
-void gui_get_global_mouse_state(struct gui_mouse* mouse)
+void gui_get_global_mouse_state(struct mouse_device* mouse)
 {
 	if (!gui || !mouse)
 		return;
@@ -166,15 +171,11 @@ bool gui_poll_event(gui_event_t* event)
 	if (!gui || gui->events.num_elems == 0)
 		return false;
 
-	if (gui->events.num_elems > 0)
-		logger(LOG_DEBUG, "events: %zu\n", gui->events.num_elems);
-
+	// logger(LOG_DEBUG, "events: %zu\n", gui->events.num_elems);
 	gui_event_t* evt = (gui_event_t*)vec_begin(gui->events);
 	if (evt == NULL)
 		return false;
-
 	memcpy(event, evt, sizeof(gui_event_t));
 	vec_erase(gui->events, 0);
-
 	return true;
 }

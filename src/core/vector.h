@@ -1,10 +1,11 @@
-#ifndef H_BM_VECTOR
-#define H_BM_VECTOR
+#pragma once
 
 #include "core/types.h"
 #include "core/memory.h"
 
 #include <assert.h>
+
+#define VEC_NOT_FOUND ((size_t)-1)
 
 #ifdef __cplusplus
 extern "C" {
@@ -179,6 +180,4 @@ static inline void vector_pop_back(struct vector* vec, size_t elem_size)
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

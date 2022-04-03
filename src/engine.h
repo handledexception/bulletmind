@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "entity.h"
+// #include "entity.h"
 #include "font.h"
 #include "sprite.h"
 
@@ -32,7 +32,7 @@ typedef struct SDL_Renderer SDL_Renderer;
 typedef struct SDL_Surface SDL_Surface;
 typedef struct SDL_Texture SDL_Texture;
 
-typedef struct input_state_s input_state_t;
+struct input_state;
 typedef struct game_resource_s game_resource_t;
 typedef struct audio_state_s audio_state_t;
 
@@ -48,6 +48,7 @@ typedef enum {
 #define DEFAULT_SFX_VOLUME 12
 #define DEFAULT_MUSIC_VOLUME 25
 
+typedef struct entity_s entity_t;
 typedef struct gfx_system gfx_system_t;
 typedef struct gfx_buffer gfx_buffer_t;
 typedef struct gfx_shader_var gfx_shader_var_t;
@@ -66,8 +67,7 @@ struct engine_gfx {
 	size_t cbuffer_size;
 };
 
-typedef struct engine_s engine_t;
-struct engine_s {
+typedef struct engine_s {
 	s32 adapter_index;
 	f32 target_fps;
 	f64 target_frametime;
@@ -75,6 +75,7 @@ struct engine_s {
 	VECTOR(struct gui_window*) windows;
 	bool fullscreen;
 	struct engine_gfx gfx;
+	struct input_state* inputs;
 	rect_t window_rect;
 	rect_t cam_rect;
 	rect_t cam_inset;
@@ -85,11 +86,12 @@ struct engine_s {
 	bool console;
 	entity_t* ent_list;
 	game_resource_t** game_resources;
-};
+} engine_t;
 
 extern engine_t* engine;
 
 bool eng_init(const char* name, s32 version, engine_t* eng);
+void eng_refresh_commands(engine_t* eng);
 void eng_refresh(engine_t* eng, f64 dt);
 void eng_shutdown(engine_t* eng);
 

@@ -49,6 +49,36 @@ static inline bool f32_compare(float f1, float f2, float epsilon)
 	return fabsf(f1 - f2) <= epsilon;
 }
 
+/*
+ *	f32 pos = 2.f;
+ *	f32 t;
+ *	int steps = 10;
+ *	for (int i = 0; i < (steps+1); i++) {
+ *		t = (f32)i / (float)steps;
+ *		printf("t = %f, lerp = %f\n", t, lerp(1.f, 100.f, t));
+ *	}
+ * > t = 0.000000, lerp = 1.000000
+ * > t = 0.100000, lerp = 10.900001
+ * > t = 0.200000, lerp = 20.800001
+ * > t = 0.300000, lerp = 30.700001
+ * > t = 0.400000, lerp = 40.600002
+ * > t = 0.500000, lerp = 50.500000
+ * > t = 0.600000, lerp = 60.400002
+ * > t = 0.700000, lerp = 70.299995
+ * > t = 0.800000, lerp = 80.200005
+ * > t = 0.900000, lerp = 90.099998
+ * > t = 1.000000, lerp = 100.000000
+ */
+static inline f32 lerp(f32 a, f32 b, f32  t)
+{
+	return a + (b-a) * t;
+}
+
+static inline f64 lerp64(f64 a, f64 b, f64 t)
+{
+	return a + (b-a) * t;
+}
+
 #ifdef __cplusplus
 }
 #endif

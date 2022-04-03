@@ -5,7 +5,7 @@
 #include "platform/platform.h"
 
 #include "gui/gui.h"
-#include "gui/gui_vkey_win32.h"
+#include "platform/keyboard-vkey-win32.h"
 
 #include <Windows.h>
 #ifndef WIN32_LEAN_AND_MEAN
@@ -32,29 +32,30 @@ static HINSTANCE g_hinstance = NULL;
 static ATOM g_atom = 0;
 static const wchar_t* g_classname = L"BMAppClass";
 
-gui_scancode_t win32_virtual_key_to_scancode(WPARAM wp, LPARAM lp)
+keyboard_scancode_t win32_virtual_key_to_scancode(WPARAM wp, LPARAM lp)
 {
-    gui_scancode_t scancode = GUI_SCANCODE_NONE;
+    keyboard_scancode_t scancode = SCANCODE_NONE;
     int vk = (int)wp;
     int sc = ((UINT)lp & 0x00ff0000) >> 16u;
     int s2vk = (int)MapVirtualKey(sc, MAPVK_VSC_TO_VK_EX);
     // assert(s2vk == vk);
     bool is_extended = (lp & (1 << 24)) != 0;
-    logger(LOG_DEBUG,  "SCANCODE: %d VK: %d MapVirtualKey: %d Extended: %s",
-        sc, vk, s2vk, is_extended ? "true":"false");
+    // logger(LOG_DEBUG,  "SCANCODE: %d VK: %d MapVirtualKey: %d Extended: %s",
+    //     sc, vk, s2vk, is_extended ? "true":"false");
     if (sc <= 127)
         scancode = win32_scancode_lut[sc];
     else
         scancode = 0xfdfdfdfd;
-    logger(LOG_DEBUG,  "SCAN: %d, SC: %d VK: %d MapVirtualKey: %d Extended: %s",
-        scancode, sc, vk, s2vk, is_extended ? "true":"false");
+    // logger(LOG_DEBUG,  "SCAN: %d, SC: %d VK: %d MapVirtualKey: %d Extended: %s",
+    //     scancode, sc, vk, s2vk, is_extended ? "true":"false");
+
     // switch (vk) {
     //     case
     // }
     // int sc = (lp >> 16) & 0xFF;
     // assert(sc == scancode);
     // // assert(vk == vkey);
-    // gui_scancode_t code;
+    // keyboard_scancode_t code;
     return scancode;
 }
 
@@ -98,27 +99,32 @@ LRESULT gui_process_keyboard_win32(UINT msg, WPARAM wp, LPARAM lp)
     u8 key_state = 0;
     gui_event_t evt;
     memset(&evt, 0, sizeof(gui_event_t));
+    evt.type = GUI_EVENT_KEY;
+    evt.timestamp = os_get_time_ns();
 
     switch (msg) {
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
         result = 1;
-        key_state = GUI_KEY_DOWN;
+        key_state = KEY_DOWN;
         break;
     case WM_KEYUP:
     case WM_SYSKEYUP:
     default:
-        key_state = GUI_KEY_UP;
+        key_state = KEY_UP;
         break;
     }
 
     // SHORT key_state = GetKeyState(VK_LCONTROL);
     // SHORT async_key_state = GetAsyncKeyState(VK_LCONTROL);
     // gui->keyboard.key_states[]
-    gui_scancode_t scancode = win32_virtual_key_to_scancode(wp, lp);
-    gui->keyboard.key_states[scancode] = key_state;
-    evt.keyboard.keys[scancode].state = key_state;
-    evt.keyboard.keys[scancode].scancode = scancode;
+    keyboard_scancode_t scancode = win32_virtual_key_to_scancode(wp, lp);
+    gui->keyboard[scancode].scancode = scancode;
+    gui->keyboard[scancode].state = key_state;
+    evt.keyboard.key.scancode = scancode;
+    evt.keyboard.key.state = key_state;
+    evt.keyboard.mod = KEY_MOD_NONE;
+
     // info("Scan Code: %d", (int)scancode);
     // info("MapVirtualKey: %d", vk);
     // info("GetAsyncKeyState: %d", async_key_state);
@@ -203,7 +209,7 @@ LRESULT CALLBACK gui_win32_wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         }
     } break;
     case WM_ACTIVATEAPP:
-        gui_clear_key_state(&gui->keyboard.key_states[0]);
+        gui_clear_key_state();
         break;
     case WM_MOUSEMOVE:
         return gui_process_mouse_move_win32(msg, wp, lp);
@@ -288,23 +294,23 @@ void* gui_get_window_handle_win32(gui_window_t* window)
     return (void*)window->data->hwnd;
 }
 
-void gui_get_global_mouse_state_win32(struct gui_mouse* mouse)
+void gui_get_global_mouse_state_win32(struct mouse_device* mouse)
 {
     u32 key_state = 0;
     POINT p = { 0, 0 };
     GetCursorPos(&p);
     mouse->screen_pos.x = p.x;
     mouse->screen_pos.y = p.y;
-    mouse->buttons[GUI_MOUSE_BUTTON_LEFT].button = GUI_MOUSE_BUTTON_LEFT;
-    mouse->buttons[GUI_MOUSE_BUTTON_RIGHT].button = GUI_MOUSE_BUTTON_RIGHT;
-    mouse->buttons[GUI_MOUSE_BUTTON_MIDDLE].button = GUI_MOUSE_BUTTON_MIDDLE;
-    mouse->buttons[GUI_MOUSE_BUTTON_X1].button = GUI_MOUSE_BUTTON_X1;
-    mouse->buttons[GUI_MOUSE_BUTTON_X2].button = GUI_MOUSE_BUTTON_X2;
-    mouse->buttons[GUI_MOUSE_BUTTON_LEFT].state = GetAsyncKeyState(VK_LBUTTON) & 0x8000 ? 1 : 0;
-    mouse->buttons[GUI_MOUSE_BUTTON_RIGHT].state = GetAsyncKeyState(VK_RBUTTON) & 0x8000 ? 1 : 0;
-    mouse->buttons[GUI_MOUSE_BUTTON_MIDDLE].state = GetAsyncKeyState(VK_MBUTTON) & 0x8000 ? 1 : 0;
-    mouse->buttons[GUI_MOUSE_BUTTON_X1].state = GetAsyncKeyState(VK_XBUTTON1) & 0x8000 ? 1 : 0;
-    mouse->buttons[GUI_MOUSE_BUTTON_X2].state = GetAsyncKeyState(VK_XBUTTON2) & 0x8000 ? 1 : 0;
+    mouse->buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
+    mouse->buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
+    mouse->buttons[MOUSE_BUTTON_MIDDLE].button = MOUSE_BUTTON_MIDDLE;
+    mouse->buttons[MOUSE_BUTTON_X1].button = MOUSE_BUTTON_X1;
+    mouse->buttons[MOUSE_BUTTON_X2].button = MOUSE_BUTTON_X2;
+    mouse->buttons[MOUSE_BUTTON_LEFT].state = GetAsyncKeyState(VK_LBUTTON) & 0x8000 ? 1 : 0;
+    mouse->buttons[MOUSE_BUTTON_RIGHT].state = GetAsyncKeyState(VK_RBUTTON) & 0x8000 ? 1 : 0;
+    mouse->buttons[MOUSE_BUTTON_MIDDLE].state = GetAsyncKeyState(VK_MBUTTON) & 0x8000 ? 1 : 0;
+    mouse->buttons[MOUSE_BUTTON_X1].state = GetAsyncKeyState(VK_XBUTTON1) & 0x8000 ? 1 : 0;
+    mouse->buttons[MOUSE_BUTTON_X2].state = GetAsyncKeyState(VK_XBUTTON2) & 0x8000 ? 1 : 0;
 }
 
 bool gui_init_win32(gui_platform_t* gp)
@@ -345,9 +351,9 @@ void gui_refresh_win32(gui_platform_t* gp)
     }
 }
 
-gui_scancode_t convert_scancode(void* sc)
+keyboard_scancode_t convert_scancode(void* sc)
 {
-    return GUI_SCANCODE_NONE;
+    return SCANCODE_NONE;
     // switch(sc) {
 
     // }
