@@ -119,3 +119,14 @@ void gfx_draw_sprite(gfx_system_t* gfx, struct gfx_texture* texture, u32 width,
 		     u32 height, u32 flags)
 {
 }
+
+const char* gfx_shader_type_to_string(enum gfx_shader_type type)
+{
+	switch (type) {
+		case GFX_SHADER_VERTEX: return "vertex";
+		case GFX_SHADER_PIXEL: return "pixel";
+		case GFX_SHADER_GEOMETRY: return "geometry";
+		case GFX_SHADER_COMPUTE: return "compute";
+	}
+	return NULL;
+}

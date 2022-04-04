@@ -4,200 +4,212 @@
 #include "platform/keyboard-scancode.h"
 
 enum vkey_win32 {
-	VKEY_WIN32_NONE		= 0x00,
+	VKEY_WIN32_NONE = 0x00,
 	VKEY_WIN32_FIRST = VKEY_WIN32_NONE,
-	VKEY_WIN32_LBUTTON	= 0x01,	/* Left mouse button */
-	VKEY_WIN32_RBUTTON	= 0x02,	/* Right mouse button */
-	VKEY_WIN32_CANCEL		= 0x03,	/* Control-break processing */
-	VKEY_WIN32_MBUTTON	= 0x04,	/* Middle mouse button (three-button mouse) */
-	VKEY_WIN32_XBUTTON1	= 0x05,	/* X1 mouse button */
-	VKEY_WIN32_XBUTTON2	= 0x06,	/* X2 mouse button */
+	VKEY_WIN32_LBUTTON = 0x01, /* Left mouse button */
+	VKEY_WIN32_RBUTTON = 0x02, /* Right mouse button */
+	VKEY_WIN32_CANCEL = 0x03,  /* Control-break processing */
+	VKEY_WIN32_MBUTTON =
+		0x04, /* Middle mouse button (three-button mouse) */
+	VKEY_WIN32_XBUTTON1 = 0x05, /* X1 mouse button */
+	VKEY_WIN32_XBUTTON2 = 0x06, /* X2 mouse button */
 	/* -	0x07	Undefined */
-	VKEY_WIN32_BACK 		= 0x08,	/* BACKSPACE key */
-	VKEY_WIN32_TAB 		= 0x09,	/* TAB key */
+	VKEY_WIN32_BACK = 0x08, /* BACKSPACE key */
+	VKEY_WIN32_TAB = 0x09,  /* TAB key */
 	/* -	0x0A-0B	Reserved */
-	VKEY_WIN32_CLEAR		= 0x0C,	/* CLEAR key */
-	VKEY_WIN32_RETURN		= 0x0D,	/* ENTER key */
+	VKEY_WIN32_CLEAR = 0x0C,  /* CLEAR key */
+	VKEY_WIN32_RETURN = 0x0D, /* ENTER key */
 	/* -	0x0E-0F	Undefined */
-	VKEY_WIN32_SHIFT		= 0x10,	/* SHIFT key */
-	VKEY_WIN32_CONTROL	= 0x11,	/* CTRL key */
-	VKEY_WIN32_MENU		= 0x12,	/* ALT key */
-	VKEY_WIN32_PAUSE		= 0x13,	/* PAUSE key */
-	VKEY_WIN32_CAPITAL	= 0x14,	/* CAPS LOCK key */
-	VKEY_WIN32_KANA		= 0x15,	/* IME Kana mode */
-	VKEY_WIN32_HANGUEL	= 0x15,	/* IME Hanguel mode (maintained for compatibility; use VKEY_WIN32_HANGUL) */
-	VKEY_WIN32_HANGUL		= 0x15,	/* IME Hangul mode */
-	VKEY_WIN32_IME_ON		= 0x16,	/* IME On */
-	VKEY_WIN32_JUNJA		= 0x17,	/* IME Junja mode */
-	VKEY_WIN32_FINAL		= 0x18,	/* IME final mode */
-	VKEY_WIN32_HANJA		= 0x19,	/* IME Hanja mode */
-	VKEY_WIN32_KANJI		= 0x19,	/* IME Kanji mode */
-	VKEY_WIN32_IME_OFF	= 0x1A,	/* IME Off */
-	VKEY_WIN32_ESCAPE		= 0x1B,	/* ESC key */
-	VKEY_WIN32_CONVERT	= 0x1C,	/* IME convert */
-	VKEY_WIN32_NONCONVERT	= 0x1D,	/* IME nonconvert */
-	VKEY_WIN32_ACCEPT		= 0x1E,	/* IME accept */
-	VKEY_WIN32_MODECHANGE	= 0x1F,	/* IME mode change request */
-	VKEY_WIN32_SPACE		= 0x20,	/* SPACEBAR */
-	VKEY_WIN32_PRIOR		= 0x21,	/* PAGE UP key */
-	VKEY_WIN32_NEXT		= 0x22,	/* PAGE DOWN key */
-	VKEY_WIN32_END		= 0x23,	/* END key */
-	VKEY_WIN32_HOME		= 0x24,	/* HOME key */
-	VKEY_WIN32_LEFT		= 0x25,	/* LEFT ARROW key */
-	VKEY_WIN32_UP			= 0x26,	/* UP ARROW key */
-	VKEY_WIN32_RIGHT		= 0x27,	/* RIGHT ARROW key */
-	VKEY_WIN32_DOWN		= 0x28,	/* DOWN ARROW key */
-	VKEY_WIN32_SELECT		= 0x29,	/* SELECT key */
-	VKEY_WIN32_PRINT		= 0x2A,	/* PRINT key */
-	VKEY_WIN32_EXECUTE	= 0x2B,	/* EXECUTE key */
-	VKEY_WIN32_SNAPSHOT	= 0x2C,	/* PRINT SCREEN key */
-	VKEY_WIN32_INSERT		= 0x2D,	/* INS key */
-	VKEY_WIN32_DELETE		= 0x2E,	/* DEL key */
-	VKEY_WIN32_HELP		= 0x2F,	/* HELP key */
-	VKEY_WIN32_0 			= 0x30,	/* 0 key */
-	VKEY_WIN32_1 			= 0x31,	/* 1 key */
-	VKEY_WIN32_2 			= 0x32,	/* 2 key */
-	VKEY_WIN32_3 			= 0x33,	/* 3 key */
-	VKEY_WIN32_4 			= 0x34,	/* 4 key */
-	VKEY_WIN32_5 			= 0x35,	/* 5 key */
-	VKEY_WIN32_6 			= 0x36,	/* 6 key */
-	VKEY_WIN32_7 			= 0x37,	/* 7 key */
-	VKEY_WIN32_8 			= 0x38,	/* 8 key */
-	VKEY_WIN32_9 			= 0x39,	/* 9 key */
+	VKEY_WIN32_SHIFT = 0x10,   /* SHIFT key */
+	VKEY_WIN32_CONTROL = 0x11, /* CTRL key */
+	VKEY_WIN32_MENU = 0x12,    /* ALT key */
+	VKEY_WIN32_PAUSE = 0x13,   /* PAUSE key */
+	VKEY_WIN32_CAPITAL = 0x14, /* CAPS LOCK key */
+	VKEY_WIN32_KANA = 0x15,    /* IME Kana mode */
+	VKEY_WIN32_HANGUEL =
+		0x15, /* IME Hanguel mode (maintained for compatibility; use VKEY_WIN32_HANGUL) */
+	VKEY_WIN32_HANGUL = 0x15,     /* IME Hangul mode */
+	VKEY_WIN32_IME_ON = 0x16,     /* IME On */
+	VKEY_WIN32_JUNJA = 0x17,      /* IME Junja mode */
+	VKEY_WIN32_FINAL = 0x18,      /* IME final mode */
+	VKEY_WIN32_HANJA = 0x19,      /* IME Hanja mode */
+	VKEY_WIN32_KANJI = 0x19,      /* IME Kanji mode */
+	VKEY_WIN32_IME_OFF = 0x1A,    /* IME Off */
+	VKEY_WIN32_ESCAPE = 0x1B,     /* ESC key */
+	VKEY_WIN32_CONVERT = 0x1C,    /* IME convert */
+	VKEY_WIN32_NONCONVERT = 0x1D, /* IME nonconvert */
+	VKEY_WIN32_ACCEPT = 0x1E,     /* IME accept */
+	VKEY_WIN32_MODECHANGE = 0x1F, /* IME mode change request */
+	VKEY_WIN32_SPACE = 0x20,      /* SPACEBAR */
+	VKEY_WIN32_PRIOR = 0x21,      /* PAGE UP key */
+	VKEY_WIN32_NEXT = 0x22,       /* PAGE DOWN key */
+	VKEY_WIN32_END = 0x23,        /* END key */
+	VKEY_WIN32_HOME = 0x24,       /* HOME key */
+	VKEY_WIN32_LEFT = 0x25,       /* LEFT ARROW key */
+	VKEY_WIN32_UP = 0x26,         /* UP ARROW key */
+	VKEY_WIN32_RIGHT = 0x27,      /* RIGHT ARROW key */
+	VKEY_WIN32_DOWN = 0x28,       /* DOWN ARROW key */
+	VKEY_WIN32_SELECT = 0x29,     /* SELECT key */
+	VKEY_WIN32_PRINT = 0x2A,      /* PRINT key */
+	VKEY_WIN32_EXECUTE = 0x2B,    /* EXECUTE key */
+	VKEY_WIN32_SNAPSHOT = 0x2C,   /* PRINT SCREEN key */
+	VKEY_WIN32_INSERT = 0x2D,     /* INS key */
+	VKEY_WIN32_DELETE = 0x2E,     /* DEL key */
+	VKEY_WIN32_HELP = 0x2F,       /* HELP key */
+	VKEY_WIN32_0 = 0x30,          /* 0 key */
+	VKEY_WIN32_1 = 0x31,          /* 1 key */
+	VKEY_WIN32_2 = 0x32,          /* 2 key */
+	VKEY_WIN32_3 = 0x33,          /* 3 key */
+	VKEY_WIN32_4 = 0x34,          /* 4 key */
+	VKEY_WIN32_5 = 0x35,          /* 5 key */
+	VKEY_WIN32_6 = 0x36,          /* 6 key */
+	VKEY_WIN32_7 = 0x37,          /* 7 key */
+	VKEY_WIN32_8 = 0x38,          /* 8 key */
+	VKEY_WIN32_9 = 0x39,          /* 9 key */
 	/* -	0x3A-40	Undefined */
-	VKEY_WIN32_A			= 0x41,	/* A key */
-	VKEY_WIN32_B			= 0x42,	/* B key */
-	VKEY_WIN32_C			= 0x43,	/* C key */
-	VKEY_WIN32_D			= 0x44,	/* D key */
-	VKEY_WIN32_E			= 0x45,	/* E key */
-	VKEY_WIN32_F			= 0x46,	/* F key */
-	VKEY_WIN32_G			= 0x47,	/* G key */
-	VKEY_WIN32_H			= 0x48,	/* H key */
-	VKEY_WIN32_I			= 0x49,	/* I key */
-	VKEY_WIN32_J			= 0x4A,	/* J key */
-	VKEY_WIN32_K			= 0x4B,	/* K key */
-	VKEY_WIN32_L			= 0x4C,	/* L key */
-	VKEY_WIN32_M			= 0x4D,	/* M key */
-	VKEY_WIN32_N			= 0x4E,	/* N key */
-	VKEY_WIN32_O			= 0x4F,	/* O key */
-	VKEY_WIN32_P			= 0x50,	/* P key */
-	VKEY_WIN32_Q			= 0x51,	/* Q key */
-	VKEY_WIN32_R			= 0x52,	/* R key */
-	VKEY_WIN32_S			= 0x53,	/* S key */
-	VKEY_WIN32_T			= 0x54,	/* T key */
-	VKEY_WIN32_U			= 0x55,	/* U key */
-	VKEY_WIN32_V			= 0x56,	/* V key */
-	VKEY_WIN32_W			= 0x57,	/* W key */
-	VKEY_WIN32_X			= 0x58,	/* X key */
-	VKEY_WIN32_Y			= 0x59,	/* Y key */
-	VKEY_WIN32_Z			= 0x5A,	/* Z key */
-	VKEY_WIN32_LWIN		= 0x5B,	/* Left Windows key (Natural keyboard) */
-	VKEY_WIN32_RWIN		= 0x5C,	/* Right Windows key (Natural keyboard) */
-	VKEY_WIN32_APPS		= 0x5D,	/* Applications key (Natural keyboard) */
+	VKEY_WIN32_A = 0x41,    /* A key */
+	VKEY_WIN32_B = 0x42,    /* B key */
+	VKEY_WIN32_C = 0x43,    /* C key */
+	VKEY_WIN32_D = 0x44,    /* D key */
+	VKEY_WIN32_E = 0x45,    /* E key */
+	VKEY_WIN32_F = 0x46,    /* F key */
+	VKEY_WIN32_G = 0x47,    /* G key */
+	VKEY_WIN32_H = 0x48,    /* H key */
+	VKEY_WIN32_I = 0x49,    /* I key */
+	VKEY_WIN32_J = 0x4A,    /* J key */
+	VKEY_WIN32_K = 0x4B,    /* K key */
+	VKEY_WIN32_L = 0x4C,    /* L key */
+	VKEY_WIN32_M = 0x4D,    /* M key */
+	VKEY_WIN32_N = 0x4E,    /* N key */
+	VKEY_WIN32_O = 0x4F,    /* O key */
+	VKEY_WIN32_P = 0x50,    /* P key */
+	VKEY_WIN32_Q = 0x51,    /* Q key */
+	VKEY_WIN32_R = 0x52,    /* R key */
+	VKEY_WIN32_S = 0x53,    /* S key */
+	VKEY_WIN32_T = 0x54,    /* T key */
+	VKEY_WIN32_U = 0x55,    /* U key */
+	VKEY_WIN32_V = 0x56,    /* V key */
+	VKEY_WIN32_W = 0x57,    /* W key */
+	VKEY_WIN32_X = 0x58,    /* X key */
+	VKEY_WIN32_Y = 0x59,    /* Y key */
+	VKEY_WIN32_Z = 0x5A,    /* Z key */
+	VKEY_WIN32_LWIN = 0x5B, /* Left Windows key (Natural keyboard) */
+	VKEY_WIN32_RWIN = 0x5C, /* Right Windows key (Natural keyboard) */
+	VKEY_WIN32_APPS = 0x5D, /* Applications key (Natural keyboard) */
 	/* -	0x5E	Reserved */
-	VKEY_WIN32_SLEEP		= 0x5F,	/*, Computer Sleep key */
-	VKEY_WIN32_NUMPAD0	= 0x60,	/* Numeric, keypad 0 key */
-	VKEY_WIN32_NUMPAD1	= 0x61,	/* Numeric, keypad 1 key */
-	VKEY_WIN32_NUMPAD2	= 0x62,	/* Numeric, keypad 2 key */
-	VKEY_WIN32_NUMPAD3	= 0x63,	/* Numeric, keypad 3 key */
-	VKEY_WIN32_NUMPAD4	= 0x64,	/* Numeric, keypad 4 key */
-	VKEY_WIN32_NUMPAD5	= 0x65,	/* Numeric, keypad 5 key */
-	VKEY_WIN32_NUMPAD6	= 0x66,	/* Numeric, keypad 6 key */
-	VKEY_WIN32_NUMPAD7	= 0x67,	/* Numeric, keypad 7 key */
-	VKEY_WIN32_NUMPAD8	= 0x68,	/* Numeric, keypad 8 key */
-	VKEY_WIN32_NUMPAD9	= 0x69,	/* Numeric, keypad 9 key */
-	VKEY_WIN32_MULTIPLY	= 0x6A,	/* Multiply key */
-	VKEY_WIN32_ADD		= 0x6B,	/* Add key */
-	VKEY_WIN32_SEPARATOR	= 0x6C,	/* Separator key */
-	VKEY_WIN32_SUBTRACT	= 0x6D,	/* Subtract key */
-	VKEY_WIN32_DECIMAL	= 0x6E,	/* Decimal key */
-	VKEY_WIN32_DIVIDE		= 0x6F,	/* Divide key */
-	VKEY_WIN32_F1			= 0x70,	/* F1 key */
-	VKEY_WIN32_F2			= 0x71,	/* F2 key */
-	VKEY_WIN32_F3			= 0x72,	/* F3 key */
-	VKEY_WIN32_F4			= 0x73,	/* F4 key */
-	VKEY_WIN32_F5			= 0x74,	/* F5 key */
-	VKEY_WIN32_F6			= 0x75,	/* F6 key */
-	VKEY_WIN32_F7			= 0x76,	/* F7 key */
-	VKEY_WIN32_F8			= 0x77,	/* F8 key */
-	VKEY_WIN32_F9			= 0x78,	/* F9 key */
-	VKEY_WIN32_F10		= 0x79,	/* F10 key */
-	VKEY_WIN32_F11		= 0x7A,	/* F11 key */
-	VKEY_WIN32_F12		= 0x7B,	/* F12 key */
-	VKEY_WIN32_F13		= 0x7C,	/* F13 key */
-	VKEY_WIN32_F14		= 0x7D,	/* F14 key */
-	VKEY_WIN32_F15		= 0x7E,	/* F15 key */
-	VKEY_WIN32_F16		= 0x7F,	/* F16 key */
-	VKEY_WIN32_F17		= 0x80,	/* F17 key */
-	VKEY_WIN32_F18		= 0x81,	/* F18 key */
-	VKEY_WIN32_F19		= 0x82,	/* F19 key */
-	VKEY_WIN32_F20		= 0x83,	/* F20 key */
-	VKEY_WIN32_F21		= 0x84,	/* F21 key */
-	VKEY_WIN32_F22		= 0x85,	/* F22 key */
-	VKEY_WIN32_F23		= 0x86,	/* F23 key */
-	VKEY_WIN32_F24		= 0x87,	/* F24 key */
+	VKEY_WIN32_SLEEP = 0x5F,     /*, Computer Sleep key */
+	VKEY_WIN32_NUMPAD0 = 0x60,   /* Numeric, keypad 0 key */
+	VKEY_WIN32_NUMPAD1 = 0x61,   /* Numeric, keypad 1 key */
+	VKEY_WIN32_NUMPAD2 = 0x62,   /* Numeric, keypad 2 key */
+	VKEY_WIN32_NUMPAD3 = 0x63,   /* Numeric, keypad 3 key */
+	VKEY_WIN32_NUMPAD4 = 0x64,   /* Numeric, keypad 4 key */
+	VKEY_WIN32_NUMPAD5 = 0x65,   /* Numeric, keypad 5 key */
+	VKEY_WIN32_NUMPAD6 = 0x66,   /* Numeric, keypad 6 key */
+	VKEY_WIN32_NUMPAD7 = 0x67,   /* Numeric, keypad 7 key */
+	VKEY_WIN32_NUMPAD8 = 0x68,   /* Numeric, keypad 8 key */
+	VKEY_WIN32_NUMPAD9 = 0x69,   /* Numeric, keypad 9 key */
+	VKEY_WIN32_MULTIPLY = 0x6A,  /* Multiply key */
+	VKEY_WIN32_ADD = 0x6B,       /* Add key */
+	VKEY_WIN32_SEPARATOR = 0x6C, /* Separator key */
+	VKEY_WIN32_SUBTRACT = 0x6D,  /* Subtract key */
+	VKEY_WIN32_DECIMAL = 0x6E,   /* Decimal key */
+	VKEY_WIN32_DIVIDE = 0x6F,    /* Divide key */
+	VKEY_WIN32_F1 = 0x70,        /* F1 key */
+	VKEY_WIN32_F2 = 0x71,        /* F2 key */
+	VKEY_WIN32_F3 = 0x72,        /* F3 key */
+	VKEY_WIN32_F4 = 0x73,        /* F4 key */
+	VKEY_WIN32_F5 = 0x74,        /* F5 key */
+	VKEY_WIN32_F6 = 0x75,        /* F6 key */
+	VKEY_WIN32_F7 = 0x76,        /* F7 key */
+	VKEY_WIN32_F8 = 0x77,        /* F8 key */
+	VKEY_WIN32_F9 = 0x78,        /* F9 key */
+	VKEY_WIN32_F10 = 0x79,       /* F10 key */
+	VKEY_WIN32_F11 = 0x7A,       /* F11 key */
+	VKEY_WIN32_F12 = 0x7B,       /* F12 key */
+	VKEY_WIN32_F13 = 0x7C,       /* F13 key */
+	VKEY_WIN32_F14 = 0x7D,       /* F14 key */
+	VKEY_WIN32_F15 = 0x7E,       /* F15 key */
+	VKEY_WIN32_F16 = 0x7F,       /* F16 key */
+	VKEY_WIN32_F17 = 0x80,       /* F17 key */
+	VKEY_WIN32_F18 = 0x81,       /* F18 key */
+	VKEY_WIN32_F19 = 0x82,       /* F19 key */
+	VKEY_WIN32_F20 = 0x83,       /* F20 key */
+	VKEY_WIN32_F21 = 0x84,       /* F21 key */
+	VKEY_WIN32_F22 = 0x85,       /* F22 key */
+	VKEY_WIN32_F23 = 0x86,       /* F23 key */
+	VKEY_WIN32_F24 = 0x87,       /* F24 key */
 	/* -	0x88-8F	Unassigned */
-	VKEY_WIN32_NUMLOCK	= 0x90,	/* NUM LOCK key */
-	VKEY_WIN32_SCROLL		= 0x91,	/* SCROLL LOCK key */
+	VKEY_WIN32_NUMLOCK = 0x90, /* NUM LOCK key */
+	VKEY_WIN32_SCROLL = 0x91,  /* SCROLL LOCK key */
 	/* 0x92-96	OEM specific */
 	/* -	0x97-9F	Unassigned */
-	VKEY_WIN32_LSHIFT					= 0xA0,	/* Left SHIFT key */
-	VKEY_WIN32_RSHIFT					= 0xA1,	/* Right SHIFT key */
-	VKEY_WIN32_LCONTROL				= 0xA2,	/* Left CONTROL key */
-	VKEY_WIN32_RCONTROL				= 0xA3,	/* Right CONTROL key */
-	VKEY_WIN32_LMENU					= 0xA4,	/* Left MENU key */
-	VKEY_WIN32_RMENU					= 0xA5,	/* Right MENU key */
-	VKEY_WIN32_BROWSER_BACK			= 0xA6,	/* Browser Back key */
-	VKEY_WIN32_BROWSER_FORWARD		= 0xA7,	/* Browser Forward key */
-	VKEY_WIN32_BROWSER_REFRESH		= 0xA8,	/* Browser Refresh key */
-	VKEY_WIN32_BROWSER_STOP			= 0xA9,	/* Browser Stop key */
-	VKEY_WIN32_BROWSER_SEARCH			= 0xAA,	/* Browser Search key */
-	VKEY_WIN32_BROWSER_FAVORITES		= 0xAB,	/* Browser Favorites key */
-	VKEY_WIN32_BROWSER_HOME			= 0xAC,	/* Browser Start and Home key */
-	VKEY_WIN32_VOLUME_MUTE			= 0xAD,	/* Volume Mute key */
-	VKEY_WIN32_VOLUME_DOWN			= 0xAE,	/* Volume Down key */
-	VKEY_WIN32_VOLUME_UP				= 0xAF,	/* Volume Up key */
-	VKEY_WIN32_MEDIA_NEXT_TRACK		= 0xB0,	/* Next Track key */
-	VKEY_WIN32_MEDIA_PREV_TRACK		= 0xB1,	/* Previous Track key */
-	VKEY_WIN32_MEDIA_STOP				= 0xB2,	/* Stop Media key */
-	VKEY_WIN32_MEDIA_PLAY_PAUSE		= 0xB3,	/* Play/Pause Media key */
-	VKEY_WIN32_LAUNCH_MAIL			= 0xB4,	/* Start Mail key */
-	VKEY_WIN32_LAUNCH_MEDIA_SELECT	= 0xB5,	/* Select Media key */
-	VKEY_WIN32_LAUNCH_APP1			= 0xB6,	/* Start Application 1 key */
-	VKEY_WIN32_LAUNCH_APP2			= 0xB7,	/* Start Application 2 key */
+	VKEY_WIN32_LSHIFT = 0xA0,              /* Left SHIFT key */
+	VKEY_WIN32_RSHIFT = 0xA1,              /* Right SHIFT key */
+	VKEY_WIN32_LCONTROL = 0xA2,            /* Left CONTROL key */
+	VKEY_WIN32_RCONTROL = 0xA3,            /* Right CONTROL key */
+	VKEY_WIN32_LMENU = 0xA4,               /* Left MENU key */
+	VKEY_WIN32_RMENU = 0xA5,               /* Right MENU key */
+	VKEY_WIN32_BROWSER_BACK = 0xA6,        /* Browser Back key */
+	VKEY_WIN32_BROWSER_FORWARD = 0xA7,     /* Browser Forward key */
+	VKEY_WIN32_BROWSER_REFRESH = 0xA8,     /* Browser Refresh key */
+	VKEY_WIN32_BROWSER_STOP = 0xA9,        /* Browser Stop key */
+	VKEY_WIN32_BROWSER_SEARCH = 0xAA,      /* Browser Search key */
+	VKEY_WIN32_BROWSER_FAVORITES = 0xAB,   /* Browser Favorites key */
+	VKEY_WIN32_BROWSER_HOME = 0xAC,        /* Browser Start and Home key */
+	VKEY_WIN32_VOLUME_MUTE = 0xAD,         /* Volume Mute key */
+	VKEY_WIN32_VOLUME_DOWN = 0xAE,         /* Volume Down key */
+	VKEY_WIN32_VOLUME_UP = 0xAF,           /* Volume Up key */
+	VKEY_WIN32_MEDIA_NEXT_TRACK = 0xB0,    /* Next Track key */
+	VKEY_WIN32_MEDIA_PREV_TRACK = 0xB1,    /* Previous Track key */
+	VKEY_WIN32_MEDIA_STOP = 0xB2,          /* Stop Media key */
+	VKEY_WIN32_MEDIA_PLAY_PAUSE = 0xB3,    /* Play/Pause Media key */
+	VKEY_WIN32_LAUNCH_MAIL = 0xB4,         /* Start Mail key */
+	VKEY_WIN32_LAUNCH_MEDIA_SELECT = 0xB5, /* Select Media key */
+	VKEY_WIN32_LAUNCH_APP1 = 0xB6,         /* Start Application 1 key */
+	VKEY_WIN32_LAUNCH_APP2 = 0xB7,         /* Start Application 2 key */
 	/* -	0xB8-B9	Reserved */
-	VKEY_WIN32_OEM_1		= 0xBA,	/* Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ';:' key */
-	VKEY_WIN32_OEM_PLUS	= 0xBB,	/* For any country/region, the '+' key */
-	VKEY_WIN32_OEM_COMMA	= 0xBC,	/* For any country/region, the ',' key */
-	VKEY_WIN32_OEM_MINUS	= 0xBD,	/* For any country/region, the '-' key */
-	VKEY_WIN32_OEM_PERIOD = 0xBE,	/* For any country/region, the '.' key */
-	VKEY_WIN32_OEM_2		= 0xBF,	/* Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '/?' key */
-	VKEY_WIN32_OEM_3		= 0xC0,	/* Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '`~' key */
+	VKEY_WIN32_OEM_1 =
+		0xBA, /* Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ';:' key */
+	VKEY_WIN32_OEM_PLUS = 0xBB,   /* For any country/region, the '+' key */
+	VKEY_WIN32_OEM_COMMA = 0xBC,  /* For any country/region, the ',' key */
+	VKEY_WIN32_OEM_MINUS = 0xBD,  /* For any country/region, the '-' key */
+	VKEY_WIN32_OEM_PERIOD = 0xBE, /* For any country/region, the '.' key */
+	VKEY_WIN32_OEM_2 =
+		0xBF, /* Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '/?' key */
+	VKEY_WIN32_OEM_3 =
+		0xC0, /* Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '`~' key */
 	/* -	0xC1-D7	Reserved */
 	/* -	0xD8-DA	Unassigned */
-	VKEY_WIN32_OEM_4		= 0xDB,	/* Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '[{' key */
-	VKEY_WIN32_OEM_5		= 0xDC,	/* Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '\|' key */
-	VKEY_WIN32_OEM_6		= 0xDD,	/* Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ']}' key */
-	VKEY_WIN32_OEM_7		= 0xDE,	/* Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the 'single-quote/double-quote' key */
-	VKEY_WIN32_OEM_8		= 0xDF,	/* Used for miscellaneous characters; it can vary by keyboard. */
+	VKEY_WIN32_OEM_4 =
+		0xDB, /* Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '[{' key */
+	VKEY_WIN32_OEM_5 =
+		0xDC, /* Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '\|' key */
+	VKEY_WIN32_OEM_6 =
+		0xDD, /* Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ']}' key */
+	VKEY_WIN32_OEM_7 =
+		0xDE, /* Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the 'single-quote/double-quote' key */
+	VKEY_WIN32_OEM_8 =
+		0xDF, /* Used for miscellaneous characters; it can vary by keyboard. */
 	/* -	0xE0	Reserved */
 	/* 0xE1	OEM specific */
-	VKEY_WIN32_OEM_102	= 0xE2,	/* The <> keys on the US standard keyboard, or the \\| key on the non-US 102-key keyboard */
+	VKEY_WIN32_OEM_102 =
+		0xE2, /* The <> keys on the US standard keyboard, or the \\| key on the non-US 102-key keyboard */
 	/* 0xE3-E4	OEM specific */
-	VKEY_WIN32_PROCESSKEY = 0xE5,	/* IME PROCESS key */
+	VKEY_WIN32_PROCESSKEY = 0xE5, /* IME PROCESS key */
 	/* 0xE6	OEM specific */
-	VKEY_WIN32_PACKET		= 0xE7,	/* Used to pass Unicode characters as if they were keystrokes. The VKEY_WIN32_PACKET key is the low word of a 32-bit Virtual Key value used for non-keyboard input methods. For more information, see Remark in KEYBDINPUT, SendInput, WM_KEYDOWN, and WM_KEYUP */
+	VKEY_WIN32_PACKET =
+		0xE7, /* Used to pass Unicode characters as if they were keystrokes. The VKEY_WIN32_PACKET key is the low word of a 32-bit Virtual Key value used for non-keyboard input methods. For more information, see Remark in KEYBDINPUT, SendInput, WM_KEYDOWN, and WM_KEYUP */
 	/* -	0xE8	Unassigned */
 	/* 0xE9-F5	OEM specific */
-	VKEY_WIN32_ATTN		= 0xF6,	/* Attn key */
-	VKEY_WIN32_CRSEL		= 0xF7,	/* CrSel key */
-	VKEY_WIN32_EXSEL		= 0xF8,	/* ExSel key */
-	VKEY_WIN32_EREOF		= 0xF9,	/* Erase EOF key */
-	VKEY_WIN32_PLAY		= 0xFA,	/* Play key */
-	VKEY_WIN32_ZOOM		= 0xFB,	/* Zoom key */
-	VKEY_WIN32_NONAME		= 0xFC,	/* Reserved */
-	VKEY_WIN32_PA1		= 0xFD,	/* PA1 key */
-	VKEY_WIN32_OEM_CLEAR	= 0xFE,	/* Clear key */
+	VKEY_WIN32_ATTN = 0xF6,      /* Attn key */
+	VKEY_WIN32_CRSEL = 0xF7,     /* CrSel key */
+	VKEY_WIN32_EXSEL = 0xF8,     /* ExSel key */
+	VKEY_WIN32_EREOF = 0xF9,     /* Erase EOF key */
+	VKEY_WIN32_PLAY = 0xFA,      /* Play key */
+	VKEY_WIN32_ZOOM = 0xFB,      /* Zoom key */
+	VKEY_WIN32_NONAME = 0xFC,    /* Reserved */
+	VKEY_WIN32_PA1 = 0xFD,       /* PA1 key */
+	VKEY_WIN32_OEM_CLEAR = 0xFE, /* Clear key */
 
 	VK_WIN32_LAST
 };
@@ -331,8 +343,7 @@ static const keyboard_scancode_t win32_scancode_lut[] = {
 	SCANCODE_NONE,
 	SCANCODE_INTERNATIONAL3,
 	SCANCODE_NONE,
-	SCANCODE_NONE
-};
+	SCANCODE_NONE};
 
 struct gui_vkey_state_win32 {
 	s8 Reserved0 : 8;

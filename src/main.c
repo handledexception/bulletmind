@@ -130,16 +130,18 @@ int main(int argc, char** argv)
 {
 	char s[26] = "\"Main screen turn on...\"";
 	str_upper_no_copy(s, 0);
-	logger(LOG_INFO,  "%s\n", s);
+	logger(LOG_INFO, "%s\n", s);
 
 	// Allocate memory arena - 8MiB
 	mem_arena_backing_buffer = (u8*)mem_alloc(ARENA_TOTAL_BYTES);
-	mem_arena_init(&mem_arena, (void*)mem_arena_backing_buffer, (size_t)ARENA_TOTAL_BYTES);
+	mem_arena_init(&mem_arena, (void*)mem_arena_backing_buffer,
+		       (size_t)ARENA_TOTAL_BYTES);
 
 	size_t sz_engine = sizeof(engine_t);
 	engine = (engine_t*)bm_mem_arena_alloc(&mem_arena, sz_engine);
 	memset(engine, 0, sizeof(engine_t));
-	engine->inputs = bm_mem_arena_alloc(&mem_arena, sizeof(struct input_state));
+	engine->inputs =
+		bm_mem_arena_alloc(&mem_arena, sizeof(struct input_state));
 	engine->adapter_index = -1; // SDL default to first available
 	engine->window_rect.x = -1; // SDL window position centered
 	engine->window_rect.y = -1; // ""
@@ -172,7 +174,7 @@ int main(int argc, char** argv)
 		pack_version(APP_VER_MAJ, APP_VER_MIN, APP_VER_REV);
 
 	if (!eng_init(APP_NAME, app_version, engine)) {
-		logger(LOG_ERROR,  "Something went wrong!\n");
+		logger(LOG_ERROR, "Something went wrong!\n");
 		return -1;
 	}
 

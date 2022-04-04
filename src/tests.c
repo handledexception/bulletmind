@@ -3,9 +3,9 @@
 #include "core/vector.h"
 
 struct foobar {
-    s32 id;
-    f32 value;
-    char name[256];
+	s32 id;
+	f32 value;
+	char name[256];
 };
 
 // int main(int argc, char* argv[])

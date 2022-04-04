@@ -67,16 +67,18 @@ struct gfx_buffer {
 	ID3D11Buffer* buffer;
 	enum gfx_buffer_type type;
 	enum gfx_buffer_usage usage;
-	bool own_data;
 };
 
-struct gfx_shader {
-	enum gfx_shader_type type;
-	void* shader;
+struct gfx_vertex_shader {
+	enum gfx_vertex_type vertex_type;
 	ID3DBlob* blob;
+	ID3D11VertexShader* program;
 	ID3D11InputLayout* input_layout;
-	VECTOR(gfx_shader_var_t) vars;
-	gfx_buffer_t* cbuffer;
+};
+
+struct gfx_pixel_shader {
+	ID3DBlob* blob;
+	ID3D11PixelShader* program;
 };
 
 struct gfx_texture2d {
@@ -262,7 +264,7 @@ result gfx_com_release_d3d11(gfx_system_t* gfx)
 void gfx_bind_vertex_shader_input_layout(gfx_system_t* gfx)
 {
 	if (gfx) {
-		gfx_shader_bind_input_layout(gfx, gfx->vertex_shader);
+		gfx_vertex_shader_bind_input_layout(gfx, gfx->vertex_shader);
 	}
 }
 
@@ -742,21 +744,14 @@ void gfx_render_clear(gfx_system_t* gfx, const rgba_t* color)
 
 void gfx_render_begin(gfx_system_t* gfx)
 {
-	if (gfx && gfx->ctx) {
-		// render scene begin
-		u32 vertex_count = BM_GFX_MAX_VERTICES;
-		u32 start_vertex = 0;
-		ID3D11DeviceContext1_VSSetShader(
-			gfx->ctx,
-			(ID3D11VertexShader*)gfx->vertex_shader->shader, NULL,
-			0);
-		ID3D11DeviceContext1_PSSetShader(
-			gfx->ctx, (ID3D11PixelShader*)gfx->pixel_shader->shader,
-			NULL, 0);
-		ID3D11DeviceContext1_PSSetSamplers(gfx->ctx, 0, 1,
-						   &gfx->sampler_state);
-		ID3D11DeviceContext1_Draw(gfx->ctx, vertex_count, start_vertex);
-	}
+	gfx_vertex_shader_t* vs = (gfx_vertex_shader_t*)gfx->vertex_shader->impl;
+	gfx_pixel_shader_t* ps = (gfx_pixel_shader_t*)gfx->pixel_shader->impl;
+	u32 vertex_count = BM_GFX_MAX_VERTICES;
+	u32 start_vertex = 0;
+	ID3D11DeviceContext1_VSSetShader(gfx->ctx, vs->program, NULL, 0);
+	ID3D11DeviceContext1_PSSetShader(gfx->ctx, ps, NULL, 0);
+	ID3D11DeviceContext1_PSSetSamplers(gfx->ctx, 0, 1, &gfx->sampler_state);
+	ID3D11DeviceContext1_Draw(gfx->ctx, vertex_count, start_vertex);
 }
 
 void gfx_render_end(gfx_system_t* gfx, bool vsync, u32 flags)
@@ -764,16 +759,26 @@ void gfx_render_end(gfx_system_t* gfx, bool vsync, u32 flags)
 	IDXGISwapChain1_Present(gfx->dxgi_swap_chain, (UINT)vsync, flags);
 }
 
-void gfx_set_vertex_shader(gfx_system_t* gfx, gfx_shader_t* vs)
+void gfx_set_vertex_shader(gfx_system_t* gfx, gfx_vertex_shader_t* vs)
 {
-	if (gfx)
+	if (gfx != NULL)
 		gfx->vertex_shader = vs;
 }
 
 void gfx_set_pixel_shader(gfx_system_t* gfx, gfx_shader_t* ps)
 {
-	if (gfx)
+	if (gfx != NULL)
 		gfx->pixel_shader = ps;
+}
+
+enum gfx_vertex_type gfx_get_vertex_type(gfx_system_t* gfx)
+{
+	if (gfx != NULL) {
+		gfx_vertex_shader_t* vs = (gfx_vertex_shader_t*)gfx->vertex_shader->impl;
+		if (vs != NULL)
+			return vs->vertex_type;
+	}
+	return GFX_VERTEX_UNKNOWN;
 }
 
 // void gfx_init_sprite(gfx_system_t* gfx, gfx_buffer_t* vertex_buffer)
@@ -812,14 +817,8 @@ result gfx_buffer_create(gfx_system_t* gfx, const void* data, size_t size,
 	gfx_buffer_t* buf = mem_alloc(sizeof(gfx_buffer_t));
 	buf->usage = usage;
 	buf->type = type;
+	buf->data = (u8*)data;
 	buf->size = size;
-	if (data == NULL && size > 0) {
-		buf->data = mem_alloc(size);
-		buf->own_data = true;
-	} else {
-		buf->data = (u8*)data;
-		buf->own_data = false;
-	}
 
 	u32 cpu_access_flags = 0;
 	if (usage == GFX_BUFFER_USAGE_DYNAMIC)
@@ -848,26 +847,25 @@ result gfx_buffer_create(gfx_system_t* gfx, const void* data, size_t size,
 		.BindFlags = (UINT)bind_flags,
 		.MiscFlags = 0,
 		.StructureByteStride = 0};
-
-	D3D11_SUBRESOURCE_DATA srd = {.pSysMem = buf->data,
-						.SysMemPitch = 0,
-						.SysMemSlicePitch = 0};
-	if (FAILED(ID3D11Device1_CreateBuffer(gfx->device, &desc, &srd,
-					&buf->buffer)))
-		return RESULT_NULL;
-
+	if (data != NULL) {
+		D3D11_SUBRESOURCE_DATA srd = {.pSysMem = buf->data,
+					      .SysMemPitch = 0,
+					      .SysMemSlicePitch = 0};
+		if (FAILED(ID3D11Device1_CreateBuffer(gfx->device, &desc, &srd,
+						      &buf->buffer)))
+			return RESULT_NULL;
+	} else {
+		if (FAILED(ID3D11Device1_CreateBuffer(gfx->device, &desc, NULL,
+						      &buf->buffer)))
+			return RESULT_NULL;
+	}
 	*buffer = buf;
-
 	return RESULT_OK;
 }
 
 void gfx_buffer_free(gfx_buffer_t* buffer)
 {
 	if (buffer != NULL) {
-		if (buffer->data != NULL && buffer->own_data) {
-			mem_free(buffer->data);
-			buffer->data = NULL;
-		}
 		if (buffer->buffer != NULL) {
 			ID3D11Buffer_Release(buffer->buffer);
 			buffer->buffer = NULL;
@@ -876,7 +874,7 @@ void gfx_buffer_free(gfx_buffer_t* buffer)
 }
 
 result gfx_buffer_copy(gfx_system_t* gfx, gfx_buffer_t* buffer,
-			    const void* data, size_t size)
+		       const void* data, size_t size)
 {
 	if (!gfx || !buffer || !data || size == 0)
 		return RESULT_NULL;
@@ -912,7 +910,7 @@ void gfx_bind_vertex_buffer(gfx_system_t* gfx, gfx_buffer_t* vb, u32 stride,
 }
 
 void gfx_buffer_upload_constants(gfx_system_t* gfx, const gfx_buffer_t* buffer,
-				enum gfx_shader_type type)
+				 enum gfx_shader_type type)
 {
 	if (gfx && buffer) {
 		if (type == GFX_SHADER_VERTEX)
@@ -929,62 +927,50 @@ void gfx_buffer_upload_constants(gfx_system_t* gfx, const gfx_buffer_t* buffer,
  */
 void gfx_shader_init(gfx_shader_t* shader)
 {
-	if (shader) {
-		shader->blob = NULL;
-		shader->cbuffer = NULL;
-		shader->input_layout = NULL;
-		shader->shader = NULL;
-		vec_init(shader->vars);
+	if (shader != NULL) {
 		shader->type = GFX_SHADER_UNKNOWN;
+		shader->impl = NULL;
+		shader->cbuffer = NULL;
+		vec_init(shader->vars);
 	}
 }
 
-gfx_shader_t* gfx_shader_create_from_file(const char* path,
-					   const char* entrypoint,
-					   const char* target,
-					   enum gfx_shader_type type)
+gfx_shader_t* gfx_shader_create(enum gfx_shader_type type)
 {
-	gfx_shader_t* shader = NULL;
-	size_t file_size = os_get_file_size(path);
-	const char* txt = os_quick_read_utf8_file(path);
-
-	ID3DBlob* blob = NULL;
-	ID3DBlob* blob_error = NULL;
-	HRESULT hr = D3DCompile(txt, file_size, path, NULL, NULL, entrypoint,
-				target, 0, 0, &blob, &blob_error);
-
-	if (SUCCEEDED(hr)) {
-		shader = (gfx_shader_t*)mem_alloc(sizeof(gfx_shader_t));
-		gfx_shader_init(shader);
-		shader->blob = blob;
-		shader->type = type;
-	} else {
-		if (!blob || blob_error) {
-			const char* err_msg =
-				(const char*)ID3D10Blob_GetBufferPointer(
-					blob_error);
-			logger(LOG_ERROR,
-			       "[gfx] Failed to compile shader %s. Error: %s",
-			       path, err_msg);
-		}
-		ID3D10Blob_Release(shader->blob);
-		ID3D10Blob_Release(blob_error);
-		mem_free(shader);
+	gfx_shader_t* shader = (gfx_shader_t*)mem_alloc(sizeof(gfx_shader_t));
+	gfx_shader_init(shader);
+	shader->type = type;
+	switch (shader->type) {
+		case GFX_SHADER_VERTEX:
+			shader->impl = (gfx_vertex_shader_t*)gfx_vertex_shader_create();
+			break;
+		case GFX_SHADER_PIXEL:
+			shader->impl = (gfx_pixel_shader_t*)gfx_pixel_shader_create();
+			break;
+		case GFX_SHADER_GEOMETRY:
+		case GFX_SHADER_COMPUTE:
+		default:
+			break;
 	}
-
 	return shader;
 }
 
 void gfx_shader_free(gfx_shader_t* shader)
 {
 	if (shader != NULL) {
-		if (shader->blob) {
-			ID3D10Blob_Release(shader->blob);
-			shader->blob = NULL;
-		}
-		if (shader->input_layout) {
-			ID3D11InputLayout_Release(shader->input_layout);
-			shader->input_layout = NULL;
+		gfx_buffer_free(shader->cbuffer);
+		switch (shader->type) {
+			case GFX_SHADER_VERTEX:
+				gfx_vertex_shader_free((gfx_vertex_shader_t*)shader->impl);
+				break;
+			case GFX_SHADER_PIXEL:
+				gfx_pixel_shader_free((gfx_pixel_shader_t*)shader->impl);
+				break;
+			case GFX_SHADER_GEOMETRY:
+			case GFX_SHADER_COMPUTE:
+			default:
+				logger(LOG_WARNING, "[gfx] shader type %s not implemented!", gfx_shader_type_to_string(shader->type));
+				break;
 		}
 		vec_free(shader->vars);
 		mem_free(shader);
@@ -992,53 +978,192 @@ void gfx_shader_free(gfx_shader_t* shader)
 	}
 }
 
-result gfx_shader_build(gfx_system_t* gfx, gfx_shader_t* shader)
+void gfx_vertex_shader_init(gfx_vertex_shader_t* vs)
 {
-	if (!gfx || !gfx->device)
+	if (vs != NULL) {
+		vs->blob = NULL;
+		vs->input_layout = NULL;
+		vs->program = NULL;
+		vs->vertex_type = GFX_VERTEX_UNKNOWN;
+	}
+}
+gfx_vertex_shader_t* gfx_vertex_shader_create()
+{
+	gfx_vertex_shader_t* vs = mem_alloc(sizeof(gfx_vertex_shader_t));
+	gfx_vertex_shader_init(vs);
+	return vs;
+}
+void gfx_vertex_shader_free(gfx_vertex_shader_t* vs)
+{
+	if (vs != NULL) {
+		ID3D10Blob_Release(vs->blob);
+		vs->blob = NULL;
+		ID3D11InputLayout_Release(vs->input_layout);
+		vs->input_layout = NULL;
+		ID3D11VertexShader_Release(vs->program);
+		vs->program = NULL;
+		vs->vertex_type = GFX_VERTEX_UNKNOWN;
+		mem_free(vs);
+		vs = NULL;
+	}
+}
+
+void gfx_pixel_shader_init(gfx_pixel_shader_t* ps)
+{
+	if (ps != NULL) {
+		ps->blob = NULL;
+		ps->program = NULL;
+	}
+}
+gfx_pixel_shader_t* gfx_pixel_shader_create()
+{
+	gfx_pixel_shader_t* ps = mem_alloc(sizeof(gfx_pixel_shader_t));
+	gfx_pixel_shader_init(ps);
+	return ps;
+}
+void gfx_pixel_shader_free(gfx_pixel_shader_t* ps)
+{
+	if (ps != NULL) {
+		ID3D10Blob_Release(ps->blob);
+		ps->blob = NULL;
+		ID3D11PixelShader_Release(ps->program);
+		ps->program = NULL;
+		mem_free(ps);
+		ps = NULL;
+	}
+}
+
+// original stuff -----------------------------------------------------------------------------------------
+result gfx_shader_compile_from_file(gfx_system_t* gfx,
+						    const char* path,
+						    const char* entrypoint,
+						    const char* target,
+						    gfx_shader_t* shader)
+{
+	if (shader == NULL)
+		return RESULT_NULL;
+	if (!os_file_exists(path))
+		return RESULT_NOT_FOUND;
+	size_t file_size = os_get_file_size(path);
+	if (file_size == 0)
+		return RESULT_NO_DATA;
+	const char* txt = os_quick_read_utf8_file(path);
+	if (txt == NULL)
 		return RESULT_NULL;
 
-	if (shader->blob) {
-		if (shader->type == GFX_SHADER_VERTEX) {
-			if (FAILED(ID3D11Device1_CreateVertexShader(
-				    gfx->device,
-				    ID3D10Blob_GetBufferPointer(shader->blob),
-				    ID3D10Blob_GetBufferSize(shader->blob),
-				    NULL,
-				    (ID3D11VertexShader**)&shader->shader))) {
-				logger(LOG_DEBUG,
-				       "[gfx] Failed to build vertex shader!");
+	ID3D10Blob* shader_blob = NULL;
+	switch (shader->type) {
+	case GFX_SHADER_VERTEX:
+		{
+			gfx_vertex_shader_t* vs = (gfx_vertex_shader_t*)shader->impl;
+			if (vs == NULL)
+				return RESULT_NULL;
+			shader_blob = vs->blob;
+			break;
+		}
+	case GFX_SHADER_PIXEL:
+		{
+			gfx_pixel_shader_t* ps = (gfx_pixel_shader_t*)shader->impl;
+			if (ps == NULL)
+				return RESULT_NULL;
+			shader_blob = ps->blob;
+			break;
+		}
+	default:
+		logger(LOG_ERROR, "[gfx] compilation of %s shaders not implemented!", gfx_shader_type_to_string(shader->type));
+		return RESULT_NOT_IMPL;
+	}
 
-				ID3D11VertexShader_Release(
-					(ID3D11VertexShader*)shader->shader);
-				shader->shader = NULL;
+	if (shader_blob != NULL) {
+		ID3DBlob* blob_error = NULL;
+		if (FAILED(D3DCompile(txt, file_size, path, NULL, NULL, entrypoint,
+					target, 0, 0, &shader_blob, &blob_error))) {
+			if (blob_error) {
+				const char* err_msg =
+					(const char*)ID3D10Blob_GetBufferPointer(
+						blob_error);
+				logger(LOG_ERROR,
+					"[gfx] Failed to compile shader %s. Error: %s",
+					path, err_msg);
+				ID3D10Blob_Release(blob_error);
 			}
-		} else if (shader->type == GFX_SHADER_PIXEL) {
-			if (FAILED(ID3D11Device1_CreatePixelShader(
-				    gfx->device,
-				    ID3D10Blob_GetBufferPointer(shader->blob),
-				    ID3D10Blob_GetBufferSize(shader->blob),
-				    NULL,
-				    (ID3D11PixelShader**)&shader->shader))) {
-				logger(LOG_DEBUG,
-				       "[gfx] Failed to build pixel shader!");
-
-				ID3D11PixelShader_Release(
-					(ID3D11PixelShader*)shader->shader);
-				shader->shader = NULL;
-			}
+			return RESULT_ERROR;
 		}
 	}
+	return RESULT_OK;
+}
+
+result gfx_shader_build_program(gfx_system_t* gfx, gfx_shader_t* shader)
+{
+	if (gfx == NULL || gfx->device == NULL || shader == NULL)
+		return RESULT_NULL;
+
+	switch (shader->type) {
+	case GFX_SHADER_VERTEX:
+		{
+			gfx_vertex_shader_t* vs = (gfx_vertex_shader_t*)shader->impl;
+			if (vs == NULL)
+				return RESULT_NULL;
+			ID3D10Blob* shader_blob = vs->blob;
+			break;
+		}
+	case GFX_SHADER_PIXEL:
+		{
+			gfx_pixel_shader_t* ps = (gfx_pixel_shader_t*)shader->impl;
+			if (ps == NULL)
+				return RESULT_NULL;
+			ID3D10Blob* shader_blob = ps->blob;
+			break;
+		}
+	default:
+		logger(LOG_ERROR, "[gfx] building of %s shaders not implemented!", gfx_shader_type_to_string(shader->type));
+		return RESULT_NOT_IMPL;
+	}
+
+	if (shader->type == GFX_SHADER_VERTEX) {
+		if (FAILED(ID3D11Device1_CreateVertexShader(
+				gfx->device,
+				ID3D10Blob_GetBufferPointer(shader->blob),
+				ID3D10Blob_GetBufferSize(shader->blob),
+				NULL,
+				(ID3D11VertexShader**)&shader->program))) {
+			logger(LOG_DEBUG,
+					"[gfx] Failed to build vertex shader!");
+
+			ID3D11VertexShader_Release(
+				(ID3D11VertexShader*)shader->program);
+			shader->program = NULL;
+		}
+	} else if (shader->type == GFX_SHADER_PIXEL) {
+		if (FAILED(ID3D11Device1_CreatePixelShader(
+				gfx->device,
+				ID3D10Blob_GetBufferPointer(shader->blob),
+				ID3D10Blob_GetBufferSize(shader->blob),
+				NULL,
+				(ID3D11PixelShader**)&shader->program))) {
+			logger(LOG_DEBUG,
+					"[gfx] Failed to build pixel shader!");
+
+			ID3D11PixelShader_Release(
+				(ID3D11PixelShader*)shader->program);
+			shader->program = NULL;
+		}
+	}
+
 
 	return RESULT_OK;
 }
 
-result gfx_shader_create_input_layout(gfx_system_t* gfx, gfx_shader_t* vs,
-				      enum gfx_vertex_type vertex_type)
+result gfx_vertex_shader_create_input_layout(gfx_system_t* gfx,
+					     gfx_vertex_shader_t* vs)
 {
+	if (!gfx || !vs || !vs->shader)
+		return RESULT_NULL;
+
 	const D3D11_INPUT_ELEMENT_DESC* descs = NULL;
 	size_t num_elems = 0;
 
-	switch (vertex_type) {
+	switch (vs->vertex_type) {
 	case GFX_VERTEX_POS_UV:
 		descs = &kVertexDescPositionUV[0];
 		num_elems = 2;
@@ -1059,9 +1184,9 @@ result gfx_shader_create_input_layout(gfx_system_t* gfx, gfx_shader_t* vs,
 		break;
 	}
 
-	if (descs) {
-		LPVOID data = ID3D10Blob_GetBufferPointer(vs->blob);
-		size_t size = ID3D10Blob_GetBufferSize(vs->blob);
+	if (descs && vs->shader->blob) {
+		LPVOID data = ID3D10Blob_GetBufferPointer(vs->shader->blob);
+		size_t size = ID3D10Blob_GetBufferSize(vs->shader->blob);
 		if (FAILED(ID3D11Device1_CreateInputLayout(
 			    gfx->device, descs, (UINT)num_elems, data, size,
 			    &vs->input_layout))) {
@@ -1073,7 +1198,7 @@ result gfx_shader_create_input_layout(gfx_system_t* gfx, gfx_shader_t* vs,
 	return RESULT_OK;
 }
 
-void gfx_shader_bind_primitive_topology(gfx_system_t* gfx, enum gfx_topology topo)
+void gfx_bind_primitive_topology(gfx_system_t* gfx, enum gfx_topology topo)
 {
 	if (gfx && gfx->ctx) {
 		ID3D11DeviceContext1_IASetPrimitiveTopology(
@@ -1081,7 +1206,8 @@ void gfx_shader_bind_primitive_topology(gfx_system_t* gfx, enum gfx_topology top
 	}
 }
 
-void gfx_shader_bind_input_layout(gfx_system_t* gfx, const gfx_shader_t* vs)
+void gfx_vertex_shader_bind_input_layout(gfx_system_t* gfx,
+					 const gfx_vertex_shader_t* vs)
 {
 	if (gfx && gfx->ctx && vs) {
 		ID3D11DeviceContext1_IASetInputLayout(gfx->ctx,
@@ -1100,11 +1226,14 @@ bool gfx_shader_add_var(gfx_shader_t* shader, gfx_shader_var_t* var)
 	return false;
 }
 
-bool gfx_shader_set_var_by_name(gfx_shader_t* shader, const char* name, const void* value, size_t size)
+bool gfx_shader_set_var_by_name(gfx_shader_t* shader, const char* name,
+				const void* value, size_t size)
 {
 	for (size_t i = 0; i < shader->vars.num_elems; i++) {
-		gfx_shader_var_t* var = (gfx_shader_var_t*)&shader->vars.elems[i];
-		if (var != NULL && !strcmp(var->name, name) && gfx_get_shader_var_size(var->type) == size) {
+		gfx_shader_var_t* var =
+			(gfx_shader_var_t*)&shader->vars.elems[i];
+		if (var != NULL && !strcmp(var->name, name) &&
+		    gfx_get_shader_var_size(var->type) == size) {
 			memcpy(var->data, value, size);
 			return true;
 		}
@@ -1112,11 +1241,13 @@ bool gfx_shader_set_var_by_name(gfx_shader_t* shader, const char* name, const vo
 	return false;
 }
 
-gfx_shader_var_t* gfx_shader_get_var_by_name(gfx_shader_t* shader, const char* name)
+gfx_shader_var_t* gfx_shader_get_var_by_name(gfx_shader_t* shader,
+					     const char* name)
 {
 	gfx_shader_var_t* found = NULL;
 	for (size_t i = 0; i < shader->vars.num_elems; i++) {
-		gfx_shader_var_t* var = (gfx_shader_var_t*)&shader->vars.elems[i];
+		gfx_shader_var_t* var =
+			(gfx_shader_var_t*)&shader->vars.elems[i];
 		if (var != NULL && !strcmp(var->name, name)) {
 			found = var;
 		}

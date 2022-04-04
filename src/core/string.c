@@ -17,7 +17,7 @@ bool str_contains(const char* str, const char* substring)
 	for (size_t i = 0; i < strlen(str); i++) {
 		size_t matches = 0;
 		for (size_t j = 0; j < sub_len; j++) {
-			if (str[i+matches] != substring[j])
+			if (str[i + matches] != substring[j])
 				break;
 			else
 				matches++;

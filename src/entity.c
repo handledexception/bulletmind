@@ -64,10 +64,10 @@ bool ent_init(entity_t** ent_list, const s32 num_ents)
 
 	const size_t sz_ent_list = sizeof(entity_t) * num_ents;
 	*ent_list = (entity_t*)mem_arena_alloc(&mem_arena, sz_ent_list,
-					   DEFAULT_ALIGNMENT);
+					       DEFAULT_ALIGNMENT);
 	memset(*ent_list, 0, sz_ent_list);
 
-	logger(LOG_INFO,  "ent_init OK\n");
+	logger(LOG_INFO, "ent_init OK\n");
 
 	return true;
 }
@@ -146,7 +146,7 @@ void ent_refresh_colliders(engine_t* eng, entity_t* e, f64 dt)
 			if (ent_has_caps(c, kEntityCollider)) {
 				if (bounds_intersects(&e->bbox, &c->bbox,
 						      EPSILON)) {
-					logger(LOG_DEBUG,  
+					logger(LOG_DEBUG,
 					       "%s (min {%f, %f, %f} max {%f, %f, %f}) intersects %s (min {%f, %f, %f} max {%f, %f, %f})",
 					       e->name, e->bbox.min.x,
 					       e->bbox.min.y, e->bbox.min.z,
@@ -189,7 +189,7 @@ void ent_refresh_emitters(engine_t* eng, entity_t* e, f64 dt)
 	// 		}
 	// 		if (inp_cmd_get_state(eng->inputs, kCommandPlayerAltFire) ==
 	// 		    true) {
-	// 			logger(LOG_INFO,  
+	// 			logger(LOG_INFO,
 	// 			       "eng_refresh - kCommandPlayerAltFire triggered!\n");
 	// 		}
 
@@ -313,7 +313,7 @@ void ent_refresh_renderables(engine_t* eng, entity_t* e, f64 dt)
 
 void ent_shutdown(entity_t* ent_list)
 {
-	logger(LOG_INFO,  "ent_shutdown OK\n");
+	logger(LOG_INFO, "ent_shutdown OK\n");
 }
 
 entity_t* ent_new(entity_t* ent_list)
@@ -324,12 +324,12 @@ entity_t* ent_new(entity_t* ent_list)
 	for (s32 edx = 0; edx < MAX_ENTITIES; edx++) {
 		e = ent_by_index(ent_list, edx);
 		if (e == NULL) {
-			logger(LOG_WARNING,   "Entity slot %d is NULL!\n", edx);
+			logger(LOG_WARNING, "Entity slot %d is NULL!\n", edx);
 			continue;
 		}
 
 		if (ent_has_no_caps(e)) {
-			logger(LOG_INFO,  
+			logger(LOG_INFO,
 			       "ent_new: found empty slot %d for entity\n",
 			       edx);
 			memset(e, 0, sizeof(entity_t));
@@ -345,7 +345,7 @@ entity_t* ent_by_index(entity_t* ent_list, const s32 idx)
 {
 	entity_t* e = &ent_list[idx];
 	if (e == NULL) {
-		logger(LOG_WARNING,   "ent_by_index - NULL entity at index %d\n",
+		logger(LOG_WARNING, "ent_by_index - NULL entity at index %d\n",
 		       idx);
 	}
 
@@ -412,10 +412,10 @@ entity_t* ent_spawn(entity_t* ent_list, const char* name, const vec2f_t org,
 		else
 			e->lifetime = e->timestamp + lifetime;
 
-		logger(LOG_INFO,  "ent_spawn: (%f) \"%s\" with caps %d\n",
+		logger(LOG_INFO, "ent_spawn: (%f) \"%s\" with caps %d\n",
 		       e->timestamp, e->name, caps);
 	} else
-		logger(LOG_WARNING,  
+		logger(LOG_WARNING,
 		       "ent_spawn: no slots found to spawn entity %s\n", name);
 
 	return e;
@@ -431,7 +431,7 @@ void ent_lifetime_update(entity_t* e)
 {
 	// kill entities that have a fixed lifetime
 	if (e->lifetime > 0.0 && (eng_get_time_sec() >= e->lifetime)) {
-		logger(LOG_INFO,  "Entity %s lifetime expired\n", e->name);
+		logger(LOG_INFO, "Entity %s lifetime expired\n", e->name);
 		e->caps = 0;
 	}
 }
@@ -539,7 +539,7 @@ bool ent_spawn_player_and_satellite(entity_t* ent_list, s32 cam_width,
 				     player_size, &player_color, kPlayerCaps,
 				     FOREVER);
 	if (player == NULL) {
-		logger(LOG_ERROR,  
+		logger(LOG_ERROR,
 		       "ent_init - failed to initialize player entity!\n");
 		return false;
 	}
@@ -555,7 +555,7 @@ bool ent_spawn_player_and_satellite(entity_t* ent_list, s32 cam_width,
 					sat_size, &sat_color, kSatelliteCaps,
 					FOREVER);
 	if (satellite == NULL) {
-		logger(LOG_ERROR,  
+		logger(LOG_ERROR,
 		       "ent_init - failed to initialize satellite entity!\n");
 		return false;
 	}
@@ -572,7 +572,7 @@ bool ent_spawn_enemy(entity_t* ent_list, s32 cam_width, s32 cam_height)
 	entity_t* enemy = ent_spawn(ent_list, "enemy", org, size, &color,
 				    kEnemyCaps, FOREVER);
 	if (enemy == NULL) {
-		logger(LOG_ERROR,  "ent_init - failed to spawn enemy!");
+		logger(LOG_ERROR, "ent_init - failed to spawn enemy!");
 		return false;
 	}
 

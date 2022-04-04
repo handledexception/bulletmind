@@ -4,7 +4,12 @@
 #include "gfx/gfx.h"
 #include "core/vector.h"
 
+typedef struct gfx_shader gfx_shader_t;
+typedef struct gfx_vertex_shader gfx_vertex_shader_t;
+
 struct gfx_scene {
+	gfx_shader_t* pixel_shader;
+	gfx_vertex_shader_t* vertex_shader;
 	VECTOR(gfx_shader_var_t) shader_vars;
 	struct gfx_vertex_data* vert_data;
 };

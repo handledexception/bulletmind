@@ -3,6 +3,7 @@
 
 #include "core/types.h"
 #include "core/export.h"
+#include "core/vector.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +30,13 @@ typedef enum {
 struct gfx_system;
 struct gfx_device;
 struct gfx_swapchain;
-struct gfx_shader;
+struct gfx_shader {
+	enum gfx_shader_type type;
+	void* impl;
+	gfx_buffer_t* cbuffer;
+	VECTOR(gfx_shader_var_t) vars;
+};
+struct gfx_vertex_shader;
 struct gfx_buffer;
 struct gfx_texture;
 struct gfx_zstencil;
@@ -40,6 +47,8 @@ typedef struct gfx_system gfx_system_t;
 typedef struct gfx_device gfx_device_t;
 typedef struct gfx_swapchain gfx_swapchain_t;
 typedef struct gfx_shader gfx_shader_t;
+typedef struct gfx_pixel_shader gfx_pixel_shader_t;
+typedef struct gfx_vertex_shader gfx_vertex_shader_t;
 typedef struct gfx_buffer gfx_buffer_t;
 typedef struct gfx_texture gfx_texture_t;
 
@@ -220,17 +229,11 @@ enum gfx_shader_var_type {
 typedef struct gfx_shader_var {
 	const char* name;
 	enum gfx_shader_var_type type;
-	// size_t size;   // size of the variable (16-byte aligned)
-	// use get_shader_var_size
 	size_t offset; // offset inside of constant buffer
 	void* data;
 } gfx_shader_var_t;
 
-
-BM_EXPORT size_t gfx_get_shader_var_size(enum gfx_shader_var_type type);
-
-BM_EXPORT enum gfx_vertex_type gfx_vertex_type_from_string(const char* s);
-// system
+/* system ------------------------------------------------------------------ */
 BM_EXPORT result gfx_enumerate_adapters(gfx_system_t* gfx, u32 adapter_index,
 					u32* count);
 BM_EXPORT result gfx_enumerate_adapter_monitors(gfx_system_t* gfx);
@@ -250,54 +253,79 @@ BM_EXPORT void gfx_render_begin(gfx_system_t* gfx);
 BM_EXPORT void gfx_render_end(gfx_system_t* gfx, bool vsync, u32 flags);
 BM_EXPORT void gfx_set_vertex_shader(gfx_system_t* gfx, gfx_shader_t* vs);
 BM_EXPORT void gfx_set_pixel_shader(gfx_system_t* gfx, gfx_shader_t* ps);
+BM_EXPORT enum gfx_vertex_type gfx_get_vertex_type(gfx_system_t* gfx);
 BM_EXPORT void gfx_init_sprite(gfx_system_t* gfx, gfx_buffer_t* vertex_buffer);
 BM_EXPORT void gfx_init_cube(gfx_system_t* gfx, gfx_buffer_t* vertex_buffer);
 BM_EXPORT void gfx_draw_sprite(gfx_system_t* gfx, gfx_texture_t* texture,
 			       u32 width, u32 height, u32 flags);
 
-// buffer
+/* buffer ------------------------------------------------------------------ */
 BM_EXPORT result gfx_buffer_create(gfx_system_t* gfx, const void* data,
 				   size_t size, enum gfx_buffer_type type,
 				   enum gfx_buffer_usage usage,
 				   gfx_buffer_t** buffer);
 BM_EXPORT void gfx_buffer_free(gfx_buffer_t* buffer);
 BM_EXPORT result gfx_buffer_copy(gfx_system_t* gfx, gfx_buffer_t* buffer,
-				      const void* data, size_t size);
+				 const void* data, size_t size);
 BM_EXPORT void gfx_bind_vertex_buffer(gfx_system_t* gfx, gfx_buffer_t* vb,
 				      u32 stride, u32 offset);
 BM_EXPORT void gfx_buffer_upload_constants(gfx_system_t* gfx,
-					  const gfx_buffer_t* buffer,
-					  enum gfx_shader_type type);
+					   const gfx_buffer_t* buffer,
+					   enum gfx_shader_type type);
+BM_EXPORT enum gfx_vertex_type gfx_vertex_type_from_string(const char* s);
 
-// shader
+/* shader ------------------------------------------------------------------ */
 BM_EXPORT void gfx_shader_init(gfx_shader_t* shader);
-BM_EXPORT gfx_shader_t* gfx_shader_create_from_file(const char* path,
-						     const char* entrypoint,
-						     const char* target,
-						     enum gfx_shader_type type);
+BM_EXPORT gfx_shader_t* gfx_shader_create(enum gfx_shader_type type);
 BM_EXPORT void gfx_shader_free(gfx_shader_t* shader);
-BM_EXPORT result gfx_shader_build(gfx_system_t* gfx, gfx_shader_t* shader);
-BM_EXPORT result gfx_shader_create_input_layout(
-	gfx_system_t* gfx, gfx_shader_t* vs, enum gfx_vertex_type vertex_type);
-BM_EXPORT void gfx_shader_bind_primitive_topology(gfx_system_t* gfx,
-					   enum gfx_topology topo);
-BM_EXPORT void gfx_shader_bind_input_layout(gfx_system_t* gfx, const gfx_shader_t* vs);
-BM_EXPORT bool gfx_shader_add_var(gfx_shader_t* shader, gfx_shader_var_t* var);
-BM_EXPORT bool gfx_shader_set_var_by_name(gfx_shader_t* shader, const char* name, const void* value);
-BM_EXPORT gfx_shader_var_t* gfx_shader_get_var_by_name(gfx_shader_t* shader, const char* name);
+BM_EXPORT void gfx_vertex_shader_init(gfx_vertex_shader_t* vs);
+BM_EXPORT gfx_vertex_shader_t* gfx_vertex_shader_create();
+BM_EXPORT void gfx_vertex_shader_free(gfx_vertex_shader_t* vs);
+BM_EXPORT void gfx_pixel_shader_init(gfx_pixel_shader_t* ps);
+BM_EXPORT gfx_pixel_shader_t* gfx_pixel_shader_create();
+BM_EXPORT void gfx_pixel_shader_free(gfx_pixel_shader_t* ps);
+BM_EXPORT result gfx_shader_compile_from_file(gfx_system_t* gfx,
+						    const char* path,
+						    const char* entrypoint,
+						    const char* target,
+						    gfx_shader_t* shader);
+BM_EXPORT result gfx_shader_build_program(gfx_system_t* gfx, gfx_shader_t* shader);
 
-// sampler
+BM_EXPORT gfx_vertex_shader_t*
+gfx_vertex_shader_create_from_file(gfx_system_t* gfx, const char* path,
+				   const char* entrypoint, const char* target,
+				   enum gfx_vertex_type type);
+
+BM_EXPORT void gfx_vertex_shader_free(gfx_vertex_shader_t* vs);
+
+BM_EXPORT result gfx_vertex_shader_create_input_layout(gfx_system_t* gfx,
+						       gfx_vertex_shader_t* vs);
+BM_EXPORT enum gfx_vertex_type gfx_shader_get_vertex_type(gfx_shader_t* vs);
+BM_EXPORT void gfx_bind_primitive_topology(gfx_system_t* gfx,
+					   enum gfx_topology topo);
+BM_EXPORT void
+gfx_vertex_shader_bind_input_layout(gfx_system_t* gfx,
+				    const gfx_vertex_shader_t* vs);
+BM_EXPORT bool gfx_shader_add_var(gfx_shader_t* shader, gfx_shader_var_t* var);
+BM_EXPORT bool gfx_shader_set_var_by_name(gfx_shader_t* shader,
+					  const char* name, const void* value,
+					  size_t size);
+BM_EXPORT gfx_shader_var_t* gfx_shader_get_var_by_name(gfx_shader_t* shader,
+						       const char* name);
+BM_EXPORT size_t gfx_get_shader_var_size(enum gfx_shader_var_type type);
+BM_EXPORT const char* gfx_shader_type_to_string(enum gfx_shader_type type);
+/* sampler ----------------------------------------------------------------- */
 BM_EXPORT result gfx_init_sampler_state(gfx_system_t* gfx);
 BM_EXPORT void gfx_bind_sampler_state(gfx_system_t* gfx, gfx_texture_t* texture,
 				      u32 slot);
 
-// rasterizer
+/* rasterizer -------------------------------------------------------------- */
 BM_EXPORT result gfx_init_rasterizer(gfx_system_t* gfx,
 				     enum gfx_culling_mode culling,
 				     enum gfx_raster_flags flags);
 BM_EXPORT void gfx_bind_rasterizer(gfx_system_t* gfx);
 
-// texture
+/* texture ----------------------------------------------------------------- */
 BM_EXPORT result gfx_create_texture2d(gfx_system_t* gfx, const u8* data,
 				      const struct gfx_texture_desc* desc,
 				      gfx_texture_t** texture2d);
@@ -318,7 +346,7 @@ BM_EXPORT void gfx_bind_zstencil_state(gfx_system_t* gfx,
 				       const struct gfx_zstencil_state* state);
 BM_EXPORT void gfx_toggle_zstencil(gfx_system_t* gfx, bool enabled);
 
-// misc
+/* misc -------------------------------------------------------------------- */
 BM_EXPORT u32 gfx_get_bits_per_pixel(enum gfx_pixel_format pf);
 BM_EXPORT u32 gfx_texture_get_width(gfx_texture_t* texture);
 BM_EXPORT u32 gfx_texture_get_height(gfx_texture_t* texture);

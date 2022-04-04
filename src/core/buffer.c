@@ -81,22 +81,23 @@ u8 buffer_resize(buffer_t* buf, size_t size)
 		} else
 			// shrink the buffer
 			if (size <= buf->size && buf->data) {
-			u8* shrink = realloc(buf->data, size);
-			if (shrink != NULL) {
-				buf->data = shrink;
-			} else {
-				free(shrink);
-				return -1;
-			}
-			buf->size = size;
-		} else
-			// grow the buffer
-			if (size > buf->size) {
-			u8* grow = (u8*)malloc(sizeof(u8) * size);
-			memcpy(grow, buf->data, size);
-			buf->data = grow;
-			buf->size = size;
-		}
+				u8* shrink = realloc(buf->data, size);
+				if (shrink != NULL) {
+					buf->data = shrink;
+				} else {
+					free(shrink);
+					return -1;
+				}
+				buf->size = size;
+			} else
+				// grow the buffer
+				if (size > buf->size) {
+					u8* grow =
+						(u8*)malloc(sizeof(u8) * size);
+					memcpy(grow, buf->data, size);
+					buf->data = grow;
+					buf->size = size;
+				}
 	}
 
 	return 0;

@@ -54,7 +54,8 @@ extern size_t mem_arena_allocated_bytes;
 extern u8* mem_arena_backing_buffer;
 extern arena_t mem_arena;
 
-BM_EXPORT void mem_arena_init(arena_t* arena, void* backing_buffer, size_t sz_backing);
+BM_EXPORT void mem_arena_init(arena_t* arena, void* backing_buffer,
+			      size_t sz_backing);
 BM_EXPORT void mem_arena_free(arena_t* arena);
 BM_EXPORT void* mem_arena_alloc(arena_t* arena, size_t size, size_t align);
 

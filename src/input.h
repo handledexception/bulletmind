@@ -73,9 +73,10 @@ typedef struct virtual_button_s {
 } virtual_button_t;
 
 struct input_state {
-	struct gamepad gamepads[MAX_GAMEPADS]; 				/* array of gamepad states */
-	struct keyboard_key keys[MAX_KEYBOARD_KEYS];  		/* array of keyboard key states */
-	struct mouse_device mouse;                    		/* mouse state */
+	struct gamepad gamepads[MAX_GAMEPADS]; /* array of gamepad states */
+	struct keyboard_key
+		keys[MAX_KEYBOARD_KEYS]; /* array of keyboard key states */
+	struct mouse_device mouse;       /* mouse state */
 	virtual_button_t buttons[MAX_VIRTUAL_BUTTONS];
 	input_mode_t mode;
 };
@@ -92,8 +93,10 @@ bool inp_init_gamepads(struct input_state* inputs);
 void inp_set_key_state(struct keyboard_key* keys, u16 scancode, u8 state);
 u8 inp_get_key_state(struct keyboard_key* keys, u16 scancode);
 
-void inp_set_mouse_pos(struct mouse_device* mouse, const vec2i_t scr, const vec2i_t wnd);
-void inp_set_mouse_button_state(struct mouse_device* mouse, u16 button, u8 state);
+void inp_set_mouse_pos(struct mouse_device* mouse, const vec2i_t scr,
+		       const vec2i_t wnd);
+void inp_set_mouse_button_state(struct mouse_device* mouse, u16 button,
+				u8 state);
 u8 inp_get_mouse_button_state(struct mouse_device* mouse, u16 button);
 
 // Gamepad deadzone
@@ -109,11 +112,13 @@ void inp_set_gamepad_button_state(struct gamepad* gamepad,
 				  gamepad_button_kind_t button, u8 state);
 u8 inp_get_gamepad_button_state(struct gamepad* gamepad,
 				gamepad_button_kind_t button);
-void inp_set_gamepad_axis_value(struct gamepad* gamepad, gamepad_axis_kind_t axis,
-				u16 value);
-s16 inp_get_gamepad_axis_value(struct gamepad* gamepad, gamepad_axis_kind_t axis);
+void inp_set_gamepad_axis_value(struct gamepad* gamepad,
+				gamepad_axis_kind_t axis, u16 value);
+s16 inp_get_gamepad_axis_value(struct gamepad* gamepad,
+			       gamepad_axis_kind_t axis);
 
-bool inp_bind_virtual_key(struct input_state* inputs, command_t cmd, u16 scancode);
+bool inp_bind_virtual_key(struct input_state* inputs, command_t cmd,
+			  u16 scancode);
 bool inp_bind_virtual_mouse_button(struct input_state* inputs, command_t cmd,
 				   u16 mouse_button);
 bool inp_bind_virtual_gamepad_button(struct input_state* inputs, command_t cmd,

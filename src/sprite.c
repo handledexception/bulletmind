@@ -57,7 +57,7 @@ bool sprite_load(const char* path, sprite_t** out)
 	const char* file_ext = path_get_extension(path);
 	if (strcmp(file_ext, "tga") == 0) {
 		img = (sprite_t*)mem_arena_alloc(&mem_arena, sizeof(sprite_t),
-					     DEFAULT_ALIGNMENT);
+						 DEFAULT_ALIGNMENT);
 		img->type = IMG_TYPE_TARGA;
 
 		file_ptr = fopen(path, "rb");
@@ -99,7 +99,7 @@ bool sprite_load(const char* path, sprite_t** out)
 		size_t pixel_size = width * height * bytes_per_pixel;
 
 		img->data = (u8*)mem_arena_alloc(&mem_arena, pixel_size,
-					     DEFAULT_ALIGNMENT);
+						 DEFAULT_ALIGNMENT);
 
 		logger(LOG_INFO, "sprite_load - %s, %dx%d %d bytes per pixel\n",
 		       path, width, height, bytes_per_pixel);
@@ -148,7 +148,7 @@ void sprite_create(u8* data, u32 w, u32 h, u32 bpp, u32 stride, u32 format,
 		   sprite_t** out)
 {
 	sprite_t* img = (sprite_t*)mem_arena_alloc(&mem_arena, sizeof(sprite_t),
-					       DEFAULT_ALIGNMENT);
+						   DEFAULT_ALIGNMENT);
 	img->type = IMG_TYPE_RAW;
 	size_t pixel_size = w * h * (bpp / 8);
 	img->data =
@@ -202,6 +202,6 @@ void sprite_shutdown(sprite_t* img)
 			SDL_DestroyTexture(img->texture);
 			img->texture = NULL;
 		}
-		logger(LOG_INFO,  "imagefile_shutdown: OK!\n");
+		logger(LOG_INFO, "imagefile_shutdown: OK!\n");
 	}
 }

@@ -93,7 +93,7 @@ void hashmap_insert(hashmap_t* map, hash_key_t* key, const void* elem,
 	u32 hash = 0;
 	if (key != NULL)
 		hash = hash_key(key);
-		// hash = hash_string(key, strlen(key));
+	// hash = hash_string(key, strlen(key));
 	struct bucket buk;
 	buk.key = hash;
 	buk.val = mem_alloc(elem_size);

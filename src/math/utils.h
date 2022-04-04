@@ -69,14 +69,14 @@ static inline bool f32_compare(float f1, float f2, float epsilon)
  * > t = 0.900000, lerp = 90.099998
  * > t = 1.000000, lerp = 100.000000
  */
-static inline f32 lerp(f32 a, f32 b, f32  t)
+static inline f32 lerp(f32 a, f32 b, f32 t)
 {
-	return a + (b-a) * t;
+	return a + (b - a) * t;
 }
 
 static inline f64 lerp64(f64 a, f64 b, f64 t)
 {
-	return a + (b-a) * t;
+	return a + (b - a) * t;
 }
 
 #ifdef __cplusplus

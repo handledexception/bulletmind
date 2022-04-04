@@ -59,7 +59,6 @@ struct engine_gfx {
 	gfx_system_t* system;
 	camera_t camera;
 	VECTOR(struct gfx_scene*) scenes;
-	VECTOR(gfx_shader_var_t) shader_vars;
 	gfx_buffer_t* vertex_buffer;
 	u8* vbuffer_data;
 	gfx_buffer_t* cbuffer; // TODO(paulh): should go with shader(s)?

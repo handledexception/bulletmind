@@ -64,6 +64,7 @@ typedef enum {
 	RESULT_NULL = 4,
 	RESULT_OOM = 5,
 	RESULT_NOT_IMPL = 6,
+	RESULT_NO_DATA = 7,
 	RESULT_UNKNOWN
 } result;
 

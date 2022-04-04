@@ -59,7 +59,7 @@ void gfx_scene_free(struct gfx_scene* scene)
 			if (scene->vert_data->tex_verts) {
 				if (scene->vert_data->tex_verts->data) {
 					mem_free(scene->vert_data->tex_verts
-							->data);
+							 ->data);
 					scene->vert_data->tex_verts->data =
 						NULL;
 				}

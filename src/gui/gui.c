@@ -9,7 +9,7 @@ gui_platform_t* gui = NULL;
 
 bool gui_init(void)
 {
-	logger(LOG_INFO,  "gui_init: Initializing GUI subsystem...");
+	logger(LOG_INFO, "gui_init: Initializing GUI subsystem...");
 
 	if (gui)
 		gui_shutdown();
@@ -44,7 +44,8 @@ void gui_shutdown(void)
 {
 	if (gui) {
 		for (size_t i = 0; i < gui->windows.num_elems; i++) {
-			gui_window_t* window = (gui_window_t*)gui->windows.elems[i];
+			gui_window_t* window =
+				(gui_window_t*)gui->windows.elems[i];
 			gui_destroy_window(window);
 		}
 		vec_free(gui->windows);
@@ -153,7 +154,7 @@ gui_window_t* gui_get_window_by_handle(void* handle)
 
 void gui_clear_key_state()
 {
-    if (!gui)
+	if (!gui)
 		return;
 	for (size_t i = 0; i < SCANCODE_MAX; i++)
 		gui->keyboard[i].state = KEY_UP;

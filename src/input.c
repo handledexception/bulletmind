@@ -31,24 +31,24 @@ bool inp_init(struct input_state* inputs)
 
 	bool ok = inp_init_gamepads(inputs);
 	if (!ok) {
-		logger(LOG_ERROR,"Error initializing gamepads!");
+		logger(LOG_ERROR, "Error initializing gamepads!");
 		return false;
 	}
-	logger(LOG_INFO,  "Initialized gamepads OK");
+	logger(LOG_INFO, "Initialized gamepads OK");
 
 	ok = inp_init_keyboard(inputs);
 	if (!ok) {
-		logger(LOG_ERROR,"Error initializing keyboard!");
+		logger(LOG_ERROR, "Error initializing keyboard!");
 		return ok;
 	}
-	logger(LOG_INFO,  "Initialized keyboard OK");
+	logger(LOG_INFO, "Initialized keyboard OK");
 
 	ok = inp_init_mouse(inputs);
 	if (!ok) {
-		logger(LOG_ERROR,"Error initializing mouse!");
+		logger(LOG_ERROR, "Error initializing mouse!");
 		return ok;
 	}
-	logger(LOG_INFO,  "Initialized mouse OK");
+	logger(LOG_INFO, "Initialized mouse OK");
 
 	for (size_t i = 0; i < kCommandMax; i++) {
 		inputs->buttons[i].name = NULL;
@@ -86,7 +86,7 @@ bool inp_init(struct input_state* inputs)
 	inp_bind_virtual_mouse_button(inputs, kCommandPlayerAltFire,
 				      MOUSE_BUTTON_RIGHT);
 
-	logger(LOG_INFO,  "inp_init OK\n");
+	logger(LOG_INFO, "inp_init OK\n");
 
 	return true;
 }
@@ -116,9 +116,11 @@ void inp_refresh_pressed(struct input_state* inputs, const gui_event_t* evt)
 	if (evt) {
 		switch (evt->type) {
 		case GUI_EVENT_KEY:
-			inp_set_key_state(&inputs->keys[0], evt->keyboard.key.scancode, evt->keyboard.key.state);
+			inp_set_key_state(&inputs->keys[0],
+					  evt->keyboard.key.scancode,
+					  evt->keyboard.key.state);
 			break;
-		/*
+			/*
 		case SDL_MOUSEBUTTONDOWN:
 			//printf("Mouse Button %d DOWN\n", SDL_BUTTON(evt->button.button));
 			inp_set_mouse_button_state(&inputs->mouse,
@@ -285,7 +287,8 @@ u8 inp_get_key_state(struct keyboard_key* keys, u16 scancode)
 	return state;
 }
 
-void inp_set_mouse_pos(struct mouse_device* mouse, const vec2i_t scr, const vec2i_t wnd)
+void inp_set_mouse_pos(struct mouse_device* mouse, const vec2i_t scr,
+		       const vec2i_t wnd)
 {
 	if (mouse) {
 		mouse->screen_pos = scr;
@@ -293,7 +296,8 @@ void inp_set_mouse_pos(struct mouse_device* mouse, const vec2i_t scr, const vec2
 	}
 }
 
-void inp_set_mouse_button_state(struct mouse_device* mouse, u16 button, u8 state)
+void inp_set_mouse_button_state(struct mouse_device* mouse, u16 button,
+				u8 state)
 {
 	if (mouse) {
 		mouse->buttons[button].button = button;
@@ -476,7 +480,7 @@ bool inp_enumerate_gamepad_buttons(struct gamepad* gamepad)
 		gamepad->buttons[kind].name = button_name;
 		gamepad->buttons[kind].timestamp = os_get_time_ns();
 
-		logger(LOG_INFO,  "Enumerated gamepad button %s\n", button_name);
+		logger(LOG_INFO, "Enumerated gamepad button %s\n", button_name);
 	}
 
 	return btn_err;
@@ -486,8 +490,8 @@ bool inp_enumerate_gamepad_axes(struct gamepad* gamepad)
 {
 	bool axis_err = false;
 
-	for (s32 adx = (s32)GAMEPAD_AXIS_LEFT_STICK_X; adx < (s32)GAMEPAD_AXES_MAX;
-	     adx++) {
+	for (s32 adx = (s32)GAMEPAD_AXIS_LEFT_STICK_X;
+	     adx < (s32)GAMEPAD_AXES_MAX; adx++) {
 		const SDL_GameControllerAxis axis = (SDL_GameControllerAxis)adx;
 
 		const char* axis_name =
@@ -515,7 +519,7 @@ bool inp_enumerate_gamepad_axes(struct gamepad* gamepad)
 		gamepad->axes[kind].kind = kind;
 		gamepad->axes[kind].timestamp = os_get_time_ns();
 
-		logger(LOG_INFO,  "Enumerated gamepad axis %s\n", axis_name);
+		logger(LOG_INFO, "Enumerated gamepad axis %s\n", axis_name);
 	}
 
 	return axis_err;
@@ -539,14 +543,15 @@ u8 inp_get_gamepad_button_state(struct gamepad* gamepad,
 	return state;
 }
 
-void inp_set_gamepad_axis_value(struct gamepad* gamepad, gamepad_axis_kind_t axis,
-				u16 value)
+void inp_set_gamepad_axis_value(struct gamepad* gamepad,
+				gamepad_axis_kind_t axis, u16 value)
 {
 	if (gamepad)
 		gamepad->axes[axis].value = value;
 }
 
-s16 inp_get_gamepad_axis_value(struct gamepad* gamepad, gamepad_axis_kind_t axis)
+s16 inp_get_gamepad_axis_value(struct gamepad* gamepad,
+			       gamepad_axis_kind_t axis)
 {
 	s16 value = 0;
 	if (gamepad)
@@ -554,12 +559,13 @@ s16 inp_get_gamepad_axis_value(struct gamepad* gamepad, gamepad_axis_kind_t axis
 	return value;
 }
 
-bool inp_bind_virtual_key(struct input_state* inputs, command_t cmd, u16 scancode)
+bool inp_bind_virtual_key(struct input_state* inputs, command_t cmd,
+			  u16 scancode)
 {
 	if (cmd < MAX_VIRTUAL_BUTTONS && scancode < SCANCODE_MAX) {
 		inputs->buttons[cmd].state = 0;
 		inputs->buttons[cmd].keyboard_key = &inputs->keys[scancode];
-		logger(LOG_INFO,  "Command %s bound to key %d\n",
+		logger(LOG_INFO, "Command %s bound to key %d\n",
 		       cmd_get_name(cmd), scancode);
 		return true;
 	}
@@ -574,7 +580,7 @@ bool inp_bind_virtual_mouse_button(struct input_state* inputs, command_t cmd,
 		inputs->buttons[cmd].state = 0;
 		inputs->buttons[cmd].mouse_button =
 			&inputs->mouse.buttons[mouse_button];
-		logger(LOG_INFO,  "Command %s bound to mouse button %d\n",
+		logger(LOG_INFO, "Command %s bound to mouse button %d\n",
 		       cmd_get_name(cmd), mouse_button);
 		return true;
 	}
