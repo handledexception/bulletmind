@@ -290,6 +290,7 @@ BM_EXPORT result gfx_shader_compile_from_file(gfx_system_t* gfx,
 						    const char* target,
 						    gfx_shader_t* shader);
 BM_EXPORT result gfx_shader_build_program(gfx_system_t* gfx, gfx_shader_t* shader);
+BM_EXPORT result gfx_shader_create_input_layout(gfx_system_t* gfx, gfx_shader_t* vs);
 
 BM_EXPORT gfx_vertex_shader_t*
 gfx_vertex_shader_create_from_file(gfx_system_t* gfx, const char* path,
@@ -298,8 +299,7 @@ gfx_vertex_shader_create_from_file(gfx_system_t* gfx, const char* path,
 
 BM_EXPORT void gfx_vertex_shader_free(gfx_vertex_shader_t* vs);
 
-BM_EXPORT result gfx_vertex_shader_create_input_layout(gfx_system_t* gfx,
-						       gfx_vertex_shader_t* vs);
+
 BM_EXPORT enum gfx_vertex_type gfx_shader_get_vertex_type(gfx_shader_t* vs);
 BM_EXPORT void gfx_bind_primitive_topology(gfx_system_t* gfx,
 					   enum gfx_topology topo);
