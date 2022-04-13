@@ -4,11 +4,11 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Clean Build",
+            "label": "clean build debug (x64)",
             "type": "shell",
             "group": "build",
             "windows": {
-                "command": "rmdir /s /q ${workspaceFolder}\\ninja",
+                "command": "rmdir /s /q ${workspaceFolder}\\ninja-debug-x64",
             }
         },
         {
@@ -21,7 +21,22 @@
             }
         },
         {
-            "label": "ninja build debug",
+            "label": "ninja build debug (x86)",
+            "type": "shell",
+            "group":{
+                "kind": "build",
+                "isDefault": false
+            },
+            "windows": {
+                "command": "ninja",
+                "args": [ "-f", "build.ninja" ]
+            },
+            "options": {
+                "cwd": "${workspaceFolder}\\ninja-debug-x86"
+            }
+        },
+        {
+            "label": "ninja build debug (x64)",
             "type": "shell",
             "group":{
                 "kind": "build",
@@ -32,7 +47,7 @@
                 "args": [ "-f", "build.ninja" ]
             },
             "options": {
-                "cwd": "${workspaceFolder}\\ninja-debug-x86"
+                "cwd": "${workspaceFolder}\\ninja-debug-x64"
             }
         }
     ]

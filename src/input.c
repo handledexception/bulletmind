@@ -98,7 +98,8 @@ void inp_refresh_pressed(struct input_state* inputs, const gui_event_t* evt)
 {
 	if (evt) {
 		switch (evt->type) {
-		case GUI_EVENT_KEY:
+		case GUI_EVENT_KEY_DOWN:
+		case GUI_EVENT_KEY_UP:
 			inp_set_key_state(&inputs->keys[0],
 					  evt->keyboard.key.scancode,
 					  evt->keyboard.key.state);

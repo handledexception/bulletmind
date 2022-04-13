@@ -125,8 +125,14 @@ void gui_show_window(gui_window_t* window, bool shown)
 {
 	if (!gui || !window)
 		return;
-
 	gui->show_window(window, shown);
+}
+
+void gui_set_window_pos(gui_window_t* window, int x, int y)
+{
+	if (!gui || !window)
+		return;
+	gui->set_window_pos(window, x, y);
 }
 
 void* gui_get_window_handle(gui_window_t* window)

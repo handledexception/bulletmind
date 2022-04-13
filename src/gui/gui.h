@@ -59,8 +59,11 @@ typedef enum {
 
 typedef enum {
 	GUI_EVENT_NONE,
-	GUI_EVENT_MOUSE,
-	GUI_EVENT_KEY,
+	GUI_EVENT_MOUSE_MOTION,
+	GUI_EVENT_MOUSE_BUTTON_DOWN,
+	GUI_EVENT_MOUSE_BUTTON_UP,
+	GUI_EVENT_KEY_DOWN,
+	GUI_EVENT_KEY_UP,
 	GUI_EVENT_TEXT,
 	GUI_EVENT_WINDOW,
 	GUI_EVENT_TOUCH,
@@ -104,6 +107,7 @@ struct gui_platform {
 	bool (*create_window)(gui_window_t* window);
 	void (*destroy_window)(gui_window_t* window);
 	void (*show_window)(gui_window_t* window, bool shown);
+	void (*set_window_pos)(gui_window_t* window, int x, int y);
 	void* (*get_handle)(gui_window_t* window);
 	void (*get_global_mouse_state)(struct mouse_device* mouse);
 };

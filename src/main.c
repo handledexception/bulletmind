@@ -30,7 +30,8 @@ result app_init(struct application* app, s32 version)
 	char ver_str[16];
 	version_string(app->version, ver_str);
 	vec_push_back(app->windows, gui_create_window("Bulletmind", 100, 100, 1280, 720, 0, NULL));
-	vec_push_back(app->windows, gui_create_window("app_main", 100, 100, 1280, 720, 0, gui->windows.elems[0]));
+	gui_window_t* main_window = gui->windows.elems[0];
+	vec_push_back(app->windows, gui_create_window("app_main", main_window->x, main_window->y, 1280, 720, 0, main_window));
 	app->inputs = inp_new();
 	inp_bind_virtual_key(app->inputs, kCommandQuit, SCANCODE_ESCAPE);
 	inp_bind_virtual_key(app->inputs, kCommandPlayerUp, SCANCODE_W);
@@ -49,10 +50,17 @@ void app_refresh(struct application* app)
 
 		gui_event_t evt;
 		while (gui_poll_event(&evt)) {
+			// if (evt.type == GUI_EVENT_MOUSE_MOTION)
+			// 	printf("mx: %d my: %d\n", evt.mouse.screen_pos.x, evt.mouse.screen_pos.y);
 			inp_refresh_pressed(app->inputs, &evt);
 			if (inp_cmd_get_state(app->inputs, kCommandQuit))
 				app->running = false;
 		}
+		struct mouse_device mouse;
+		gui_get_global_mouse_state(&mouse);
+		printf("sx: %d sy: %d | wx: %d wy: %d\n",
+			mouse.screen_pos.x, mouse.screen_pos.y,
+			mouse.window_pos.x, mouse.window_pos.y);
 	}
 }
 
