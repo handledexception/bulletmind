@@ -30,12 +30,6 @@ typedef enum {
 struct gfx_system;
 struct gfx_device;
 struct gfx_swapchain;
-struct gfx_shader {
-	enum gfx_shader_type type;
-	void* impl;
-	gfx_buffer_t* cbuffer;
-	VECTOR(gfx_shader_var_t) vars;
-};
 struct gfx_vertex_shader;
 struct gfx_buffer;
 struct gfx_texture;
@@ -46,11 +40,46 @@ struct gfx_zstencil_state;
 typedef struct gfx_system gfx_system_t;
 typedef struct gfx_device gfx_device_t;
 typedef struct gfx_swapchain gfx_swapchain_t;
+typedef struct gfx_buffer gfx_buffer_t;
+typedef struct gfx_texture gfx_texture_t;
 typedef struct gfx_shader gfx_shader_t;
 typedef struct gfx_pixel_shader gfx_pixel_shader_t;
 typedef struct gfx_vertex_shader gfx_vertex_shader_t;
-typedef struct gfx_buffer gfx_buffer_t;
-typedef struct gfx_texture gfx_texture_t;
+
+enum gfx_shader_var_type {
+	GFX_SHADER_PARAM_BOOL,
+	GFX_SHADER_PARAM_S32,
+	GFX_SHADER_PARAM_U32,
+	GFX_SHADER_PARAM_F32,
+	GFX_SHADER_PARAM_F64,
+	GFX_SHADER_PARAM_VEC2,
+	GFX_SHADER_PARAM_VEC3,
+	GFX_SHADER_PARAM_VEC4,
+	GFX_SHADER_PARAM_MAT4,
+	GFX_SHADER_PARAM_TEX
+};
+
+enum gfx_shader_type {
+	GFX_SHADER_VERTEX,
+	GFX_SHADER_PIXEL,
+	GFX_SHADER_COMPUTE,
+	GFX_SHADER_GEOMETRY,
+	GFX_SHADER_UNKNOWN
+};
+
+typedef struct gfx_shader_var {
+	const char* name;
+	enum gfx_shader_var_type type;
+	size_t offset; // offset inside of constant buffer
+	void* data;
+} gfx_shader_var_t;
+
+struct gfx_shader {
+	enum gfx_shader_type type;
+	void* impl;
+	gfx_buffer_t* cbuffer;
+	VECTOR(gfx_shader_var_t) vars;
+};
 
 struct gfx_window {
 #if defined(_WIN32)
@@ -77,14 +106,6 @@ enum gfx_texture_type {
 	GFX_TEXTURE_2D,
 	GFX_TEXTURE_3D,
 	GFX_TEXTURE_CUBE,
-};
-
-enum gfx_shader_type {
-	GFX_SHADER_VERTEX,
-	GFX_SHADER_PIXEL,
-	GFX_SHADER_COMPUTE,
-	GFX_SHADER_GEOMETRY,
-	GFX_SHADER_UNKNOWN
 };
 
 struct gfx_config {
@@ -203,6 +224,12 @@ enum gfx_vertex_type {
 	GFX_VERTEX_LAST = GFX_VERTEX_UNKNOWN
 };
 
+enum gfx_vertex_attribute {
+	GFX_VERTEX_POS,
+	GFX_VERTEX_UV,
+	GFX_VERTEX_COLOR,
+};
+
 struct gfx_vertex_data {
 	enum gfx_vertex_type type;
 	struct vec3f* positions;
@@ -212,26 +239,6 @@ struct gfx_vertex_data {
 	struct texture_vertex* tex_verts;
 	size_t num_vertices;
 };
-
-enum gfx_shader_var_type {
-	GFX_SHADER_PARAM_BOOL,
-	GFX_SHADER_PARAM_S32,
-	GFX_SHADER_PARAM_U32,
-	GFX_SHADER_PARAM_F32,
-	GFX_SHADER_PARAM_F64,
-	GFX_SHADER_PARAM_VEC2,
-	GFX_SHADER_PARAM_VEC3,
-	GFX_SHADER_PARAM_VEC4,
-	GFX_SHADER_PARAM_MAT4,
-	GFX_SHADER_PARAM_TEX
-};
-
-typedef struct gfx_shader_var {
-	const char* name;
-	enum gfx_shader_var_type type;
-	size_t offset; // offset inside of constant buffer
-	void* data;
-} gfx_shader_var_t;
 
 /* system ------------------------------------------------------------------ */
 BM_EXPORT result gfx_enumerate_adapters(gfx_system_t* gfx, u32 adapter_index,
@@ -299,8 +306,8 @@ gfx_vertex_shader_create_from_file(gfx_system_t* gfx, const char* path,
 
 BM_EXPORT void gfx_vertex_shader_free(gfx_vertex_shader_t* vs);
 
-
-BM_EXPORT enum gfx_vertex_type gfx_shader_get_vertex_type(gfx_shader_t* vs);
+BM_EXPORT enum gfx_vertex_type gfx_vertex_shader_get_vertex_type(gfx_vertex_shader_t* vs);
+BM_EXPORT void gfx_vertex_shader_set_vertex_type(gfx_vertex_shader_t* vs, enum gfx_vertex_type type);
 BM_EXPORT void gfx_bind_primitive_topology(gfx_system_t* gfx,
 					   enum gfx_topology topo);
 BM_EXPORT void

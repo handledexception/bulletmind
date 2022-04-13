@@ -263,8 +263,10 @@ result gfx_com_release_d3d11(gfx_system_t* gfx)
 
 void gfx_bind_vertex_shader_input_layout(gfx_system_t* gfx)
 {
-	if (gfx) {
-		gfx_vertex_shader_bind_input_layout(gfx, gfx->vertex_shader);
+	if (gfx && gfx->vertex_shader) {
+		gfx_vertex_shader_t* vs = (gfx_vertex_shader_t*)gfx->vertex_shader->impl;
+		if (vs)
+			gfx_vertex_shader_bind_input_layout(gfx, vs);
 	}
 }
 
@@ -749,7 +751,7 @@ void gfx_render_begin(gfx_system_t* gfx)
 	u32 vertex_count = BM_GFX_MAX_VERTICES;
 	u32 start_vertex = 0;
 	ID3D11DeviceContext1_VSSetShader(gfx->ctx, vs->program, NULL, 0);
-	ID3D11DeviceContext1_PSSetShader(gfx->ctx, ps, NULL, 0);
+	ID3D11DeviceContext1_PSSetShader(gfx->ctx, ps->program, NULL, 0);
 	ID3D11DeviceContext1_PSSetSamplers(gfx->ctx, 0, 1, &gfx->sampler_state);
 	ID3D11DeviceContext1_Draw(gfx->ctx, vertex_count, start_vertex);
 }
@@ -759,7 +761,7 @@ void gfx_render_end(gfx_system_t* gfx, bool vsync, u32 flags)
 	IDXGISwapChain1_Present(gfx->dxgi_swap_chain, (UINT)vsync, flags);
 }
 
-void gfx_set_vertex_shader(gfx_system_t* gfx, gfx_vertex_shader_t* vs)
+void gfx_set_vertex_shader(gfx_system_t* gfx, gfx_shader_t* vs)
 {
 	if (gfx != NULL)
 		gfx->vertex_shader = vs;
@@ -1008,6 +1010,17 @@ void gfx_vertex_shader_free(gfx_vertex_shader_t* vs)
 	}
 }
 
+enum gfx_vertex_type gfx_vertex_shader_get_vertex_type(gfx_vertex_shader_t* vs)
+{
+	return vs->vertex_type;
+}
+
+void gfx_vertex_shader_set_vertex_type(gfx_vertex_shader_t* vs, enum gfx_vertex_type type)
+{
+	vs->vertex_type = type;
+}
+
+
 void gfx_pixel_shader_init(gfx_pixel_shader_t* ps)
 {
 	if (ps != NULL) {
@@ -1018,7 +1031,7 @@ void gfx_pixel_shader_init(gfx_pixel_shader_t* ps)
 gfx_pixel_shader_t* gfx_pixel_shader_create()
 {
 	gfx_pixel_shader_t* ps = mem_alloc(sizeof(gfx_pixel_shader_t));
-	gfx_pixel_shader_init(ps);
+	// gfx_pixel_shader_init(ps);
 	return ps;
 }
 void gfx_pixel_shader_free(gfx_pixel_shader_t* ps)
@@ -1051,14 +1064,14 @@ result gfx_shader_compile_from_file(gfx_system_t* gfx,
 	if (txt == NULL)
 		return RESULT_NULL;
 
-	ID3D10Blob* shader_blob = NULL;
+	ID3D10Blob** shader_blob = NULL;
 	switch (shader->type) {
 	case GFX_SHADER_VERTEX:
 		{
 			gfx_vertex_shader_t* vs = (gfx_vertex_shader_t*)shader->impl;
 			if (vs == NULL)
 				return RESULT_NULL;
-			shader_blob = vs->blob;
+			shader_blob = &vs->blob;
 			break;
 		}
 	case GFX_SHADER_PIXEL:
@@ -1066,7 +1079,7 @@ result gfx_shader_compile_from_file(gfx_system_t* gfx,
 			gfx_pixel_shader_t* ps = (gfx_pixel_shader_t*)shader->impl;
 			if (ps == NULL)
 				return RESULT_NULL;
-			shader_blob = ps->blob;
+			shader_blob = &ps->blob;
 			break;
 		}
 	default:
@@ -1074,22 +1087,21 @@ result gfx_shader_compile_from_file(gfx_system_t* gfx,
 		return RESULT_NOT_IMPL;
 	}
 
-	if (shader_blob != NULL) {
-		ID3DBlob* blob_error = NULL;
-		if (FAILED(D3DCompile(txt, file_size, path, NULL, NULL, entrypoint,
-					target, 0, 0, &shader_blob, &blob_error))) {
-			if (blob_error) {
-				const char* err_msg =
-					(const char*)ID3D10Blob_GetBufferPointer(
-						blob_error);
-				logger(LOG_ERROR,
-					"[gfx] Failed to compile shader %s. Error: %s",
-					path, err_msg);
-				ID3D10Blob_Release(blob_error);
-			}
-			return RESULT_ERROR;
+	ID3DBlob* blob_error = NULL;
+	if (FAILED(D3DCompile(txt, file_size, path, NULL, NULL, entrypoint,
+				target, 0, 0, shader_blob, &blob_error))) {
+		if (blob_error) {
+			const char* err_msg =
+				(const char*)ID3D10Blob_GetBufferPointer(
+					blob_error);
+			logger(LOG_ERROR,
+				"[gfx] Failed to compile shader %s. Error: %s",
+				path, err_msg);
+			ID3D10Blob_Release(blob_error);
 		}
+		return RESULT_ERROR;
 	}
+
 	return RESULT_OK;
 }
 

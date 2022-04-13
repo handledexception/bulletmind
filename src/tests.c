@@ -1,5 +1,9 @@
 #include "core/types.h"
+#include "core/memory.h"
 #include "core/hashmap.h"
+#include "core/random.h"
+#include "platform/platform.h"
+#include "core/string.h"
 #include "core/vector.h"
 
 struct foobar {
@@ -27,6 +31,68 @@ struct foobar {
 #include <tau/tau.h>
 
 TAU_MAIN()
+
+TEST(core_memory_suite, basic)
+{
+	size_t sz = 0x800000;
+	char* scratch = malloc(sz);
+	char* dest = malloc(sz);
+	char* dest2 = malloc(sz);
+	char* dest3 = malloc(sz);
+
+	int* p = (int*)&scratch[0];
+	for (int i = 0; i < sz; i += 4) {
+		int val = random(INT32_MIN, INT32_MAX);
+		*p = val;
+		CHECK_EQ(*(int*)(&scratch[i]), val);
+		p++;
+	}
+
+	u64 s = os_get_time_ns();
+	mem_copy((void*)dest, (void*)scratch, sz);
+	u64 e = os_get_time_ns() - s;
+	printf("mem_copy: %lldns\n", e);
+
+	s = os_get_time_ns();
+	mem_copy_sse2((void*)dest2, (void*)scratch, sz);
+	e = os_get_time_ns() - s;
+	printf("mem_copy_sse2: %lldns\n", e);
+
+	s = os_get_time_ns();
+	memcpy((void*)dest3, (void*)scratch, sz);
+	e = os_get_time_ns() - s;
+	printf("memcpy: %lldns\n", e);
+
+	CHECK(memcmp(dest3, dest, sz) == 0);
+	CHECK(memcmp(dest3, dest2, sz) == 0);
+	free(scratch);
+	free(dest);
+	free(dest2);
+	scratch = NULL;
+	dest = NULL;
+	dest2 = NULL;
+}
+
+TEST(core_string_suite, basic)
+{
+	string_t s;
+	str_init(&s);
+	CHECK_EQ(s.capacity, 0);
+	CHECK_EQ(s.size, 0);
+	CHECK_NULL(s.data);
+	CHECK_NULL(s.refs);
+	for (size_t i = 0; i < SSO_SIZE; i++)
+		CHECK_EQ(s.text[i], CSTR_NULL);
+
+	str_reserve(&s, 8);
+	CHECK_EQ(s.capacity, 16);
+	str_reserve(&s, 32);
+	CHECK_EQ(s.capacity, 64);
+	str_reserve(&s, 128);
+	CHECK_EQ(s.capacity, 256);
+
+	str_assign(&s, "Hello, string!");
+}
 
 TEST(core_vector_suite, basic)
 {

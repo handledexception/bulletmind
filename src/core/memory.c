@@ -13,6 +13,7 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+#include "core/algorithm.h"
 #include "core/logger.h"
 #include "core/memory.h"
 #include "core/mem_align.h"
@@ -20,7 +21,7 @@
 
 #include <assert.h>
 #include <malloc.h>
-
+#include <emmintrin.h>
 static struct memory_allocator allocator = {malloc, realloc, free};
 
 #define BM_TRACK_MEMORY_USAGE 1
@@ -46,6 +47,7 @@ static void recalculate_usage(size_t new_size)
 	if (bytes_allocated <= min_bytes_allocated || min_bytes_allocated == 0)
 		os_atomic_set_long((long*)&min_bytes_allocated,
 				   (long)bytes_allocated);
+	logger(LOG_DEBUG, "allocated: %zu", bytes_allocated);
 #else
 	(void)new_size;
 #endif
@@ -56,10 +58,10 @@ void* mem_alloc(size_t size)
 	void* ptr = NULL;
 #ifdef BM_TRACK_MEMORY_USAGE
 	// set size before ptr for later recall
-	size_t alloc_size = size + sizeof(size_t);
+	u64 alloc_size = size + sizeof(u64);
 	ptr = allocator.malloc(alloc_size);
-	*(size_t*)(ptr) = alloc_size;
-	*(u8**)(&ptr) += sizeof(size_t);
+	*(u64*)(ptr) = alloc_size;
+	*(u8**)(&ptr) += sizeof(u64);
 	recalculate_usage(bytes_allocated + alloc_size);
 	os_atomic_inc_long((long*)&alloc_count);
 #else
@@ -73,20 +75,24 @@ void* mem_realloc(void* ptr, size_t size)
 #ifdef BM_TRACK_MEMORY_USAGE
 	if (!ptr)
 		os_atomic_inc_long((long*)&alloc_count);
-	ptr = mem_alloc(sizeof(size_t));
-	u8* p = (u8*)ptr;
-	size_t* hdr = (size_t*)(p)-1;
-	size_t sz_hdr = *hdr;
-	allocator.realloc(ptr, size + sz_hdr);
+	u8* curr_hdr = *(u8**)(&ptr) - sizeof(u64);
+	u64 curr_size = *(u64*)(curr_hdr);
+	u64 new_size = curr_size + size + sizeof(u64);
+	u8* new_ptr = allocator.malloc(new_size);
+	u8* new_hdr = *(u8**)(&new_ptr);
+	*(u64*)(new_hdr) = new_size;
+	*(u8**)(&new_ptr) += sizeof(u64);
+	memcpy(new_ptr, ptr, curr_size);
+	mem_free(ptr);
 #else
 	allocator.realloc(ptr, size);
 #endif
 #ifdef BM_TRACK_MEMORY_USAGE
-	size_t realloc_size = sz_hdr - size;
-	size_t new_bytes_allocated = bytes_allocated + realloc_size;
+	// size_t realloc_size = sz_hdr - size;
+	size_t new_bytes_allocated = bytes_allocated + new_size;
 	recalculate_usage(new_bytes_allocated);
 #endif
-	return ptr;
+	return new_ptr;
 }
 
 void mem_free(void* ptr)
@@ -95,16 +101,37 @@ void mem_free(void* ptr)
 #ifdef BM_TRACK_MEMORY_USAGE
 		// retrieve size of allocation from ptr header
 		u8* p = (u8*)ptr;
-		size_t* hdr = (size_t*)(p)-1;
-		size_t alloc_size = *hdr;
-		size_t obj_size = alloc_size - sizeof(size_t);
-		p -= sizeof(size_t);
+		u64* hdr = (u64*)(p)-1;
+		u64 alloc_size = *hdr;
+		u64 obj_size = alloc_size - sizeof(u64);
+		p -= sizeof(u64);
 		allocator.free(p);
 		recalculate_usage(bytes_allocated - alloc_size);
 		os_atomic_dec_long((long*)&alloc_count);
 #else
 		allocator.free(ptr);
 #endif
+	}
+}
+
+void mem_copy(void* dst, void* src, size_t size)
+{
+	u8* to = (u8*)dst;
+	u8* from = (u8*)src;
+	while (size--)
+		*to++ = *from++;
+}
+
+void mem_copy_sse2(void* dst, void* src, size_t size)
+{
+	__m128i *from = (__m128i *)src;
+	__m128i *to = (__m128i *)dst;
+	size_t index = 0;
+	while(size) {
+		__m128i x = _mm_load_si128(&from[index]);
+		_mm_stream_si128(&to[index], x);
+		size -= 16;
+		index++;
 	}
 }
 

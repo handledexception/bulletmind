@@ -27,7 +27,7 @@
 
 #include <stdlib.h>
 
-#include <SDL.h>
+// #include <SDL.h>
 
 #define MAX_VIRTUAL_BUTTONS \
 	(MAX_KEYBOARD_KEYS + MAX_MOUSE_BUTTONS + GAMEPAD_BUTTON_MAX)
@@ -81,13 +81,13 @@ struct input_state {
 	input_mode_t mode;
 };
 
-bool inp_init(struct input_state* inputs);
-void inp_refresh_mouse(struct mouse_device* mouse, f32 scale_x, f32 scale_y);
+struct input_state* inp_new();
+void inp_free(struct input_state* inputs);
+result inp_init(struct input_state* inputs);
+// void inp_refresh_mouse(struct mouse_device* mouse, f32 scale_x, f32 scale_y);
 void inp_refresh_pressed(struct input_state* inputs, const gui_event_t* evt);
 void inp_shutdown(struct input_state* inputs);
 
-bool inp_init_keyboard(struct input_state* inputs);
-bool inp_init_mouse(struct input_state* inputs);
 bool inp_init_gamepads(struct input_state* inputs);
 
 void inp_set_key_state(struct keyboard_key* keys, u16 scancode, u8 state);
@@ -101,28 +101,28 @@ u8 inp_get_mouse_button_state(struct mouse_device* mouse, u16 button);
 
 // Gamepad deadzone
 // https://www.gamasutra.com/blogs/JoshSutphin/20130416/190541/Doing_Thumbstick_Dead_Zones_Right.php
-const char* inp_gamepad_button_kind_to_string(gamepad_button_kind_t kind);
-gamepad_button_kind_t
-inp_gamepad_button_kind_from_sdl(const SDL_GameControllerButton button);
-gamepad_axis_kind_t
-inp_gamepad_axis_kind_from_sdl(const SDL_GameControllerAxis axis);
-bool inp_enumerate_gamepad_buttons(struct gamepad* gamepad);
-bool inp_enumerate_gamepad_axes(struct gamepad* gamepad);
-void inp_set_gamepad_button_state(struct gamepad* gamepad,
-				  gamepad_button_kind_t button, u8 state);
-u8 inp_get_gamepad_button_state(struct gamepad* gamepad,
-				gamepad_button_kind_t button);
-void inp_set_gamepad_axis_value(struct gamepad* gamepad,
-				gamepad_axis_kind_t axis, u16 value);
-s16 inp_get_gamepad_axis_value(struct gamepad* gamepad,
-			       gamepad_axis_kind_t axis);
+// const char* inp_gamepad_button_kind_to_string(gamepad_button_kind_t kind);
+// gamepad_button_kind_t
+// inp_gamepad_button_kind_from_sdl(const SDL_GameControllerButton button);
+// gamepad_axis_kind_t
+// inp_gamepad_axis_kind_from_sdl(const SDL_GameControllerAxis axis);
+// bool inp_enumerate_gamepad_buttons(struct gamepad* gamepad);
+// bool inp_enumerate_gamepad_axes(struct gamepad* gamepad);
+// void inp_set_gamepad_button_state(struct gamepad* gamepad,
+// 				  gamepad_button_kind_t button, u8 state);
+// u8 inp_get_gamepad_button_state(struct gamepad* gamepad,
+// 				gamepad_button_kind_t button);
+// void inp_set_gamepad_axis_value(struct gamepad* gamepad,
+// 				gamepad_axis_kind_t axis, u16 value);
+// s16 inp_get_gamepad_axis_value(struct gamepad* gamepad,
+// 			       gamepad_axis_kind_t axis);
 
 bool inp_bind_virtual_key(struct input_state* inputs, command_t cmd,
 			  u16 scancode);
 bool inp_bind_virtual_mouse_button(struct input_state* inputs, command_t cmd,
 				   u16 mouse_button);
-bool inp_bind_virtual_gamepad_button(struct input_state* inputs, command_t cmd,
-				     u32 gamepad, gamepad_button_kind_t button);
+// bool inp_bind_virtual_gamepad_button(struct input_state* inputs, command_t cmd,
+// 				     u32 gamepad, gamepad_button_kind_t button);
 
 bool inp_cmd_get_state(struct input_state* inputs, command_t cmd);
 void inp_cmd_toggle(struct input_state* inputs, command_t cmd, bool* value);

@@ -7,7 +7,7 @@
 
 gui_platform_t* gui = NULL;
 
-bool gui_init(void)
+result gui_init(void)
 {
 	logger(LOG_INFO, "gui_init: Initializing GUI subsystem...");
 

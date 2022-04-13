@@ -565,8 +565,10 @@ bool ent_spawn_player_and_satellite(entity_t* ent_list, s32 cam_width,
 
 bool ent_spawn_enemy(entity_t* ent_list, s32 cam_width, s32 cam_height)
 {
-	vec2f_t org = {(f32)gen_random(0, cam_width, 1),
-		       (f32)gen_random(0, cam_height, 3)};
+	vec2f_t org = {
+		(f32)random(0, cam_width),
+		(f32)random(0, cam_height)
+	};
 	vec2i_t size = {32, 32};
 	rgba_t color = {0xf0, 0x36, 0x00, 0xff};
 	entity_t* enemy = ent_spawn(ent_list, "enemy", org, size, &color,

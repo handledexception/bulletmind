@@ -85,7 +85,9 @@
         "ratio": "c",
         "tuple": "c",
         "utility": "c",
-        "xtr1common": "c"
+        "xtr1common": "c",
+        "*.2": "c",
+        "time.h": "c"
     },
     "cmake.configureOnOpen": false
 }

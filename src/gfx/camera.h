@@ -16,7 +16,7 @@ typedef struct {
 	f32 z_far;
 } camera_t;
 
-void gfx_camera_init(camera_t* cam);
+void gfx_camera_new(camera_t* cam);
 void gfx_camera_free(camera_t* cam);
 void gfx_camera_ortho(camera_t* cam, const vec3f_t* eye, const vec3f_t* dir,
 		      const vec3f_t* up, const rect_t* viewport, f32 z_near,

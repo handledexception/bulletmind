@@ -24,31 +24,43 @@
 #include <stdio.h>
 #include <string.h>
 
-bool inp_init(struct input_state* inputs)
+struct input_state* inp_new()
 {
-	if (!inputs)
-		return false;
+	struct input_state* inputs = mem_alloc(sizeof(struct input_state));
+	inp_init(inputs);
+	return inputs;
+}
 
-	bool ok = inp_init_gamepads(inputs);
-	if (!ok) {
-		logger(LOG_ERROR, "Error initializing gamepads!");
-		return false;
+void inp_free(struct input_state* inputs)
+{
+	if (inputs != NULL) {
+		mem_free(inputs);
+		inputs = NULL;
 	}
-	logger(LOG_INFO, "Initialized gamepads OK");
+}
 
-	ok = inp_init_keyboard(inputs);
-	if (!ok) {
-		logger(LOG_ERROR, "Error initializing keyboard!");
-		return ok;
-	}
-	logger(LOG_INFO, "Initialized keyboard OK");
+result inp_init(struct input_state* inputs)
+{
+	if (inputs == NULL)
+		return RESULT_NULL;
 
-	ok = inp_init_mouse(inputs);
-	if (!ok) {
-		logger(LOG_ERROR, "Error initializing mouse!");
-		return ok;
+	memset(inputs, 0, sizeof(*inputs));
+
+	for (size_t i = SCANCODE_NONE; i < SCANCODE_MAX; i++) {
+		inputs->keys[i].scancode = (u16)i;
+		inputs->keys[i].state = 0;
 	}
-	logger(LOG_INFO, "Initialized mouse OK");
+
+	inputs->mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
+	inputs->mouse.buttons[MOUSE_BUTTON_LEFT].state = false;
+	inputs->mouse.buttons[MOUSE_BUTTON_MIDDLE].button = MOUSE_BUTTON_MIDDLE;
+	inputs->mouse.buttons[MOUSE_BUTTON_MIDDLE].state = false;
+	inputs->mouse.buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
+	inputs->mouse.buttons[MOUSE_BUTTON_RIGHT].state = false;
+	inputs->mouse.buttons[MOUSE_BUTTON_X1].button = MOUSE_BUTTON_X1;
+	inputs->mouse.buttons[MOUSE_BUTTON_X1].state = false;
+	inputs->mouse.buttons[MOUSE_BUTTON_X2].button = MOUSE_BUTTON_X2;
+	inputs->mouse.buttons[MOUSE_BUTTON_X2].state = false;
 
 	for (size_t i = 0; i < kCommandMax; i++) {
 		inputs->buttons[i].name = NULL;
@@ -59,57 +71,28 @@ bool inp_init(struct input_state* inputs)
 		inputs->buttons[i].toggled = false;
 	}
 
-	inp_bind_virtual_key(inputs, kCommandQuit, SCANCODE_ESCAPE);
-	inp_bind_virtual_key(inputs, kCommandPlayerUp, SCANCODE_W);
-	inp_bind_virtual_key(inputs, kCommandPlayerDown, SCANCODE_S);
-	inp_bind_virtual_key(inputs, kCommandPlayerLeft, SCANCODE_A);
-	inp_bind_virtual_key(inputs, kCommandPlayerRight, SCANCODE_D);
-	inp_bind_virtual_key(inputs, kCommandPlayerSpeed, SCANCODE_LSHIFT);
-	inp_bind_virtual_key(inputs, kCommandSetFpsHigh, SCANCODE_F5);
-	inp_bind_virtual_key(inputs, kCommandSetFpsLow, SCANCODE_F6);
-	inp_bind_virtual_key(inputs, kCommandDebugMode, SCANCODE_F1);
-	inp_bind_virtual_key(inputs, kCommandConsole, SCANCODE_GRAVE);
-	inp_bind_virtual_key(inputs, kCommandToggleFullscreen, SCANCODE_F12);
-	inp_bind_virtual_key(inputs, kCommandPlayerPrimaryFire, SCANCODE_SPACE);
-	inp_bind_virtual_gamepad_button(inputs, kCommandPlayerUp, 0,
-					GAMEPAD_BUTTON_DPAD_UP);
-	inp_bind_virtual_gamepad_button(inputs, kCommandPlayerDown, 0,
-					GAMEPAD_BUTTON_DPAD_DOWN);
-	inp_bind_virtual_gamepad_button(inputs, kCommandPlayerLeft, 0,
-					GAMEPAD_BUTTON_DPAD_LEFT);
-	inp_bind_virtual_gamepad_button(inputs, kCommandPlayerRight, 0,
-					GAMEPAD_BUTTON_DPAD_RIGHT);
-	inp_bind_virtual_gamepad_button(inputs, kCommandPlayerPrimaryFire, 0,
-					GAMEPAD_BUTTON_RIGHT_SHOULDER);
-	inp_bind_virtual_mouse_button(inputs, kCommandPlayerPrimaryFire,
-				      MOUSE_BUTTON_LEFT);
-	inp_bind_virtual_mouse_button(inputs, kCommandPlayerAltFire,
-				      MOUSE_BUTTON_RIGHT);
-
-	logger(LOG_INFO, "inp_init OK\n");
-
-	return true;
+	return RESULT_OK;
 }
 
-void inp_refresh_mouse(struct mouse_device* mouse, f32 scale_x, f32 scale_y)
-{
-	int mx = 0;
-	int my = 0;
-	SDL_GetMouseState(&mx, &my);
-	f32 fmx = (f32)mx;
-	f32 fmy = (f32)my;
-	fmx /= scale_x;
-	fmy /= scale_y;
+// void inp_refresh_mouse(struct mouse_device* mouse, f32 scale_x, f32 scale_y)
+// {
+// 	int mx = 0;
+// 	int my = 0;
+// 	SDL_GetMouseState(&mx, &my);
+// 	f32 fmx = (f32)mx;
+// 	f32 fmy = (f32)my;
+// 	fmx /= scale_x;
+// 	fmy /= scale_y;
 
-	vec2i_t mouse_window_pos;
-	mouse_window_pos.x = (s32)fmx;
-	mouse_window_pos.y = (s32)fmy;
+// 	vec2i_t mouse_window_pos;
+// 	mouse_window_pos.x = (s32)fmx;
+// 	mouse_window_pos.y = (s32)fmy;
 
-	vec2i_t mouse_screen_pos;
-	SDL_GetGlobalMouseState(&mouse_screen_pos.x, &mouse_screen_pos.y);
+// 	vec2i_t mouse_screen_pos;
+// 	SDL_GetGlobalMouseState(&mouse_screen_pos.x, &mouse_screen_pos.y);
 
-	inp_set_mouse_pos(mouse, mouse_screen_pos, mouse_window_pos);
-}
+// 	inp_set_mouse_pos(mouse, mouse_screen_pos, mouse_window_pos);
+// }
 
 void inp_refresh_pressed(struct input_state* inputs, const gui_event_t* evt)
 {
@@ -189,85 +172,50 @@ void inp_shutdown(struct input_state* inputs)
 	logger(LOG_INFO, "inp_shutdown OK\n");
 }
 
-bool inp_init_keyboard(struct input_state* inputs)
-{
-	for (size_t i = SCANCODE_NONE; i < SCANCODE_MAX; i++) {
-		inputs->keys[i].scancode = (u16)i;
-		inputs->keys[i].state = 0;
-		// inputs->keys[i].timestamp = 0ULL;
-	}
 
-	return true;
-}
+// bool inp_init_gamepads(struct input_state* inputs)
+// {
+// 	const int num_joysticks = SDL_NumJoysticks();
+// 	if (num_joysticks == 0)
+// 		return true;
 
-bool inp_init_mouse(struct input_state* inputs)
-{
-	inputs->mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
-	// inputs->mouse.buttons[MOUSE_BUTTON_LEFT].timestamp = 0ULL;
-	inputs->mouse.buttons[MOUSE_BUTTON_LEFT].state = false;
+// 	bool gamepad_err = false;
+// 	for (int gdx = 0; gdx < num_joysticks; gdx++) {
+// 		SDL_GameController* gc = SDL_GameControllerOpen(gdx);
+// 		if (gc == NULL) {
+// 			const char* sdl_err = SDL_GetError();
+// 			if (sdl_err != NULL && sdl_err[0] != '\0')
+// 				logger(LOG_ERROR,
+// 				       "SDL_GameControllerOpen error: %s\n",
+// 				       sdl_err);
+// 			gamepad_err = true;
+// 			continue;
+// 		}
 
-	inputs->mouse.buttons[MOUSE_BUTTON_MIDDLE].button = MOUSE_BUTTON_MIDDLE;
-	// inputs->mouse.buttons[MOUSE_BUTTON_MIDDLE].timestamp = 0ULL;
-	inputs->mouse.buttons[MOUSE_BUTTON_MIDDLE].state = false;
+// 		struct gamepad gamepad;
+// 		memset(&gamepad, 0, sizeof(struct gamepad));
+// 		gamepad.instance = (void*)gc;
+// 		gamepad.name = SDL_GameControllerName(gc);
+// 		gamepad.index = gdx;
+// 		gamepad.is_connected = true;
+// 		gamepad.product_id = SDL_GameControllerGetProduct(gc);
+// 		gamepad.vendor_id = SDL_GameControllerGetVendor(gc);
+// 		gamepad.version = SDL_GameControllerGetProductVersion(gc);
 
-	inputs->mouse.buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
-	// inputs->mouse.buttons[MOUSE_BUTTON_RIGHT].timestamp = 0ULL;
-	inputs->mouse.buttons[MOUSE_BUTTON_RIGHT].state = false;
+// 		gamepad_err = inp_enumerate_gamepad_axes(&gamepad);
+// 		if (!gamepad_err)
+// 			gamepad_err = inp_enumerate_gamepad_buttons(&gamepad);
 
-	inputs->mouse.buttons[MOUSE_BUTTON_X1].button = MOUSE_BUTTON_X1;
-	// inputs->mouse.buttons[MOUSE_BUTTON_X1].timestamp = 0ULL;
-	inputs->mouse.buttons[MOUSE_BUTTON_X1].state = false;
+// 		inputs->gamepads[gdx] = gamepad;
 
-	inputs->mouse.buttons[MOUSE_BUTTON_X2].button = MOUSE_BUTTON_X2;
-	// inputs->mouse.buttons[MOUSE_BUTTON_X2].timestamp = 0ULL;
-	inputs->mouse.buttons[MOUSE_BUTTON_X2].state = false;
+// 		logger(LOG_INFO,
+// 		       "Gamepad %s connected | Product ID: %d | Vendor ID: %d | Version: %d\n",
+// 		       gamepad.name, gamepad.product_id, gamepad.vendor_id,
+// 		       gamepad.version);
+// 	}
 
-	return true;
-}
-
-bool inp_init_gamepads(struct input_state* inputs)
-{
-	const int num_joysticks = SDL_NumJoysticks();
-	if (num_joysticks == 0)
-		return true;
-
-	bool gamepad_err = false;
-	for (int gdx = 0; gdx < num_joysticks; gdx++) {
-		SDL_GameController* gc = SDL_GameControllerOpen(gdx);
-		if (gc == NULL) {
-			const char* sdl_err = SDL_GetError();
-			if (sdl_err != NULL && sdl_err[0] != '\0')
-				logger(LOG_ERROR,
-				       "SDL_GameControllerOpen error: %s\n",
-				       sdl_err);
-			gamepad_err = true;
-			continue;
-		}
-
-		struct gamepad gamepad;
-		memset(&gamepad, 0, sizeof(struct gamepad));
-		gamepad.instance = (void*)gc;
-		gamepad.name = SDL_GameControllerName(gc);
-		gamepad.index = gdx;
-		gamepad.is_connected = true;
-		gamepad.product_id = SDL_GameControllerGetProduct(gc);
-		gamepad.vendor_id = SDL_GameControllerGetVendor(gc);
-		gamepad.version = SDL_GameControllerGetProductVersion(gc);
-
-		gamepad_err = inp_enumerate_gamepad_axes(&gamepad);
-		if (!gamepad_err)
-			gamepad_err = inp_enumerate_gamepad_buttons(&gamepad);
-
-		inputs->gamepads[gdx] = gamepad;
-
-		logger(LOG_INFO,
-		       "Gamepad %s connected | Product ID: %d | Vendor ID: %d | Version: %d\n",
-		       gamepad.name, gamepad.product_id, gamepad.vendor_id,
-		       gamepad.version);
-	}
-
-	return !gamepad_err;
-}
+// 	return !gamepad_err;
+// }
 
 void inp_set_key_state(struct keyboard_key* keys, u16 scancode, u8 state)
 {
@@ -317,247 +265,247 @@ u8 inp_get_mouse_button_state(struct mouse_device* mouse, u16 button)
 	return state;
 }
 
-const char* inp_gamepad_button_kind_to_string(gamepad_button_kind_t kind)
-{
-	switch (kind) {
-	default:
-	case GAMEPAD_BUTTON_NONE:
-	case GAMEPAD_BUTTON_MAX:
-		return "None";
-	case GAMEPAD_BUTTON_A:
-		return "A";
-	case GAMEPAD_BUTTON_B:
-		return "B";
-	case GAMEPAD_BUTTON_X:
-		return "X";
-	case GAMEPAD_BUTTON_Y:
-		return "Y";
-	case GAMEPAD_BUTTON_BACK:
-		return "Back";
-	case GAMEPAD_BUTTON_GUIDE:
-		return "Guide";
-	case GAMEPAD_BUTTON_START:
-		return "Start";
-	case GAMEPAD_BUTTON_LEFT_STICK:
-		return "LS";
-	case GAMEPAD_BUTTON_RIGHT_STICK:
-		return "RS";
-	case GAMEPAD_BUTTON_LEFT_SHOULDER:
-		return "Right Shoulder";
-	case GAMEPAD_BUTTON_RIGHT_SHOULDER:
-		return "Left Shoulder";
-	case GAMEPAD_BUTTON_DPAD_UP:
-		return "D-Pad Up";
-	case GAMEPAD_BUTTON_DPAD_DOWN:
-		return "D-Pad Down";
-	case GAMEPAD_BUTTON_DPAD_LEFT:
-		return "D-Pad Left";
-	case GAMEPAD_BUTTON_DPAD_RIGHT:
-		return "D-Pad Right";
-	}
-}
+// const char* inp_gamepad_button_kind_to_string(gamepad_button_kind_t kind)
+// {
+// 	switch (kind) {
+// 	default:
+// 	case GAMEPAD_BUTTON_NONE:
+// 	case GAMEPAD_BUTTON_MAX:
+// 		return "None";
+// 	case GAMEPAD_BUTTON_A:
+// 		return "A";
+// 	case GAMEPAD_BUTTON_B:
+// 		return "B";
+// 	case GAMEPAD_BUTTON_X:
+// 		return "X";
+// 	case GAMEPAD_BUTTON_Y:
+// 		return "Y";
+// 	case GAMEPAD_BUTTON_BACK:
+// 		return "Back";
+// 	case GAMEPAD_BUTTON_GUIDE:
+// 		return "Guide";
+// 	case GAMEPAD_BUTTON_START:
+// 		return "Start";
+// 	case GAMEPAD_BUTTON_LEFT_STICK:
+// 		return "LS";
+// 	case GAMEPAD_BUTTON_RIGHT_STICK:
+// 		return "RS";
+// 	case GAMEPAD_BUTTON_LEFT_SHOULDER:
+// 		return "Right Shoulder";
+// 	case GAMEPAD_BUTTON_RIGHT_SHOULDER:
+// 		return "Left Shoulder";
+// 	case GAMEPAD_BUTTON_DPAD_UP:
+// 		return "D-Pad Up";
+// 	case GAMEPAD_BUTTON_DPAD_DOWN:
+// 		return "D-Pad Down";
+// 	case GAMEPAD_BUTTON_DPAD_LEFT:
+// 		return "D-Pad Left";
+// 	case GAMEPAD_BUTTON_DPAD_RIGHT:
+// 		return "D-Pad Right";
+// 	}
+// }
 
-gamepad_button_kind_t
-inp_gamepad_button_kind_from_sdl(const SDL_GameControllerButton button)
-{
-	gamepad_button_kind_t kind = GAMEPAD_BUTTON_NONE;
+// gamepad_button_kind_t
+// inp_gamepad_button_kind_from_sdl(const SDL_GameControllerButton button)
+// {
+// 	gamepad_button_kind_t kind = GAMEPAD_BUTTON_NONE;
 
-	switch (button) {
-	case SDL_CONTROLLER_BUTTON_INVALID:
-		kind = GAMEPAD_BUTTON_NONE;
-		break;
-	case SDL_CONTROLLER_BUTTON_A:
-		kind = GAMEPAD_BUTTON_A;
-		break;
-	case SDL_CONTROLLER_BUTTON_B:
-		kind = GAMEPAD_BUTTON_B;
-		break;
-	case SDL_CONTROLLER_BUTTON_X:
-		kind = GAMEPAD_BUTTON_X;
-		break;
-	case SDL_CONTROLLER_BUTTON_Y:
-		kind = GAMEPAD_BUTTON_Y;
-		break;
-	case SDL_CONTROLLER_BUTTON_BACK:
-		kind = GAMEPAD_BUTTON_BACK;
-		break;
-	case SDL_CONTROLLER_BUTTON_GUIDE:
-		kind = GAMEPAD_BUTTON_GUIDE;
-		break;
-	case SDL_CONTROLLER_BUTTON_START:
-		kind = GAMEPAD_BUTTON_START;
-		break;
-	case SDL_CONTROLLER_BUTTON_LEFTSTICK:
-		kind = GAMEPAD_BUTTON_LEFT_STICK;
-		break;
-	case SDL_CONTROLLER_BUTTON_RIGHTSTICK:
-		kind = GAMEPAD_BUTTON_RIGHT_STICK;
-		break;
-	case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
-		kind = GAMEPAD_BUTTON_LEFT_SHOULDER;
-		break;
-	case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
-		kind = GAMEPAD_BUTTON_RIGHT_SHOULDER;
-		break;
-	case SDL_CONTROLLER_BUTTON_DPAD_UP:
-		kind = GAMEPAD_BUTTON_DPAD_UP;
-		break;
-	case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-		kind = GAMEPAD_BUTTON_DPAD_DOWN;
-		break;
-	case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-		kind = GAMEPAD_BUTTON_DPAD_LEFT;
-		break;
-	case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-		kind = GAMEPAD_BUTTON_DPAD_RIGHT;
-		break;
-	case SDL_CONTROLLER_BUTTON_MAX:
-		kind = GAMEPAD_BUTTON_MAX;
-		break;
-	default:
-		kind = GAMEPAD_BUTTON_NONE;
-		break;
-	}
+// 	switch (button) {
+// 	case SDL_CONTROLLER_BUTTON_INVALID:
+// 		kind = GAMEPAD_BUTTON_NONE;
+// 		break;
+// 	case SDL_CONTROLLER_BUTTON_A:
+// 		kind = GAMEPAD_BUTTON_A;
+// 		break;
+// 	case SDL_CONTROLLER_BUTTON_B:
+// 		kind = GAMEPAD_BUTTON_B;
+// 		break;
+// 	case SDL_CONTROLLER_BUTTON_X:
+// 		kind = GAMEPAD_BUTTON_X;
+// 		break;
+// 	case SDL_CONTROLLER_BUTTON_Y:
+// 		kind = GAMEPAD_BUTTON_Y;
+// 		break;
+// 	case SDL_CONTROLLER_BUTTON_BACK:
+// 		kind = GAMEPAD_BUTTON_BACK;
+// 		break;
+// 	case SDL_CONTROLLER_BUTTON_GUIDE:
+// 		kind = GAMEPAD_BUTTON_GUIDE;
+// 		break;
+// 	case SDL_CONTROLLER_BUTTON_START:
+// 		kind = GAMEPAD_BUTTON_START;
+// 		break;
+// 	case SDL_CONTROLLER_BUTTON_LEFTSTICK:
+// 		kind = GAMEPAD_BUTTON_LEFT_STICK;
+// 		break;
+// 	case SDL_CONTROLLER_BUTTON_RIGHTSTICK:
+// 		kind = GAMEPAD_BUTTON_RIGHT_STICK;
+// 		break;
+// 	case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+// 		kind = GAMEPAD_BUTTON_LEFT_SHOULDER;
+// 		break;
+// 	case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+// 		kind = GAMEPAD_BUTTON_RIGHT_SHOULDER;
+// 		break;
+// 	case SDL_CONTROLLER_BUTTON_DPAD_UP:
+// 		kind = GAMEPAD_BUTTON_DPAD_UP;
+// 		break;
+// 	case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+// 		kind = GAMEPAD_BUTTON_DPAD_DOWN;
+// 		break;
+// 	case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+// 		kind = GAMEPAD_BUTTON_DPAD_LEFT;
+// 		break;
+// 	case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+// 		kind = GAMEPAD_BUTTON_DPAD_RIGHT;
+// 		break;
+// 	case SDL_CONTROLLER_BUTTON_MAX:
+// 		kind = GAMEPAD_BUTTON_MAX;
+// 		break;
+// 	default:
+// 		kind = GAMEPAD_BUTTON_NONE;
+// 		break;
+// 	}
 
-	return kind;
-}
+// 	return kind;
+// }
 
-gamepad_axis_kind_t
-inp_gamepad_axis_kind_from_sdl(const SDL_GameControllerAxis axis)
-{
-	gamepad_axis_kind_t kind = GAMEPAD_AXIS_NONE;
+// gamepad_axis_kind_t
+// inp_gamepad_axis_kind_from_sdl(const SDL_GameControllerAxis axis)
+// {
+// 	gamepad_axis_kind_t kind = GAMEPAD_AXIS_NONE;
 
-	switch (axis) {
-	case SDL_CONTROLLER_AXIS_INVALID:
-		kind = GAMEPAD_AXIS_NONE;
-		break;
-	case SDL_CONTROLLER_AXIS_LEFTX:
-		kind = GAMEPAD_AXIS_LEFT_STICK_X;
-		break;
-	case SDL_CONTROLLER_AXIS_LEFTY:
-		kind = GAMEPAD_AXIS_LEFT_STICK_Y;
-		break;
-	case SDL_CONTROLLER_AXIS_RIGHTX:
-		kind = GAMEPAD_AXIS_RIGHT_STICK_X;
-		break;
-	case SDL_CONTROLLER_AXIS_RIGHTY:
-		kind = GAMEPAD_AXIS_RIGHT_STICK_Y;
-		break;
-	case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
-		kind = GAMEPAD_AXIS_LEFT_TRIGGER;
-		break;
-	case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
-		kind = GAMEPAD_AXIS_RIGHT_TRIGGER;
-		break;
-	case SDL_CONTROLLER_AXIS_MAX:
-		kind = GAMEPAD_AXES_MAX;
-		break;
-	}
+// 	switch (axis) {
+// 	case SDL_CONTROLLER_AXIS_INVALID:
+// 		kind = GAMEPAD_AXIS_NONE;
+// 		break;
+// 	case SDL_CONTROLLER_AXIS_LEFTX:
+// 		kind = GAMEPAD_AXIS_LEFT_STICK_X;
+// 		break;
+// 	case SDL_CONTROLLER_AXIS_LEFTY:
+// 		kind = GAMEPAD_AXIS_LEFT_STICK_Y;
+// 		break;
+// 	case SDL_CONTROLLER_AXIS_RIGHTX:
+// 		kind = GAMEPAD_AXIS_RIGHT_STICK_X;
+// 		break;
+// 	case SDL_CONTROLLER_AXIS_RIGHTY:
+// 		kind = GAMEPAD_AXIS_RIGHT_STICK_Y;
+// 		break;
+// 	case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+// 		kind = GAMEPAD_AXIS_LEFT_TRIGGER;
+// 		break;
+// 	case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+// 		kind = GAMEPAD_AXIS_RIGHT_TRIGGER;
+// 		break;
+// 	case SDL_CONTROLLER_AXIS_MAX:
+// 		kind = GAMEPAD_AXES_MAX;
+// 		break;
+// 	}
 
-	return kind;
-}
+// 	return kind;
+// }
 
-bool inp_enumerate_gamepad_buttons(struct gamepad* gamepad)
-{
-	bool btn_err = false;
+// bool inp_enumerate_gamepad_buttons(struct gamepad* gamepad)
+// {
+// 	bool btn_err = false;
 
-	for (s32 bdx = GAMEPAD_BUTTON_A; bdx < GAMEPAD_BUTTON_MAX; bdx++) {
-		const SDL_GameControllerButton button =
-			(SDL_GameControllerButton)bdx;
+// 	for (s32 bdx = GAMEPAD_BUTTON_A; bdx < GAMEPAD_BUTTON_MAX; bdx++) {
+// 		const SDL_GameControllerButton button =
+// 			(SDL_GameControllerButton)bdx;
 
-		const char* button_name =
-			SDL_GameControllerGetStringForButton(button);
+// 		const char* button_name =
+// 			SDL_GameControllerGetStringForButton(button);
 
-		const u8 button_state = SDL_GameControllerGetButton(
-			(SDL_GameController*)gamepad->instance, button);
+// 		const u8 button_state = SDL_GameControllerGetButton(
+// 			(SDL_GameController*)gamepad->instance, button);
 
-		const gamepad_button_kind_t kind =
-			inp_gamepad_button_kind_from_sdl(button);
+// 		const gamepad_button_kind_t kind =
+// 			inp_gamepad_button_kind_from_sdl(button);
 
-		gamepad->buttons[kind].index = bdx;
-		gamepad->buttons[kind].kind = kind;
-		gamepad->buttons[kind].state = button_state;
-		gamepad->buttons[kind].name = button_name;
-		gamepad->buttons[kind].timestamp = os_get_time_ns();
+// 		gamepad->buttons[kind].index = bdx;
+// 		gamepad->buttons[kind].kind = kind;
+// 		gamepad->buttons[kind].state = button_state;
+// 		gamepad->buttons[kind].name = button_name;
+// 		gamepad->buttons[kind].timestamp = os_get_time_ns();
 
-		logger(LOG_INFO, "Enumerated gamepad button %s\n", button_name);
-	}
+// 		logger(LOG_INFO, "Enumerated gamepad button %s\n", button_name);
+// 	}
 
-	return btn_err;
-}
+// 	return btn_err;
+// }
 
-bool inp_enumerate_gamepad_axes(struct gamepad* gamepad)
-{
-	bool axis_err = false;
+// bool inp_enumerate_gamepad_axes(struct gamepad* gamepad)
+// {
+// 	bool axis_err = false;
 
-	for (s32 adx = (s32)GAMEPAD_AXIS_LEFT_STICK_X;
-	     adx < (s32)GAMEPAD_AXES_MAX; adx++) {
-		const SDL_GameControllerAxis axis = (SDL_GameControllerAxis)adx;
+// 	for (s32 adx = (s32)GAMEPAD_AXIS_LEFT_STICK_X;
+// 	     adx < (s32)GAMEPAD_AXES_MAX; adx++) {
+// 		const SDL_GameControllerAxis axis = (SDL_GameControllerAxis)adx;
 
-		const char* axis_name =
-			SDL_GameControllerGetStringForAxis(axis);
+// 		const char* axis_name =
+// 			SDL_GameControllerGetStringForAxis(axis);
 
-		const s16 axis_value = SDL_GameControllerGetAxis(
-			(SDL_GameController*)gamepad->instance, axis);
+// 		const s16 axis_value = SDL_GameControllerGetAxis(
+// 			(SDL_GameController*)gamepad->instance, axis);
 
-		// SDL_GameControllerGetAxis returns 0 on success or failure. Must use SDL_GetError to check for errors.
-		if (axis_value == 0) {
-			const char* err = SDL_GetError();
-			if (err != NULL && err[0] != '\0') {
-				logger(LOG_INFO,
-				       "SDL_GameControllerGetAxis error: %s\n",
-				       err);
-				axis_err = true;
-			}
-		}
+// 		// SDL_GameControllerGetAxis returns 0 on success or failure. Must use SDL_GetError to check for errors.
+// 		if (axis_value == 0) {
+// 			const char* err = SDL_GetError();
+// 			if (err != NULL && err[0] != '\0') {
+// 				logger(LOG_INFO,
+// 				       "SDL_GameControllerGetAxis error: %s\n",
+// 				       err);
+// 				axis_err = true;
+// 			}
+// 		}
 
-		const gamepad_axis_kind_t kind =
-			inp_gamepad_axis_kind_from_sdl(axis);
-		gamepad->axes[kind].index = adx;
-		gamepad->axes[kind].name = axis_name;
-		gamepad->axes[kind].value = axis_value;
-		gamepad->axes[kind].kind = kind;
-		gamepad->axes[kind].timestamp = os_get_time_ns();
+// 		const gamepad_axis_kind_t kind =
+// 			inp_gamepad_axis_kind_from_sdl(axis);
+// 		gamepad->axes[kind].index = adx;
+// 		gamepad->axes[kind].name = axis_name;
+// 		gamepad->axes[kind].value = axis_value;
+// 		gamepad->axes[kind].kind = kind;
+// 		gamepad->axes[kind].timestamp = os_get_time_ns();
 
-		logger(LOG_INFO, "Enumerated gamepad axis %s\n", axis_name);
-	}
+// 		logger(LOG_INFO, "Enumerated gamepad axis %s\n", axis_name);
+// 	}
 
-	return axis_err;
-}
+// 	return axis_err;
+// }
 
-void inp_set_gamepad_button_state(struct gamepad* gamepad,
-				  gamepad_button_kind_t button, u8 state)
-{
-	if (gamepad && gamepad->buttons[button].state != state) {
-		gamepad->buttons[button].state = state;
-		gamepad->buttons[button].timestamp = os_get_time_ns();
-	}
-}
+// void inp_set_gamepad_button_state(struct gamepad* gamepad,
+// 				  gamepad_button_kind_t button, u8 state)
+// {
+// 	if (gamepad && gamepad->buttons[button].state != state) {
+// 		gamepad->buttons[button].state = state;
+// 		gamepad->buttons[button].timestamp = os_get_time_ns();
+// 	}
+// }
 
-u8 inp_get_gamepad_button_state(struct gamepad* gamepad,
-				gamepad_button_kind_t button)
-{
-	u8 state = 0;
-	if (gamepad)
-		state = gamepad->buttons[button].state;
-	return state;
-}
+// u8 inp_get_gamepad_button_state(struct gamepad* gamepad,
+// 				gamepad_button_kind_t button)
+// {
+// 	u8 state = 0;
+// 	if (gamepad)
+// 		state = gamepad->buttons[button].state;
+// 	return state;
+// }
 
-void inp_set_gamepad_axis_value(struct gamepad* gamepad,
-				gamepad_axis_kind_t axis, u16 value)
-{
-	if (gamepad)
-		gamepad->axes[axis].value = value;
-}
+// void inp_set_gamepad_axis_value(struct gamepad* gamepad,
+// 				gamepad_axis_kind_t axis, u16 value)
+// {
+// 	if (gamepad)
+// 		gamepad->axes[axis].value = value;
+// }
 
-s16 inp_get_gamepad_axis_value(struct gamepad* gamepad,
-			       gamepad_axis_kind_t axis)
-{
-	s16 value = 0;
-	if (gamepad)
-		value = gamepad->axes[axis].value;
-	return value;
-}
+// s16 inp_get_gamepad_axis_value(struct gamepad* gamepad,
+// 			       gamepad_axis_kind_t axis)
+// {
+// 	s16 value = 0;
+// 	if (gamepad)
+// 		value = gamepad->axes[axis].value;
+// 	return value;
+// }
 
 bool inp_bind_virtual_key(struct input_state* inputs, command_t cmd,
 			  u16 scancode)
@@ -565,7 +513,7 @@ bool inp_bind_virtual_key(struct input_state* inputs, command_t cmd,
 	if (cmd < MAX_VIRTUAL_BUTTONS && scancode < SCANCODE_MAX) {
 		inputs->buttons[cmd].state = 0;
 		inputs->buttons[cmd].keyboard_key = &inputs->keys[scancode];
-		logger(LOG_INFO, "Command %s bound to key %d\n",
+		logger(LOG_INFO, "Command `%s` bound to key `%d`",
 		       cmd_get_name(cmd), scancode);
 		return true;
 	}
@@ -580,7 +528,7 @@ bool inp_bind_virtual_mouse_button(struct input_state* inputs, command_t cmd,
 		inputs->buttons[cmd].state = 0;
 		inputs->buttons[cmd].mouse_button =
 			&inputs->mouse.buttons[mouse_button];
-		logger(LOG_INFO, "Command %s bound to mouse button %d\n",
+		logger(LOG_INFO, "Command %s bound to mouse button %d",
 		       cmd_get_name(cmd), mouse_button);
 		return true;
 	}
@@ -597,7 +545,7 @@ bool inp_bind_virtual_gamepad_button(struct input_state* inputs, command_t cmd,
 			&inputs->gamepads[gamepad].buttons[button];
 
 		logger(LOG_INFO,
-		       "Command %s bound to gamepad %d/button %d (%s)\n",
+		       "Command %s bound to gamepad %d/button %d (%s)",
 		       cmd_get_name(cmd), gamepad, button,
 		       inputs->gamepads[gamepad].buttons[button].name);
 

@@ -68,6 +68,8 @@ typedef enum {
 	RESULT_UNKNOWN
 } result;
 
+#define ENSURE_OK(func) { result res = func; if (res != RESULT_OK) { return res; } }
+
 #define UNUSED_PARAMETER(param) (void)param
 
 #include "core/rect.h"

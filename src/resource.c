@@ -255,7 +255,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 		enum gfx_shader_type type = GFX_SHADER_UNKNOWN;
 		enum gfx_vertex_type vertex_type = GFX_VERTEX_UNKNOWN;
 		if (!strcmp(file_ext, "hlsl")) {
-			if (str_contains(asset_path, ".vs")) {
+			if (cstr_contains(asset_path, ".vs")) {
 				entrypoint = "VSMain";
 				target = "vs_5_0";
 				type = GFX_SHADER_VERTEX;
@@ -263,7 +263,7 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 						  &vertex_type_str);
 				vertex_type = gfx_vertex_type_from_string(
 					vertex_type_str);
-			} else if (str_contains(asset_path, ".ps")) {
+			} else if (cstr_contains(asset_path, ".ps")) {
 				entrypoint = "PSMain";
 				target = "ps_5_0";
 				type = GFX_SHADER_PIXEL;
@@ -273,6 +273,10 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 		if (shader != NULL) {
 			gfx_shader_compile_from_file(eng->gfx.system, asset_path, entrypoint, target, shader);
 			gfx_shader_build_program(eng->gfx.system, shader);
+			if (type == GFX_SHADER_VERTEX) {
+				gfx_vertex_shader_set_vertex_type((gfx_vertex_shader_t*)shader->impl, vertex_type);
+				gfx_shader_create_input_layout(eng->gfx.system, shader);
+			}
 		}
 		resource = mem_arena_alloc(&mem_arena, sizeof(game_resource_t),
 					   DEFAULT_ALIGNMENT);

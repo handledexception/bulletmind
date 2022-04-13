@@ -318,7 +318,7 @@ void gui_get_global_mouse_state_win32(struct mouse_device* mouse)
 		GetAsyncKeyState(VK_XBUTTON2) & 0x8000 ? 1 : 0;
 }
 
-bool gui_init_win32(gui_platform_t* gp)
+result gui_init_win32(gui_platform_t* gp)
 {
 	g_hinstance = get_module_from_wndproc(gui_win32_wndproc);
 
@@ -344,7 +344,7 @@ bool gui_init_win32(gui_platform_t* gp)
 	gp->get_handle = gui_get_window_handle_win32;
 	gp->get_global_mouse_state = gui_get_global_mouse_state_win32;
 
-	return true;
+	return RESULT_OK;
 }
 
 void gui_refresh_win32(gui_platform_t* gp)

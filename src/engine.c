@@ -119,7 +119,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	vec3f_t cam_eye = {0.f, 0.25f, -1.f};
 	vec3f_t cam_dir = {0.f, 0.f, 0.f};
 	vec3f_t cam_up = {0.f, 1.f, 0.f};
-	gfx_camera_init(&eng->gfx.camera);
+	gfx_camera_new(&eng->gfx.camera);
 	gfx_camera_persp(&eng->gfx.camera, &cam_eye, &cam_dir, &cam_up,
 			 &viewport, 60.f, Z_NEAR, Z_FAR);
 	logger(LOG_INFO,
@@ -151,9 +151,11 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	}
 
 	game_resource_t* resource = eng_get_resource(eng, "pos_color_vs");
-	gfx_vertex_shader_t* hlsl_vs = (gfx_vertex_shader_t*)resource->data;
+	gfx_shader_t* hlsl_vs = (gfx_shader_t*)resource->data;
+	// gfx_vertex_shader_t* hlsl_vs = (gfx_vertex_shader_t*)pos_color_vs->impl;
 	resource = eng_get_resource(eng, "pos_color_ps");
 	gfx_shader_t* hlsl_ps = (gfx_shader_t*)resource->data;
+	// gfx_pixel_shader_t* hlsl_ps = (gfx_pixel_shader_t*)pos_color_ps->impl;
 	gfx_set_vertex_shader(eng->gfx.system, hlsl_vs);
 	gfx_set_pixel_shader(eng->gfx.system, hlsl_ps);
 	u32 num_shader_vars = 2;

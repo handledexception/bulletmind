@@ -37,14 +37,14 @@ void draw_circle(SDL_Renderer* rend, f32 cx, f32 cy, f32 radius)
 
 	while (x >= y) {
 		//  Each of the following renders an octant of the circle
-		SDL_RenderDrawPoint(rend, cx + x, cy - y);
-		SDL_RenderDrawPoint(rend, cx + x, cy + y);
-		SDL_RenderDrawPoint(rend, cx - x, cy - y);
-		SDL_RenderDrawPoint(rend, cx - x, cy + y);
-		SDL_RenderDrawPoint(rend, cx + y, cy - x);
-		SDL_RenderDrawPoint(rend, cx + y, cy + x);
-		SDL_RenderDrawPoint(rend, cx - y, cy - x);
-		SDL_RenderDrawPoint(rend, cx - y, cy + x);
+		SDL_RenderDrawPoint(rend, (int)(cx + x), (int)(cy - y));
+		SDL_RenderDrawPoint(rend, (int)(cx + x), (int)(cy + y));
+		SDL_RenderDrawPoint(rend, (int)(cx - x), (int)(cy - y));
+		SDL_RenderDrawPoint(rend, (int)(cx - x), (int)(cy + y));
+		SDL_RenderDrawPoint(rend, (int)(cx + y), (int)(cy - x));
+		SDL_RenderDrawPoint(rend, (int)(cx + y), (int)(cy + x));
+		SDL_RenderDrawPoint(rend, (int)(cx - y), (int)(cy - x));
+		SDL_RenderDrawPoint(rend, (int)(cx - y), (int)(cy + x));
 
 		if (error <= 0.f) {
 			++y;
@@ -98,8 +98,8 @@ void draw_sprite_sheet(SDL_Renderer* rend, sprite_sheet_t* sprite_sheet,
 		frame_delay = 0.025;
 
 	// printf("frame_delay %f\n", frame_delay);
-	s32 scaled_width = current_frame->bbox.max.x * backing_sprite->scaling;
-	s32 scaled_height = current_frame->bbox.max.y * backing_sprite->scaling;
+	s32 scaled_width = (s32)current_frame->bbox.max.x * backing_sprite->scaling;
+	s32 scaled_height = (s32)current_frame->bbox.max.y * backing_sprite->scaling;
 	SDL_Rect dst = {
 		(s32)(org->x) - scaled_width / 2,
 		(s32)(org->y) - scaled_height / 2,

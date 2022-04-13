@@ -2,7 +2,7 @@
 #include "gfx/gfx.h"
 #include "gfx/camera.h"
 
-void gfx_camera_init(camera_t* cam)
+void gfx_camera_new(camera_t* cam)
 {
 	if (cam == NULL)
 		cam = (camera_t*)mem_alloc(sizeof(*cam));
@@ -23,7 +23,7 @@ void gfx_camera_init(camera_t* cam)
 void gfx_camera_free(camera_t* cam)
 {
 	if (cam != NULL) {
-		free((void*)cam);
+		mem_free((void*)cam);
 		cam = NULL;
 	}
 }

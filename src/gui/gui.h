@@ -117,18 +117,18 @@ struct gui_display {
 	gui_display_orientation_t orientation;
 };
 
-BM_EXPORT bool gui_init(void);
+BM_EXPORT result gui_init(void);
 BM_EXPORT void gui_refresh(void);
 BM_EXPORT void gui_shutdown(void);
 
 #if defined(_WIN32)
-BM_EXPORT bool gui_init_win32(gui_platform_t* gp);
+BM_EXPORT result gui_init_win32(gui_platform_t* gp);
 BM_EXPORT void gui_refresh_win32(gui_platform_t* gp);
 #elif defined(__APPLE__)
-BM_EXPORT bool gui_init_macos(gui_platform_t* gp);
+BM_EXPORT result gui_init_macos(gui_platform_t* gp);
 BM_EXPORT void gui_refresh_macos(gui_platform_t* gp);
 #elif defined(__linux__)
-BM_EXPORT bool gui_init_linux(gui_platform_t* gp);
+BM_EXPORT result gui_init_linux(gui_platform_t* gp);
 BM_EXPORT void gui_refresh_linux(gui_platform_t* gp);
 #endif
 

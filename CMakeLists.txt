@@ -79,8 +79,8 @@ set(TOMLC99_SOURCES
 
 # core
 set(BM_CORE_HEADERS
+    src/core/algorithm.h
     src/core/binary.h
-    src/core/bitfield.h
     src/core/buffer.h
     src/core/console.h
     src/core/export.h
@@ -88,6 +88,7 @@ set(BM_CORE_HEADERS
     src/core/mem_align.h
     src/core/memory.h
     src/core/path.h
+    src/core/random.h
     src/core/rect.h
     src/core/scancode.h
     src/core/string.h
@@ -103,7 +104,6 @@ set(BM_CORE_SOURCES
     src/core/mem_align.c
     src/core/memory.c
     src/core/path.c
-    src/core/random.c
     src/core/string.c
     src/core/utils.c)
 
