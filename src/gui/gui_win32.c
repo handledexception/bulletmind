@@ -76,6 +76,18 @@ LRESULT gui_process_mouse_move_win32(UINT msg, WPARAM wp, LPARAM lp)
 	return 0;
 }
 
+LRESULT gui_process_window_size_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
+{
+	gui_event_t evt;
+	memset(&evt, 0, sizeof(gui_event_t));
+	evt.type = GUI_EVENT_WINDOW_SIZE;
+	evt.timestamp = os_get_time_ns();
+	UINT width = LOWORD(lp);
+	UINT height = HIWORD(lp);
+	vec_push_back(gui->events, &evt);
+	return 0;
+}
+
 LRESULT gui_process_mouse_activate_win32(UINT msg, WPARAM wp, LPARAM lp)
 {
 	return 0;
@@ -211,6 +223,8 @@ LRESULT CALLBACK gui_win32_wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	case WM_ACTIVATEAPP:
 		gui_clear_key_state();
 		break;
+	case WM_SIZE:
+		return gui_process_window_size_win32(hwnd, msg, wp, lp);
 	case WM_MOUSEMOVE:
 		return gui_process_mouse_move_win32(msg, wp, lp);
 	// case WM_CAPTURECHANGED:
@@ -318,13 +332,13 @@ void gui_get_global_mouse_state_win32(struct mouse_device* mouse)
 		GetAsyncKeyState(VK_XBUTTON2) & 0x8000 ? 1 : 0;
 }
 
-result gui_init_win32(gui_platform_t* gp)
+result gui_init_win32(gui_system_t* gp)
 {
 	g_hinstance = get_module_from_wndproc(gui_win32_wndproc);
 
 	WNDCLASSEX wcex;
 	wcex.cbSize = sizeof(WNDCLASSEX);
-	wcex.hCursor = NULL;
+	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wcex.hIcon = NULL;
 	wcex.hIconSm = NULL;
 	wcex.lpszMenuName = NULL;
@@ -347,7 +361,7 @@ result gui_init_win32(gui_platform_t* gp)
 	return RESULT_OK;
 }
 
-void gui_refresh_win32(gui_platform_t* gp)
+void gui_refresh_win32(gui_system_t* gp)
 {
 	MSG msg;
 	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {

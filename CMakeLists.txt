@@ -93,6 +93,7 @@ set(BM_CORE_HEADERS
     src/core/scancode.h
     src/core/string.h
     src/core/time_convert.h
+    src/core/toml_config.h
     src/core/types.h
     src/core/utils.h
     src/core/vector.h)
@@ -105,6 +106,7 @@ set(BM_CORE_SOURCES
     src/core/memory.c
     src/core/path.c
     src/core/string.c
+    src/core/toml_config.c
     src/core/utils.c)
 
 # math
@@ -150,31 +152,33 @@ set(BM_GUI_SOURCES
 
 # game
 set(BM_GAME_HEADERS
-    src/audio.h
+    src/asset.h
+    # src/audio.h
     src/command.h
-    src/engine.h
-    src/entity.h
-    src/font.h
+    # src/engine.h
+    # src/entity.h
+    # src/font.h
     src/input.h
-    src/render.h
-    src/resource.h
-    src/sprite.h
-    src/toml_config.h)
+    # src/render.h
+    # src/resource.h
+    # src/sprite.h
+)
 set(BM_GAME_SOURCES
-    src/audio.c
+    src/asset.c
+    # src/audio.c
     src/command.c
-    src/engine.c
-    src/entity.c
-    src/font.c
+    # src/engine.c
+    # src/entity.c
+    # src/font.c
     src/input.c
     src/main.c
-    src/render.c
-    src/resource.c
-    src/sprite.c
-    src/toml_config.c)
+    # src/render.c
+    # src/resource.c
+    # src/sprite.c
+)
 
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-    set(TARGET_COMPILE_DEFINES
+    set(TARGET_COMPILE_DEFS
         -DUNICODE
         -D_UNICODE
         -DBM_WINDOWS
@@ -215,14 +219,14 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
         SDL2_mixer.lib
         kernel32)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(TARGET_COMPILE_DEFINES
+    set(TARGET_COMPILE_DEFS
         -DBM_DARWIN)
     set(BM_PLATFORM_SOURCES
         ${BM_PLATFORM_SOURCES}
         src/platform/platform-darwin.c
         src/platform/platform-posix.c)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set(TARGET_COMPILE_DEFINES
+    set(TARGET_COMPILE_DEFS
         -DBM_LINUX)
 endif()
 
@@ -271,7 +275,7 @@ else()
 endif()
 
 set_property(TARGET bulletmind PROPERTY C_STANDARD 11)
-target_compile_definitions(bulletmind PRIVATE ${TARGET_COMPILE_DEFINES})
+target_compile_definitions(bulletmind PRIVATE ${TARGET_COMPILE_DEFS})
 target_include_directories(bulletmind PRIVATE ${TARGET_INCLUDE_DIRS})
 target_link_directories(bulletmind PRIVATE ${TARGET_LINK_DIRS})
 target_link_libraries(bulletmind PRIVATE ${TARGET_LINK_LIBS})
@@ -309,73 +313,72 @@ target_link_options(bulletmind PRIVATE ${TARGET_LINK_OPTS})
 # set_property(TARGET bulletmind-cpp PROPERTY CXX_STANDARD 17)
 
 # post-build commands
-if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-    # copy SDL2 DLLs
-    add_custom_command(TARGET bulletmind POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libFLAC-8.dll
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/libFLAC-8.dll)
-    add_custom_command(TARGET bulletmind POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libjpeg-9.dll
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/libjpeg-9.dll)
-    add_custom_command(TARGET bulletmind POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libmodplug-1.dll
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/libmodplug-1.dll)
-    add_custom_command(TARGET bulletmind POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libmpg123-0.dll
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/libmpg123-0.dll)
-    add_custom_command(TARGET bulletmind POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libogg-0.dll
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/libogg-0.dll)
-    add_custom_command(TARGET bulletmind POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libopus-0.dll
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/libopus-0.dll)
-    add_custom_command(TARGET bulletmind POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libopusfile-0.dll
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/libopusfile-0.dll)
-    add_custom_command(TARGET bulletmind POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libpng16-16.dll
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/libpng16-16.dll)
-    add_custom_command(TARGET bulletmind POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libtiff-5.dll
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/libtiff-5.dll)
-    add_custom_command(TARGET bulletmind POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libvorbis-0.dll
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/libvorbis-0.dll)
-    add_custom_command(TARGET bulletmind POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libvorbisfile-3.dll
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/libvorbisfile-3.dll)
-    add_custom_command(TARGET bulletmind POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libwebp-7.dll
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/libwebp-7.dll)
-    add_custom_command(TARGET bulletmind POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/SDL2.dll
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/SDL2.dll)
-    add_custom_command(TARGET bulletmind POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/SDL2_image.dll
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/SDL2_image.dll)
-    add_custom_command(TARGET bulletmind POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/SDL2_mixer.dll
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/SDL2_mixer.dll)
-    add_custom_command(TARGET bulletmind POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/zlib1.dll
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/zlib1.dll)
-endif()
+# if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+#     add_custom_command(TARGET bulletmind POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#         ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libFLAC-8.dll
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libFLAC-8.dll)
+#     add_custom_command(TARGET bulletmind POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#         ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libjpeg-9.dll
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libjpeg-9.dll)
+#     add_custom_command(TARGET bulletmind POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#         ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libmodplug-1.dll
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libmodplug-1.dll)
+#     add_custom_command(TARGET bulletmind POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#         ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libmpg123-0.dll
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libmpg123-0.dll)
+#     add_custom_command(TARGET bulletmind POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#         ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libogg-0.dll
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libogg-0.dll)
+#     add_custom_command(TARGET bulletmind POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#         ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libopus-0.dll
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libopus-0.dll)
+#     add_custom_command(TARGET bulletmind POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#         ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libopusfile-0.dll
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libopusfile-0.dll)
+#     add_custom_command(TARGET bulletmind POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#         ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libpng16-16.dll
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libpng16-16.dll)
+#     add_custom_command(TARGET bulletmind POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#         ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libtiff-5.dll
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libtiff-5.dll)
+#     add_custom_command(TARGET bulletmind POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#         ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libvorbis-0.dll
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libvorbis-0.dll)
+#     add_custom_command(TARGET bulletmind POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#         ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libvorbisfile-3.dll
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libvorbisfile-3.dll)
+#     add_custom_command(TARGET bulletmind POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#         ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libwebp-7.dll
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libwebp-7.dll)
+#     add_custom_command(TARGET bulletmind POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#         ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/SDL2.dll
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>/SDL2.dll)
+#     add_custom_command(TARGET bulletmind POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#         ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/SDL2_image.dll
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>/SDL2_image.dll)
+#     add_custom_command(TARGET bulletmind POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#         ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/SDL2_mixer.dll
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>/SDL2_mixer.dll)
+#     add_custom_command(TARGET bulletmind POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#         ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/zlib1.dll
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>/zlib1.dll)
+# endif()
 # copy assets
 add_custom_command(TARGET bulletmind POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -387,21 +390,21 @@ add_custom_command(TARGET bulletmind POST_BUILD
 #     ${CMAKE_CURRENT_SOURCE_DIR}/config
 #     $<TARGET_FILE_DIR:${PROJECT_NAME}>/config)
 
-add_executable(bm_tests
-    src/tests.c
-    ${MURMURHASH2_SOURCES}
-    ${TOMLC99_SOURCES}
-    ${BM_CORE_HEADERS}
-    ${BM_CORE_SOURCES}
-    ${BM_MATH_HEADERS}
-    ${BM_MATH_SOURCES}
-    ${BM_PLATFORM_HEADERS}
-    ${BM_PLATFORM_SOURCES})
-set_property(TARGET bm_tests PROPERTY C_STANDARD 11)
-target_compile_definitions(bm_tests PRIVATE -D_CRT_SECURE_NO_WARNINGS)
-target_include_directories(bm_tests PRIVATE
-    ${TARGET_INCLUDE_DIRS}
-    deps/tau)
-target_link_directories(bm_tests PRIVATE ${TARGET_LINK_DIRS})
-target_link_libraries(bm_tests PRIVATE ${TARGET_LINK_LIBS})
-target_link_options(bm_tests PRIVATE ${TARGET_LINK_OPTS})
+# add_executable(bm_tests
+#     src/tests.c
+#     ${MURMURHASH2_SOURCES}
+#     ${TOMLC99_SOURCES}
+#     ${BM_CORE_HEADERS}
+#     ${BM_CORE_SOURCES}
+#     ${BM_MATH_HEADERS}
+#     ${BM_MATH_SOURCES}
+#     ${BM_PLATFORM_HEADERS}
+#     ${BM_PLATFORM_SOURCES})
+# set_property(TARGET bm_tests PROPERTY C_STANDARD 11)
+# target_compile_definitions(bm_tests PRIVATE -D_CRT_SECURE_NO_WARNINGS)
+# target_include_directories(bm_tests PRIVATE
+#     ${TARGET_INCLUDE_DIRS}
+#     deps/tau)
+# target_link_directories(bm_tests PRIVATE ${TARGET_LINK_DIRS})
+# target_link_libraries(bm_tests PRIVATE ${TARGET_LINK_LIBS})
+# target_link_options(bm_tests PRIVATE ${TARGET_LINK_OPTS})

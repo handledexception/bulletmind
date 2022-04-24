@@ -514,6 +514,8 @@ gfx_system_t* gfx_system_init(const struct gfx_config* cfg, s32 flags)
 void gfx_system_shutdown(gfx_system_t* gfx)
 {
 	if (gfx) {
+		gfx_destroy_render_target(gfx);
+		gfx_destroy_zstencil(gfx);
 		gfx_com_release_d3d11(gfx);
 		gfx_destroy_device_dependent_resources(gfx);
 		mem_free(gfx);
@@ -1055,7 +1057,7 @@ result gfx_shader_compile_from_file(gfx_system_t* gfx,
 {
 	if (shader == NULL)
 		return RESULT_NULL;
-	if (!os_file_exists(path))
+	if (!os_path_exists(path))
 		return RESULT_NOT_FOUND;
 	size_t file_size = os_get_file_size(path);
 	if (file_size == 0)
@@ -1535,6 +1537,18 @@ result gfx_init_render_target(gfx_system_t* gfx, u32 width, u32 height,
 	return RESULT_OK;
 }
 
+void gfx_destroy_render_target(gfx_system_t* gfx)
+{
+	if (gfx && gfx->render_target) {
+		if (gfx->render_target->impl) {
+			mem_free(gfx->render_target->impl);
+			gfx->render_target->impl = NULL;
+		}
+		mem_free(gfx->render_target);
+		gfx->render_target = NULL;
+	}
+}
+
 void gfx_set_render_target(gfx_system_t* gfx, gfx_texture_t* texture,
 			   gfx_texture_t* zstencil)
 {
@@ -1633,8 +1647,8 @@ void gfx_destroy_zstencil(gfx_system_t* gfx)
 		mem_free(gfx->zstencil_state_disabled);
 		gfx->zstencil_state_disabled = NULL;
 
-		mem_free(gfx->zstencil_target);
 		mem_free(gfx->zstencil_target->impl);
+		mem_free(gfx->zstencil_target);
 		gfx->zstencil_target->impl = NULL;
 		gfx->zstencil_target = NULL;
 	}

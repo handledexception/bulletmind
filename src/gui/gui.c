@@ -5,7 +5,7 @@
 #include "core/types.h"
 #include "core/memory.h"
 
-gui_platform_t* gui = NULL;
+gui_system_t* gui = NULL;
 
 result gui_init(void)
 {
@@ -14,7 +14,7 @@ result gui_init(void)
 	if (gui)
 		gui_shutdown();
 
-	gui = (gui_platform_t*)mem_alloc(sizeof(*gui));
+	gui = (gui_system_t*)mem_alloc(sizeof(*gui));
 	memset(gui, 0, sizeof(*gui));
 	vec_init(gui->events);
 

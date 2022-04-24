@@ -26,6 +26,30 @@
 extern "C" {
 #endif
 
+typedef enum {
+	BM_ARCH_X86,
+	BM_ARCH_AMD64,
+	BM_ARCH_ARM32,
+	BM_ARCH_ARM64,
+	BM_ARCH_PPC32,
+	BM_ARCH_PPC64,
+	BM_ARCH_UNKNOWN
+} architecture_t;
+
+typedef enum {
+	BM_COMPILER_GCC,
+	BM_COMPILER_CLANG,
+	BM_COMPILER_MSVC,
+	BM_COMPILER_UNKNOWN
+} compiler_t;
+
+typedef enum {
+	BM_PLATFORM_WINDOWS,
+	BM_PLATFORM_DARWIN,
+	BM_PLATFORM_LINUX,
+	BM_PLATFORM_UNKNOWN
+} platform_t;
+
 BM_EXPORT FILE* os_wfopen(const wchar_t* path, const char* mode);
 BM_EXPORT FILE* os_fopen(const char* path, const char* mode);
 BM_EXPORT s64 os_fgetsize(FILE* file);
@@ -62,12 +86,19 @@ BM_EXPORT void* os_dlopen(const char* path);
 BM_EXPORT void* os_dlsym(void* module, const char* func);
 BM_EXPORT void os_dlclose(void* module);
 
-BM_EXPORT bool os_file_exists(const char* path);
+BM_EXPORT bool os_path_exists(const char* path);
 
 BM_EXPORT long os_atomic_inc_long(volatile long* val);
 BM_EXPORT long os_atomic_dec_long(volatile long* val);
 BM_EXPORT long os_atomic_set_long(volatile long* ptr, long val);
 BM_EXPORT long os_atomic_exchange_long(volatile long* ptr, long val);
+
+BM_EXPORT architecture_t os_get_architecture(void);
+BM_EXPORT const char* os_architecture_to_string(architecture_t arch);
+BM_EXPORT compiler_t os_get_compiler(void);
+BM_EXPORT const char* os_compiler_to_string(compiler_t comp);
+BM_EXPORT platform_t os_get_platform(void);
+BM_EXPORT const char* os_platform_to_string(platform_t plat);
 
 #ifdef __cplusplus
 }

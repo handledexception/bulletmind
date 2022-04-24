@@ -35,6 +35,7 @@ BM_EXPORT void* mem_realloc(void* ptr, size_t size);
 BM_EXPORT void mem_free(void* ptr);
 BM_EXPORT void mem_copy(void* dst, void* src, size_t size);
 BM_EXPORT void mem_copy_sse2(void* dst, void* src, size_t size);
+BM_EXPORT void mem_log_usage();
 
 // Basic linear allocator
 // https://www.gingerbill.org/article/2019/02/08/memory-allocation-strategies-002/

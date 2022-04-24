@@ -17,8 +17,8 @@
 #include "audio.h"
 #include "engine.h"
 #include "resource.h"
-#include "toml_config.h"
 
+#include "core/toml_config.h"
 #include "core/logger.h"
 #include "core/memory.h"
 #include "core/path.h"
@@ -93,7 +93,7 @@ bool game_res_init(engine_t* eng)
 			return false;
 		}
 
-		if (!os_file_exists(asset_path)) {
+		if (!os_path_exists(asset_path)) {
 			logger(LOG_ERROR, "Game resource file not found: %s\n",
 			       asset_path);
 			return false;

@@ -53,7 +53,7 @@ u64 os_get_time_ns(void)
 	return (u64)time_val;
 }
 
-bool os_file_exists(const char* path)
+bool os_path_exists(const char* path)
 {
 	WIN32_FIND_DATAW wfd;
 	HANDLE hFind;

@@ -299,3 +299,87 @@ f64 os_get_time_msec(void)
 {
 	return nsec_to_msec_f64(os_get_time_ns());
 }
+
+architecture_t os_get_architecture(void)
+{
+#if defined(__i386__) || defined(_M_IX86)
+	return BM_ARCH_X86;
+#elif defined(__amd64__) || defined(_M_AMD64)
+	return BM_ARCH_AMD64;
+#elif defined(__aarch64__)
+	return BM_ARCH_ARM64;
+#elif defined(__arm__)
+	return BM_ARCH_ARM32;
+#elif defined(__ppc64__) || defined(_ARCH_PPC64)
+	return BM_ARCH_PPC64;
+#elif defined(__ppc__) || defined(_ARCH_PPC) || defined(_M_PPC)
+	return BM_ARCH_PPC32;
+#endif
+	return BM_ARCH_UNKNOWN;
+}
+
+const char* os_architecture_to_string(architecture_t arch)
+{
+	switch (arch) {
+	case BM_ARCH_X86: return "x86";
+	case BM_ARCH_AMD64: return "amd64";
+	case BM_ARCH_ARM32: return "arm32";
+	case BM_ARCH_ARM64: return "arm64";
+	case BM_ARCH_PPC32: return "PPC32";
+	case BM_ARCH_PPC64: return "PPC64";
+	case BM_ARCH_UNKNOWN:
+	default:
+		return "Unknown";
+	}
+	return "Unknown";
+}
+
+compiler_t os_get_compiler(void)
+{
+#if defined(__clang__)
+	return BM_COMPILER_CLANG;
+#elif defined(__GNUC__)
+	return BM_COMPILER_GCC;
+#elif defined(_MSC_VER)
+	return BM_COMPILER_MSVC;
+#endif
+	return BM_COMPILER_UNKNOWN;
+}
+
+const char* os_compiler_to_string(compiler_t comp)
+{
+	switch (comp) {
+	case BM_COMPILER_CLANG: return "Clang";
+	case BM_COMPILER_GCC: return "GCC";
+	case BM_COMPILER_MSVC: return "MSVC";
+	case BM_COMPILER_UNKNOWN:
+	default:
+		return "Unknown";
+	}
+	return "Unknown";
+}
+
+platform_t os_get_platform(void)
+{
+#if defined(_WIN32)
+	return BM_PLATFORM_WINDOWS;
+#elif defined(__APPLE__)
+	return BM_PLATFORM_DARWIN;
+#elif defined(linux) || defined(__linux__)
+	return BM_PLATFORM_LINUX;
+#endif
+	return BM_PLATFORM_UNKNOWN;
+}
+
+const char* os_platform_to_string(platform_t p)
+{
+	switch (p) {
+	case BM_PLATFORM_WINDOWS: return "Windows";
+	case BM_PLATFORM_DARWIN: return "Darwin";
+	case BM_PLATFORM_LINUX: return "Linux";
+	case BM_PLATFORM_UNKNOWN:
+	default:
+		return "Unknown";
+	}
+	return "Unknown";
+}
