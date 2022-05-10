@@ -136,6 +136,7 @@ set(BM_PLATFORM_SOURCES
 
 # gfx
 set(BM_GFX_HEADERS
+    src/gfx/enums.h
     src/gfx/gfx.h
     src/gfx/camera.h
     src/gfx/scene.h)
