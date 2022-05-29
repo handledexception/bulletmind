@@ -28,7 +28,6 @@ struct application {
 	u32 version;
 	bool running;
 	VECTOR(gui_window_t*) windows;
-	struct gfx_system* gfx;
 	struct input_state* inputs;
 	struct asset_manager* assets;
 	camera_t cam;
@@ -41,7 +40,6 @@ result app_init(struct application* app, s32 version, const char* asset_cfg)
 	app->running = false;
 	app->version = version;
 	vec_init(app->windows);
-	app->gfx = NULL;
 	ENSURE_OK(gui_init());
 	char ver_str[16];
 	version_string(app->version, ver_str);
@@ -61,7 +59,9 @@ result app_init(struct application* app, s32 version, const char* asset_cfg)
 		.fullscreen = false,
 	};
 	rect_t viewport = { .x = 0, .y = 0, .w = VIEW_WIDTH, .h = VIEW_HEIGHT };
-	app->gfx = gfx_system_init(&gfx_cfg, GFX_D3D11 | GFX_USE_ZBUFFER);
+	gfx_init(&gfx_cfg, GFX_D3D11 | GFX_USE_ZBUFFER);
+	gfx_init_sampler_state();
+	gfx_init_rasterizer(GFX_CULLING_NONE, 0);
 	vec3f_t cam_eye = {0.f, 0.25f, -1.f};
 	vec3f_t cam_dir = {0.f, 0.f, 0.f};
 	vec3f_t cam_up = {0.f, 1.f, 0.f};
@@ -76,7 +76,7 @@ result app_init(struct application* app, s32 version, const char* asset_cfg)
 	inp_bind_virtual_key(app->inputs, kCommandPlayerRight, SCANCODE_D);
 	inp_bind_virtual_key(app->inputs, kCommandPlayerSpeed, SCANCODE_LSHIFT);
 
-	app->assets = asset_manager_new(app->gfx, gui);
+	app->assets = asset_manager_new(gfx, gui);
 	asset_manager_load_toml(asset_cfg, app->assets);
 	return RESULT_OK;
 }
@@ -93,8 +93,8 @@ void app_refresh(struct application* app)
 			if (inp_cmd_get_state(app->inputs, kCommandQuit))
 				app->running = false;
 		}
-		gfx_render_clear(app->gfx, &kClearColor);
-		gfx_render_end(app->gfx, false, 0);
+		gfx_render_clear(&kClearColor);
+		gfx_render_end(false, 0);
 	}
 }
 
@@ -103,7 +103,7 @@ void app_shutdown(struct application* app)
 	if (app != NULL) {
 		asset_manager_free(app->assets);
 		inp_free(app->inputs);
-		gfx_system_shutdown(app->gfx);
+		gfx_shutdown();
 		gui_shutdown();
 	}
 }

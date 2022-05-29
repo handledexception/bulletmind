@@ -391,21 +391,21 @@ add_custom_command(TARGET bulletmind POST_BUILD
 #     ${CMAKE_CURRENT_SOURCE_DIR}/config
 #     $<TARGET_FILE_DIR:${PROJECT_NAME}>/config)
 
-# add_executable(bm_tests
-#     src/tests.c
-#     ${MURMURHASH2_SOURCES}
-#     ${TOMLC99_SOURCES}
-#     ${BM_CORE_HEADERS}
-#     ${BM_CORE_SOURCES}
-#     ${BM_MATH_HEADERS}
-#     ${BM_MATH_SOURCES}
-#     ${BM_PLATFORM_HEADERS}
-#     ${BM_PLATFORM_SOURCES})
-# set_property(TARGET bm_tests PROPERTY C_STANDARD 11)
-# target_compile_definitions(bm_tests PRIVATE -D_CRT_SECURE_NO_WARNINGS)
-# target_include_directories(bm_tests PRIVATE
-#     ${TARGET_INCLUDE_DIRS}
-#     deps/tau)
-# target_link_directories(bm_tests PRIVATE ${TARGET_LINK_DIRS})
-# target_link_libraries(bm_tests PRIVATE ${TARGET_LINK_LIBS})
-# target_link_options(bm_tests PRIVATE ${TARGET_LINK_OPTS})
+add_executable(bm_tests
+    src/tests.c
+    ${MURMURHASH2_SOURCES}
+    ${TOMLC99_SOURCES}
+    ${BM_CORE_HEADERS}
+    ${BM_CORE_SOURCES}
+    ${BM_MATH_HEADERS}
+    ${BM_MATH_SOURCES}
+    ${BM_PLATFORM_HEADERS}
+    ${BM_PLATFORM_SOURCES})
+set_property(TARGET bm_tests PROPERTY C_STANDARD 11)
+target_compile_definitions(bm_tests PRIVATE -D_CRT_SECURE_NO_WARNINGS)
+target_include_directories(bm_tests PRIVATE
+    ${TARGET_INCLUDE_DIRS}
+    deps/tau)
+target_link_directories(bm_tests PRIVATE ${TARGET_LINK_DIRS})
+target_link_libraries(bm_tests PRIVATE ${TARGET_LINK_LIBS})
+target_link_options(bm_tests PRIVATE ${TARGET_LINK_OPTS})

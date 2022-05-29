@@ -14,9 +14,9 @@ static const char* kDX11VertexShaderTarget = "vs_5_0";
 static const char* kDX11PixelShaderTarget = "ps_5_0";
 
 BM_EXPORT DXGI_FORMAT gfx_pixel_format_to_dxgi_format(enum gfx_pixel_format pf);
-BM_EXPORT void gfx_activate_d3d11_debug_info(gfx_system_t* gfx);
-BM_EXPORT result gfx_com_release_d3d11(gfx_system_t* gfx);
-BM_EXPORT void gfx_bind_vertex_shader_input_layout(gfx_system_t* gfx);
+BM_EXPORT void gfx_activate_d3d11_debug_info(void);
+BM_EXPORT result gfx_com_release_d3d11(void);
+BM_EXPORT void gfx_bind_vertex_shader_input_layout(void);
 
 #ifdef __cplusplus
 }
