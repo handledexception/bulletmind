@@ -30,7 +30,7 @@ struct asset {
 	bool lazy_load;
 };
 
-struct asset_manager* asset_manager_new(gfx_system_t* gfx, gui_system_t* gui)
+struct asset_manager* asset_manager_new(void)
 {
 	struct asset_manager* mgr = mem_alloc(sizeof(*mgr));
 	asset_manager_init(mgr);
@@ -163,7 +163,7 @@ bool asset_from_toml(const toml_table_t* table, struct asset_manager* mgr, asset
 	case kAssetMusic:
 		break;
 	case kAssetShader:
-		res = asset_make_shader(table, new_asset, mgr->gfx);
+		res = asset_make_shader(table, new_asset);
 		break;
 	case kAssetUnknown:
 	default:
@@ -174,7 +174,7 @@ bool asset_from_toml(const toml_table_t* table, struct asset_manager* mgr, asset
 	return res;
 }
 
-bool asset_make_shader(const toml_table_t* table, asset_t* asset, gfx_system_t* gfx)
+bool asset_make_shader(const toml_table_t* table, asset_t* asset)
 {
 	if (asset == NULL || gfx == NULL)
 		return false;
@@ -198,11 +198,11 @@ bool asset_make_shader(const toml_table_t* table, asset_t* asset, gfx_system_t* 
 		}
 		gfx_shader_t* shader = gfx_shader_create(shader_type);
 		if (shader != NULL) {
-			gfx_shader_compile_from_file(gfx, asset->path, entrypoint, target, shader);
-			gfx_shader_build_program(gfx, shader);
+			gfx_shader_compile_from_file(asset->path, entrypoint, target, shader);
+			gfx_shader_build_program(shader);
 			if (shader_type == GFX_SHADER_VERTEX) {
 				gfx_vertex_shader_set_vertex_type((gfx_vertex_shader_t*)shader->impl, vertex_type);
-				gfx_shader_create_input_layout(gfx, shader);
+				gfx_shader_create_input_layout(shader);
 			}
 			asset->data = (void*)shader;
 		}

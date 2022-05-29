@@ -133,7 +133,7 @@ void gfx_init_sprite(gfx_buffer_t* vertex_buffer)
 	size_t sz_tex_verts = sizeof(vec2f_t) * 4;
 	vd->tex_verts->data = mem_alloc(sz_tex_verts);
 	vd->tex_verts->size = sizeof(vec2f_t);
-	gfx_buffer_create(gfx, vd, sz_positions + sz_tex_verts,
+	gfx_buffer_create(vd, sz_positions + sz_tex_verts,
 			  GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DYNAMIC,
 			  &vertex_buffer);
 }

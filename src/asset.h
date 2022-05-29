@@ -35,10 +35,8 @@ typedef enum {
 
 typedef struct asset asset_t;
 typedef struct asset_manager asset_manager_t;
-typedef struct gfx_system gfx_system_t;
-typedef struct gui_system gui_system_t;
 
-struct asset_manager* asset_manager_new(gfx_system_t* gfx, gui_system_t* gui);
+struct asset_manager* asset_manager_new(void);
 void asset_manager_init(struct asset_manager* mgr);
 void asset_manager_free(struct asset_manager* mgr);
 result asset_manager_load_toml(const char* path, struct asset_manager* mgr);
@@ -47,5 +45,5 @@ asset_t* asset_new();
 void asset_free(asset_t* asset);
 void asset_init(asset_t* asset);
 bool asset_from_toml(const toml_table_t* table, struct asset_manager* mgr, asset_t** asset);
-bool asset_make_shader(const toml_table_t* table, asset_t* asset, gfx_system_t* gfx);
+bool asset_make_shader(const toml_table_t* table, asset_t* asset);
 asset_kind_t asset_kind_from_string(const char* kind);

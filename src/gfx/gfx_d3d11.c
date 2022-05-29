@@ -61,6 +61,35 @@ static const D3D11_INPUT_ELEMENT_DESC kVertexDescPositionNormalColor[3] = {
 	 D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 };
 
+struct gfx_display {
+	char name[128];
+	char friendly_name[128];
+	u32 index;
+	u32 refresh_rate;
+	u32 width;
+	u32 height;
+	bool has_desktop;
+	enum gfx_display_orientation orientation;
+	rect_t desktop_coords;
+	IDXGIOutput* dxgi_output;
+};
+
+struct gfx_adapter {
+	char name[128];
+	char description[128];
+	u32 index;
+	u32 vendor_id;
+	u32 device_id;
+	u32 subsystem_id;
+	u32 revision;
+	u64 driver_version;
+	size_t vram;
+	size_t sys_mem;
+	size_t sys_mem_shared;
+	IDXGIAdapter1* dxgi_adapter;
+	VECTOR(struct gfx_display) displays;
+};
+
 struct gfx_buffer {
 	u8* data;
 	size_t size;
@@ -147,6 +176,23 @@ struct gfx_module {
 
 typedef HRESULT(WINAPI* PFN_CREATE_DXGI_FACTORY2)(UINT flags, REFIID riid,
 						  void** ppFactory);
+
+enum gfx_display_orientation gfx_dxgi_rotation_to_orientation(DXGI_MODE_ROTATION rotation)
+{
+	switch (rotation) {
+	case DXGI_MODE_ROTATION_ROTATE90:
+		return GFX_DISPLAY_ORIENTATION_90;
+	case DXGI_MODE_ROTATION_ROTATE180:
+		return GFX_DISPLAY_ORIENTATION_180;
+	case DXGI_MODE_ROTATION_ROTATE270:
+		return GFX_DISPLAY_ORIENTATION_270;
+	default:
+	case DXGI_MODE_ROTATION_UNSPECIFIED:
+	case DXGI_MODE_ROTATION_IDENTITY:
+		return GFX_DISPLAY_ORIENTATION_0;
+	}
+	return GFX_DISPLAY_ORIENTATION_0;
+}
 
 D3D11_USAGE gfx_buffer_usage_to_d3d11_usage(enum gfx_buffer_usage usage)
 {
@@ -275,30 +321,39 @@ void gfx_bind_vertex_shader_input_layout(void)
 //
 // gfx system
 //
-result gfx_enumerate_adapters(u32 adapter_index, u32* count)
+void unpack_driver_version(u64 ver, u16* aa, u16* bb, u16* ccccc, u64* ddddd)
 {
-	UINT i = 0;
+	*aa = (ver >> 48) & 0xffff;
+	*bb = (ver >> 32) & 0xffff;
+	*ccccc = (ver >> 16) & 0xffff;
+	*ddddd = ver & 0xffff;
+}
 
-	result res = RESULT_NOT_FOUND;
+result gfx_enumerate_adapters(struct vector* adapters, bool enum_displays)
+{
+	if (!gfx || !gfx->module || !gfx->module->dxgi_factory)
+		return RESULT_NULL;
 
-	IDXGIAdapter1* dxgi_adapter = NULL;
-	for (i = 0; IDXGIFactory2_EnumAdapters1(gfx->module->dxgi_factory, i,
-						&dxgi_adapter) == S_OK;
-	     i++) {
+	HRESULT hr = S_OK;
+	for (UINT i = 0; hr == S_OK; i++) {
+		struct gfx_adapter ga;
+		memset(&ga, 0, sizeof(struct gfx_adapter));
+
+		hr = IDXGIFactory2_EnumAdapters1(gfx->module->dxgi_factory, i,
+						&ga.dxgi_adapter);
+		if (FAILED(hr))
+			continue;
+
 		DXGI_ADAPTER_DESC desc;
-
-		IDXGIAdapter1_GetDesc(dxgi_adapter, &desc);
-
-		/* ignore Microsoft's 'basic' renderer */
+		IDXGIAdapter1_GetDesc(ga.dxgi_adapter, &desc);
+		// ignore Microsoft's 'basic' renderer
 		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c)
 			continue;
 
-		char adapter_name[512] = "";
-
-		os_wcs_to_utf8(desc.Description, 0, adapter_name,
-			       sizeof adapter_name);
+		os_wcs_to_utf8(desc.Description, 0, ga.description,
+			       sizeof(ga.description));
 		logger(LOG_INFO, "\033[7mgfx\033[m\tDXGI Adapter %u: %s", i,
-		       (const char*)&adapter_name[0]);
+		       (const char*)&ga.description[0]);
 		logger(LOG_INFO, "     \tDedicated VRAM: %u",
 		       desc.DedicatedVideoMemory);
 		logger(LOG_INFO, "     \tShared VRAM:    %u",
@@ -309,31 +364,36 @@ result gfx_enumerate_adapters(u32 adapter_index, u32* count)
 
 		LARGE_INTEGER umd;
 		if (SUCCEEDED(IDXGIAdapter1_CheckInterfaceSupport(
-			    dxgi_adapter, &BM_IID_IDXGIDevice, &umd))) {
-			const u64 version = umd.QuadPart;
-			const u16 aa = (version >> 48) & 0xffff;
-			const u16 bb = (version >> 32) & 0xffff;
-			const u16 ccccc = (version >> 16) & 0xffff;
-			const u64 ddddd = version & 0xffff;
+			    ga.dxgi_adapter, &BM_IID_IDXGIDevice, &umd))) {
+			u16 aa = 0;
+			u16 bb = 0;
+			u16 ccccc = 0;
+			u64 ddddd = 0;
+			unpack_driver_version((u64)umd.QuadPart, &aa, &bb, &ccccc, &ddddd);
 			logger(LOG_INFO, "     \tDriver Version: %u.%u.%u.%u",
 			       aa, bb, ccccc, ddddd);
+			ga.driver_version = umd.QuadPart;
 		} else {
 			logger(LOG_WARNING, "     \tDriver Version: Unknown");
 		}
 
-		if (adapter_index == i) {
-			res = RESULT_OK;
-			gfx->module->dxgi_adapter = dxgi_adapter;
-			// break;
-		}
+		ga.index = i;
+		ga.vram = desc.DedicatedVideoMemory;
+		ga.sys_mem = desc.DedicatedSystemMemory;
+		ga.sys_mem_shared = desc.SharedSystemMemory;
+		ga.vendor_id = desc.VendorId;
+		ga.device_id = desc.DeviceId;
+		ga.subsystem_id = desc.SubSysId;
+		ga.revision = desc.Revision;
 
 		logger(LOG_INFO, "[gfx] Monitors");
-		gfx_enumerate_adapter_monitors();
+		vec_init(ga.displays);
+		gfx_enumerate_displays(&ga, &ga.displays.vec);
 
-		(*count)++;
+		vector_push_back(adapters, &ga, sizeof(struct gfx_adapter));
 	}
 
-	return res;
+	return RESULT_OK;
 }
 
 static bool gfx_get_monitor_target(const MONITORINFOEX* info,
@@ -396,19 +456,23 @@ static bool gfx_get_monitor_target(const MONITORINFOEX* info,
 	return found;
 }
 
-result gfx_enumerate_adapter_monitors(void)
+result gfx_enumerate_displays(const gfx_adapter_t* adapter, struct vector* displays)
 {
-	if (!gfx && !gfx->module->dxgi_adapter)
+	if (!gfx || !gfx->module || !adapter->dxgi_adapter)
 		return RESULT_NULL;
 
-	IDXGIOutput* dxgi_output = NULL;
-	u32 output_index = 0;
+	struct gfx_display gd;
+	UINT output_index = 0;
+	if (FAILED(IDXGIAdapter1_EnumOutputs(adapter->dxgi_adapter, output_index,
+				       &gd.dxgi_output)))
+		return RESULT_NOT_FOUND;
+
 	for (output_index = 0;
-	     IDXGIAdapter1_EnumOutputs(gfx->module->dxgi_adapter, output_index,
-				       &dxgi_output) == S_OK;
+	     IDXGIAdapter1_EnumOutputs(adapter->dxgi_adapter, output_index,
+				       &gd.dxgi_output) == S_OK;
 	     output_index++) {
 		DXGI_OUTPUT_DESC desc;
-		if (FAILED(IDXGIOutput_GetDesc(dxgi_output, &desc)))
+		if (FAILED(IDXGIOutput_GetDesc(gd.dxgi_output, &desc)))
 			continue;
 
 		bool target_found = false;
@@ -429,17 +493,15 @@ result gfx_enumerate_adapter_monitors(void)
 				refresh_rate = mode.dmDisplayFrequency;
 			}
 			const RECT rect = desc.DesktopCoordinates;
-			char device_name[512] = "";
-			char friendly_name[512] = "";
-			os_wcs_to_utf8(desc.DeviceName, 0, device_name,
+			os_wcs_to_utf8(desc.DeviceName, 0, gd.name,
 				       sizeof desc.DeviceName);
 			os_wcs_to_utf8(target.monitorFriendlyDeviceName, 0,
-				       friendly_name,
+				       gd.friendly_name,
 				       sizeof target.monitorFriendlyDeviceName);
 			logger(LOG_INFO, "     \tOutput %u:     %s",
-			       output_index, device_name);
+			       output_index, gd.name);
 			logger(LOG_INFO, "     \tFriendly Name: %s",
-			       friendly_name);
+			       gd.friendly_name);
 			logger(LOG_INFO, "     \tPosition:      %d, %d",
 			       rect.left, rect.top);
 			logger(LOG_INFO, "     \tSize:          %d, %d",
@@ -448,6 +510,17 @@ result gfx_enumerate_adapter_monitors(void)
 			       desc.AttachedToDesktop ? "true" : "false");
 			logger(LOG_INFO, "     \tRefresh Rate:  %uhz",
 			       refresh_rate);
+			gd.desktop_coords.x = rect.left;
+			gd.desktop_coords.y = rect.top;
+			gd.desktop_coords.w = rect.right;
+			gd.desktop_coords.h = rect.bottom;
+			gd.width = rect.right - rect.left;
+			gd.height = rect.bottom - rect.top;
+			gd.orientation = gfx_dxgi_rotation_to_orientation(desc.Rotation);
+			gd.has_desktop = desc.AttachedToDesktop;
+			gd.refresh_rate = refresh_rate;
+			DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY output_tect = target.outputTechnology;
+			vector_push_back(displays, &gd, sizeof(struct gfx_display));
 		}
 	}
 	return RESULT_OK;
@@ -514,6 +587,20 @@ result gfx_init_dx11(const struct gfx_config* cfg, s32 flags)
 
 void gfx_shutdown_dx11(void)
 {
+	for (size_t i = 0; i < gfx->adapters.num_elems; i++) {
+		gfx_adapter_t* adap = vec_elem(gfx->adapters, i);
+		if (adap) {
+			for (size_t j = 0; j < adap->displays.num_elems; j++) {
+				gfx_display_t* disp = vec_elem(adap->displays, j);
+				if (disp) {
+					IDXGIOutput_Release(disp->dxgi_output);
+				}
+			}
+		}
+		vec_free(adap->displays);
+		IDXGIAdapter1_Release(adap->dxgi_adapter);
+	}
+	vec_free(gfx->adapters);
 	gfx_com_release_d3d11();
 }
 
@@ -624,10 +711,15 @@ result gfx_create_device_dependent_resources(s32 adapter)
 		goto cleanup;
 	}
 
-	u32 adapter_count = 0;
-	res = gfx_enumerate_adapters(adapter, &adapter_count);
+	vec_init(gfx->adapters);
+	res = gfx_enumerate_adapters(&gfx->adapters.vec, true);
 	if (res == RESULT_NOT_FOUND)
 		goto cleanup;
+
+	gfx_adapter_t* adap = vec_elem(gfx->adapters, adapter);
+	if (adap != NULL) {
+		gfx->module->dxgi_adapter = adap->dxgi_adapter;
+	}
 
 	gfx->module->d3d11_dll = os_dlopen("d3d11.dll");
 	if (!gfx->module->d3d11_dll) {

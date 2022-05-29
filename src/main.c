@@ -33,6 +33,21 @@ struct application {
 	camera_t cam;
 };
 
+result app_init_gfx(struct application* app, const struct gfx_config* cfg)
+{
+	rect_t viewport = { .x = 0, .y = 0, .w = VIEW_WIDTH, .h = VIEW_HEIGHT };
+	ENSURE_OK(gfx_init(cfg, GFX_D3D11 | GFX_USE_ZBUFFER));
+	ENSURE_OK(gfx_init_sampler_state());
+	ENSURE_OK(gfx_init_rasterizer(GFX_CULLING_NONE, 0));
+	vec3f_t cam_eye = {0.f, 0.25f, -1.f};
+	vec3f_t cam_dir = {0.f, 0.f, 0.f};
+	vec3f_t cam_up = {0.f, 1.f, 0.f};
+	gfx_camera_new(&app->cam);
+	gfx_camera_persp(&app->cam, &cam_eye, &cam_dir, &cam_up,
+			 &viewport, 60.f, Z_NEAR, Z_FAR);
+	return RESULT_OK;
+}
+
 result app_init(struct application* app, s32 version, const char* asset_cfg)
 {
 	if (app == NULL)
@@ -58,16 +73,7 @@ result app_init(struct application* app, s32 version, const char* asset_cfg)
 		.pix_fmt = GFX_FORMAT_BGRA,
 		.fullscreen = false,
 	};
-	rect_t viewport = { .x = 0, .y = 0, .w = VIEW_WIDTH, .h = VIEW_HEIGHT };
-	gfx_init(&gfx_cfg, GFX_D3D11 | GFX_USE_ZBUFFER);
-	gfx_init_sampler_state();
-	gfx_init_rasterizer(GFX_CULLING_NONE, 0);
-	vec3f_t cam_eye = {0.f, 0.25f, -1.f};
-	vec3f_t cam_dir = {0.f, 0.f, 0.f};
-	vec3f_t cam_up = {0.f, 1.f, 0.f};
-	gfx_camera_new(&app->cam);
-	gfx_camera_persp(&app->cam, &cam_eye, &cam_dir, &cam_up,
-			 &viewport, 60.f, Z_NEAR, Z_FAR);
+	ENSURE_OK(app_init_gfx(app, &gfx_cfg));
 	app->inputs = inp_new();
 	inp_bind_virtual_key(app->inputs, kCommandQuit, SCANCODE_ESCAPE);
 	inp_bind_virtual_key(app->inputs, kCommandPlayerUp, SCANCODE_W);
@@ -75,8 +81,7 @@ result app_init(struct application* app, s32 version, const char* asset_cfg)
 	inp_bind_virtual_key(app->inputs, kCommandPlayerLeft, SCANCODE_A);
 	inp_bind_virtual_key(app->inputs, kCommandPlayerRight, SCANCODE_D);
 	inp_bind_virtual_key(app->inputs, kCommandPlayerSpeed, SCANCODE_LSHIFT);
-
-	app->assets = asset_manager_new(gfx, gui);
+	app->assets = asset_manager_new();
 	asset_manager_load_toml(asset_cfg, app->assets);
 	return RESULT_OK;
 }

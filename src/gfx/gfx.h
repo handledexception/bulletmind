@@ -25,6 +25,7 @@ typedef struct rgba rgba_t;
 struct gfx_adapter;
 struct gfx_buffer;
 struct gfx_device;
+struct gfx_display;
 struct gfx_module;
 struct gfx_monitor;
 struct gfx_pixel_shader;
@@ -41,6 +42,7 @@ struct gfx_zstencil_state;
 typedef struct gfx_adapter gfx_adapter_t;
 typedef struct gfx_buffer gfx_buffer_t;
 typedef struct gfx_device gfx_device_t;
+typedef struct gfx_display gfx_display_t;
 typedef struct gfx_module gfx_module_t;
 typedef struct gfx_monitor gfx_monitor_t;
 typedef struct gfx_pixel_shader gfx_pixel_shader_t;
@@ -72,43 +74,17 @@ struct gfx_config {
 	enum gfx_pixel_format pix_fmt;
 };
 
-struct gfx_adapter {
-	u32 index;
-	char description[128];
-	u32 vendor_id;
-	u32 device_id;
-	u32 subsystem_id;
-	u32 revision;
-	size_t vram;
-	size_t sys_mem;
-	size_t sys_mem_shared;
-	const char *name;
-};
-
-struct gfx_display {
-	char name[128];
-	rect_t coords;
-	bool has_desktop;
-	enum gfx_display_orientation orientation;
-};
-
 struct gfx_system {
-	gfx_module_t* module;
-	enum gfx_module_type type;
-	result (*enumerate_adapters)(u32* num_adapters);
-	result (*enumerate_monitors)(u32 adapter_index, u32* num_monitors);
-	void (*set_viewport)(u32 width, u32 height);
-	result (*create_swap_chain)(const struct gfx_config* cfg);
-	result (*create_device)(u32 adapter_index);
-	void (*destroy_device)(void);
-
+	gfx_module_t* module;					/* platform graphics module */
+	enum gfx_module_type type;				/* module type (D3D11, OpenGL, etc.) */
+	VECTOR(struct gfx_adapter) adapters;	/* graphics adapters */
 };
 
 struct gfx_shader_var {
-	const char* name;
-	enum gfx_shader_var_type type;
-	size_t offset; // offset inside of constant buffer
-	void* data;
+	const char* name;				/* friendly name */
+	enum gfx_shader_var_type type;	/* shader variable type */
+	size_t offset;					/* offset inside of constant buffer */
+	void* data;						/* data blob */
 };
 
 struct gfx_shader {
@@ -170,9 +146,8 @@ BM_EXPORT void gfx_shutdown_dx11(void);
 #endif
 
 /* system ------------------------------------------------------------------ */
-BM_EXPORT result gfx_enumerate_adapters(u32 adapter_index,
-					u32* count);
-BM_EXPORT result gfx_enumerate_adapter_monitors();
+BM_EXPORT result gfx_enumerate_adapters(struct vector* adapters, bool enum_displays);
+BM_EXPORT result gfx_enumerate_displays(const gfx_adapter_t* adapter, struct vector* displays);
 BM_EXPORT void gfx_set_viewport(u32 width, u32 height);
 BM_EXPORT void gfx_system_bind_render_target(void);
 BM_EXPORT result gfx_create_swap_chain(const struct gfx_config* cfg);

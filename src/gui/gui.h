@@ -97,15 +97,15 @@ struct gui_window {
 };
 
 struct gui_system {
-	VECTOR(gui_window_t*) windows;                   /* window list */
-	VECTOR(gui_event_t) events;                      /* GUI events */
-	struct keyboard_key keyboard[MAX_KEYBOARD_KEYS]; /* raw keyboard state */
-	struct mouse_device mouse;                       /* raw mouse state */
-	bool (*create_window)(gui_window_t* window);
-	void (*destroy_window)(gui_window_t* window);
-	void (*show_window)(gui_window_t* window, bool shown);
-	void* (*get_handle)(gui_window_t* window);
-	void (*get_global_mouse_state)(struct mouse_device* mouse);
+	VECTOR(gui_window_t*) windows;								/* window list */
+	VECTOR(gui_event_t) events;									/* GUI events */
+	struct keyboard_key keyboard[MAX_KEYBOARD_KEYS];			/* raw keyboard state */
+	struct mouse_device mouse;									/* raw mouse state */
+	bool (*create_window)(gui_window_t* window);				/* platform window create function */
+	void (*destroy_window)(gui_window_t* window);				/* platform window destroy function */
+	void (*show_window)(gui_window_t* window, bool shown);		/* platform window show function */
+	void* (*get_handle)(gui_window_t* window);					/* platform window get handle function */
+	void (*get_global_mouse_state)(struct mouse_device* mouse); /* platform window get global mouse state function */
 };
 
 struct gui_display {

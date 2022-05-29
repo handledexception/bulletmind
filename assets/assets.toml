@@ -19,60 +19,60 @@ vertex_type = "poscol"
 
 [[assets]]
 name = "font_7px"
-path = "assets/font_7px_rgba.tga"
+path = "assets/image/font_7px_rgba.tga"
 kind = "sprite_font"
 
 [[assets]]
 name = "player"
-path = "assets/ss_player.toml"
+path = "assets/image/ss_player.toml"
 kind = "sprite_sheet"
 
 [[assets]]
 name = "skelly"
-path = "assets/ss_skelly.toml"
+path = "assets/image/ss_skelly.toml"
 kind = "sprite_sheet"
 
 [[assets]]
 name = "roboid"
-path = "assets/roboid.toml"
+path = "assets/image/roboid.toml"
 kind = "sprite_sheet"
 
 [[assets]]
 name = "bullet"
-path = "assets/bullet_rgba.tga"
+path = "assets/image/bullet_rgba.tga"
 kind = "sprite"
 scale = 2
 
 [[assets]]
 name = "tiled_wall_64x64"
-path = "assets/tiled_wall_64x64.tga"
+path = "assets/image/tiled_wall_64x64.tga"
 kind = "sprite"
 scale = 1
 
 [[assets]]
 name = "machines_floor_64x64"
-path = "assets/machines_floor_64x64.tga"
+path = "assets/image/machines_floor_64x64.tga"
 kind = "sprite"
 scale = 1
 
 [[assets]]
 name = "shadowy_wall_16x16"
-path = "assets/shadowy_wall_16x16.tga"
+path = "assets/image/shadowy_wall_16x16.tga"
 kind = "sprite"
 scale = 1
 
 [[assets]]
 name = "grass_dirt_block"
-path = "assets/grass_dirt_block.tga"
+path = "assets/image/grass_dirt_block.tga"
 kind = "sprite"
 scale = 1
 
 [[assets]]
 name = "snd_primary_fire"
-path = "assets/primary_fire.wav"
+path = "assets/sfx/primary_fire.wav"
 kind = "sfx"
 
 [[assets]]
 name = "theme_music"
-path = "assets/theme.ogg"
+path = "assets/music/theme.ogg"
 kind = "music"
