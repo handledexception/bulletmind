@@ -2,6 +2,8 @@
 #include "math/types.h"
 #include "core/memory.h"
 
+gfx_system_t* gfx = NULL;
+
 size_t gfx_get_shader_var_size(enum gfx_shader_var_type type)
 {
 	switch (type) {
@@ -64,6 +66,27 @@ u32 gfx_get_bits_per_pixel(enum gfx_pixel_format pf)
 	return bpp;
 }
 
+result gfx_init(const struct gfx_config* cfg,
+					s32 flags)
+{
+	if (cfg->module == GFX_MODULE_DX11) {
+		gfx = (gfx_system_t*)mem_alloc(sizeof(gfx_system_t));
+		memset(gfx, 0, sizeof(*gfx));
+		return gfx_init_dx11(cfg, flags);
+	}
+	return RESULT_NOT_IMPL;
+}
+
+void gfx_shutdown(void)
+{
+	if (gfx) {
+		gfx_destroy_render_target();
+		gfx_destroy_zstencil();
+		gfx_destroy_device_dependent_resources();
+		gfx_shutdown_dx11();
+	}
+}
+
 enum gfx_vertex_type gfx_vertex_type_from_string(const char* s)
 {
 	if (!strcmp(s, "posuv"))
@@ -97,7 +120,7 @@ u32 gfx_get_vertex_stride(enum gfx_vertex_type type)
 	return stride;
 }
 
-void gfx_init_sprite(gfx_system_t* gfx, gfx_buffer_t* vertex_buffer)
+void gfx_init_sprite(gfx_buffer_t* vertex_buffer)
 {
 	size_t sz = sizeof(struct gfx_vertex_data);
 	struct gfx_vertex_data* vd = (struct gfx_vertex_data*)mem_alloc(sz);
@@ -110,12 +133,12 @@ void gfx_init_sprite(gfx_system_t* gfx, gfx_buffer_t* vertex_buffer)
 	size_t sz_tex_verts = sizeof(vec2f_t) * 4;
 	vd->tex_verts->data = mem_alloc(sz_tex_verts);
 	vd->tex_verts->size = sizeof(vec2f_t);
-	gfx_buffer_create(gfx, vd, sz_positions + sz_tex_verts,
+	gfx_buffer_create(vd, sz_positions + sz_tex_verts,
 			  GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DYNAMIC,
 			  &vertex_buffer);
 }
 
-void gfx_draw_sprite(gfx_system_t* gfx, struct gfx_texture* texture, u32 width,
+void gfx_draw_sprite(struct gfx_texture* texture, u32 width,
 		     u32 height, u32 flags)
 {
 }

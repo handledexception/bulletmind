@@ -2,9 +2,9 @@
 #include "core/memory.h"
 #include "core/hashmap.h"
 #include "core/random.h"
-#include "platform/platform.h"
 #include "core/string.h"
 #include "core/vector.h"
+#include "platform/platform.h"
 
 struct foobar {
 	s32 id;

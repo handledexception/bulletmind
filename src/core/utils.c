@@ -12,5 +12,5 @@ void version_string(const u32 version, char* ver_str)
 	const u8 ver_min = (version & 0xff00) >> 8;
 	const u8 ver_rev = (version & 0xff);
 	sprintf(str_tmp, "%d.%d.%d", ver_maj, ver_min, ver_rev);
-	memcpy(ver_str, str_tmp, 12);
+	strncpy(ver_str, str_tmp, 12);
 }

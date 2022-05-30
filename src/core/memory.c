@@ -47,7 +47,7 @@ static void recalculate_usage(size_t new_size)
 	if (bytes_allocated <= min_bytes_allocated || min_bytes_allocated == 0)
 		os_atomic_set_long((long*)&min_bytes_allocated,
 				   (long)bytes_allocated);
-	logger(LOG_DEBUG, "allocated: %zu", bytes_allocated);
+	logger(LOG_DEBUG, "memory: allocated %zu bytes in %zu allocations", bytes_allocated, alloc_count);
 #else
 	(void)new_size;
 #endif
@@ -62,8 +62,8 @@ void* mem_alloc(size_t size)
 	ptr = allocator.malloc(alloc_size);
 	*(u64*)(ptr) = alloc_size;
 	*(u8**)(&ptr) += sizeof(u64);
-	recalculate_usage(bytes_allocated + alloc_size);
 	os_atomic_inc_long((long*)&alloc_count);
+	recalculate_usage(bytes_allocated + alloc_size);
 #else
 	ptr = allocator.malloc(size);
 #endif
@@ -106,8 +106,8 @@ void mem_free(void* ptr)
 		u64 obj_size = alloc_size - sizeof(u64);
 		p -= sizeof(u64);
 		allocator.free(p);
-		recalculate_usage(bytes_allocated - alloc_size);
 		os_atomic_dec_long((long*)&alloc_count);
+		recalculate_usage(bytes_allocated - alloc_size);
 #else
 		allocator.free(ptr);
 #endif
@@ -135,7 +135,7 @@ void mem_copy_sse2(void* dst, void* src, size_t size)
 	}
 }
 
-static void log_memory_usage()
+void mem_log_usage()
 {
 #ifdef BM_TRACK_MEMORY_USAGE
 	logger(LOG_INFO, "Current: %zu | Max: %zu | Min: %zu | Objects: %zu",

@@ -28,10 +28,10 @@ extern "C" {
 
 typedef struct gui_window gui_window_t;
 typedef struct gui_window_data gui_window_data_t;
-typedef struct gui_platform gui_platform_t;
+typedef struct gui_system gui_system_t;
 typedef struct gui_display gui_display_t;
 
-extern gui_platform_t* gui;
+extern gui_system_t* gui;
 
 typedef struct {
 	u32 format;
@@ -65,7 +65,7 @@ typedef enum {
 	GUI_EVENT_KEY_DOWN,
 	GUI_EVENT_KEY_UP,
 	GUI_EVENT_TEXT,
-	GUI_EVENT_WINDOW,
+	GUI_EVENT_WINDOW_SIZE,
 	GUI_EVENT_TOUCH,
 	GUI_EVENT_APP
 } gui_event_type_t;
@@ -99,17 +99,16 @@ struct gui_window {
 	gui_window_t* parent;
 };
 
-struct gui_platform {
-	VECTOR(gui_window_t*) windows;                   /* window list */
-	VECTOR(gui_event_t) events;                      /* GUI events */
-	struct keyboard_key keyboard[MAX_KEYBOARD_KEYS]; /* raw keyboard state */
-	struct mouse_device mouse;                       /* raw mouse state */
-	bool (*create_window)(gui_window_t* window);
-	void (*destroy_window)(gui_window_t* window);
-	void (*show_window)(gui_window_t* window, bool shown);
-	void (*set_window_pos)(gui_window_t* window, int x, int y);
-	void* (*get_handle)(gui_window_t* window);
-	void (*get_global_mouse_state)(struct mouse_device* mouse);
+struct gui_system {
+	VECTOR(gui_window_t*) windows;								/* window list */
+	VECTOR(gui_event_t) events;									/* GUI events */
+	struct keyboard_key keyboard[MAX_KEYBOARD_KEYS];			/* raw keyboard state */
+	struct mouse_device mouse;									/* raw mouse state */
+	bool (*create_window)(gui_window_t* window);				/* platform window create function */
+	void (*destroy_window)(gui_window_t* window);				/* platform window destroy function */
+	void (*show_window)(gui_window_t* window, bool shown);		/* platform window show function */
+	void* (*get_handle)(gui_window_t* window);					/* platform window get handle function */
+	void (*get_global_mouse_state)(struct mouse_device* mouse); /* platform window get global mouse state function */
 };
 
 struct gui_display {
@@ -126,14 +125,14 @@ BM_EXPORT void gui_refresh(void);
 BM_EXPORT void gui_shutdown(void);
 
 #if defined(_WIN32)
-BM_EXPORT result gui_init_win32(gui_platform_t* gp);
-BM_EXPORT void gui_refresh_win32(gui_platform_t* gp);
+BM_EXPORT result gui_init_win32(gui_system_t* gp);
+BM_EXPORT void gui_refresh_win32(gui_system_t* gp);
 #elif defined(__APPLE__)
-BM_EXPORT result gui_init_macos(gui_platform_t* gp);
-BM_EXPORT void gui_refresh_macos(gui_platform_t* gp);
+BM_EXPORT result gui_init_macos(gui_system_t* gp);
+BM_EXPORT void gui_refresh_macos(gui_system_t* gp);
 #elif defined(__linux__)
-BM_EXPORT result gui_init_linux(gui_platform_t* gp);
-BM_EXPORT void gui_refresh_linux(gui_platform_t* gp);
+BM_EXPORT result gui_init_linux(gui_system_t* gp);
+BM_EXPORT void gui_refresh_linux(gui_system_t* gp);
 #endif
 
 BM_EXPORT gui_display_t* gui_create_display(s32 index);
@@ -150,7 +149,7 @@ BM_EXPORT void gui_clear_key_state();
 BM_EXPORT void gui_get_global_mouse_state(struct mouse_device* mouse);
 
 BM_EXPORT bool gui_poll_event(gui_event_t* event);
-BM_EXPORT void gui_refresh_win32(gui_platform_t* gp);
+BM_EXPORT void gui_refresh_win32(gui_system_t* gp);
 
 #ifdef __cplusplus
 }
