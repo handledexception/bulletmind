@@ -69,21 +69,21 @@ LRESULT gui_process_mouse_move_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	ScreenToClient(hwnd, &pos);
 	gui->mouse.window_pos.x = pos.x;
 	gui->mouse.window_pos.y = pos.y;
-	gui->mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
-	gui->mouse.buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
-	gui->mouse.buttons[MOUSE_BUTTON_MIDDLE].button = MOUSE_BUTTON_MIDDLE;
-	gui->mouse.buttons[MOUSE_BUTTON_X1].button = MOUSE_BUTTON_X1;
-	gui->mouse.buttons[MOUSE_BUTTON_X2].button = MOUSE_BUTTON_X2;
-	gui->mouse.buttons[MOUSE_BUTTON_LEFT].state =
-		GetAsyncKeyState(VK_LBUTTON) & 0x8000 ? 1 : 0;
-	gui->mouse.buttons[MOUSE_BUTTON_RIGHT].state =
-		GetAsyncKeyState(VK_RBUTTON) & 0x8000 ? 1 : 0;
-	gui->mouse.buttons[MOUSE_BUTTON_MIDDLE].state =
-		GetAsyncKeyState(VK_MBUTTON) & 0x8000 ? 1 : 0;
-	gui->mouse.buttons[MOUSE_BUTTON_X1].state =
-		GetAsyncKeyState(VK_XBUTTON1) & 0x8000 ? 1 : 0;
-	gui->mouse.buttons[MOUSE_BUTTON_X2].state =
-		GetAsyncKeyState(VK_XBUTTON2) & 0x8000 ? 1 : 0;
+	// gui->mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
+	// gui->mouse.buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
+	// gui->mouse.buttons[MOUSE_BUTTON_MIDDLE].button = MOUSE_BUTTON_MIDDLE;
+	// gui->mouse.buttons[MOUSE_BUTTON_X1].button = MOUSE_BUTTON_X1;
+	// gui->mouse.buttons[MOUSE_BUTTON_X2].button = MOUSE_BUTTON_X2;
+	// gui->mouse.buttons[MOUSE_BUTTON_LEFT].state =
+	// 	GetAsyncKeyState(VK_LBUTTON) & 0x8000 ? 1 : 0;
+	// gui->mouse.buttons[MOUSE_BUTTON_RIGHT].state =
+	// 	GetAsyncKeyState(VK_RBUTTON) & 0x8000 ? 1 : 0;
+	// gui->mouse.buttons[MOUSE_BUTTON_MIDDLE].state =
+	// 	GetAsyncKeyState(VK_MBUTTON) & 0x8000 ? 1 : 0;
+	// gui->mouse.buttons[MOUSE_BUTTON_X1].state =
+	// 	GetAsyncKeyState(VK_XBUTTON1) & 0x8000 ? 1 : 0;
+	// gui->mouse.buttons[MOUSE_BUTTON_X2].state =
+	// 	GetAsyncKeyState(VK_XBUTTON2) & 0x8000 ? 1 : 0;
 
 	gui_event_t evt;
 	memset(&evt, 0, sizeof(gui_event_t));
@@ -93,21 +93,21 @@ LRESULT gui_process_mouse_move_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	evt.mouse.screen_pos.y = gui->mouse.screen_pos.y;
 	evt.mouse.window_pos.x = gui->mouse.window_pos.x;
 	evt.mouse.window_pos.y = gui->mouse.window_pos.y;
-	evt.mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
-	evt.mouse.buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
-	evt.mouse.buttons[MOUSE_BUTTON_MIDDLE].button = MOUSE_BUTTON_MIDDLE;
-	evt.mouse.buttons[MOUSE_BUTTON_X1].button = MOUSE_BUTTON_X1;
-	evt.mouse.buttons[MOUSE_BUTTON_X2].button = MOUSE_BUTTON_X2;
-	evt.mouse.buttons[MOUSE_BUTTON_LEFT].state =
-		GetAsyncKeyState(VK_LBUTTON) & 0x8000 ? 1 : 0;
-	evt.mouse.buttons[MOUSE_BUTTON_RIGHT].state =
-		GetAsyncKeyState(VK_RBUTTON) & 0x8000 ? 1 : 0;
-	evt.mouse.buttons[MOUSE_BUTTON_MIDDLE].state =
-		GetAsyncKeyState(VK_MBUTTON) & 0x8000 ? 1 : 0;
-	evt.mouse.buttons[MOUSE_BUTTON_X1].state =
-		GetAsyncKeyState(VK_XBUTTON1) & 0x8000 ? 1 : 0;
-	evt.mouse.buttons[MOUSE_BUTTON_X2].state =
-		GetAsyncKeyState(VK_XBUTTON2) & 0x8000 ? 1 : 0;
+	// evt.mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
+	// evt.mouse.buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
+	// evt.mouse.buttons[MOUSE_BUTTON_MIDDLE].button = MOUSE_BUTTON_MIDDLE;
+	// evt.mouse.buttons[MOUSE_BUTTON_X1].button = MOUSE_BUTTON_X1;
+	// evt.mouse.buttons[MOUSE_BUTTON_X2].button = MOUSE_BUTTON_X2;
+	// evt.mouse.buttons[MOUSE_BUTTON_LEFT].state =
+	// 	GetAsyncKeyState(VK_LBUTTON) & 0x8000 ? 1 : 0;
+	// evt.mouse.buttons[MOUSE_BUTTON_RIGHT].state =
+	// 	GetAsyncKeyState(VK_RBUTTON) & 0x8000 ? 1 : 0;
+	// evt.mouse.buttons[MOUSE_BUTTON_MIDDLE].state =
+	// 	GetAsyncKeyState(VK_MBUTTON) & 0x8000 ? 1 : 0;
+	// evt.mouse.buttons[MOUSE_BUTTON_X1].state =
+	// 	GetAsyncKeyState(VK_XBUTTON1) & 0x8000 ? 1 : 0;
+	// evt.mouse.buttons[MOUSE_BUTTON_X2].state =
+	// 	GetAsyncKeyState(VK_XBUTTON2) & 0x8000 ? 1 : 0;
 	vec_push_back(gui->events, &evt);
 
 	return 0;
