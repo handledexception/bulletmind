@@ -87,7 +87,8 @@
         "utility": "c",
         "xtr1common": "c",
         "*.2": "c",
-        "time.h": "c"
+        "time.h": "c",
+        "atomic": "c"
     },
     "cmake.configureOnOpen": false
 }

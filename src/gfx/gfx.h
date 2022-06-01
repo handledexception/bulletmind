@@ -134,6 +134,7 @@ struct gfx_vertex_data {
 };
 
 extern gfx_system_t* gfx;
+extern bool gfx_ok;
 
 BM_EXPORT result gfx_init(const struct gfx_config* cfg,
 					s32 flags);

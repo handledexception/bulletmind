@@ -133,7 +133,7 @@ int main(int argc, char** argv)
 	logger(LOG_INFO, "%s\n", s);
 
 	// Allocate memory arena - 8MiB
-	mem_arena_backing_buffer = (u8*)mem_alloc(ARENA_TOTAL_BYTES);
+	mem_arena_backing_buffer = (u8*)MEM_ALLOC(ARENA_TOTAL_BYTES);
 	mem_arena_init(&mem_arena, (void*)mem_arena_backing_buffer,
 		       (size_t)ARENA_TOTAL_BYTES);
 
@@ -215,7 +215,7 @@ int main(int argc, char** argv)
 
 	eng_shutdown(engine);
 	engine = NULL;
-	mem_free(mem_arena_backing_buffer);
+	BM_MEM_FREE(mem_arena_backing_buffer);
 	mem_arena_backing_buffer = NULL;
 
 	return 0;

@@ -24,12 +24,17 @@
 #include <emmintrin.h>
 static struct memory_allocator allocator = {malloc, realloc, free};
 
-#define BM_TRACK_MEMORY_USAGE 1
-#ifdef BM_TRACK_MEMORY_USAGE
-static uint64_t alloc_count = 0;
-static uint64_t bytes_allocated = 0;
-static uint64_t min_bytes_allocated = 0;
-static uint64_t max_bytes_allocated = 0;
+// #define LOG_ALLOCATIONS
+#define TRACK_MEMORY
+#ifdef TRACK_MEMORY
+static s32 live_alloc_count = 0;
+static s32 total_alloc_count = 0;
+static s32 live_bytes_allocated = 0;
+static s32 total_bytes_allocated = 0;
+static s32 total_free_count = 0;
+static s32 total_bytes_freed = 0;
+static s32 min_bytes_allocated = 0;
+static s32 max_bytes_allocated = 0;
 #endif
 
 // extern from memory.h
@@ -37,33 +42,62 @@ size_t mem_arena_allocated_bytes = 0;
 u8* mem_arena_backing_buffer = NULL;
 arena_t mem_arena = {NULL, 0, 0, 0};
 
-static void recalculate_usage(size_t new_size)
+static void recalculate_allocs(size_t size)
 {
-#ifdef BM_TRACK_MEMORY_USAGE
-	os_atomic_set_long((long*)&bytes_allocated, (long)new_size);
-	if (bytes_allocated > max_bytes_allocated)
-		os_atomic_set_long((long*)&max_bytes_allocated,
-				   (long)bytes_allocated);
-	if (bytes_allocated <= min_bytes_allocated || min_bytes_allocated == 0)
-		os_atomic_set_long((long*)&min_bytes_allocated,
-				   (long)bytes_allocated);
-	logger(LOG_DEBUG, "memory: allocated %zu bytes in %zu allocations", bytes_allocated, alloc_count);
-#else
-	(void)new_size;
+#ifdef LOG_ALLOCATIONS
+	logger(LOG_DEBUG, "MEM ALLOC %zu", size);
+#endif
+#ifdef TRACK_MEMORY
+	os_atomic_inc_s32(&live_alloc_count);
+	os_atomic_inc_s32(&total_alloc_count);
+	os_atomic_set_s32(&total_bytes_allocated, size + total_bytes_allocated);
+	size_t new_size = live_bytes_allocated + size;
+	os_atomic_set_s32(&live_bytes_allocated, new_size);
+	if (new_size > max_bytes_allocated) {
+		os_atomic_set_s32(&max_bytes_allocated,
+				   new_size);
+	}
+	if (min_bytes_allocated == 0) {
+		os_atomic_set_s32(&min_bytes_allocated,
+				   live_bytes_allocated);
+	}
+#ifdef LOG_ALLOCATIONS
+	logger(LOG_DEBUG, "[allocs] allocated %zu bytes in %zu allocations", live_bytes_allocated, live_alloc_count);
+#endif
 #endif
 }
 
-void* mem_alloc(size_t size)
+static void recalculate_frees(size_t size)
+{
+#ifdef LOG_ALLOCS
+	logger(LOG_DEBUG, "MEM FREE %zu", size);
+#endif
+#ifdef TRACK_MEMORY
+	os_atomic_dec_s32(&live_alloc_count);
+	os_atomic_inc_s32(&total_free_count);
+	os_atomic_set_s32(&total_bytes_freed, total_bytes_freed + (s32)size);
+	size_t new_size = live_bytes_allocated - size;
+	os_atomic_set_s32(&live_bytes_allocated, new_size);
+	if (live_bytes_allocated <= min_bytes_allocated) {
+		os_atomic_set_s32(&min_bytes_allocated,
+				   live_bytes_allocated);
+	}
+#ifdef LOG_ALLOCATIONS
+	logger(LOG_DEBUG, "[frees] allocated %zu bytes in %zu allocations", live_bytes_allocated, live_alloc_count);
+#endif
+#endif
+}
+
+void* mem_alloc(size_t size, const char* func)
 {
 	void* ptr = NULL;
-#ifdef BM_TRACK_MEMORY_USAGE
+#ifdef TRACK_MEMORY
 	// set size before ptr for later recall
-	u64 alloc_size = size + sizeof(u64);
+	s32 alloc_size = size + sizeof(s32);
 	ptr = allocator.malloc(alloc_size);
-	*(u64*)(ptr) = alloc_size;
-	*(u8**)(&ptr) += sizeof(u64);
-	os_atomic_inc_long((long*)&alloc_count);
-	recalculate_usage(bytes_allocated + alloc_size);
+	*(s32*)(ptr) = alloc_size;
+	*(u8**)(&ptr) += sizeof(s32);
+	recalculate_allocs(alloc_size);
 #else
 	ptr = allocator.malloc(size);
 #endif
@@ -72,25 +106,21 @@ void* mem_alloc(size_t size)
 
 void* mem_realloc(void* ptr, size_t size)
 {
-#ifdef BM_TRACK_MEMORY_USAGE
-	if (!ptr)
-		os_atomic_inc_long((long*)&alloc_count);
-	u8* curr_hdr = *(u8**)(&ptr) - sizeof(u64);
-	u64 curr_size = *(u64*)(curr_hdr);
-	u64 new_size = curr_size + size + sizeof(u64);
-	u8* new_ptr = allocator.malloc(new_size);
+	void* new_ptr = ptr;
+#ifdef TRACK_MEMORY
+	u8* curr_hdr = *(u8**)(&ptr) - sizeof(s32);
+	s32 curr_size = *(s32*)(curr_hdr);
+	s32 new_size = curr_size + size + sizeof(s32);
+	new_ptr = allocator.malloc(new_size);
+	recalculate_allocs(new_size);
 	u8* new_hdr = *(u8**)(&new_ptr);
-	*(u64*)(new_hdr) = new_size;
-	*(u8**)(&new_ptr) += sizeof(u64);
+	*(s32*)(new_hdr) = new_size;
+	*(u8**)(&new_ptr) += sizeof(s32);
 	memcpy(new_ptr, ptr, curr_size);
 	mem_free(ptr);
+	recalculate_frees(curr_size);
 #else
-	allocator.realloc(ptr, size);
-#endif
-#ifdef BM_TRACK_MEMORY_USAGE
-	// size_t realloc_size = sz_hdr - size;
-	size_t new_bytes_allocated = bytes_allocated + new_size;
-	recalculate_usage(new_bytes_allocated);
+	allocator.realloc(new_ptr, size);
 #endif
 	return new_ptr;
 }
@@ -98,16 +128,15 @@ void* mem_realloc(void* ptr, size_t size)
 void mem_free(void* ptr)
 {
 	if (ptr) {
-#ifdef BM_TRACK_MEMORY_USAGE
+#ifdef TRACK_MEMORY
 		// retrieve size of allocation from ptr header
 		u8* p = (u8*)ptr;
-		u64* hdr = (u64*)(p)-1;
-		u64 alloc_size = *hdr;
-		u64 obj_size = alloc_size - sizeof(u64);
-		p -= sizeof(u64);
+		s32* hdr = (s32*)(p)-1;
+		s32 alloc_size = *hdr;
+		s32 obj_size = alloc_size - sizeof(s32);
+		p -= sizeof(s32);
 		allocator.free(p);
-		os_atomic_dec_long((long*)&alloc_count);
-		recalculate_usage(bytes_allocated - alloc_size);
+		recalculate_frees(alloc_size);
 #else
 		allocator.free(ptr);
 #endif
@@ -135,13 +164,26 @@ void mem_copy_sse2(void* dst, void* src, size_t size)
 	}
 }
 
-void mem_log_usage()
+int mem_report_leaks()
 {
-#ifdef BM_TRACK_MEMORY_USAGE
-	logger(LOG_INFO, "Current: %zu | Max: %zu | Min: %zu | Objects: %zu",
-	       bytes_allocated, max_bytes_allocated, min_bytes_allocated,
-	       alloc_count);
+#ifdef TRACK_MEMORY
+	int num_leaks = total_alloc_count - total_free_count;
+	logger(LOG_INFO, "[Memory Leak Report]\n"\
+		"Total Allocated: %d bytes (%d allocations)\n"
+		"Total Freed: %d bytes (%d frees)\n"
+		"Live Allocated: %d bytes (%d allocations)\n"
+		"Max Allocated: %d bytes | Min Allocated: %d bytes\n"
+		"Memory Leaks: %d",
+		total_bytes_allocated, total_alloc_count,
+		total_bytes_freed, total_free_count,
+		live_bytes_allocated, live_alloc_count,
+		max_bytes_allocated, min_bytes_allocated,
+		num_leaks);
+	assert(total_alloc_count == total_free_count);
+	assert(total_bytes_allocated == total_bytes_freed);
+	return num_leaks;
 #endif
+	return 0;
 }
 
 //

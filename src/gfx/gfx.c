@@ -3,6 +3,7 @@
 #include "core/memory.h"
 
 gfx_system_t* gfx = NULL;
+bool gfx_ok = false;
 
 size_t gfx_get_shader_var_size(enum gfx_shader_var_type type)
 {
@@ -70,7 +71,7 @@ result gfx_init(const struct gfx_config* cfg,
 					s32 flags)
 {
 	if (cfg->module == GFX_MODULE_DX11) {
-		gfx = (gfx_system_t*)mem_alloc(sizeof(gfx_system_t));
+		gfx = (gfx_system_t*)MEM_ALLOC(sizeof(gfx_system_t));
 		memset(gfx, 0, sizeof(*gfx));
 		return gfx_init_dx11(cfg, flags);
 	}
@@ -123,15 +124,15 @@ u32 gfx_get_vertex_stride(enum gfx_vertex_type type)
 void gfx_init_sprite(gfx_buffer_t* vertex_buffer)
 {
 	size_t sz = sizeof(struct gfx_vertex_data);
-	struct gfx_vertex_data* vd = (struct gfx_vertex_data*)mem_alloc(sz);
+	struct gfx_vertex_data* vd = (struct gfx_vertex_data*)MEM_ALLOC(sz);
 	memset(vd, 0, sz);
 	vd->num_vertices = 4;
 	size_t sz_positions = sizeof(vec3f_t) * vd->num_vertices;
-	vd->positions = (vec3f_t*)mem_alloc(sz_positions);
-	vd->tex_verts = (struct texture_vertex*)mem_alloc(
+	vd->positions = (vec3f_t*)MEM_ALLOC(sz_positions);
+	vd->tex_verts = (struct texture_vertex*)MEM_ALLOC(
 		sizeof(struct texture_vertex));
 	size_t sz_tex_verts = sizeof(vec2f_t) * 4;
-	vd->tex_verts->data = mem_alloc(sz_tex_verts);
+	vd->tex_verts->data = MEM_ALLOC(sz_tex_verts);
 	vd->tex_verts->size = sizeof(vec2f_t);
 	gfx_buffer_create(vd, sz_positions + sz_tex_verts,
 			  GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DYNAMIC,

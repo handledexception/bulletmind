@@ -19,6 +19,7 @@
 
 #include "core/types.h"
 #include "core/export.h"
+#include "core/logger.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +37,17 @@ BM_EXPORT void mem_free(void* ptr);
 BM_EXPORT void mem_copy(void* dst, void* src, size_t size);
 BM_EXPORT void mem_copy_sse2(void* dst, void* src, size_t size);
 BM_EXPORT void mem_log_usage();
+BM_EXPORT int mem_report_leaks();
+
+#define BM_FUNC_SIG NULL
+#if _WIN32
+#undef BM_FUNC_SIG
+#define BM_FUNC_SIG __FUNCSIG__
+#endif
+#ifndef MEM_ALLOC
+#define MEM_ALLOC(sz) mem_alloc(sz); logger(LOG_DEBUG, "mem_alloc: %s", BM_FUNC_SIG);
+#define BM_MEM_FREE(p) mem_free(p); logger(LOG_DEBUG, "mem_free: %s", BM_FUNC_SIG);
+#endif
 
 // Basic linear allocator
 // https://www.gingerbill.org/article/2019/02/08/memory-allocation-strategies-002/

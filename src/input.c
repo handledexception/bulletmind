@@ -26,7 +26,7 @@
 
 struct input_state* inp_new()
 {
-	struct input_state* inputs = mem_alloc(sizeof(struct input_state));
+	struct input_state* inputs = MEM_ALLOC(sizeof(struct input_state));
 	inp_init(inputs);
 	return inputs;
 }
@@ -34,7 +34,7 @@ struct input_state* inp_new()
 void inp_free(struct input_state* inputs)
 {
 	if (inputs != NULL) {
-		mem_free(inputs);
+		BM_MEM_FREE(inputs);
 		inputs = NULL;
 	}
 }

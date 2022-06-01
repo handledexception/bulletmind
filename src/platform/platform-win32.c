@@ -101,22 +101,70 @@ void os_dlclose(void* module)
 	FreeLibrary(module);
 }
 
-long os_atomic_inc_long(volatile long* val)
+// Interlocked (32-bit)
+s32 os_atomic_inc_s32(volatile s32* ptr)
 {
-	return _InterlockedIncrement(val);
+	return _InterlockedIncrement((LONG*)ptr);
 }
-
-long os_atomic_dec_long(volatile long* val)
+s32 os_atomic_dec_s32(volatile s32* ptr)
 {
-	return _InterlockedDecrement(val);
+	return _InterlockedDecrement((LONG*)ptr);
 }
-
-long os_atomic_set_long(volatile long* ptr, long val)
+s32 os_atomic_set_s32(volatile s32* ptr, s32 val)
 {
-	return _InterlockedExchange(ptr, val);
+	return _InterlockedExchange((LONG*)ptr, (LONG)val);
 }
-
-long os_atomic_exchange_long(volatile long* ptr, long val)
+s32 os_atomic_get_s32(volatile s32* ptr)
 {
-	return os_atomic_set_long(ptr, val);
+	return (s32)_InterlockedOr((LONG*)ptr, 0);
+}
+s32 os_atomic_exchange_s32(volatile s32* ptr, s32 val)
+{
+	return os_atomic_set_s32(ptr, val);
+}
+bool os_atomic_compare_swap_s32(volatile s32 *ptr, s32 old_val,
+					       s32 new_val)
+{
+	return (s32)(_InterlockedCompareExchange((LONG*)ptr, (LONG)new_val, (LONG)old_val)) == old_val;
+}
+bool os_atomic_compare_exchange_s32(volatile s32* ptr, s32* old_ptr, s32 new_val)
+{
+	const s32 old_val = *old_ptr;
+	const s32 previous =
+		(s32)_InterlockedCompareExchange((LONG*)ptr, (LONG)new_val, (LONG)old_val);
+	*old_ptr = previous;
+	return previous == old_val;
+}
+// Interlocked64
+s64 os_atomic_inc_s64(volatile s64* ptr)
+{
+	return (s64)_InterlockedIncrement64((LONG64*)ptr);
+}
+s64 os_atomic_dec_s64(volatile s64* ptr)
+{
+	return (s64)_InterlockedDecrement64((LONG64*)ptr);
+}
+s64 os_atomic_set_s64(volatile s64* ptr, s64 val)
+{
+	return (s64)_InterlockedExchange64((LONG64*)ptr, (LONG64)val);
+}
+s64 os_atomic_get_s64(volatile s64* ptr)
+{
+	return (s64)_InterlockedOr64((LONG64*)ptr, 0);
+}
+s64 os_atomic_exchange_s64(volatile s64* ptr, s64 val)
+{
+	return os_atomic_set_s64(ptr, val);
+}
+bool os_atomic_compare_swap_s64(volatile s64* ptr, s64 old_val, s64 new_val)
+{
+	return (s64)(_InterlockedCompareExchange64((LONG64*)ptr, (LONG64)new_val, (LONG64)old_val)) == old_val;
+}
+bool os_atomic_compare_exchange_s64(volatile s64* ptr, s64* old_ptr, s64 new_val)
+{
+	const s64 old_val = *old_ptr;
+	const s64 previous =
+		(s64)_InterlockedCompareExchange64((LONG64*)ptr, (LONG64)new_val, (LONG64)old_val);
+	*old_ptr = previous;
+	return previous == old_val;
 }

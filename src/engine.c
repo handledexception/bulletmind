@@ -162,13 +162,13 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	gfx_shader_var_t world_var;
 	world_var.name = "world";
 	world_var.type = GFX_SHADER_PARAM_MAT4;
-	world_var.data = mem_alloc(sizeof(struct mat4f));
+	world_var.data = MEM_ALLOC(sizeof(struct mat4f));
 	world_var.offset = 0;
 
 	gfx_shader_var_t view_proj_var;
 	view_proj_var.name = "view_proj";
 	view_proj_var.type = GFX_SHADER_PARAM_MAT4;
-	view_proj_var.data = mem_alloc(sizeof(struct mat4f));
+	view_proj_var.data = MEM_ALLOC(sizeof(struct mat4f));
 	view_proj_var.offset = sizeof(struct mat4f);
 
 	struct mat4f* world_matrix = (struct mat4f*)world_var.data;
@@ -190,7 +190,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	size_t cbuffer_size = ((sizeof(mat4f_t) * num_shader_vars) + 15) &
 			      0xfffffff0;
 	eng->gfx.cbuffer_size = cbuffer_size;
-	eng->gfx.cbuffer_data = (u8*)mem_alloc(cbuffer_size);
+	eng->gfx.cbuffer_data = (u8*)MEM_ALLOC(cbuffer_size);
 	gfx_buffer_create(eng->gfx.system, eng->gfx.cbuffer_data, cbuffer_size,
 			  GFX_BUFFER_CONSTANT, GFX_BUFFER_USAGE_DYNAMIC,
 			  &eng->gfx.cbuffer);
@@ -224,7 +224,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	scene2->vert_data->colors[1] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
 	scene2->vert_data->colors[2] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
 	size_t vbd_size = (sizeof(vec3f_t) * 9) + (sizeof(vec4f_t) * 9);
-	eng->gfx.vbuffer_data = (u8*)mem_alloc(vbd_size);
+	eng->gfx.vbuffer_data = (u8*)MEM_ALLOC(vbd_size);
 	gfx_shader_add_var(hlsl_vs, &world_var);
 	gfx_shader_add_var(hlsl_vs, &view_proj_var);
 	vec_push_back(scene->shader_vars, &world_var);
@@ -236,7 +236,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 
 	size_t vertex_buffer_size = (sizeof(vec3f_t) * BM_GFX_MAX_VERTICES) +
 				    (sizeof(vec4f_t) * BM_GFX_MAX_VERTICES);
-	eng->gfx.vbuffer_data = (u8*)mem_alloc(vertex_buffer_size);
+	eng->gfx.vbuffer_data = (u8*)MEM_ALLOC(vertex_buffer_size);
 	gfx_buffer_create(eng->gfx.system, eng->gfx.vbuffer_data,
 			  vertex_buffer_size, GFX_BUFFER_VERTEX,
 			  GFX_BUFFER_USAGE_DYNAMIC, &eng->gfx.vertex_buffer);

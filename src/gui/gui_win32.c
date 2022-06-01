@@ -341,7 +341,7 @@ bool gui_create_window_win32(gui_window_t* window)
 	memset(&window_title, 0, sizeof(window_title));
 	os_utf8_to_wcs(window->title, 0, window_title, sizeof(window_title));
 
-	window->data = (gui_window_data_t*)mem_alloc(sizeof(gui_window_data_t));
+	window->data = (gui_window_data_t*)MEM_ALLOC(sizeof(gui_window_data_t));
 	memset(window->data, 0, sizeof(gui_window_data_t));
 	window->data->instance = g_hinstance;
 	window->data->window = window;
@@ -363,7 +363,7 @@ void gui_destroy_window_win32(gui_window_t* window)
 {
 	if (window) {
 		if (window->data) {
-			mem_free((gui_window_data_t*)window->data);
+			BM_MEM_FREE((gui_window_data_t*)window->data);
 			window->data = NULL;
 		}
 	}
@@ -377,11 +377,11 @@ void gui_show_window_win32(gui_window_t* window, bool shown)
 	}
 }
 
-void gui_set_window_pos_win32(gui_window_t* window, int x, int y)
+void gui_set_window_pos_win32(gui_window_t* window, s32 cx, s32 cy)
 {
 	if (window) {
 		gui_window_data_t* data = (gui_window_data_t*)window->data;
-		SetWindowPos(data->hwnd, HWND_TOP, x, y, window->w, window->h, 0);
+		SetWindowPos(data->hwnd, HWND_TOP, cx, cy, window->w, window->h, 0);
 	}
 }
 
@@ -416,7 +416,7 @@ void gui_get_global_mouse_state_win32(struct mouse_device* mouse)
 		GetAsyncKeyState(VK_XBUTTON2) & 0x8000 ? 1 : 0;
 }
 
-result gui_init_win32(gui_platform_t* gp)
+result gui_init_win32(gui_system_t* gp)
 {
 	g_hinstance = get_module_from_wndproc(gui_win32_wndproc);
 
@@ -446,7 +446,7 @@ result gui_init_win32(gui_platform_t* gp)
 	return RESULT_OK;
 }
 
-void gui_refresh_win32(gui_platform_t* gp)
+void gui_refresh_win32(gui_system_t* gp)
 {
 	MSG msg;
 	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {

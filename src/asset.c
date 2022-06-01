@@ -32,7 +32,7 @@ struct asset {
 
 struct asset_manager* asset_manager_new(void)
 {
-	struct asset_manager* mgr = mem_alloc(sizeof(*mgr));
+	struct asset_manager* mgr = MEM_ALLOC(sizeof(*mgr));
 	asset_manager_init(mgr);
 	mgr->gfx = gfx;
 	mgr->gui = gui;
@@ -59,7 +59,7 @@ void asset_manager_free(struct asset_manager* mgr)
 			toml_free(mgr->toml);
 			mgr->toml = NULL;
 		}
-		mem_free(mgr);
+		BM_MEM_FREE(mgr);
 	}
 }
 
@@ -104,7 +104,7 @@ result asset_manager_load_toml(const char* path, struct asset_manager* mgr)
 
 asset_t* asset_new()
 {
-	asset_t* asset = mem_alloc(sizeof(*asset));
+	asset_t* asset = MEM_ALLOC(sizeof(*asset));
 	asset_init(asset);
 	return asset;
 }
@@ -122,7 +122,7 @@ void asset_free(asset_t* asset)
 {
 	if (asset != NULL) {
 		asset_init(asset);
-		mem_free(asset);
+		BM_MEM_FREE(asset);
 		asset = NULL;
 	}
 }

@@ -107,6 +107,7 @@ struct gui_system {
 	bool (*create_window)(gui_window_t* window);				/* platform window create function */
 	void (*destroy_window)(gui_window_t* window);				/* platform window destroy function */
 	void (*show_window)(gui_window_t* window, bool shown);		/* platform window show function */
+	void (*set_window_pos)(gui_window_t* window, s32 cx, s32 cy);
 	void* (*get_handle)(gui_window_t* window);					/* platform window get handle function */
 	void (*get_global_mouse_state)(struct mouse_device* mouse); /* platform window get global mouse state function */
 };
@@ -143,6 +144,7 @@ BM_EXPORT gui_window_t* gui_create_window(const char* title, s32 x, s32 y,
 					  gui_window_t* parent);
 BM_EXPORT void gui_destroy_window(gui_window_t* window);
 BM_EXPORT void gui_show_window(gui_window_t* window, bool shown);
+BM_EXPORT void gui_set_window_pos(gui_window_t* window, s32 cx, s32 cy);
 BM_EXPORT void* gui_get_window_handle(gui_window_t* window);
 BM_EXPORT gui_window_t* gui_get_window_by_handle(void* handle);
 BM_EXPORT void gui_clear_key_state();

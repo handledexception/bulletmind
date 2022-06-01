@@ -1,5 +1,5 @@
-#include <core/logger.h>
 #include <core/types.h>
+#include <core/logger.h>
 #include <core/utils.h>
 #include <core/vector.h>
 #include <platform/platform.h>
@@ -15,6 +15,7 @@
 #define APP_VER_MAJ 1
 #define APP_VER_MIN 0
 #define APP_VER_REV 0
+#define APP_ASSETS_TOML_PATH "assets/assets.toml"
 #define GFX_ADAPTER_INDEX 0
 #define VIEW_WIDTH 1280
 #define VIEW_HEIGHT 720
@@ -48,32 +49,10 @@ result app_init_gfx(struct application* app, const struct gfx_config* cfg)
 	return RESULT_OK;
 }
 
-result app_init(struct application* app, s32 version, const char* asset_cfg)
+result app_init_inputs(struct application* app)
 {
-	if (app == NULL)
-		return RESULT_NULL;
-	app->running = false;
-	app->version = version;
-	vec_init(app->windows);
-	ENSURE_OK(gui_init());
-	char ver_str[16];
-	version_string(app->version, ver_str);
-	char window_title[256];
-	snprintf(window_title, (sizeof(APP_NAME) + 1 + 16) + 1, "%s %s", APP_NAME, ver_str);
-	vec_push_back(app->windows, gui_create_window(window_title, 100, 100, VIEW_WIDTH, VIEW_HEIGHT, 0, NULL));
-	vec_push_back(app->windows, gui_create_window("canvas_view", 0, 0, VIEW_WIDTH, VIEW_HEIGHT, 0, gui->windows.elems[0]));
-	void* window_handle = gui_get_window_handle(gui->windows.elems[1]);
-	const struct gfx_config gfx_cfg = {
-		.window = { window_handle },
-		.adapter = GFX_ADAPTER_INDEX,
-		.width = VIEW_WIDTH,
-		.height = VIEW_HEIGHT,
-		.fps_num = 144,
-		.fps_den = 1,
-		.pix_fmt = GFX_FORMAT_BGRA,
-		.fullscreen = false,
-	};
-	ENSURE_OK(app_init_gfx(app, &gfx_cfg));
+	if (app->inputs)
+		inp_free(app->inputs);
 	app->inputs = inp_new();
 	inp_bind_virtual_key(app->inputs, kCommandQuit, SCANCODE_ESCAPE);
 	inp_bind_virtual_key(app->inputs, kCommandPlayerUp, SCANCODE_W);
@@ -81,8 +60,48 @@ result app_init(struct application* app, s32 version, const char* asset_cfg)
 	inp_bind_virtual_key(app->inputs, kCommandPlayerLeft, SCANCODE_A);
 	inp_bind_virtual_key(app->inputs, kCommandPlayerRight, SCANCODE_D);
 	inp_bind_virtual_key(app->inputs, kCommandPlayerSpeed, SCANCODE_LSHIFT);
+	return RESULT_OK;
+}
+
+result app_init_assets(struct application* app, const char* assets_toml_path)
+{
+	if (app->assets)
+		asset_manager_free(app->assets);
 	app->assets = asset_manager_new();
-	asset_manager_load_toml(asset_cfg, app->assets);
+	return asset_manager_load_toml(assets_toml_path, app->assets);
+}
+
+result app_init(struct application* app, s32 version, u32 vx, u32 vy, const char* assets_toml_path)
+{
+	if (app == NULL)
+		return RESULT_NULL;
+	app->running = false;
+	app->version = version;
+	// vec_init(app->windows);
+	ENSURE_OK(gui_init());
+	char ver_str[16];
+	version_string(app->version, ver_str);
+	char window_title[256];
+	snprintf(window_title, (sizeof(APP_NAME) + 1 + 16) + 1, "%s %s", APP_NAME, ver_str);
+	gui_create_window(window_title, 100, 100, vx, vy, 0, NULL);
+	gui_create_window("canvas_view", 0, 0, vx, vy, 0, gui->windows.elems[0]);
+	// vec_push_back(app->windows, gui_create_window(window_title, 100, 100, vx, vy, 0, NULL));
+	// vec_push_back(app->windows, gui_create_window("canvas_view", 0, 0, vx, vy, 0, gui->windows.elems[0]));
+	// void* gfx_view_handle = gui_get_window_handle(gui->windows.elems[1]);
+	// const struct gfx_config gfx_cfg = {
+	// 	.module = GFX_MODULE_DX11,
+	// 	.window = { gfx_view_handle },
+	// 	.adapter = GFX_ADAPTER_INDEX,
+	// 	.width = vx,
+	// 	.height = vy,
+	// 	.fps_num = 60,
+	// 	.fps_den = 1,
+	// 	.fullscreen = false,
+	// 	.pix_fmt = GFX_FORMAT_BGRA,
+	// };
+	// ENSURE_OK(app_init_gfx(app, &gfx_cfg));
+	ENSURE_OK(app_init_inputs(app));
+	// ENSURE_OK(app_init_assets(app, assets_toml_path));
 	return RESULT_OK;
 }
 
@@ -102,10 +121,11 @@ void app_refresh(struct application* app)
 		}
 		struct mouse_device mouse;
 		gui_get_global_mouse_state(&mouse);
-		printf("sx: %d sy: %d | wx: %d wy: %d\n",
-			mouse.screen_pos.x, mouse.screen_pos.y,
-			mouse.window_pos.x, mouse.window_pos.y);
+		// printf("sx: %d sy: %d | wx: %d wy: %d\n",
+		// 	mouse.screen_pos.x, mouse.screen_pos.y,
+		// 	mouse.window_pos.x, mouse.window_pos.y);
 		gfx_render_clear(&kClearColor);
+		gfx_render_begin();
 		gfx_render_end(false, 0);
 	}
 }
@@ -117,6 +137,7 @@ void app_shutdown(struct application* app)
 		inp_free(app->inputs);
 		gfx_shutdown();
 		gui_shutdown();
+		// vec_free(app->windows);
 	}
 }
 
@@ -127,10 +148,12 @@ int main(int argc, char** argv)
 	logger(LOG_INFO, "Compiler: %s", os_compiler_to_string(os_get_compiler()));
 	logger(LOG_INFO, "Pointer size: %zu bytes", sizeof(intptr_t));
 	struct application app;
+	memset(&app, 0, sizeof(struct application));
 	const u32 app_ver =
 		pack_version(APP_VER_MAJ, APP_VER_MIN, APP_VER_REV);
-	ENSURE_OK(app_init(&app, app_ver, "assets/assets.toml"));
+	ENSURE_OK(app_init(&app, app_ver, VIEW_WIDTH, VIEW_HEIGHT, APP_ASSETS_TOML_PATH));
 	app_refresh(&app);
 	app_shutdown(&app);
+	ENSURE_OK(mem_report_leaks());
 	return RESULT_OK;
 }

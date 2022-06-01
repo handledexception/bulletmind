@@ -406,10 +406,10 @@ static bool gfx_get_monitor_target(const MONITORINFOEX* info,
 	if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &num_paths,
 					&num_modes) == ERROR_SUCCESS) {
 		DISPLAYCONFIG_PATH_INFO* paths =
-			(DISPLAYCONFIG_PATH_INFO*)mem_alloc(
+			(DISPLAYCONFIG_PATH_INFO*)MEM_ALLOC(
 				num_paths * (sizeof(DISPLAYCONFIG_PATH_INFO)));
 		DISPLAYCONFIG_MODE_INFO* modes =
-			(DISPLAYCONFIG_MODE_INFO*)mem_alloc(
+			(DISPLAYCONFIG_MODE_INFO*)MEM_ALLOC(
 				num_modes * (sizeof(DISPLAYCONFIG_MODE_INFO)));
 		if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &num_paths, paths,
 				       &num_modes, modes,
@@ -448,8 +448,8 @@ static bool gfx_get_monitor_target(const MONITORINFOEX* info,
 				}
 			}
 		}
-		mem_free(paths);
-		mem_free(modes);
+		BM_MEM_FREE(paths);
+		BM_MEM_FREE(modes);
 		paths = NULL;
 		modes = NULL;
 	}
@@ -545,10 +545,10 @@ result gfx_init_dx11(const struct gfx_config* cfg, s32 flags)
 {
 	if (gfx) {
 		if (gfx->module != NULL) {
-			mem_free(gfx->module);
+			BM_MEM_FREE(gfx->module);
 			gfx->module = NULL;
 		}
-		gfx->module = mem_alloc(sizeof(*gfx->module));
+		gfx->module = MEM_ALLOC(sizeof(*gfx->module));
 		memset(gfx->module, 0, sizeof(*gfx->module));
 	}
 	if (gfx_create_device_dependent_resources(cfg->adapter) !=
@@ -581,6 +581,8 @@ result gfx_init_dx11(const struct gfx_config* cfg, s32 flags)
 	gfx_set_render_target(gfx->module->render_target, gfx->module->zstencil_target);
 	gfx_set_viewport(cfg->width, cfg->height);
 	gfx_init_sprite(gfx->module->sprite_vb);
+
+	gfx_ok = true;
 
 	return RESULT_OK;
 }
@@ -806,6 +808,8 @@ void gfx_destroy_device_dependent_resources(void)
 
 void gfx_render_clear(const rgba_t* color)
 {
+	if (!gfx_ok)
+		return;
 	float clear_color[4];
 	clear_color[0] = color->r / 255.f;
 	clear_color[1] = color->g / 255.f;
@@ -834,6 +838,8 @@ void gfx_render_clear(const rgba_t* color)
 
 void gfx_render_begin(void)
 {
+	if (!gfx_ok)
+		return;
 	gfx_vertex_shader_t* vs = (gfx_vertex_shader_t*)gfx->module->vertex_shader->impl;
 	gfx_pixel_shader_t* ps = (gfx_pixel_shader_t*)gfx->module->pixel_shader->impl;
 	u32 vertex_count = BM_GFX_MAX_VERTICES;
@@ -846,6 +852,8 @@ void gfx_render_begin(void)
 
 void gfx_render_end(bool vsync, u32 flags)
 {
+	if (!gfx_ok)
+		return;
 	IDXGISwapChain1_Present(gfx->module->dxgi_swap_chain, (UINT)vsync, flags);
 }
 
@@ -874,15 +882,15 @@ enum gfx_vertex_type gfx_get_vertex_type(void)
 // void gfx_init_sprite(gfx_buffer_t* vertex_buffer)
 // {
 // 	size_t sz = sizeof(struct gfx_vertex_data);
-// 	struct gfx_vertex_data* vd = (struct gfx_vertex_data*)mem_alloc(sz);
+// 	struct gfx_vertex_data* vd = (struct gfx_vertex_data*)MEM_ALLOC(sz);
 // 	memset(vd, 0, sz);
 // 	vd->num_vertices = 4;
 // 	size_t sz_positions = sizeof(vec3f_t) * vd->num_vertices;
-// 	vd->positions = (vec3f_t*)mem_alloc(sz_positions);
-// 	vd->tex_verts = (struct texture_vertex*)mem_alloc(
+// 	vd->positions = (vec3f_t*)MEM_ALLOC(sz_positions);
+// 	vd->tex_verts = (struct texture_vertex*)MEM_ALLOC(
 // 		sizeof(struct texture_vertex));
 // 	size_t sz_tex_verts = sizeof(vec2f_t) * 4;
-// 	vd->tex_verts->data = mem_alloc(sz_tex_verts);
+// 	vd->tex_verts->data = MEM_ALLOC(sz_tex_verts);
 // 	vd->tex_verts->size = sizeof(vec2f_t);
 // 	gfx_buffer_create(gfx, vd, sz_positions + sz_tex_verts,
 // 			  GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DYNAMIC,
@@ -904,7 +912,7 @@ result gfx_buffer_create(const void* data, size_t size,
 	if (!gfx || !gfx->module->device)
 		return RESULT_NULL;
 
-	gfx_buffer_t* buf = mem_alloc(sizeof(gfx_buffer_t));
+	gfx_buffer_t* buf = MEM_ALLOC(sizeof(gfx_buffer_t));
 	buf->usage = usage;
 	buf->type = type;
 	buf->data = (u8*)data;
@@ -1027,7 +1035,7 @@ void gfx_shader_init(gfx_shader_t* shader)
 
 gfx_shader_t* gfx_shader_create(enum gfx_shader_type type)
 {
-	gfx_shader_t* shader = (gfx_shader_t*)mem_alloc(sizeof(gfx_shader_t));
+	gfx_shader_t* shader = (gfx_shader_t*)MEM_ALLOC(sizeof(gfx_shader_t));
 	gfx_shader_init(shader);
 	shader->type = type;
 	switch (shader->type) {
@@ -1063,7 +1071,7 @@ void gfx_shader_free(gfx_shader_t* shader)
 				break;
 		}
 		vec_free(shader->vars);
-		mem_free(shader);
+		BM_MEM_FREE(shader);
 		shader = NULL;
 	}
 }
@@ -1079,7 +1087,7 @@ void gfx_vertex_shader_init(gfx_vertex_shader_t* vs)
 }
 gfx_vertex_shader_t* gfx_vertex_shader_create()
 {
-	gfx_vertex_shader_t* vs = mem_alloc(sizeof(gfx_vertex_shader_t));
+	gfx_vertex_shader_t* vs = MEM_ALLOC(sizeof(gfx_vertex_shader_t));
 	gfx_vertex_shader_init(vs);
 	return vs;
 }
@@ -1093,7 +1101,7 @@ void gfx_vertex_shader_free(gfx_vertex_shader_t* vs)
 		ID3D11VertexShader_Release(vs->program);
 		vs->program = NULL;
 		vs->vertex_type = GFX_VERTEX_UNKNOWN;
-		mem_free(vs);
+		BM_MEM_FREE(vs);
 		vs = NULL;
 	}
 }
@@ -1118,7 +1126,7 @@ void gfx_pixel_shader_init(gfx_pixel_shader_t* ps)
 }
 gfx_pixel_shader_t* gfx_pixel_shader_create()
 {
-	gfx_pixel_shader_t* ps = mem_alloc(sizeof(gfx_pixel_shader_t));
+	gfx_pixel_shader_t* ps = MEM_ALLOC(sizeof(gfx_pixel_shader_t));
 	// gfx_pixel_shader_init(ps);
 	return ps;
 }
@@ -1129,7 +1137,7 @@ void gfx_pixel_shader_free(gfx_pixel_shader_t* ps)
 		ps->blob = NULL;
 		ID3D11PixelShader_Release(ps->program);
 		ps->program = NULL;
-		mem_free(ps);
+		BM_MEM_FREE(ps);
 		ps = NULL;
 	}
 }
@@ -1456,7 +1464,7 @@ result gfx_create_texture2d(const u8* data,
 		return RESULT_NULL;
 
 	gfx_texture_t* tex = *texture;
-	tex->impl = mem_alloc(sizeof(struct gfx_texture2d));
+	tex->impl = MEM_ALLOC(sizeof(struct gfx_texture2d));
 	struct gfx_texture2d* tex2d = (struct gfx_texture2d*)tex->impl;
 
 	DXGI_FORMAT dxgi_format =
@@ -1504,7 +1512,7 @@ result gfx_create_texture2d(const u8* data,
 	u32 stride = desc->width * (gfx_get_bits_per_pixel(desc->pix_fmt) / 8);
 	tex->size = desc->height * stride;
 	if (data) {
-		tex->data = (u8*)mem_alloc(tex->size);
+		tex->data = (u8*)MEM_ALLOC(tex->size);
 		memcpy(tex->data, data, tex->size);
 
 		D3D11_SUBRESOURCE_DATA srd = {
@@ -1558,7 +1566,7 @@ result gfx_create_texture(const u8* data,
 {
 	result res = RESULT_OK;
 
-	gfx_texture_t* tex = (gfx_texture_t*)mem_alloc(sizeof(*tex));
+	gfx_texture_t* tex = (gfx_texture_t*)MEM_ALLOC(sizeof(*tex));
 
 	switch (desc->type) {
 	case GFX_TEXTURE_2D:
@@ -1575,7 +1583,7 @@ result gfx_create_texture(const u8* data,
 	if (res == RESULT_OK) {
 		*texture = tex;
 	} else {
-		mem_free(tex);
+		BM_MEM_FREE(tex);
 		tex = NULL;
 	}
 
@@ -1590,7 +1598,7 @@ result gfx_init_render_target(u32 width, u32 height,
 		return RESULT_NULL;
 
 	gfx->module->render_target =
-		(gfx_texture_t*)mem_alloc(sizeof(*gfx->module->render_target));
+		(gfx_texture_t*)MEM_ALLOC(sizeof(*gfx->module->render_target));
 
 	struct gfx_texture_desc desc = {
 		.type = GFX_TEXTURE_2D,
@@ -1626,10 +1634,10 @@ void gfx_destroy_render_target(void)
 {
 	if (gfx && gfx->module->render_target) {
 		if (gfx->module->render_target->impl) {
-			mem_free(gfx->module->render_target->impl);
+			BM_MEM_FREE(gfx->module->render_target->impl);
 			gfx->module->render_target->impl = NULL;
 		}
-		mem_free(gfx->module->render_target);
+		BM_MEM_FREE(gfx->module->render_target);
 		gfx->module->render_target = NULL;
 	}
 }
@@ -1699,7 +1707,7 @@ result gfx_init_zstencil(u32 width, u32 height,
 		return RESULT_NULL;
 
 	gfx->module->zstencil_target =
-		(gfx_texture_t*)mem_alloc(sizeof(*gfx->module->zstencil_target));
+		(gfx_texture_t*)MEM_ALLOC(sizeof(*gfx->module->zstencil_target));
 
 	struct gfx_texture_desc desc = {
 		.type = GFX_TEXTURE_2D,
@@ -1713,9 +1721,9 @@ result gfx_init_zstencil(u32 width, u32 height,
 
 	// TODO(paulh): Add more zstencil state options eventually
 	gfx->module->zstencil_state_enabled =
-		mem_alloc(sizeof(*gfx->module->zstencil_state_enabled));
+		MEM_ALLOC(sizeof(*gfx->module->zstencil_state_enabled));
 	gfx->module->zstencil_state_disabled =
-		mem_alloc(sizeof(*gfx->module->zstencil_state_disabled));
+		MEM_ALLOC(sizeof(*gfx->module->zstencil_state_disabled));
 	gfx_create_zstencil_state(false, &gfx->module->zstencil_state_disabled);
 	gfx_create_zstencil_state(true, &gfx->module->zstencil_state_enabled);
 	gfx_toggle_zstencil(enabled);
@@ -1727,13 +1735,13 @@ void gfx_destroy_zstencil(void)
 {
 	if (gfx && gfx->module->zstencil_state_enabled &&
 	    gfx->module->zstencil_state_disabled && gfx->module->zstencil_target) {
-		mem_free(gfx->module->zstencil_state_enabled);
+		BM_MEM_FREE(gfx->module->zstencil_state_enabled);
 		gfx->module->zstencil_state_enabled = NULL;
-		mem_free(gfx->module->zstencil_state_disabled);
+		BM_MEM_FREE(gfx->module->zstencil_state_disabled);
 		gfx->module->zstencil_state_disabled = NULL;
 
-		mem_free(gfx->module->zstencil_target->impl);
-		mem_free(gfx->module->zstencil_target);
+		BM_MEM_FREE(gfx->module->zstencil_target->impl);
+		BM_MEM_FREE(gfx->module->zstencil_target);
 		gfx->module->zstencil_target->impl = NULL;
 		gfx->module->zstencil_target = NULL;
 	}

@@ -26,7 +26,7 @@ static inline void vector_init(struct vector* vec)
 static inline void vector_free(struct vector* vec)
 {
 	if (vec && vec->elems) {
-		mem_free(vec->elems);
+		BM_MEM_FREE(vec->elems);
 		vec->elems = NULL;
 		vec->num_elems = 0;
 		vec->capacity = 0;
@@ -38,11 +38,11 @@ static inline void vector_reserve(struct vector* vec, size_t elem_size,
 {
 	if (capacity == 0 || capacity <= vec->capacity)
 		return;
-	void* ptr = mem_alloc(elem_size * capacity);
+	void* ptr = MEM_ALLOC(elem_size * capacity);
 	if (vec->elems) {
 		if (vec->num_elems)
 			memcpy(ptr, vec->elems, elem_size * vec->num_elems);
-		mem_free(vec->elems);
+		BM_MEM_FREE(vec->elems);
 	}
 	vec->elems = ptr;
 	vec->capacity = capacity;
@@ -59,11 +59,11 @@ static inline void vector_ensure_capacity(struct vector* vec, size_t elem_size,
 	if (new_cap > new_capacity)
 		new_cap = new_capacity;
 
-	void* ptr = mem_alloc(elem_size * new_cap);
+	void* ptr = MEM_ALLOC(elem_size * new_cap);
 	if (vec->elems) {
 		if (vec->capacity)
 			memcpy(ptr, vec->elems, elem_size * vec->capacity);
-		mem_free(vec->elems);
+		BM_MEM_FREE(vec->elems);
 	}
 	vec->elems = ptr;
 	vec->capacity = new_cap;

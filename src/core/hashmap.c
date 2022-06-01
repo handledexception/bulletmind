@@ -96,7 +96,7 @@ void hashmap_insert(hashmap_t* map, hash_key_t* key, const void* elem,
 	// hash = hash_string(key, strlen(key));
 	struct bucket buk;
 	buk.key = hash;
-	buk.val = mem_alloc(elem_size);
+	buk.val = MEM_ALLOC(elem_size);
 	memcpy(buk.val, elem, elem_size);
 	vector_push_back(&map->buckets, &buk, sizeof(struct bucket));
 }
