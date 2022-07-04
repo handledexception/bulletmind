@@ -122,20 +122,22 @@ s32 os_atomic_exchange_s32(volatile s32* ptr, s32 val)
 {
 	return os_atomic_set_s32(ptr, val);
 }
-bool os_atomic_compare_swap_s32(volatile s32 *ptr, s32 old_val,
-					       s32 new_val)
+bool os_atomic_compare_swap_s32(volatile s32* ptr, s32 old_val, s32 new_val)
 {
-	return (s32)(_InterlockedCompareExchange((LONG*)ptr, (LONG)new_val, (LONG)old_val)) == old_val;
+	return (s32)(_InterlockedCompareExchange((LONG*)ptr, (LONG)new_val,
+						 (LONG)old_val)) == old_val;
 }
-bool os_atomic_compare_exchange_s32(volatile s32* ptr, s32* old_ptr, s32 new_val)
+bool os_atomic_compare_exchange_s32(volatile s32* ptr, s32* old_ptr,
+				    s32 new_val)
 {
 	const s32 old_val = *old_ptr;
-	const s32 previous =
-		(s32)_InterlockedCompareExchange((LONG*)ptr, (LONG)new_val, (LONG)old_val);
+	const s32 previous = (s32)_InterlockedCompareExchange(
+		(LONG*)ptr, (LONG)new_val, (LONG)old_val);
 	*old_ptr = previous;
 	return previous == old_val;
 }
 // Interlocked64
+#if defined(BM_BITS_64)
 s64 os_atomic_inc_s64(volatile s64* ptr)
 {
 	return (s64)_InterlockedIncrement64((LONG64*)ptr);
@@ -158,13 +160,17 @@ s64 os_atomic_exchange_s64(volatile s64* ptr, s64 val)
 }
 bool os_atomic_compare_swap_s64(volatile s64* ptr, s64 old_val, s64 new_val)
 {
-	return (s64)(_InterlockedCompareExchange64((LONG64*)ptr, (LONG64)new_val, (LONG64)old_val)) == old_val;
+	return (s64)(_InterlockedCompareExchange64((LONG64*)ptr,
+						   (LONG64)new_val,
+						   (LONG64)old_val)) == old_val;
 }
-bool os_atomic_compare_exchange_s64(volatile s64* ptr, s64* old_ptr, s64 new_val)
+bool os_atomic_compare_exchange_s64(volatile s64* ptr, s64* old_ptr,
+				    s64 new_val)
 {
 	const s64 old_val = *old_ptr;
-	const s64 previous =
-		(s64)_InterlockedCompareExchange64((LONG64*)ptr, (LONG64)new_val, (LONG64)old_val);
+	const s64 previous = (s64)_InterlockedCompareExchange64(
+		(LONG64*)ptr, (LONG64)new_val, (LONG64)old_val);
 	*old_ptr = previous;
 	return previous == old_val;
 }
+#endif

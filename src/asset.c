@@ -12,30 +12,16 @@
 
 #include <toml.h>
 
-#define BM_ASSET_NAME_MAX_LENGTH 1024
-
 struct asset_manager {
 	VECTOR(asset_t*) assets;
 	struct asset_sytems* systems;
 	toml_table_t* toml;
-	gfx_system_t* gfx;
-	gui_system_t* gui;
-};
-
-struct asset {
-	char name[BM_ASSET_NAME_MAX_LENGTH];
-	char path[BM_MAX_PATH];
-	asset_kind_t kind;
-	void* data;
-	bool lazy_load;
 };
 
 struct asset_manager* asset_manager_new(void)
 {
 	struct asset_manager* mgr = MEM_ALLOC(sizeof(*mgr));
 	asset_manager_init(mgr);
-	mgr->gfx = gfx;
-	mgr->gui = gui;
 	return mgr;
 }
 
@@ -87,7 +73,8 @@ result asset_manager_load_toml(const char* path, struct asset_manager* mgr)
 	for (int i = 0; i < num_assets; i++) {
 		toml_table_t* asset_table = toml_table_at(asset_array, i);
 		if (asset_table == NULL) {
-			logger(LOG_WARNING, "Problem reading asset at index %d!", i);
+			logger(LOG_WARNING,
+			       "Problem reading asset at index %d!", i);
 			continue;
 		}
 		asset_t* asset = NULL;
@@ -100,6 +87,21 @@ result asset_manager_load_toml(const char* path, struct asset_manager* mgr)
 		}
 	}
 	return RESULT_OK;
+}
+
+result asset_manager_find(const char* name, struct asset_manager* mgr,
+			  asset_t** asset)
+{
+	if (!mgr)
+		return RESULT_NULL;
+	for (size_t i = 0; i < mgr->assets.num_elems; i++) {
+		asset_t* ass = (asset_t*)mgr->assets.elems[i];
+		if (ass != NULL && !strcmp(ass->name, name)) {
+			*asset = ass;
+			return RESULT_OK;
+		}
+	}
+	return RESULT_NOT_FOUND;
 }
 
 asset_t* asset_new()
@@ -121,46 +123,63 @@ void asset_init(asset_t* asset)
 void asset_free(asset_t* asset)
 {
 	if (asset != NULL) {
+		if (asset->kind == kAssetShader) {
+			gfx_shader_free(asset->data);
+		}
 		asset_init(asset);
 		BM_MEM_FREE(asset);
 		asset = NULL;
 	}
 }
 
-bool asset_from_toml(const toml_table_t* table, struct asset_manager* mgr, asset_t** asset)
+bool asset_from_toml(const toml_table_t* table, struct asset_manager* mgr,
+		     asset_t** asset)
 {
 	bool attr_ok = false;
-	char* asset_name = NULL;
-	char* asset_path = NULL;
-	char* asset_kind_str = NULL;
+	const char* asset_name = NULL;
+	const char* asset_path = NULL;
+	const char* asset_kind_str = NULL;
 	if (read_table_string(table, "name", &asset_name) &&
-		read_table_string(table, "path", &asset_path) &&
-		read_table_string(table, "kind", &asset_kind_str)) {
+	    read_table_string(table, "path", &asset_path) &&
+	    read_table_string(table, "kind", &asset_kind_str)) {
 		attr_ok = true;
 	}
-	if (!attr_ok)
+	if (!attr_ok) {
+		logger(LOG_ERROR, "Error reading asset attributes!");
 		return false;
+	}
 
-	logger(LOG_INFO, "Read asset OK -- Name: %s | Path: %s | Kind: %s", asset_name, asset_path, asset_kind_str);
+	logger(LOG_INFO, "Asset: %s | Path: %s | Kind: %s", asset_name,
+	       asset_path, asset_kind_str);
 
-	asset_kind_t asset_kind =
-		asset_kind_from_string(asset_kind_str);
+	asset_kind_t asset_kind = asset_kind_from_string(asset_kind_str);
 	asset_t* new_asset = asset_new();
 	new_asset->kind = asset_kind;
-	strncpy(new_asset->name, asset_name, strnlen(asset_name, BM_ASSET_NAME_MAX_LENGTH));
+	strncpy(new_asset->name, asset_name,
+		strnlen(asset_name, BM_ASSET_NAME_MAX_LENGTH));
 	strncpy(new_asset->path, asset_path, strnlen(asset_path, BM_MAX_PATH));
 
 	bool res = false;
 	switch (asset_kind) {
 	case kAssetSprite:
+		logger(LOG_WARNING,
+		       "asset_from_toml: sprite not yet implemented!");
 		break;
 	case kAssetSpriteSheet:
+		logger(LOG_WARNING,
+		       "asset_from_toml: sprite sheet not yet implemented!");
 		break;
 	case kAssetSpriteFont:
+		logger(LOG_WARNING,
+		       "asset_from_toml: sprite font not yet implemented!");
 		break;
 	case kAssetSoundEffect:
+		logger(LOG_WARNING,
+		       "asset_from_toml: sound effect not yet implemented!");
 		break;
 	case kAssetMusic:
+		logger(LOG_WARNING,
+		       "asset_from_toml: music not yet implemented!");
 		break;
 	case kAssetShader:
 		res = asset_make_shader(table, new_asset);
@@ -176,8 +195,11 @@ bool asset_from_toml(const toml_table_t* table, struct asset_manager* mgr, asset
 
 bool asset_make_shader(const toml_table_t* table, asset_t* asset)
 {
-	if (asset == NULL || gfx == NULL)
+	if (asset == NULL || gfx == NULL) {
+		logger(LOG_WARNING,
+		       "asset_make_shader: Asset is NULL or graphics system not yet initialized!");
 		return false;
+	}
 	const char* ext = path_get_extension(asset->path);
 	if (!strcmp(ext, "hlsl")) {
 		const char* entrypoint = NULL;
@@ -189,20 +211,25 @@ bool asset_make_shader(const toml_table_t* table, asset_t* asset)
 			target = "vs_5_0";
 			shader_type = GFX_SHADER_VERTEX;
 			char* vertex_type_str = NULL;
-			read_table_string(table, "vertex_type", &vertex_type_str);
-			vertex_type = gfx_vertex_type_from_string(vertex_type_str);
+			read_table_string(table, "vertex_type",
+					  &vertex_type_str);
+			vertex_type =
+				gfx_vertex_type_from_string(vertex_type_str);
 		} else if (cstr_contains(asset->path, ".ps")) {
 			entrypoint = "PSMain";
 			target = "ps_5_0";
 			shader_type = GFX_SHADER_PIXEL;
 		}
-		gfx_shader_t* shader = gfx_shader_create(shader_type);
+		gfx_shader_t* shader = gfx_shader_new(shader_type);
 		if (shader != NULL) {
-			gfx_shader_compile_from_file(asset->path, entrypoint, target, shader);
+			gfx_shader_compile_from_file(asset->path, entrypoint,
+						     target, shader);
 			gfx_shader_build_program(shader);
 			if (shader_type == GFX_SHADER_VERTEX) {
-				gfx_vertex_shader_set_vertex_type((gfx_vertex_shader_t*)shader->impl, vertex_type);
-				gfx_shader_create_input_layout(shader);
+				gfx_vertex_shader_set_vertex_type(
+					(gfx_vertex_shader_t*)shader->impl,
+					vertex_type);
+				gfx_shader_new_input_layout(shader);
 			}
 			asset->data = (void*)shader;
 		}

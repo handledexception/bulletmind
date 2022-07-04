@@ -269,13 +269,18 @@ game_resource_t* make_game_resource(engine_t* eng, const char* asset_name,
 				type = GFX_SHADER_PIXEL;
 			}
 		}
-		gfx_shader_t* shader = gfx_shader_create(type);
+		gfx_shader_t* shader = gfx_shader_new(type);
 		if (shader != NULL) {
-			gfx_shader_compile_from_file(eng->gfx.system, asset_path, entrypoint, target, shader);
+			gfx_shader_compile_from_file(eng->gfx.system,
+						     asset_path, entrypoint,
+						     target, shader);
 			gfx_shader_build_program(eng->gfx.system, shader);
 			if (type == GFX_SHADER_VERTEX) {
-				gfx_vertex_shader_set_vertex_type((gfx_vertex_shader_t*)shader->impl, vertex_type);
-				gfx_shader_create_input_layout(eng->gfx.system, shader);
+				gfx_vertex_shader_set_vertex_type(
+					(gfx_vertex_shader_t*)shader->impl,
+					vertex_type);
+				gfx_shader_new_input_layout(eng->gfx.system,
+							    shader);
 			}
 		}
 		resource = mem_arena_alloc(&mem_arena, sizeof(game_resource_t),

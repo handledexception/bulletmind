@@ -59,7 +59,6 @@ void str_resize(string_t* s, size_t new_size)
 	else if (new_size < s->capacity) {
 
 	} else {
-
 	}
 }
 

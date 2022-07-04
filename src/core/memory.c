@@ -21,20 +21,27 @@
 
 #include <assert.h>
 #include <malloc.h>
+
+#ifdef BM_WINDOWS
 #include <emmintrin.h>
+#endif
+
 static struct memory_allocator allocator = {malloc, realloc, free};
 
 // #define LOG_ALLOCATIONS
-#define TRACK_MEMORY
+
 #ifdef TRACK_MEMORY
-static s32 live_alloc_count = 0;
-static s32 total_alloc_count = 0;
-static s32 live_bytes_allocated = 0;
-static s32 total_bytes_allocated = 0;
-static s32 total_free_count = 0;
-static s32 total_bytes_freed = 0;
-static s32 min_bytes_allocated = 0;
-static s32 max_bytes_allocated = 0;
+struct memory_stats {
+	s32 live_alloc_count;
+	s32 total_alloc_count;
+	s32 live_bytes_allocated;
+	s32 total_bytes_allocated;
+	s32 total_free_count;
+	s32 total_bytes_freed;
+	s32 min_bytes_allocated;
+	s32 max_bytes_allocated;
+};
+static struct memory_stats mem_stats = {0};
 #endif
 
 // extern from memory.h
@@ -48,55 +55,60 @@ static void recalculate_allocs(size_t size)
 	logger(LOG_DEBUG, "MEM ALLOC %zu", size);
 #endif
 #ifdef TRACK_MEMORY
-	os_atomic_inc_s32(&live_alloc_count);
-	os_atomic_inc_s32(&total_alloc_count);
-	os_atomic_set_s32(&total_bytes_allocated, size + total_bytes_allocated);
-	size_t new_size = live_bytes_allocated + size;
-	os_atomic_set_s32(&live_bytes_allocated, new_size);
-	if (new_size > max_bytes_allocated) {
-		os_atomic_set_s32(&max_bytes_allocated,
-				   new_size);
+	os_atomic_inc_s32(&mem_stats.live_alloc_count);
+	os_atomic_inc_s32(&mem_stats.total_alloc_count);
+	os_atomic_set_s32(&mem_stats.total_bytes_allocated,
+			  (s32)size + mem_stats.total_bytes_allocated);
+
+	size_t new_size = mem_stats.live_bytes_allocated + size;
+	os_atomic_set_s32(&mem_stats.live_bytes_allocated, (s32)new_size);
+
+	if (mem_stats.live_bytes_allocated > mem_stats.max_bytes_allocated) {
+		os_atomic_set_s32(&mem_stats.max_bytes_allocated,
+				  (s32)mem_stats.live_bytes_allocated);
 	}
-	if (min_bytes_allocated == 0) {
-		os_atomic_set_s32(&min_bytes_allocated,
-				   live_bytes_allocated);
+
+	if (mem_stats.live_bytes_allocated < mem_stats.min_bytes_allocated ||
+	    mem_stats.min_bytes_allocated == 0) {
+		os_atomic_set_s32(&mem_stats.min_bytes_allocated,
+				  (s32)mem_stats.live_bytes_allocated);
 	}
 #ifdef LOG_ALLOCATIONS
-	logger(LOG_DEBUG, "[allocs] allocated %zu bytes in %zu allocations", live_bytes_allocated, live_alloc_count);
+	logger(LOG_DEBUG, "[allocs] allocated %zu bytes in %zu allocations",
+	       live_bytes_allocated, live_alloc_count);
 #endif
 #endif
 }
 
 static void recalculate_frees(size_t size)
 {
-#ifdef LOG_ALLOCS
+#ifdef LOG_ALLOCATIONS
 	logger(LOG_DEBUG, "MEM FREE %zu", size);
 #endif
 #ifdef TRACK_MEMORY
-	os_atomic_dec_s32(&live_alloc_count);
-	os_atomic_inc_s32(&total_free_count);
-	os_atomic_set_s32(&total_bytes_freed, total_bytes_freed + (s32)size);
-	size_t new_size = live_bytes_allocated - size;
-	os_atomic_set_s32(&live_bytes_allocated, new_size);
-	if (live_bytes_allocated <= min_bytes_allocated) {
-		os_atomic_set_s32(&min_bytes_allocated,
-				   live_bytes_allocated);
-	}
+	os_atomic_dec_s32(&mem_stats.live_alloc_count);
+	os_atomic_inc_s32(&mem_stats.total_free_count);
+	os_atomic_set_s32(&mem_stats.total_bytes_freed,
+			  mem_stats.total_bytes_freed + (s32)size);
+
+	size_t new_size = mem_stats.live_bytes_allocated - size;
+	os_atomic_set_s32(&mem_stats.live_bytes_allocated, (s32)new_size);
 #ifdef LOG_ALLOCATIONS
-	logger(LOG_DEBUG, "[frees] allocated %zu bytes in %zu allocations", live_bytes_allocated, live_alloc_count);
+	logger(LOG_DEBUG, "[frees] allocated %zu bytes in %zu allocations",
+	       live_bytes_allocated, live_alloc_count);
 #endif
 #endif
 }
 
-void* mem_alloc(size_t size, const char* func)
+void* mem_alloc(size_t size)
 {
 	void* ptr = NULL;
 #ifdef TRACK_MEMORY
 	// set size before ptr for later recall
-	s32 alloc_size = size + sizeof(s32);
+	size_t alloc_size = size + sizeof(size_t);
 	ptr = allocator.malloc(alloc_size);
-	*(s32*)(ptr) = alloc_size;
-	*(u8**)(&ptr) += sizeof(s32);
+	*(size_t*)(ptr) = alloc_size;
+	*(u8**)(&ptr) += sizeof(size_t);
 	recalculate_allocs(alloc_size);
 #else
 	ptr = allocator.malloc(size);
@@ -108,14 +120,14 @@ void* mem_realloc(void* ptr, size_t size)
 {
 	void* new_ptr = ptr;
 #ifdef TRACK_MEMORY
-	u8* curr_hdr = *(u8**)(&ptr) - sizeof(s32);
-	s32 curr_size = *(s32*)(curr_hdr);
-	s32 new_size = curr_size + size + sizeof(s32);
+	u8* curr_hdr = *(u8**)(&ptr) - sizeof(size_t);
+	size_t curr_size = *(s32*)(curr_hdr);
+	size_t new_size = curr_size + size + sizeof(size_t);
 	new_ptr = allocator.malloc(new_size);
 	recalculate_allocs(new_size);
 	u8* new_hdr = *(u8**)(&new_ptr);
-	*(s32*)(new_hdr) = new_size;
-	*(u8**)(&new_ptr) += sizeof(s32);
+	*(size_t*)(new_hdr) = new_size;
+	*(u8**)(&new_ptr) += sizeof(size_t);
 	memcpy(new_ptr, ptr, curr_size);
 	mem_free(ptr);
 	recalculate_frees(curr_size);
@@ -131,10 +143,10 @@ void mem_free(void* ptr)
 #ifdef TRACK_MEMORY
 		// retrieve size of allocation from ptr header
 		u8* p = (u8*)ptr;
-		s32* hdr = (s32*)(p)-1;
-		s32 alloc_size = *hdr;
-		s32 obj_size = alloc_size - sizeof(s32);
-		p -= sizeof(s32);
+		size_t* hdr = (size_t*)(p)-1;
+		size_t alloc_size = *hdr;
+		size_t obj_size = alloc_size - sizeof(size_t);
+		p -= sizeof(size_t);
 		allocator.free(p);
 		recalculate_frees(alloc_size);
 #else
@@ -151,36 +163,40 @@ void mem_copy(void* dst, void* src, size_t size)
 		*to++ = *from++;
 }
 
+#ifdef BM_WINDOWS
 void mem_copy_sse2(void* dst, void* src, size_t size)
 {
-	__m128i *from = (__m128i *)src;
-	__m128i *to = (__m128i *)dst;
+	__m128i* from = (__m128i*)src;
+	__m128i* to = (__m128i*)dst;
 	size_t index = 0;
-	while(size) {
+	while (size) {
 		__m128i x = _mm_load_si128(&from[index]);
 		_mm_stream_si128(&to[index], x);
 		size -= 16;
 		index++;
 	}
 }
+#endif
 
 int mem_report_leaks()
 {
 #ifdef TRACK_MEMORY
-	int num_leaks = total_alloc_count - total_free_count;
-	logger(LOG_INFO, "[Memory Leak Report]\n"\
-		"Total Allocated: %d bytes (%d allocations)\n"
-		"Total Freed: %d bytes (%d frees)\n"
-		"Live Allocated: %d bytes (%d allocations)\n"
-		"Max Allocated: %d bytes | Min Allocated: %d bytes\n"
-		"Memory Leaks: %d",
-		total_bytes_allocated, total_alloc_count,
-		total_bytes_freed, total_free_count,
-		live_bytes_allocated, live_alloc_count,
-		max_bytes_allocated, min_bytes_allocated,
-		num_leaks);
-	assert(total_alloc_count == total_free_count);
-	assert(total_bytes_allocated == total_bytes_freed);
+	int num_leaks =
+		mem_stats.total_alloc_count - mem_stats.total_free_count;
+	logger(LOG_INFO,
+	       "[Memory Leak Report]\n"
+	       "Total Allocated: %d bytes (%d allocations)\n"
+	       "Total Freed: %d bytes (%d frees)\n"
+	       "Live Allocated: %d bytes (%d allocations)\n"
+	       "Max Allocated: %d bytes | Min Allocated: %d bytes\n"
+	       "Memory Leaks: %d",
+	       mem_stats.total_bytes_allocated, mem_stats.total_alloc_count,
+	       mem_stats.total_bytes_freed, mem_stats.total_free_count,
+	       mem_stats.live_bytes_allocated, mem_stats.live_alloc_count,
+	       mem_stats.max_bytes_allocated, mem_stats.min_bytes_allocated,
+	       num_leaks);
+	assert(mem_stats.total_alloc_count == mem_stats.total_free_count);
+	assert(mem_stats.total_bytes_allocated == mem_stats.total_bytes_freed);
 	return num_leaks;
 #endif
 	return 0;

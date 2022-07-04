@@ -9,7 +9,7 @@ extern "C" {
 
 static inline int random(int lower, int upper)
 {
-	int div =  (upper + 1 - lower) + lower;
+	int div = (upper + 1 - lower) + lower;
 	if (div == 0)
 		return rand();
 	return rand() % div;

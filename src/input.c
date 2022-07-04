@@ -173,7 +173,6 @@ void inp_shutdown(struct input_state* inputs)
 	logger(LOG_INFO, "inp_shutdown OK\n");
 }
 
-
 // bool inp_init_gamepads(struct input_state* inputs)
 // {
 // 	const int num_joysticks = SDL_NumJoysticks();

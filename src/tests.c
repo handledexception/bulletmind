@@ -35,10 +35,10 @@ TAU_MAIN()
 TEST(core_memory_suite, basic)
 {
 	size_t sz = 0x800000;
-	char* scratch = malloc(sz);
-	char* dest = malloc(sz);
-	char* dest2 = malloc(sz);
-	char* dest3 = malloc(sz);
+	char* scratch = mem_alloc(sz);
+	char* dest = mem_alloc(sz);
+	char* dest2 = mem_alloc(sz);
+	char* dest3 = mem_alloc(sz);
 
 	int* p = (int*)&scratch[0];
 	for (int i = 0; i < sz; i += 4) {
@@ -183,7 +183,7 @@ TEST(core_hashmap_suite, basic)
 	hashmap_insert(&map, &k1, &td1, sizeof(struct test_data));
 	hashmap_insert(&map, &k2, &td2, sizeof(struct test_data));
 	struct test_data* found = NULL;
-	hashmap_find(&map, &k2, (struct test_data*)&found);
+	hashmap_find(&map, &k2, &found);
 	CHECK_EQ(td2.id, found->id);
 }
 // TEST(core_vector_suite, basic_tests2) {

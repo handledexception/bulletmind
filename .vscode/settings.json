@@ -88,7 +88,10 @@
         "xtr1common": "c",
         "*.2": "c",
         "time.h": "c",
-        "atomic": "c"
+        "atomic": "c",
+        "intrinsics.h": "c",
+        "deque": "c",
+        "win32_types.h": "c"
     },
     "cmake.configureOnOpen": false
 }

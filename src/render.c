@@ -98,8 +98,10 @@ void draw_sprite_sheet(SDL_Renderer* rend, sprite_sheet_t* sprite_sheet,
 		frame_delay = 0.025;
 
 	// printf("frame_delay %f\n", frame_delay);
-	s32 scaled_width = (s32)current_frame->bbox.max.x * backing_sprite->scaling;
-	s32 scaled_height = (s32)current_frame->bbox.max.y * backing_sprite->scaling;
+	s32 scaled_width =
+		(s32)current_frame->bbox.max.x * backing_sprite->scaling;
+	s32 scaled_height =
+		(s32)current_frame->bbox.max.y * backing_sprite->scaling;
 	SDL_Rect dst = {
 		(s32)(org->x) - scaled_width / 2,
 		(s32)(org->y) - scaled_height / 2,

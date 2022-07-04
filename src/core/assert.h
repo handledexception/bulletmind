@@ -21,32 +21,31 @@
 /* 1. The inspiration for this `typedef char` array hack as a struct  */
 /*    definition: https://stackoverflow.com/a/3385694/4561887 */
 /* Discard the `message` portion entirely. */
-#define _Static_assert_hack(expression, message) \
-    struct MAKE_UNIQUE_VARIABLE_NAME(static_assertion_failed) \
-    { \
-        _Pragma("GCC diagnostic push") \
-        _Pragma("GCC diagnostic ignored \"-Wunused-local-typedefs\"") \
-        typedef char static_assertion_failed[(expression) ? 1 : -1]; \
-        _Pragma("GCC diagnostic pop") \
-    }
+#define _Static_assert_hack(expression, message)                                                                   \
+	struct MAKE_UNIQUE_VARIABLE_NAME(static_assertion_failed) {                                                \
+		_Pragma("GCC diagnostic push") _Pragma(                                                            \
+			"GCC diagnostic ignored \"-Wunused-local-typedefs\"") typedef char static_assertion_failed \
+			[(expression) ? 1 : -1];                                                                   \
+		_Pragma("GCC diagnostic pop")                                                                      \
+	}
 
 /* For C++ only: */
 /* See: https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html */
 #ifdef __cplusplus
-    #if __cplusplus < 201103L
-        /* for pre-C++11 */
-        #ifndef _Static_assert
-            #define _Static_assert _Static_assert_hack
-        #endif
-    #else
-        /* for C++11 or later */
-        #ifndef _Static_assert
-            #define _Static_assert static_assert
-        #endif
-    #endif
+#if __cplusplus < 201103L
+/* for pre-C++11 */
+#ifndef _Static_assert
+#define _Static_assert _Static_assert_hack
+#endif
+#else
+/* for C++11 or later */
+#ifndef _Static_assert
+#define _Static_assert static_assert
+#endif
+#endif
 #endif
 
 /* For C **and** C++: */
 #define STATIC_ASSERT(test_for_true) \
-    _Static_assert((test_for_true), "(" #test_for_true ") failed")
+	_Static_assert((test_for_true), "(" #test_for_true ") failed")
 /* ---------------------------------- END ----------------------------------- */

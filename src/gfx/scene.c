@@ -6,7 +6,9 @@ struct gfx_scene* gfx_scene_new(u32 num_verts, u32 num_vars,
 				enum gfx_vertex_type vert_type)
 {
 	struct gfx_scene* scene = MEM_ALLOC(sizeof(*scene));
+	memset(scene, 0, sizeof(*scene));
 	scene->vert_data = MEM_ALLOC(sizeof(*scene->vert_data));
+	memset(scene->vert_data, 0, sizeof(*scene->vert_data));
 	scene->vert_data->type = vert_type;
 	if (vert_type == GFX_VERTEX_POS_COLOR) {
 		scene->vert_data->num_vertices = num_verts;
@@ -24,13 +26,15 @@ struct gfx_scene* gfx_scene_new(u32 num_verts, u32 num_vars,
 		scene->vert_data->colors = NULL;
 		scene->vert_data->normals = NULL;
 		scene->vert_data->tangents = NULL;
-		scene->vert_data->tex_verts = MEM_ALLOC(
-			sizeof(*scene->vert_data->tex_verts) * num_verts);
+		scene->vert_data->tex_verts =
+			MEM_ALLOC(sizeof(struct texture_vertex) * num_verts);
+		size_t uv_size = sizeof(struct vec2f);
 		for (size_t i = 0; i < num_verts; i++) {
-			size_t data_size = sizeof(struct vec2f);
-			scene->vert_data->tex_verts->data =
-				MEM_ALLOC(data_size);
-			scene->vert_data->tex_verts->size = data_size;
+			scene->vert_data->tex_verts[i].data =
+				MEM_ALLOC(uv_size);
+			memset(scene->vert_data->tex_verts[i].data, 0,
+			       sizeof(uv_size));
+			scene->vert_data->tex_verts[i].size = uv_size;
 		}
 	}
 	return scene;
@@ -39,33 +43,52 @@ struct gfx_scene* gfx_scene_new(u32 num_verts, u32 num_vars,
 void gfx_scene_free(struct gfx_scene* scene)
 {
 	if (scene) {
-		if (scene->vert_data) {
-			if (scene->vert_data->positions) {
+		// if (scene->vertex_shader) {
+		// 	// scene->vertex_shader->vars
+		// 	gfx_shader_free(scene->vertex_shader);
+		// 	scene->vertex_shader = NULL;
+		// }
+		// if (scene->pixel_shader) {
+		// 	gfx_shader_free(scene->pixel_shader);
+		// 	scene->pixel_shader = NULL;
+		// }
+		if (scene->vert_data != NULL) {
+			if (scene->vert_data->positions != NULL) {
 				BM_MEM_FREE(scene->vert_data->positions);
 				scene->vert_data->positions = NULL;
 			}
-			if (scene->vert_data->normals) {
+			if (scene->vert_data->normals != NULL) {
 				BM_MEM_FREE(scene->vert_data->normals);
 				scene->vert_data->normals = NULL;
 			}
-			if (scene->vert_data->tangents) {
+			if (scene->vert_data->tangents != NULL) {
 				BM_MEM_FREE(scene->vert_data->tangents);
 				scene->vert_data->tangents = NULL;
 			}
-			if (scene->vert_data->colors) {
+			if (scene->vert_data->colors != NULL) {
 				BM_MEM_FREE(scene->vert_data->colors);
 				scene->vert_data->colors = NULL;
 			}
-			if (scene->vert_data->tex_verts) {
-				if (scene->vert_data->tex_verts->data) {
-					BM_MEM_FREE(scene->vert_data->tex_verts
-							 ->data);
-					scene->vert_data->tex_verts->data =
-						NULL;
+			if (scene->vert_data->tex_verts != NULL) {
+				for (size_t i = 0;
+				     i < scene->vert_data->num_vertices; i++) {
+					if (scene->vert_data->tex_verts[i]
+						    .data != NULL) {
+						BM_MEM_FREE(
+							scene->vert_data
+								->tex_verts[i]
+								.data);
+						scene->vert_data->tex_verts[i]
+							.data = NULL;
+						scene->vert_data->tex_verts[i]
+							.size = 0;
+					}
 				}
 				BM_MEM_FREE(scene->vert_data->tex_verts);
 				scene->vert_data->tex_verts = NULL;
 			}
+			BM_MEM_FREE(scene->vert_data);
+			scene->vert_data = NULL;
 		}
 	}
 	BM_MEM_FREE(scene);

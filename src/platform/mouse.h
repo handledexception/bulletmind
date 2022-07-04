@@ -7,10 +7,7 @@
 
 typedef struct gui_window gui_window_t;
 
-enum mouse_button_state {
-	MOUSE_BUTTON_DOWN = 1,
-	MOUSE_BUTTON_UP = 0
-};
+enum mouse_button_state { MOUSE_BUTTON_DOWN = 1, MOUSE_BUTTON_UP = 0 };
 
 enum _mouse_button {
 	MOUSE_BUTTON_LEFT = 0,

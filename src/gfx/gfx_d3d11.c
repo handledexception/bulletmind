@@ -29,6 +29,11 @@
 		obj = NULL;                       \
 	}
 
+typedef HRESULT(WINAPI* PFN_CREATE_DXGI_FACTORY2)(UINT flags, REFIID riid,
+						  void** ppFactory);
+static PFN_CREATE_DXGI_FACTORY2 CreateDXGIFactory2Func = NULL;
+static PFN_D3D11_CREATE_DEVICE D3D11CreateDeviceFunc = NULL;
+
 static const D3D11_INPUT_ELEMENT_DESC kVertexDescPositionUV[2] = {
 	{"SV_Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
 	 D3D11_INPUT_PER_VERTEX_DATA, 0},
@@ -174,10 +179,8 @@ struct gfx_module {
 	rect_t viewport;
 };
 
-typedef HRESULT(WINAPI* PFN_CREATE_DXGI_FACTORY2)(UINT flags, REFIID riid,
-						  void** ppFactory);
-
-enum gfx_display_orientation gfx_dxgi_rotation_to_orientation(DXGI_MODE_ROTATION rotation)
+enum gfx_display_orientation
+gfx_dxgi_rotation_to_orientation(DXGI_MODE_ROTATION rotation)
 {
 	switch (rotation) {
 	case DXGI_MODE_ROTATION_ROTATE90:
@@ -278,10 +281,14 @@ void gfx_activate_d3d11_debug_info(void)
 	if (gfx && gfx->module) {
 		ID3D11InfoQueue* nfo_q;
 		if (SUCCEEDED(IProvideClassInfo_QueryInterface(
-				gfx->module->device, &BM_IID_ID3D11InfoQueue, (void**)&nfo_q))) {
-			// ID3D11InfoQueue_SetBreakOnSeverity(nfo_q, D3D11_MESSAGE_SEVERITY_INFO, TRUE);
-			// ID3D11InfoQueue_SetBreakOnSeverity(nfo_q, D3D11_MESSAGE_SEVERITY_MESSAGE, TRUE);
-			// ID3D11InfoQueue_SetBreakOnSeverity(nfo_q, D3D11_MESSAGE_SEVERITY_WARNING, TRUE);
+			    gfx->module->device, &BM_IID_ID3D11InfoQueue,
+			    (void**)&nfo_q))) {
+			ID3D11InfoQueue_SetBreakOnSeverity(
+				nfo_q, D3D11_MESSAGE_SEVERITY_INFO, TRUE);
+			ID3D11InfoQueue_SetBreakOnSeverity(
+				nfo_q, D3D11_MESSAGE_SEVERITY_MESSAGE, TRUE);
+			ID3D11InfoQueue_SetBreakOnSeverity(
+				nfo_q, D3D11_MESSAGE_SEVERITY_WARNING, TRUE);
 			ID3D11InfoQueue_SetBreakOnSeverity(
 				nfo_q, D3D11_MESSAGE_SEVERITY_CORRUPTION, TRUE);
 			ID3D11InfoQueue_SetBreakOnSeverity(
@@ -309,15 +316,6 @@ result gfx_com_release_d3d11(void)
 	return RESULT_OK;
 }
 
-void gfx_bind_vertex_shader_input_layout(void)
-{
-	if (gfx && gfx->module->vertex_shader) {
-		gfx_vertex_shader_t* vs = (gfx_vertex_shader_t*)gfx->module->vertex_shader->impl;
-		if (vs)
-			gfx_vertex_shader_bind_input_layout(vs);
-	}
-}
-
 //
 // gfx system
 //
@@ -340,7 +338,7 @@ result gfx_enumerate_adapters(struct vector* adapters, bool enum_displays)
 		memset(&ga, 0, sizeof(struct gfx_adapter));
 
 		hr = IDXGIFactory2_EnumAdapters1(gfx->module->dxgi_factory, i,
-						&ga.dxgi_adapter);
+						 &ga.dxgi_adapter);
 		if (FAILED(hr))
 			continue;
 
@@ -369,7 +367,8 @@ result gfx_enumerate_adapters(struct vector* adapters, bool enum_displays)
 			u16 bb = 0;
 			u16 ccccc = 0;
 			u64 ddddd = 0;
-			unpack_driver_version((u64)umd.QuadPart, &aa, &bb, &ccccc, &ddddd);
+			unpack_driver_version((u64)umd.QuadPart, &aa, &bb,
+					      &ccccc, &ddddd);
 			logger(LOG_INFO, "     \tDriver Version: %u.%u.%u.%u",
 			       aa, bb, ccccc, ddddd);
 			ga.driver_version = umd.QuadPart;
@@ -456,15 +455,16 @@ static bool gfx_get_monitor_target(const MONITORINFOEX* info,
 	return found;
 }
 
-result gfx_enumerate_displays(const gfx_adapter_t* adapter, struct vector* displays)
+result gfx_enumerate_displays(const gfx_adapter_t* adapter,
+			      struct vector* displays)
 {
-	if (!gfx || !gfx->module || !adapter->dxgi_adapter)
+	if (!gfx_system_ok() || !adapter->dxgi_adapter)
 		return RESULT_NULL;
 
 	struct gfx_display gd;
 	UINT output_index = 0;
-	if (FAILED(IDXGIAdapter1_EnumOutputs(adapter->dxgi_adapter, output_index,
-				       &gd.dxgi_output)))
+	if (FAILED(IDXGIAdapter1_EnumOutputs(adapter->dxgi_adapter,
+					     output_index, &gd.dxgi_output)))
 		return RESULT_NOT_FOUND;
 
 	for (output_index = 0;
@@ -516,11 +516,14 @@ result gfx_enumerate_displays(const gfx_adapter_t* adapter, struct vector* displ
 			gd.desktop_coords.h = rect.bottom;
 			gd.width = rect.right - rect.left;
 			gd.height = rect.bottom - rect.top;
-			gd.orientation = gfx_dxgi_rotation_to_orientation(desc.Rotation);
+			gd.orientation =
+				gfx_dxgi_rotation_to_orientation(desc.Rotation);
 			gd.has_desktop = desc.AttachedToDesktop;
 			gd.refresh_rate = refresh_rate;
-			DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY output_tect = target.outputTechnology;
-			vector_push_back(displays, &gd, sizeof(struct gfx_display));
+			DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY output_tect =
+				target.outputTechnology;
+			vector_push_back(displays, &gd,
+					 sizeof(struct gfx_display));
 		}
 	}
 	return RESULT_OK;
@@ -536,24 +539,25 @@ void gfx_set_viewport(u32 width, u32 height)
 		.TopLeftX = 0.f,
 		.TopLeftY = 0.f,
 	};
-
 	ID3D11DeviceContext1_RSSetViewports(gfx->module->ctx, 1, &viewport);
 }
 
 // TODO(paulh): Refactor to initialize D3D11 once, and allow instantiating multple swap chains
 result gfx_init_dx11(const struct gfx_config* cfg, s32 flags)
 {
-	if (gfx) {
-		if (gfx->module != NULL) {
-			BM_MEM_FREE(gfx->module);
-			gfx->module = NULL;
-		}
-		gfx->module = MEM_ALLOC(sizeof(*gfx->module));
-		memset(gfx->module, 0, sizeof(*gfx->module));
+	if (gfx == NULL)
+		return RESULT_NULL;
+
+	if (gfx->module != NULL) {
+		BM_MEM_FREE(gfx->module);
+		gfx->module = NULL;
 	}
-	if (gfx_create_device_dependent_resources(cfg->adapter) !=
-	    RESULT_OK) {
-		gfx_com_release_d3d11();
+
+	gfx->module = MEM_ALLOC(sizeof(*gfx->module));
+	memset(gfx->module, 0, sizeof(*gfx->module));
+
+	if (gfx_create_device(cfg->adapter) != RESULT_OK) {
+		gfx_shutdown();
 		return RESULT_ERROR;
 	}
 	logger(LOG_INFO,
@@ -567,10 +571,9 @@ result gfx_init_dx11(const struct gfx_config* cfg, s32 flags)
 	}
 	logger(LOG_INFO, "\033[7mgfx\033[m Created swap chain\n");
 
-	if (gfx_init_render_target(cfg->width, cfg->height,
-				   cfg->pix_fmt) != RESULT_OK ||
-	    gfx_init_zstencil(cfg->width, cfg->height,
-			      GFX_FORMAT_DEPTH_U24,
+	if (gfx_init_render_target(cfg->width, cfg->height, cfg->pix_fmt) !=
+		    RESULT_OK ||
+	    gfx_init_zstencil(cfg->width, cfg->height, GFX_FORMAT_DEPTH_U24,
 			      flags & GFX_USE_ZBUFFER) != RESULT_OK) {
 		gfx_com_release_d3d11();
 		return RESULT_ERROR;
@@ -578,9 +581,10 @@ result gfx_init_dx11(const struct gfx_config* cfg, s32 flags)
 	logger(LOG_INFO,
 	       "\033[7mgfx\033[m Created render target and zbuffer\n");
 
-	gfx_set_render_target(gfx->module->render_target, gfx->module->zstencil_target);
+	gfx_set_render_target(gfx->module->render_target,
+			      gfx->module->zstencil_target);
 	gfx_set_viewport(cfg->width, cfg->height);
-	gfx_init_sprite(gfx->module->sprite_vb);
+	// gfx_init_sprite(gfx->module->sprite_vb);
 
 	gfx_ok = true;
 
@@ -593,7 +597,8 @@ void gfx_shutdown_dx11(void)
 		gfx_adapter_t* adap = vec_elem(gfx->adapters, i);
 		if (adap) {
 			for (size_t j = 0; j < adap->displays.num_elems; j++) {
-				gfx_display_t* disp = vec_elem(adap->displays, j);
+				gfx_display_t* disp =
+					vec_elem(adap->displays, j);
 				if (disp) {
 					IDXGIOutput_Release(disp->dxgi_output);
 				}
@@ -603,12 +608,52 @@ void gfx_shutdown_dx11(void)
 		IDXGIAdapter1_Release(adap->dxgi_adapter);
 	}
 	vec_free(gfx->adapters);
-	gfx_com_release_d3d11();
+
+	if (gfx->module != NULL) {
+		gfx_com_release_d3d11();
+		BM_MEM_FREE(gfx->module);
+		gfx->module = NULL;
+	}
+}
+
+bool gfx_system_ok(void)
+{
+	// Should be OK if gfx initialization completed successfully
+	// Make sure pointers are still valid
+	return (gfx != NULL && gfx->module != NULL);
+	// return (gfx != NULL && gfx->module != NULL &&
+	// 	gfx->module->device != NULL && gfx->module->ctx != NULL &&
+	// 	gfx->module->dxgi_swap_chain != NULL);
+	// return false;
+}
+
+gfx_shader_t* gfx_system_get_vertex_shader()
+{
+	if (gfx_system_ok())
+		return gfx->module->vertex_shader;
+	return NULL;
+}
+
+gfx_shader_t* gfx_system_get_pixel_shader()
+{
+	if (gfx_system_ok())
+		return gfx->module->pixel_shader;
+	return NULL;
 }
 
 void gfx_system_bind_render_target(void)
 {
-	gfx_set_render_target(gfx->module->render_target, gfx->module->zstencil_target);
+	gfx_set_render_target(gfx->module->render_target,
+			      gfx->module->zstencil_target);
+}
+
+void gfx_system_bind_input_layout(gfx_shader_t* shader)
+{
+	if (gfx_system_ok() && shader != NULL) {
+		gfx_vertex_shader_t* vs = (gfx_vertex_shader_t*)shader->impl;
+		if (vs != NULL)
+			gfx_vertex_shader_bind_input_layout(vs);
+	}
 }
 
 result gfx_create_swap_chain(const struct gfx_config* cfg)
@@ -654,14 +699,16 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 		IDXGISwapChain* dxgi_swap_chain = NULL;
 		// if(SUCCEEDED(IDXGIFactory2_CreateSwapChainForHwnd(gfx->module->dxgi_factory, (IUnknown*)gfx->module->device, hwnd, &swap_desc1, NULL, NULL, &dxgi_swap_chain)))
 		if (SUCCEEDED(IDXGIFactory2_CreateSwapChain(
-			    gfx->module->dxgi_factory, (IUnknown*)gfx->module->device,
-			    &swap_desc, &dxgi_swap_chain))) {
+			    gfx->module->dxgi_factory,
+			    (IUnknown*)gfx->module->device, &swap_desc,
+			    &dxgi_swap_chain))) {
 			if (SUCCEEDED(IDXGISwapChain1_QueryInterface(
 				    dxgi_swap_chain, &BM_IID_IDXGISwapChain2,
 				    (void**)&gfx->module->dxgi_swap_chain))) {
 				if (cfg->fullscreen)
 					IDXGIFactory2_MakeWindowAssociation(
-						gfx->module->dxgi_factory, hwnd, 0);
+						gfx->module->dxgi_factory, hwnd,
+						0);
 				else
 					IDXGIFactory2_MakeWindowAssociation(
 						gfx->module->dxgi_factory, hwnd,
@@ -683,23 +730,61 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 	return res;
 }
 
-result gfx_create_device_dependent_resources(s32 adapter)
+result gfx_load_dx11_dlls()
+{
+	if (gfx != NULL && gfx->module != NULL) {
+		gfx->module->dxgi_dll = os_dlopen("dxgi.dll");
+		if (!gfx->module->dxgi_dll) {
+			return RESULT_NULL;
+		}
+		gfx->module->d3d11_dll = os_dlopen("d3d11.dll");
+		if (!gfx->module->d3d11_dll) {
+			return RESULT_NULL;
+		}
+	}
+	return RESULT_OK;
+}
+
+void gfx_unload_dx11_dlls()
+{
+	if (gfx != NULL) {
+		if (gfx->module->d3d11_dll != NULL) {
+			os_dlclose(gfx->module->d3d11_dll);
+			gfx->module->d3d11_dll = NULL;
+		}
+		if (gfx->module->dxgi_dll != NULL) {
+			os_dlclose(gfx->module->dxgi_dll);
+			gfx->module->dxgi_dll = NULL;
+		}
+	}
+}
+
+result gfx_load_dx11_functions()
+{
+	if (gfx->module->dxgi_dll) {
+		CreateDXGIFactory2Func =
+			os_dlsym(gfx->module->dxgi_dll, "CreateDXGIFactory2");
+		if (!CreateDXGIFactory2Func) {
+			return RESULT_NULL;
+		}
+	}
+	if (gfx->module->d3d11_dll) {
+		D3D11CreateDeviceFunc =
+			os_dlsym(gfx->module->d3d11_dll, "D3D11CreateDevice");
+		if (!D3D11CreateDeviceFunc) {
+			return RESULT_NULL;
+		}
+	}
+	return RESULT_OK;
+}
+
+result gfx_create_device(s32 adapter)
 {
 	result res = RESULT_OK;
 	HRESULT hr = S_OK;
 
-	gfx->module->dxgi_dll = os_dlopen("dxgi.dll");
-	if (!gfx->module->dxgi_dll) {
-		res = RESULT_NULL;
-		goto cleanup;
-	}
-
-	PFN_CREATE_DXGI_FACTORY2 CreateDXGIFactory2Func =
-		os_dlsym(gfx->module->dxgi_dll, "CreateDXGIFactory2");
-	if (!CreateDXGIFactory2Func) {
-		res = RESULT_NULL;
-		goto cleanup;
-	}
+	ENSURE_OK(gfx_load_dx11_dlls());
+	ENSURE_OK(gfx_load_dx11_functions());
 
 	UINT dxgi_flags = 0;
 #if defined(BM_DEBUG)
@@ -709,31 +794,15 @@ result gfx_create_device_dependent_resources(s32 adapter)
 	hr = CreateDXGIFactory2Func(dxgi_flags, &BM_IID_IDXGIFactory2,
 				    (void**)&gfx->module->dxgi_factory);
 	if (FAILED(hr)) {
-		res = RESULT_ERROR;
-		goto cleanup;
+		return RESULT_ERROR;
 	}
 
 	vec_init(gfx->adapters);
-	res = gfx_enumerate_adapters(&gfx->adapters.vec, true);
-	if (res == RESULT_NOT_FOUND)
-		goto cleanup;
+	ENSURE_OK(gfx_enumerate_adapters(&gfx->adapters.vec, true));
 
 	gfx_adapter_t* adap = vec_elem(gfx->adapters, adapter);
 	if (adap != NULL) {
 		gfx->module->dxgi_adapter = adap->dxgi_adapter;
-	}
-
-	gfx->module->d3d11_dll = os_dlopen("d3d11.dll");
-	if (!gfx->module->d3d11_dll) {
-		res = RESULT_NULL;
-		goto cleanup;
-	}
-
-	PFN_D3D11_CREATE_DEVICE D3D11CreateDeviceFunc =
-		os_dlsym(gfx->module->d3d11_dll, "D3D11CreateDevice");
-	if (!D3D11CreateDeviceFunc) {
-		res = RESULT_NULL;
-		goto cleanup;
 	}
 
 	UINT create_flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
@@ -758,57 +827,47 @@ result gfx_create_device_dependent_resources(s32 adapter)
 				   D3D_DRIVER_TYPE_UNKNOWN, NULL, create_flags,
 				   feature_levels, num_feature_levels,
 				   D3D11_SDK_VERSION,
-				   (ID3D11Device**)&gfx->module->device, &feature_level,
+				   (ID3D11Device**)&gfx->module->device,
+				   &feature_level,
 				   (ID3D11DeviceContext**)&gfx->module->ctx);
 	if (FAILED(hr)) {
-		res = RESULT_ERROR;
-		goto cleanup;
+		return RESULT_ERROR;
 	}
 
-	hr = ID3D11Device_QueryInterface(gfx->module->device, &BM_IID_ID3D11Device1,
+	hr = ID3D11Device_QueryInterface(gfx->module->device,
+					 &BM_IID_ID3D11Device1,
 					 (void**)&gfx->module->device);
 	if (FAILED(hr)) {
-		res = RESULT_ERROR;
-		goto cleanup;
+		return RESULT_ERROR;
 	}
 
-	hr = ID3D11DeviceContext_QueryInterface(
-		gfx->module->ctx, &BM_IID_ID3D11DeviceContext1, (void**)&gfx->module->ctx);
+	hr = ID3D11DeviceContext_QueryInterface(gfx->module->ctx,
+						&BM_IID_ID3D11DeviceContext1,
+						(void**)&gfx->module->ctx);
 	if (FAILED(hr)) {
-		res = RESULT_ERROR;
-		goto cleanup;
+		return RESULT_ERROR;
 	}
 
-	hr = ID3D11Device_QueryInterface(gfx->module->device, &BM_IID_IDXGIDevice1,
+	hr = ID3D11Device_QueryInterface(gfx->module->device,
+					 &BM_IID_IDXGIDevice1,
 					 (void**)&gfx->module->dxgi_device);
 	if (FAILED(hr)) {
-		res = RESULT_ERROR;
-		goto cleanup;
-	}
-
-cleanup:
-	if (res != RESULT_OK) {
-		gfx_shutdown();
+		return RESULT_ERROR;
 	}
 
 	return res;
 }
 
-void gfx_destroy_device_dependent_resources(void)
+void gfx_destroy_device(void)
 {
 	if (gfx) {
-		if (gfx->module->d3d11_dll) {
-			os_dlclose(gfx->module->d3d11_dll);
-		}
-		if (gfx->module->dxgi_dll) {
-			os_dlclose(gfx->module->dxgi_dll);
-		}
+		gfx_unload_dx11_dlls();
 	}
 }
 
 void gfx_render_clear(const rgba_t* color)
 {
-	if (!gfx_ok)
+	if (!gfx_system_ok())
 		return;
 	float clear_color[4];
 	clear_color[0] = color->r / 255.f;
@@ -820,11 +879,13 @@ void gfx_render_clear(const rgba_t* color)
 			(struct gfx_texture2d*)gfx->module->render_target->impl;
 		if (tex && tex->rtv) {
 			ID3D11DeviceContext1_ClearRenderTargetView(
-				gfx->module->ctx, tex->rtv, (FLOAT*)clear_color);
+				gfx->module->ctx, tex->rtv,
+				(FLOAT*)clear_color);
 		}
 
 		struct gfx_texture2d* zs =
-			(struct gfx_texture2d*)gfx->module->zstencil_target->impl;
+			(struct gfx_texture2d*)
+				gfx->module->zstencil_target->impl;
 		if (zs && zs->dsv) {
 			u32 dsv_clear_flags = D3D11_CLEAR_DEPTH |
 					      D3D11_CLEAR_STENCIL;
@@ -838,23 +899,28 @@ void gfx_render_clear(const rgba_t* color)
 
 void gfx_render_begin(void)
 {
-	if (!gfx_ok)
+	if (!gfx_system_ok())
 		return;
-	gfx_vertex_shader_t* vs = (gfx_vertex_shader_t*)gfx->module->vertex_shader->impl;
-	gfx_pixel_shader_t* ps = (gfx_pixel_shader_t*)gfx->module->pixel_shader->impl;
+	gfx_vertex_shader_t* vs =
+		(gfx_vertex_shader_t*)gfx->module->vertex_shader->impl;
+	gfx_pixel_shader_t* ps =
+		(gfx_pixel_shader_t*)gfx->module->pixel_shader->impl;
 	u32 vertex_count = BM_GFX_MAX_VERTICES;
 	u32 start_vertex = 0;
-	ID3D11DeviceContext1_VSSetShader(gfx->module->ctx, vs->program, NULL, 0);
-	ID3D11DeviceContext1_PSSetShader(gfx->module->ctx, ps->program, NULL, 0);
-	ID3D11DeviceContext1_PSSetSamplers(gfx->module->ctx, 0, 1, &gfx->module->sampler_state);
-	ID3D11DeviceContext1_Draw(gfx->module->ctx, vertex_count, start_vertex);
+	ID3D11DeviceContext1* ctx = gfx->module->ctx;
+	ID3D11DeviceContext1_VSSetShader(ctx, vs->program, NULL, 0);
+	ID3D11DeviceContext1_PSSetShader(ctx, ps->program, NULL, 0);
+	ID3D11DeviceContext1_PSSetSamplers(ctx, 0, 1,
+					   &gfx->module->sampler_state);
+	ID3D11DeviceContext1_Draw(ctx, vertex_count, start_vertex);
 }
 
 void gfx_render_end(bool vsync, u32 flags)
 {
-	if (!gfx_ok)
+	if (!gfx_system_ok())
 		return;
-	IDXGISwapChain1_Present(gfx->module->dxgi_swap_chain, (UINT)vsync, flags);
+	IDXGISwapChain1_Present(gfx->module->dxgi_swap_chain, (UINT)vsync,
+				flags);
 }
 
 void gfx_set_vertex_shader(gfx_shader_t* vs)
@@ -872,7 +938,8 @@ void gfx_set_pixel_shader(gfx_shader_t* ps)
 enum gfx_vertex_type gfx_get_vertex_type(void)
 {
 	if (gfx != NULL) {
-		gfx_vertex_shader_t* vs = (gfx_vertex_shader_t*)gfx->module->vertex_shader->impl;
+		gfx_vertex_shader_t* vs =
+			(gfx_vertex_shader_t*)gfx->module->vertex_shader->impl;
 		if (vs != NULL)
 			return vs->vertex_type;
 	}
@@ -905,11 +972,64 @@ enum gfx_vertex_type gfx_get_vertex_type(void)
 //
 // gfx buffer
 //
+result gfx_buffer_new(size_t size, enum gfx_buffer_type type, enum gfx_buffer_usage usage, gfx_buffer_t** buf)
+{
+	if (!gfx_system_ok())
+		return RESULT_NULL;
+	gfx_buffer_t* b = MEM_ALLOC(sizeof(gfx_buffer_t));
+	b->usage = usage;
+	b->type = type;
+	b->data = NULL;
+	b->size = size;
+
+	u32 cpu_access_flags = 0;
+	if (usage == GFX_BUFFER_USAGE_DYNAMIC)
+		cpu_access_flags = D3D11_CPU_ACCESS_WRITE;
+
+	u32 bind_flags = 0;
+	switch (type) {
+	case GFX_BUFFER_VERTEX:
+		bind_flags = D3D11_BIND_VERTEX_BUFFER;
+		break;
+	case GFX_BUFFER_INDEX:
+		bind_flags = D3D11_BIND_INDEX_BUFFER;
+		break;
+	case GFX_BUFFER_CONSTANT:
+		bind_flags = D3D11_BIND_CONSTANT_BUFFER;
+		break;
+	default:
+	case GFX_BUFFER_UNKNOWN:
+		return RESULT_UNKNOWN;
+	}
+
+	D3D11_BUFFER_DESC desc = {
+		.Usage = gfx_buffer_usage_to_d3d11_usage(usage),
+		.CPUAccessFlags = (UINT)cpu_access_flags,
+		.ByteWidth = (UINT)size,
+		.BindFlags = (UINT)bind_flags,
+		.MiscFlags = 0,
+		.StructureByteStride = 0};
+	if (data != NULL) {
+		D3D11_SUBRESOURCE_DATA srd = {.pSysMem = buf->data,
+					      .SysMemPitch = 0,
+					      .SysMemSlicePitch = 0};
+		if (FAILED(ID3D11Device1_CreateBuffer(
+			    gfx->module->device, &desc, &srd, &buf->buffer)))
+			return RESULT_NULL;
+	} else {
+		if (FAILED(ID3D11Device1_CreateBuffer(
+			    gfx->module->device, &desc, NULL, &buf->buffer)))
+			return RESULT_NULL;
+	}
+	*buf = b;
+	return RESULT_OK;
+}
+
 result gfx_buffer_create(const void* data, size_t size,
 			 enum gfx_buffer_type type, enum gfx_buffer_usage usage,
 			 gfx_buffer_t** buffer)
 {
-	if (!gfx || !gfx->module->device)
+	if (!gfx_system_ok())
 		return RESULT_NULL;
 
 	gfx_buffer_t* buf = MEM_ALLOC(sizeof(gfx_buffer_t));
@@ -949,12 +1069,12 @@ result gfx_buffer_create(const void* data, size_t size,
 		D3D11_SUBRESOURCE_DATA srd = {.pSysMem = buf->data,
 					      .SysMemPitch = 0,
 					      .SysMemSlicePitch = 0};
-		if (FAILED(ID3D11Device1_CreateBuffer(gfx->module->device, &desc, &srd,
-						      &buf->buffer)))
+		if (FAILED(ID3D11Device1_CreateBuffer(
+			    gfx->module->device, &desc, &srd, &buf->buffer)))
 			return RESULT_NULL;
 	} else {
-		if (FAILED(ID3D11Device1_CreateBuffer(gfx->module->device, &desc, NULL,
-						      &buf->buffer)))
+		if (FAILED(ID3D11Device1_CreateBuffer(
+			    gfx->module->device, &desc, NULL, &buf->buffer)))
 			return RESULT_NULL;
 	}
 	*buffer = buf;
@@ -968,13 +1088,14 @@ void gfx_buffer_free(gfx_buffer_t* buffer)
 			ID3D11Buffer_Release(buffer->buffer);
 			buffer->buffer = NULL;
 		}
+		BM_MEM_FREE(buffer);
+		buffer = NULL;
 	}
 }
 
-result gfx_buffer_copy(gfx_buffer_t* buffer,
-		       const void* data, size_t size)
+result gfx_buffer_copy(gfx_buffer_t* buffer, const void* data, size_t size)
 {
-	if (!gfx || !buffer || !data || size == 0)
+	if (!gfx_system_ok() || !buffer || !data || size == 0)
 		return RESULT_NULL;
 
 	D3D11_MAPPED_SUBRESOURCE sr = {
@@ -990,14 +1111,13 @@ result gfx_buffer_copy(gfx_buffer_t* buffer,
 
 	memcpy(sr.pData, data, size);
 
-	ID3D11DeviceContext1_Unmap(gfx->module->ctx, (ID3D11Resource*)buffer->buffer,
-				   0);
+	ID3D11DeviceContext1_Unmap(gfx->module->ctx,
+				   (ID3D11Resource*)buffer->buffer, 0);
 
 	return RESULT_OK;
 }
 
-void gfx_bind_vertex_buffer(gfx_buffer_t* vb, u32 stride,
-			    u32 offset)
+void gfx_bind_vertex_buffer(gfx_buffer_t* vb, u32 stride, u32 offset)
 {
 	if (gfx && gfx->module->ctx) {
 		ID3D11DeviceContext1_IASetVertexBuffers(gfx->module->ctx, 0, 1,
@@ -1033,22 +1153,22 @@ void gfx_shader_init(gfx_shader_t* shader)
 	}
 }
 
-gfx_shader_t* gfx_shader_create(enum gfx_shader_type type)
+gfx_shader_t* gfx_shader_new(enum gfx_shader_type type)
 {
 	gfx_shader_t* shader = (gfx_shader_t*)MEM_ALLOC(sizeof(gfx_shader_t));
 	gfx_shader_init(shader);
 	shader->type = type;
 	switch (shader->type) {
-		case GFX_SHADER_VERTEX:
-			shader->impl = (gfx_vertex_shader_t*)gfx_vertex_shader_create();
-			break;
-		case GFX_SHADER_PIXEL:
-			shader->impl = (gfx_pixel_shader_t*)gfx_pixel_shader_create();
-			break;
-		case GFX_SHADER_GEOMETRY:
-		case GFX_SHADER_COMPUTE:
-		default:
-			break;
+	case GFX_SHADER_VERTEX:
+		shader->impl = (gfx_vertex_shader_t*)gfx_vertex_shader_create();
+		break;
+	case GFX_SHADER_PIXEL:
+		shader->impl = (gfx_pixel_shader_t*)gfx_pixel_shader_create();
+		break;
+	case GFX_SHADER_GEOMETRY:
+	case GFX_SHADER_COMPUTE:
+	default:
+		break;
 	}
 	return shader;
 }
@@ -1057,18 +1177,23 @@ void gfx_shader_free(gfx_shader_t* shader)
 {
 	if (shader != NULL) {
 		gfx_buffer_free(shader->cbuffer);
+		shader->cbuffer = NULL;
 		switch (shader->type) {
-			case GFX_SHADER_VERTEX:
-				gfx_vertex_shader_free((gfx_vertex_shader_t*)shader->impl);
-				break;
-			case GFX_SHADER_PIXEL:
-				gfx_pixel_shader_free((gfx_pixel_shader_t*)shader->impl);
-				break;
-			case GFX_SHADER_GEOMETRY:
-			case GFX_SHADER_COMPUTE:
-			default:
-				logger(LOG_WARNING, "[gfx] shader type %s not implemented!", gfx_shader_type_to_string(shader->type));
-				break;
+		case GFX_SHADER_VERTEX:
+			gfx_vertex_shader_free(
+				(gfx_vertex_shader_t*)shader->impl);
+			break;
+		case GFX_SHADER_PIXEL:
+			gfx_pixel_shader_free(
+				(gfx_pixel_shader_t*)shader->impl);
+			break;
+		case GFX_SHADER_GEOMETRY:
+		case GFX_SHADER_COMPUTE:
+		default:
+			logger(LOG_WARNING,
+			       "[gfx] shader type %s not implemented!",
+			       gfx_shader_type_to_string(shader->type));
+			break;
 		}
 		vec_free(shader->vars);
 		BM_MEM_FREE(shader);
@@ -1111,11 +1236,11 @@ enum gfx_vertex_type gfx_vertex_shader_get_vertex_type(gfx_vertex_shader_t* vs)
 	return vs->vertex_type;
 }
 
-void gfx_vertex_shader_set_vertex_type(gfx_vertex_shader_t* vs, enum gfx_vertex_type type)
+void gfx_vertex_shader_set_vertex_type(gfx_vertex_shader_t* vs,
+				       enum gfx_vertex_type type)
 {
 	vs->vertex_type = type;
 }
-
 
 void gfx_pixel_shader_init(gfx_pixel_shader_t* ps)
 {
@@ -1127,7 +1252,7 @@ void gfx_pixel_shader_init(gfx_pixel_shader_t* ps)
 gfx_pixel_shader_t* gfx_pixel_shader_create()
 {
 	gfx_pixel_shader_t* ps = MEM_ALLOC(sizeof(gfx_pixel_shader_t));
-	// gfx_pixel_shader_init(ps);
+	gfx_pixel_shader_init(ps);
 	return ps;
 }
 void gfx_pixel_shader_free(gfx_pixel_shader_t* ps)
@@ -1143,11 +1268,8 @@ void gfx_pixel_shader_free(gfx_pixel_shader_t* ps)
 }
 
 // original stuff -----------------------------------------------------------------------------------------
-result gfx_shader_compile_from_file(
-						    const char* path,
-						    const char* entrypoint,
-						    const char* target,
-						    gfx_shader_t* shader)
+result gfx_shader_compile_from_file(const char* path, const char* entrypoint,
+				    const char* target, gfx_shader_t* shader)
 {
 	if (shader == NULL)
 		return RESULT_NULL;
@@ -1162,37 +1284,37 @@ result gfx_shader_compile_from_file(
 
 	ID3D10Blob** shader_blob = NULL;
 	switch (shader->type) {
-	case GFX_SHADER_VERTEX:
-		{
-			gfx_vertex_shader_t* vs = (gfx_vertex_shader_t*)shader->impl;
-			if (vs == NULL)
-				return RESULT_NULL;
-			shader_blob = &vs->blob;
-			break;
-		}
-	case GFX_SHADER_PIXEL:
-		{
-			gfx_pixel_shader_t* ps = (gfx_pixel_shader_t*)shader->impl;
-			if (ps == NULL)
-				return RESULT_NULL;
-			shader_blob = &ps->blob;
-			break;
-		}
+	case GFX_SHADER_VERTEX: {
+		gfx_vertex_shader_t* vs = (gfx_vertex_shader_t*)shader->impl;
+		if (vs == NULL)
+			return RESULT_NULL;
+		shader_blob = &vs->blob;
+		break;
+	}
+	case GFX_SHADER_PIXEL: {
+		gfx_pixel_shader_t* ps = (gfx_pixel_shader_t*)shader->impl;
+		if (ps == NULL)
+			return RESULT_NULL;
+		shader_blob = &ps->blob;
+		break;
+	}
 	default:
-		logger(LOG_ERROR, "[gfx] compilation of %s shaders not implemented!", gfx_shader_type_to_string(shader->type));
+		logger(LOG_ERROR,
+		       "[gfx] compilation of %s shaders not implemented!",
+		       gfx_shader_type_to_string(shader->type));
 		return RESULT_NOT_IMPL;
 	}
 
 	ID3DBlob* blob_error = NULL;
 	if (FAILED(D3DCompile(txt, file_size, path, NULL, NULL, entrypoint,
-				target, 0, 0, shader_blob, &blob_error))) {
+			      target, 0, 0, shader_blob, &blob_error))) {
 		if (blob_error) {
 			const char* err_msg =
 				(const char*)ID3D10Blob_GetBufferPointer(
 					blob_error);
 			logger(LOG_ERROR,
-				"[gfx] Failed to compile shader %s. Error: %s",
-				path, err_msg);
+			       "[gfx] Failed to compile shader %s. Error: %s",
+			       path, err_msg);
 			ID3D10Blob_Release(blob_error);
 		}
 		return RESULT_ERROR;
@@ -1207,53 +1329,51 @@ result gfx_shader_build_program(gfx_shader_t* shader)
 		return RESULT_NULL;
 
 	switch (shader->type) {
-	case GFX_SHADER_VERTEX:
-		{
-			gfx_vertex_shader_t* vs = (gfx_vertex_shader_t*)shader->impl;
-			if (vs == NULL)
-				return RESULT_NULL;
-			if (FAILED(ID3D11Device1_CreateVertexShader(
-					gfx->module->device,
-					ID3D10Blob_GetBufferPointer(vs->blob),
-					ID3D10Blob_GetBufferSize(vs->blob),
-					NULL,
-					(ID3D11VertexShader**)&vs->program))) {
-				logger(LOG_DEBUG,
-						"[gfx] Failed to build vertex shader!");
-				ID3D11VertexShader_Release(vs->program);
-				vs->program = NULL;
-			}
-			break;
+	case GFX_SHADER_VERTEX: {
+		gfx_vertex_shader_t* vs = (gfx_vertex_shader_t*)shader->impl;
+		if (vs == NULL)
+			return RESULT_NULL;
+		if (FAILED(ID3D11Device1_CreateVertexShader(
+			    gfx->module->device,
+			    ID3D10Blob_GetBufferPointer(vs->blob),
+			    ID3D10Blob_GetBufferSize(vs->blob), NULL,
+			    (ID3D11VertexShader**)&vs->program))) {
+			logger(LOG_DEBUG,
+			       "[gfx] Failed to build vertex shader!");
+			ID3D11VertexShader_Release(vs->program);
+			vs->program = NULL;
 		}
-	case GFX_SHADER_PIXEL:
-		{
-			gfx_pixel_shader_t* ps = (gfx_pixel_shader_t*)shader->impl;
-			if (ps == NULL)
-				return RESULT_NULL;
-			if (FAILED(ID3D11Device1_CreatePixelShader(
-					gfx->module->device,
-					ID3D10Blob_GetBufferPointer(ps->blob),
-					ID3D10Blob_GetBufferSize(ps->blob),
-					NULL,
-					(ID3D11PixelShader**)&ps->program))) {
-				logger(LOG_DEBUG,
-						"[gfx] Failed to build pixel shader!");
-				ID3D11PixelShader_Release(ps->program);
-				ps->program = NULL;
-			}
-			break;
+		break;
+	}
+	case GFX_SHADER_PIXEL: {
+		gfx_pixel_shader_t* ps = (gfx_pixel_shader_t*)shader->impl;
+		if (ps == NULL)
+			return RESULT_NULL;
+		if (FAILED(ID3D11Device1_CreatePixelShader(
+			    gfx->module->device,
+			    ID3D10Blob_GetBufferPointer(ps->blob),
+			    ID3D10Blob_GetBufferSize(ps->blob), NULL,
+			    (ID3D11PixelShader**)&ps->program))) {
+			logger(LOG_DEBUG,
+			       "[gfx] Failed to build pixel shader!");
+			ID3D11PixelShader_Release(ps->program);
+			ps->program = NULL;
 		}
+		break;
+	}
 	default:
-		logger(LOG_ERROR, "[gfx] building of %s shaders not implemented!", gfx_shader_type_to_string(shader->type));
+		logger(LOG_ERROR,
+		       "[gfx] building of %s shaders not implemented!",
+		       gfx_shader_type_to_string(shader->type));
 		return RESULT_NOT_IMPL;
 	}
 
 	return RESULT_OK;
 }
 
-result gfx_shader_create_input_layout(gfx_shader_t* shader)
+result gfx_shader_new_input_layout(gfx_shader_t* shader)
 {
-	if (!gfx || !shader)
+	if (!gfx_system_ok() || !shader)
 		return RESULT_NULL;
 
 	gfx_vertex_shader_t* vs = (gfx_vertex_shader_t*)shader->impl;
@@ -1287,8 +1407,8 @@ result gfx_shader_create_input_layout(gfx_shader_t* shader)
 		LPVOID data = ID3D10Blob_GetBufferPointer(vs->blob);
 		size_t size = ID3D10Blob_GetBufferSize(vs->blob);
 		if (FAILED(ID3D11Device1_CreateInputLayout(
-			    gfx->module->device, descs, (UINT)num_elems, data, size,
-			    &vs->input_layout))) {
+			    gfx->module->device, descs, (UINT)num_elems, data,
+			    size, &vs->input_layout))) {
 			ID3D11InputLayout_Release(vs->input_layout);
 			return RESULT_NULL;
 		}
@@ -1313,52 +1433,12 @@ void gfx_vertex_shader_bind_input_layout(const gfx_vertex_shader_t* vs)
 	}
 }
 
-bool gfx_shader_add_var(gfx_shader_t* shader, gfx_shader_var_t* var)
-{
-	if (shader != NULL && var != NULL) {
-		if (vec_find(shader->vars, var, 0) == VEC_NOT_FOUND) {
-			vec_push_back(shader->vars, var);
-			return true;
-		}
-	}
-	return false;
-}
-
-bool gfx_shader_set_var_by_name(gfx_shader_t* shader, const char* name,
-				const void* value, size_t size)
-{
-	for (size_t i = 0; i < shader->vars.num_elems; i++) {
-		gfx_shader_var_t* var =
-			(gfx_shader_var_t*)&shader->vars.elems[i];
-		if (var != NULL && !strcmp(var->name, name) &&
-		    gfx_get_shader_var_size(var->type) == size) {
-			memcpy(var->data, value, size);
-			return true;
-		}
-	}
-	return false;
-}
-
-gfx_shader_var_t* gfx_shader_get_var_by_name(gfx_shader_t* shader,
-					     const char* name)
-{
-	gfx_shader_var_t* found = NULL;
-	for (size_t i = 0; i < shader->vars.num_elems; i++) {
-		gfx_shader_var_t* var =
-			(gfx_shader_var_t*)&shader->vars.elems[i];
-		if (var != NULL && !strcmp(var->name, name)) {
-			found = var;
-		}
-	}
-	return found;
-}
-
 //
 // gfx sampler
 //
 result gfx_init_sampler_state(void)
 {
-	if (!gfx || !gfx->module->device)
+	if (!gfx_system_ok() || !gfx->module->device)
 		return RESULT_NULL;
 
 	D3D11_SAMPLER_DESC sd = {
@@ -1374,8 +1454,8 @@ result gfx_init_sampler_state(void)
 		.BorderColor = {0.f, 0.f, 0.f, 0.f},
 	};
 
-	if (FAILED(ID3D11Device1_CreateSamplerState(gfx->module->device, &sd,
-						    &gfx->module->sampler_state))) {
+	if (FAILED(ID3D11Device1_CreateSamplerState(
+		    gfx->module->device, &sd, &gfx->module->sampler_state))) {
 		logger(LOG_DEBUG, "[gfx] Failed to create sampler state!");
 
 		ID3D11SamplerState_Release(gfx->module->sampler_state);
@@ -1396,8 +1476,9 @@ void gfx_bind_sampler_state(gfx_texture_t* texture, u32 slot)
 			UINT views = 1;
 			ID3D11DeviceContext1_PSSetShaderResources(
 				gfx->module->ctx, slot, views, &impl->srv);
-			ID3D11DeviceContext1_PSSetSamplers(gfx->module->ctx, slot, 1,
-							   &gfx->module->sampler_state);
+			ID3D11DeviceContext1_PSSetSamplers(
+				gfx->module->ctx, slot, 1,
+				&gfx->module->sampler_state);
 		}
 	}
 }
@@ -1438,7 +1519,8 @@ result gfx_init_rasterizer(enum gfx_culling_mode culling,
 				(flags & GFX_RASTER_ANTIALIAS_LINES),
 		};
 		if (FAILED(ID3D11Device1_CreateRasterizerState(
-			    gfx->module->device, &desc, &gfx->module->raster_state))) {
+			    gfx->module->device, &desc,
+			    &gfx->module->raster_state))) {
 			return RESULT_NULL;
 		}
 	}
@@ -1449,15 +1531,97 @@ result gfx_init_rasterizer(enum gfx_culling_mode culling,
 void gfx_bind_rasterizer(void)
 {
 	if (gfx && gfx->module->device) {
-		ID3D11DeviceContext1_RSSetState(gfx->module->ctx, gfx->module->raster_state);
+		ID3D11DeviceContext1_RSSetState(gfx->module->ctx,
+						gfx->module->raster_state);
 	}
 }
 
 //
 // gfx texture
 //
-result gfx_create_texture2d(const u8* data,
-			    const struct gfx_texture_desc* desc,
+void gfx_init_texture(gfx_texture_t* texture)
+{
+	if (texture != NULL) {
+		texture->data = NULL;
+		texture->impl = NULL;
+		texture->size = 0;
+		texture->type = GFX_TEXTURE_UNKNOWN;
+	}
+}
+
+result gfx_create_texture(const u8* data, const struct gfx_texture_desc* desc,
+			  gfx_texture_t** texture)
+{
+	result res = RESULT_OK;
+
+	gfx_texture_t* tex = (gfx_texture_t*)MEM_ALLOC(sizeof(*tex));
+	gfx_init_texture(tex);
+
+	switch (desc->type) {
+	case GFX_TEXTURE_2D:
+		res = gfx_create_texture2d(data, desc, &tex);
+		tex->type = GFX_TEXTURE_2D;
+		break;
+	case GFX_TEXTURE_1D:
+	case GFX_TEXTURE_3D:
+	case GFX_TEXTURE_CUBE:
+	default:
+		res = RESULT_NOT_IMPL;
+		break;
+	}
+
+	if (res == RESULT_OK) {
+		*texture = tex;
+	} else {
+		BM_MEM_FREE(tex);
+		tex = NULL;
+	}
+
+	return res;
+}
+
+void gfx_destroy_texture(gfx_texture_t* texture)
+{
+	if (texture != NULL) {
+		if (texture->data != NULL) {
+			BM_MEM_FREE(texture->data);
+			texture->data = NULL;
+		}
+		switch (texture->type) {
+		case GFX_TEXTURE_2D:
+			gfx_destroy_texture2d(texture);
+			break;
+		case GFX_TEXTURE_1D:
+		case GFX_TEXTURE_3D:
+		case GFX_TEXTURE_CUBE:
+		default:
+			break;
+		}
+		if (texture->impl != NULL) {
+			BM_MEM_FREE(texture->impl);
+			texture->impl = NULL;
+		}
+		BM_MEM_FREE(texture);
+		texture = NULL;
+	}
+}
+
+void gfx_init_texture2d(struct gfx_texture2d* tex2d)
+{
+	if (tex2d != NULL) {
+		tex2d->pix_fmt = GFX_FORMAT_UNKNOWN;
+		tex2d->width = 0;
+		tex2d->height = 0;
+		tex2d->mip_levels = 0;
+		tex2d->flags = 0;
+		tex2d->texture = NULL;
+		tex2d->srv = NULL;
+		tex2d->rtv = NULL;
+		tex2d->dsv = NULL;
+	}
+}
+
+result gfx_create_texture2d(const u8* data, const struct gfx_texture_desc* desc,
 			    gfx_texture_t** texture)
 {
 	if (!texture || !*texture)
@@ -1466,6 +1630,7 @@ result gfx_create_texture2d(const u8* data,
 	gfx_texture_t* tex = *texture;
 	tex->impl = MEM_ALLOC(sizeof(struct gfx_texture2d));
 	struct gfx_texture2d* tex2d = (struct gfx_texture2d*)tex->impl;
+	gfx_init_texture2d(tex2d);
 
 	DXGI_FORMAT dxgi_format =
 		gfx_pixel_format_to_dxgi_format(desc->pix_fmt);
@@ -1521,12 +1686,14 @@ result gfx_create_texture2d(const u8* data,
 			.SysMemSlicePitch = (UINT)tex->size,
 		};
 
-		if (FAILED(ID3D11Device1_CreateTexture2D(
-			    gfx->module->device, &tex_desc, &srd, &tex2d->texture)))
+		if (FAILED(ID3D11Device1_CreateTexture2D(gfx->module->device,
+							 &tex_desc, &srd,
+							 &tex2d->texture)))
 			return RESULT_NULL;
 	} else {
-		if (FAILED(ID3D11Device1_CreateTexture2D(
-			    gfx->module->device, &tex_desc, NULL, &tex2d->texture)))
+		if (FAILED(ID3D11Device1_CreateTexture2D(gfx->module->device,
+							 &tex_desc, NULL,
+							 &tex2d->texture)))
 			return RESULT_NULL;
 	}
 
@@ -1539,8 +1706,9 @@ result gfx_create_texture2d(const u8* data,
 		};
 
 		if (FAILED(ID3D11Device_CreateDepthStencilView(
-			    gfx->module->device, (ID3D11Resource*)tex2d->texture,
-			    &dsv_desc, &tex2d->dsv)))
+			    gfx->module->device,
+			    (ID3D11Resource*)tex2d->texture, &dsv_desc,
+			    &tex2d->dsv)))
 			return RESULT_NULL;
 		// shader texture
 	} else {
@@ -1552,53 +1720,40 @@ result gfx_create_texture2d(const u8* data,
 		};
 
 		if (FAILED(ID3D11Device1_CreateShaderResourceView(
-			    gfx->module->device, (ID3D11Resource*)tex2d->texture,
-			    &srv_desc, &tex2d->srv)))
+			    gfx->module->device,
+			    (ID3D11Resource*)tex2d->texture, &srv_desc,
+			    &tex2d->srv)))
 			return RESULT_NULL;
 	}
 
 	return RESULT_OK;
 }
 
-result gfx_create_texture(const u8* data,
-			  const struct gfx_texture_desc* desc,
-			  gfx_texture_t** texture)
+void gfx_destroy_texture2d(gfx_texture_t* texture)
 {
-	result res = RESULT_OK;
-
-	gfx_texture_t* tex = (gfx_texture_t*)MEM_ALLOC(sizeof(*tex));
-
-	switch (desc->type) {
-	case GFX_TEXTURE_2D:
-		res = gfx_create_texture2d(data, desc, &tex);
-		break;
-	case GFX_TEXTURE_1D:
-	case GFX_TEXTURE_3D:
-	case GFX_TEXTURE_CUBE:
-	default:
-		res = RESULT_NOT_IMPL;
-		break;
+	if (texture != NULL) {
+		struct gfx_texture2d* tex2d =
+			(struct gfx_texture2d*)texture->impl;
+		if (tex2d->texture != NULL) {
+			ID3D11Texture2D_Release(tex2d->texture);
+		}
+		if (tex2d->rtv) {
+			ID3D11RenderTargetView_Release(tex2d->rtv);
+		}
+		if (tex2d->dsv) {
+			ID3D11DepthStencilView_Release(tex2d->dsv);
+		}
+		if (tex2d->srv) {
+			ID3D11ShaderResourceView_Release(tex2d->srv);
+		}
 	}
-
-	if (res == RESULT_OK) {
-		*texture = tex;
-	} else {
-		BM_MEM_FREE(tex);
-		tex = NULL;
-	}
-
-	return res;
 }
 
 // TODO(paulh): Release stuff if failed!!!!!
-result gfx_init_render_target(u32 width, u32 height,
-			      enum gfx_pixel_format pf)
+result gfx_init_render_target(u32 width, u32 height, enum gfx_pixel_format pf)
 {
-	if (!gfx || !gfx->module->device || !gfx->module->dxgi_swap_chain)
+	if (!gfx_system_ok())
 		return RESULT_NULL;
-
-	gfx->module->render_target =
-		(gfx_texture_t*)MEM_ALLOC(sizeof(*gfx->module->render_target));
 
 	struct gfx_texture_desc desc = {
 		.type = GFX_TEXTURE_2D,
@@ -1609,23 +1764,21 @@ result gfx_init_render_target(u32 width, u32 height,
 		.flags = GFX_TEXTURE_IS_RENDER_TARGET,
 	};
 
-	if (gfx_create_texture2d(NULL, &desc, &gfx->module->render_target) ==
-	    RESULT_OK) {
-		struct gfx_texture2d* tex =
-			(struct gfx_texture2d*)gfx->module->render_target->impl;
-		HRESULT hr = IDXGISwapChain2_GetBuffer(gfx->module->dxgi_swap_chain, 0,
-						       &BM_IID_ID3D11Texture2D,
-						       (void**)&tex->texture);
-		if (FAILED(hr))
-			return RESULT_NULL;
+	ENSURE_OK(gfx_create_texture(NULL, &desc, &gfx->module->render_target));
+	struct gfx_texture2d* tex =
+		(struct gfx_texture2d*)gfx->module->render_target->impl;
+	HRESULT hr = IDXGISwapChain2_GetBuffer(gfx->module->dxgi_swap_chain, 0,
+					       &BM_IID_ID3D11Texture2D,
+					       (void**)&tex->texture);
+	if (FAILED(hr))
+		return RESULT_NULL;
 
-		// D3D11_RENDER_TARGET_VIEW_DESC rtv_desc; // TODO?
-		hr = ID3D11Device1_CreateRenderTargetView(
-			gfx->module->device, (ID3D11Resource*)tex->texture, NULL,
-			&tex->rtv);
-		if (FAILED(hr))
-			return RESULT_NULL;
-	}
+	// D3D11_RENDER_TARGET_VIEW_DESC rtv_desc; // TODO?
+	hr = ID3D11Device1_CreateRenderTargetView(gfx->module->device,
+						  (ID3D11Resource*)tex->texture,
+						  NULL, &tex->rtv);
+	if (FAILED(hr))
+		return RESULT_NULL;
 
 	return RESULT_OK;
 }
@@ -1633,17 +1786,11 @@ result gfx_init_render_target(u32 width, u32 height,
 void gfx_destroy_render_target(void)
 {
 	if (gfx && gfx->module->render_target) {
-		if (gfx->module->render_target->impl) {
-			BM_MEM_FREE(gfx->module->render_target->impl);
-			gfx->module->render_target->impl = NULL;
-		}
-		BM_MEM_FREE(gfx->module->render_target);
-		gfx->module->render_target = NULL;
+		gfx_destroy_texture(gfx->module->render_target);
 	}
 }
 
-void gfx_set_render_target(gfx_texture_t* texture,
-			   gfx_texture_t* zstencil)
+void gfx_set_render_target(gfx_texture_t* texture, gfx_texture_t* zstencil)
 {
 	if (gfx && gfx->module->ctx) {
 		ID3D11RenderTargetView* rtv = NULL;
@@ -1658,12 +1805,12 @@ void gfx_set_render_target(gfx_texture_t* texture,
 				(struct gfx_texture2d*)zstencil->impl;
 			dsv = tex->dsv;
 		}
-		ID3D11DeviceContext1_OMSetRenderTargets(gfx->module->ctx, 1, &rtv, dsv);
+		ID3D11DeviceContext1_OMSetRenderTargets(gfx->module->ctx, 1,
+							&rtv, dsv);
 	}
 }
 
-result gfx_create_zstencil_state(bool enable,
-				 struct gfx_zstencil_state** state)
+result gfx_create_zstencil_state(bool enable, struct gfx_zstencil_state** state)
 {
 	if (!gfx || !gfx->module->device || !state)
 		return RESULT_NULL;
@@ -1692,22 +1839,19 @@ result gfx_create_zstencil_state(bool enable,
 		.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS,
 	};
 
-	if (FAILED(ID3D11Device1_CreateDepthStencilState(gfx->module->device, &desc,
-							 &zss->dss)))
+	if (FAILED(ID3D11Device1_CreateDepthStencilState(gfx->module->device,
+							 &desc, &zss->dss)))
 		return RESULT_NULL;
 
 	return RESULT_OK;
 }
 
 // TODO(paulh): Release stuff if failed!!!!!
-result gfx_init_zstencil(u32 width, u32 height,
-			 enum gfx_pixel_format pix_fmt, bool enabled)
+result gfx_init_zstencil(u32 width, u32 height, enum gfx_pixel_format pix_fmt,
+			 bool enabled)
 {
 	if (!gfx || !gfx->module->device)
 		return RESULT_NULL;
-
-	gfx->module->zstencil_target =
-		(gfx_texture_t*)MEM_ALLOC(sizeof(*gfx->module->zstencil_target));
 
 	struct gfx_texture_desc desc = {
 		.type = GFX_TEXTURE_2D,
@@ -1717,8 +1861,9 @@ result gfx_init_zstencil(u32 width, u32 height,
 		.mip_levels = 1,
 		.flags = GFX_TEXTURE_IS_ZSTENCIL,
 	};
-	gfx_create_texture2d(NULL, &desc, &gfx->module->zstencil_target);
 
+	ENSURE_OK(
+		gfx_create_texture(NULL, &desc, &gfx->module->zstencil_target));
 	// TODO(paulh): Add more zstencil state options eventually
 	gfx->module->zstencil_state_enabled =
 		MEM_ALLOC(sizeof(*gfx->module->zstencil_state_enabled));
@@ -1734,16 +1879,23 @@ result gfx_init_zstencil(u32 width, u32 height,
 void gfx_destroy_zstencil(void)
 {
 	if (gfx && gfx->module->zstencil_state_enabled &&
-	    gfx->module->zstencil_state_disabled && gfx->module->zstencil_target) {
+	    gfx->module->zstencil_state_disabled &&
+	    gfx->module->zstencil_target) {
+		ID3D11DepthStencilState_Release(
+			gfx->module->zstencil_state_enabled->dss);
 		BM_MEM_FREE(gfx->module->zstencil_state_enabled);
 		gfx->module->zstencil_state_enabled = NULL;
+
+		ID3D11DepthStencilState_Release(
+			gfx->module->zstencil_state_disabled->dss);
 		BM_MEM_FREE(gfx->module->zstencil_state_disabled);
 		gfx->module->zstencil_state_disabled = NULL;
 
-		BM_MEM_FREE(gfx->module->zstencil_target->impl);
-		BM_MEM_FREE(gfx->module->zstencil_target);
-		gfx->module->zstencil_target->impl = NULL;
-		gfx->module->zstencil_target = NULL;
+		gfx_destroy_texture(gfx->module->zstencil_target);
+		// BM_MEM_FREE(gfx->module->zstencil_target->impl);
+		// BM_MEM_FREE(gfx->module->zstencil_target);
+		// gfx->module->zstencil_target->impl = NULL;
+		// gfx->module->zstencil_target = NULL;
 	}
 }
 
@@ -1759,9 +1911,11 @@ void gfx_toggle_zstencil(bool enabled)
 {
 	if (gfx) {
 		if (enabled)
-			gfx_bind_zstencil_state(gfx->module->zstencil_state_enabled);
+			gfx_bind_zstencil_state(
+				gfx->module->zstencil_state_enabled);
 		else
-			gfx_bind_zstencil_state(gfx->module->zstencil_state_disabled);
+			gfx_bind_zstencil_state(
+				gfx->module->zstencil_state_disabled);
 	}
 }
 

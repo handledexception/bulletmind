@@ -5,28 +5,28 @@
 gfx_system_t* gfx = NULL;
 bool gfx_ok = false;
 
-size_t gfx_get_shader_var_size(enum gfx_shader_var_type type)
+size_t gfx_shader_var_size(enum gfx_shader_var_type type)
 {
 	switch (type) {
-	case GFX_SHADER_PARAM_BOOL:
+	case GFX_SHADER_VAR_BOOL:
 		return sizeof(bool);
-	case GFX_SHADER_PARAM_S32:
+	case GFX_SHADER_VAR_S32:
 		return sizeof(s32);
-	case GFX_SHADER_PARAM_U32:
+	case GFX_SHADER_VAR_U32:
 		return sizeof(u32);
-	case GFX_SHADER_PARAM_F32:
+	case GFX_SHADER_VAR_F32:
 		return sizeof(f32);
-	case GFX_SHADER_PARAM_F64:
+	case GFX_SHADER_VAR_F64:
 		return sizeof(f64);
-	case GFX_SHADER_PARAM_VEC2:
+	case GFX_SHADER_VAR_VEC2:
 		return sizeof(struct vec2f);
-	case GFX_SHADER_PARAM_VEC3:
+	case GFX_SHADER_VAR_VEC3:
 		return sizeof(struct vec3f);
-	case GFX_SHADER_PARAM_VEC4:
+	case GFX_SHADER_VAR_VEC4:
 		return sizeof(struct vec4f);
-	case GFX_SHADER_PARAM_MAT4:
+	case GFX_SHADER_VAR_MAT4:
 		return sizeof(struct mat4f);
-	case GFX_SHADER_PARAM_TEX:
+	case GFX_SHADER_VAR_TEX:
 		return sizeof(void*);
 	}
 	return 0;
@@ -67,8 +67,7 @@ u32 gfx_get_bits_per_pixel(enum gfx_pixel_format pf)
 	return bpp;
 }
 
-result gfx_init(const struct gfx_config* cfg,
-					s32 flags)
+result gfx_init(const struct gfx_config* cfg, s32 flags)
 {
 	if (cfg->module == GFX_MODULE_DX11) {
 		gfx = (gfx_system_t*)MEM_ALLOC(sizeof(gfx_system_t));
@@ -83,8 +82,11 @@ void gfx_shutdown(void)
 	if (gfx) {
 		gfx_destroy_render_target();
 		gfx_destroy_zstencil();
-		gfx_destroy_device_dependent_resources();
-		gfx_shutdown_dx11();
+		gfx_destroy_device();
+		if (gfx->type == GFX_MODULE_DX11)
+			gfx_shutdown_dx11();
+		BM_MEM_FREE(gfx);
+		gfx = NULL;
 	}
 }
 
@@ -121,6 +123,117 @@ u32 gfx_get_vertex_stride(enum gfx_vertex_type type)
 	return stride;
 }
 
+result gfx_shader_cbuffer_new(gfx_shader_t* shader)
+{
+	if (shader == NULL)
+		return RESULT_NULL;
+	if (shader->cbuffer != NULL) {
+		gfx_buffer_free(shader->cbuffer);
+		shader->cbuffer = NULL;
+	}
+	size_t buf_size = 0;
+	for (size_t i = 0; i < shader->vars.num_elems; i++) {
+		size_t var_size =
+			gfx_shader_var_size(shader->vars.elems[i].type);
+		buf_size += var_size;
+	}
+	buf_size = (buf_size + 15 & 0xfffffff0);
+	return gfx_buffer_create(NULL, buf_size, GFX_BUFFER_CONSTANT,
+				 GFX_BUFFER_USAGE_DYNAMIC, &shader->cbuffer);
+}
+
+gfx_shader_var_t* gfx_shader_var_new(const char* name,
+				     enum gfx_shader_var_type type)
+{
+	gfx_shader_var_t* var = MEM_ALLOC(sizeof(*var));
+	gfx_shader_var_init(var);
+	size_t len = strlen(name);
+	if (len > 255) {
+		strncpy(&var->name[0], name, 255);
+		var->name[256] = '\0';
+	} else {
+		strncpy(&var->name[0], name, len);
+	}
+
+	return var;
+}
+
+void gfx_shader_var_init(gfx_shader_var_t* var)
+{
+	if (var != NULL) {
+		var->data = NULL;
+		memset(var->name, 0, 256);
+		var->type = GFX_SHADER_VAR_UNKNOWN;
+	}
+}
+
+void gfx_shader_var_free(gfx_shader_var_t* var)
+{
+	if (var != NULL) {
+		if (var->data != NULL) {
+			BM_MEM_FREE(var->data);
+			var->data = NULL;
+		}
+		BM_MEM_FREE(var);
+		var = NULL;
+	}
+}
+
+void gfx_shader_var_set(gfx_shader_var_t* var, const void* data)
+{
+	if (var != NULL && data != NULL) {
+		size_t szd = gfx_shader_var_size(var->type);
+		if (var->data != NULL) {
+			BM_MEM_FREE(var->data);
+			var->data = NULL;
+		}
+		if (var->data == NULL) {
+			var->data = MEM_ALLOC(szd);
+		}
+		memcpy(var->data, data, szd);
+	}
+}
+
+bool gfx_shader_add_var(gfx_shader_t* shader, const gfx_shader_var_t* var)
+{
+	if (shader != NULL && var != NULL) {
+		if (vec_find(shader->vars, var, 0) == VEC_NOT_FOUND) {
+			vec_push_back(shader->vars, var);
+			return true;
+		}
+	}
+	return false;
+}
+
+bool gfx_shader_set_var_by_name(gfx_shader_t* shader, const char* name,
+				const void* value, size_t size)
+{
+	for (size_t i = 0; i < shader->vars.num_elems; i++) {
+		gfx_shader_var_t* var =
+			(gfx_shader_var_t*)&shader->vars.elems[i];
+		if (var != NULL && !strcmp(var->name, name) &&
+		    gfx_shader_var_size(var->type) == size) {
+			memcpy(var->data, value, size);
+			return true;
+		}
+	}
+	return false;
+}
+
+gfx_shader_var_t* gfx_shader_get_var_by_name(gfx_shader_t* shader,
+					     const char* name)
+{
+	gfx_shader_var_t* found = NULL;
+	for (size_t i = 0; i < shader->vars.num_elems; i++) {
+		gfx_shader_var_t* var =
+			(gfx_shader_var_t*)&shader->vars.elems[i];
+		if (var != NULL && !strcmp(var->name, name)) {
+			found = var;
+		}
+	}
+	return found;
+}
+
 void gfx_init_sprite(gfx_buffer_t* vertex_buffer)
 {
 	size_t sz = sizeof(struct gfx_vertex_data);
@@ -134,23 +247,34 @@ void gfx_init_sprite(gfx_buffer_t* vertex_buffer)
 	size_t sz_tex_verts = sizeof(vec2f_t) * 4;
 	vd->tex_verts->data = MEM_ALLOC(sz_tex_verts);
 	vd->tex_verts->size = sizeof(vec2f_t);
-	gfx_buffer_create(vd, sz_positions + sz_tex_verts,
-			  GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DYNAMIC,
-			  &vertex_buffer);
+	gfx_buffer_create(vd, sz_positions + sz_tex_verts, GFX_BUFFER_VERTEX,
+			  GFX_BUFFER_USAGE_DYNAMIC, &vertex_buffer);
 }
 
-void gfx_draw_sprite(struct gfx_texture* texture, u32 width,
-		     u32 height, u32 flags)
+// void gfx_destroy_sprite(gfx_buffer_t* vertex_buffer)
+// {
+// 	if (vertex_buffer) {
+// 		gfx_buffer_free(vertex_buffer);
+// 		BM_MEM_FREE(vertex_buffer)
+// 	}
+// }
+
+void gfx_draw_sprite(struct gfx_texture* texture, u32 width, u32 height,
+		     u32 flags)
 {
 }
 
 const char* gfx_shader_type_to_string(enum gfx_shader_type type)
 {
 	switch (type) {
-		case GFX_SHADER_VERTEX: return "vertex";
-		case GFX_SHADER_PIXEL: return "pixel";
-		case GFX_SHADER_GEOMETRY: return "geometry";
-		case GFX_SHADER_COMPUTE: return "compute";
+	case GFX_SHADER_VERTEX:
+		return "vertex";
+	case GFX_SHADER_PIXEL:
+		return "pixel";
+	case GFX_SHADER_GEOMETRY:
+		return "geometry";
+	case GFX_SHADER_COMPUTE:
+		return "compute";
 	}
 	return NULL;
 }

@@ -42,17 +42,19 @@ bool read_toml_config(const char* path, toml_table_t** toml)
 }
 
 // toml does allocation inside toml_raw_to_X functions (i.e. toml_rtos)
-bool read_table_string(toml_table_t* table, const char* key, char** val)
+bool read_table_string(toml_table_t* table, const char* key, const char** val)
 {
 	if (table != NULL) {
-		const char* raw_value = toml_raw_in(table, key);
+		toml_raw_t raw_value = toml_raw_in(table, key);
 		char* tmp = NULL;
 		if (raw_value != NULL)
 			toml_rtos(raw_value, &tmp);
-		*val = realloc(*val, (sizeof(char) * strlen(tmp)) + 1);
+		*val = realloc((char*)(*val),
+			       (sizeof(char) * strlen((const char*)tmp)) + 1);
 		if (tmp != NULL)
-			memcpy(*val, tmp, sizeof(char) * strlen(tmp) + 1);
-		free(tmp);
+			memcpy((char*)(*val), tmp,
+			       sizeof(char) * strlen((const char*)tmp) + 1);
+		free((void*)tmp);
 		return true;
 	}
 

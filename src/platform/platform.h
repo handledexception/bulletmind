@@ -26,31 +26,6 @@
 extern "C" {
 #endif
 
-typedef enum {
-	BM_ARCH_X86,
-	BM_ARCH_AMD64,
-	BM_ARCH_ARM32,
-	BM_ARCH_ARM64,
-	BM_ARCH_PPC32,
-	BM_ARCH_PPC64,
-	BM_ARCH_UNKNOWN
-} architecture_t;
-
-typedef enum {
-	BM_COMPILER_GCC,
-	BM_COMPILER_CLANG,
-	BM_COMPILER_MSVC,
-	BM_COMPILER_UNKNOWN
-} compiler_t;
-
-typedef enum {
-	BM_PLATFORM_WINDOWS,
-	BM_PLATFORM_DARWIN,
-	BM_PLATFORM_LINUX,
-	BM_PLATFORM_UNKNOWN
-} platform_t;
-
-
 // file i/o & utf8
 #ifdef _WIN32
 BM_EXPORT int os_stat(const char* file, struct stat* st);
@@ -88,15 +63,10 @@ BM_EXPORT void os_dlclose(void* module);
 // path
 BM_EXPORT bool os_path_exists(const char* path);
 
-// architecture
-BM_EXPORT architecture_t os_get_architecture(void);
-BM_EXPORT const char* os_architecture_to_string(architecture_t arch);
-// compiler
-BM_EXPORT compiler_t os_get_compiler(void);
-BM_EXPORT const char* os_compiler_to_string(compiler_t comp);
-// platform
-BM_EXPORT platform_t os_get_platform(void);
-BM_EXPORT const char* os_platform_to_string(platform_t plat);
+BM_EXPORT const char* os_architecture_string(void);
+BM_EXPORT const char* os_compiler_string(void);
+BM_EXPORT const char* os_platform_string(void);
+BM_EXPORT const char* os_bits_string(void);
 
 // 32-bit atomics
 BM_EXPORT s32 os_atomic_inc_s32(volatile s32* ptr);
@@ -104,16 +74,22 @@ BM_EXPORT s32 os_atomic_dec_s32(volatile s32* ptr);
 BM_EXPORT s32 os_atomic_set_s32(volatile s32* ptr, s32 val);
 BM_EXPORT s32 os_atomic_get_s32(volatile s32* ptr);
 BM_EXPORT s32 os_atomic_exchange_s32(volatile s32* ptr, s32 val);
-BM_EXPORT bool os_atomic_compare_swap_s32(volatile s32* ptr, s32 old_val, s32 new_val);
-BM_EXPORT bool os_atomic_compare_exchange_s32(volatile s32* ptr, s32* old_ptr, s32 new_val);
+BM_EXPORT bool os_atomic_compare_swap_s32(volatile s32* ptr, s32 old_val,
+					  s32 new_val);
+BM_EXPORT bool os_atomic_compare_exchange_s32(volatile s32* ptr, s32* old_ptr,
+					      s32 new_val);
 // 64-bit atomics
+#if defined(BM_BITS_64)
 BM_EXPORT s64 os_atomic_inc_s64(volatile s64* ptr);
 BM_EXPORT s64 os_atomic_dec_s64(volatile s64* ptr);
 BM_EXPORT s64 os_atomic_set_s64(volatile s64* ptr, s64 val);
 BM_EXPORT s64 os_atomic_get_s64(volatile s64* ptr);
 BM_EXPORT s64 os_atomic_exchange_s64(volatile s64* ptr, s64 val);
-BM_EXPORT bool os_atomic_compare_swap_s64(volatile s64* ptr, s64 old_val, s64 new_val);
-BM_EXPORT bool os_atomic_compare_exchange_s64(volatile s64* ptr, s64* old_ptr, s64 new_val);
+BM_EXPORT bool os_atomic_compare_swap_s64(volatile s64* ptr, s64 old_val,
+					  s64 new_val);
+BM_EXPORT bool os_atomic_compare_exchange_s64(volatile s64* ptr, s64* old_ptr,
+					      s64 new_val);
+#endif
 
 #ifdef __cplusplus
 }

@@ -16,6 +16,7 @@ result gui_init(void)
 
 	gui = (gui_system_t*)MEM_ALLOC(sizeof(*gui));
 	memset(gui, 0, sizeof(*gui));
+	vec_init(gui->windows);
 	vec_init(gui->events);
 
 #if defined(_WIN32)
@@ -47,7 +48,6 @@ void gui_shutdown(void)
 			gui_window_t* window =
 				(gui_window_t*)gui->windows.elems[i];
 			gui_destroy_window(window);
-
 		}
 		vec_free(gui->windows);
 		vec_free(gui->events);

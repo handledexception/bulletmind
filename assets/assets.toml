@@ -1,12 +1,12 @@
 [[assets]]
-name = "solid_ps"
-path = "assets/shader/solid.ps.hlsl"
-kind = "shader"
-[[assets]]
-name = "solid_vs"
+name = "pos_uv_vs"
 path = "assets/shader/solid.vs.hlsl"
 kind = "shader"
 vertex_type = "posuv"
+[[assets]]
+name = "pos_uv_ps"
+path = "assets/shader/solid.ps.hlsl"
+kind = "shader"
 [[assets]]
 name = "pos_color_ps"
 path = "assets/shader/pos_color.ps.hlsl"

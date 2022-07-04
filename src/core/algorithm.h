@@ -11,10 +11,10 @@
 
 static inline u32 min(u32 a, u32 b)
 {
-    return (a < b) ? a : b;
+	return (a < b) ? a : b;
 }
 
 static inline u32 max(u32 a, u32 b)
 {
-    return (a > b) ? a : b;
+	return (a > b) ? a : b;
 }

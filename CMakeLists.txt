@@ -42,9 +42,9 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Od /Zi")
     endif()
     if (BM_BUILD_32BIT)
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MACHINE:X86")
+        set(TARGET_LINK_OPTS ${TARGET_LINK_OPTS} "/MACHINE:X86")
     else()
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MACHINE:X64")
+        set(TARGET_LINK_OPTS ${TARGET_LINK_OPTS} "/MACHINE:X64")
     endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL Clang OR CMAKE_CXX_COMPILER_ID STREQUAL GNU)
     message("Compiler: ${CMAKE_CXX_COMPILER_ID}")
@@ -84,6 +84,7 @@ set(BM_CORE_HEADERS
     src/core/buffer.h
     src/core/console.h
     src/core/export.h
+    src/core/intrinsics.h
     src/core/logger.h
     src/core/mem_align.h
     src/core/memory.h
@@ -180,11 +181,10 @@ set(BM_GAME_SOURCES
 
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     set(TARGET_COMPILE_DEFS
+        -DBM_WINDOWS
         -DUNICODE
         -D_UNICODE
-        -DBM_WINDOWS
-        -D_CRT_SECURE_NO_WARNINGS
-        -DMSWindows)
+        -D_CRT_SECURE_NO_WARNINGS)
         # -DSDL_AUDIODRIVER=dsound)
     set(BM_PLATFORM_HEADERS
         ${BM_PLATFORM_HEADERS}
@@ -195,6 +195,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
     set(BM_GFX_HEADERS
         ${BM_GFX_HEADERS}
+        src/gfx/dxguids.h
+        src/gfx/win32_types.h
         src/gfx/gfx_d3d11.h)
     set(BM_GFX_SOURCES
         ${BM_GFX_SOURCES}
@@ -214,10 +216,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     endif()
 
     set(TARGET_LINK_LIBS
-        SDL2main.lib
-        SDL2.lib
-        SDL2_image.lib
-        SDL2_mixer.lib
+        # SDL2main.lib
+        # SDL2.lib
+        # SDL2_image.lib
+        # SDL2_mixer.lib
         kernel32)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(TARGET_COMPILE_DEFS
@@ -250,7 +252,8 @@ set(BM_TARGET_SOURCES
 
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     add_executable(bulletmind WIN32 ${BM_TARGET_SOURCES})
-    set_target_properties(bulletmind PROPERTIES LINK_FLAGS_DEBUG "-Xlinker /SUBSYSTEM:CONSOLE")
+    # set_target_properties(bulletmind PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:CONSOLE")
+    set(TARGET_LINK_OPTS ${TARGET_LINK_OPTS} "/SUBSYSTEM:CONSOLE")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_library(SDL2_LIBRARY NAME SDL2 REQUIRED)
     find_library(SDL2_MIXER_LIBRARY NAME SDL2_mixer REQUIRED)

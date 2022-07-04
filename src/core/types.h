@@ -17,6 +17,8 @@
 #ifndef H_BM_CORE_TYPES
 #define H_BM_CORE_TYPES
 
+#include "core/intrinsics.h"
+
 #ifndef NOMINMAX /* don't define min() and max(). */
 #define NOMINMAX
 #endif
@@ -69,7 +71,13 @@ typedef enum {
 	RESULT_UNKNOWN
 } result;
 
-#define ENSURE_OK(func) { result res = func; if (res != RESULT_OK) { return res; } }
+#define ENSURE_OK(func)                 \
+	{                               \
+		result res = func;      \
+		if (res != RESULT_OK) { \
+			return res;     \
+		}                       \
+	}
 
 #define UNUSED_PARAMETER(param) (void)param
 

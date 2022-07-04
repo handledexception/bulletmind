@@ -18,6 +18,7 @@
 #include "core/types.h"
 
 #define MAX_ASSETS 1024
+#define BM_ASSET_NAME_MAX_LENGTH 1024
 
 // forward decl
 typedef struct toml_table_t toml_table_t;
@@ -36,14 +37,25 @@ typedef enum {
 typedef struct asset asset_t;
 typedef struct asset_manager asset_manager_t;
 
+struct asset {
+	char name[BM_ASSET_NAME_MAX_LENGTH];
+	char path[BM_MAX_PATH];
+	asset_kind_t kind;
+	void* data;
+	bool lazy_load;
+};
+
 struct asset_manager* asset_manager_new(void);
 void asset_manager_init(struct asset_manager* mgr);
 void asset_manager_free(struct asset_manager* mgr);
 result asset_manager_load_toml(const char* path, struct asset_manager* mgr);
+result asset_manager_find(const char* name, struct asset_manager* mgr,
+			  asset_t** asset);
 
 asset_t* asset_new();
 void asset_free(asset_t* asset);
 void asset_init(asset_t* asset);
-bool asset_from_toml(const toml_table_t* table, struct asset_manager* mgr, asset_t** asset);
+bool asset_from_toml(const toml_table_t* table, struct asset_manager* mgr,
+		     asset_t** asset);
 bool asset_make_shader(const toml_table_t* table, asset_t* asset);
 asset_kind_t asset_kind_from_string(const char* kind);

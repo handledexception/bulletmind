@@ -62,7 +62,7 @@ keyboard_scancode_t win32_virtual_key_to_scancode(WPARAM wp, LPARAM lp)
 LRESULT gui_process_mouse_move_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 {
 	POINT pos = {.x = 0, .y = 0};
-	POINT win_pos = { .x = 0, .y = 0 };
+	POINT win_pos = {.x = 0, .y = 0};
 	GetCursorPos(&pos);
 	gui->mouse.screen_pos.x = pos.x;
 	gui->mouse.screen_pos.y = pos.y;
@@ -113,7 +113,8 @@ LRESULT gui_process_mouse_move_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	return 0;
 }
 
-LRESULT gui_process_mouse_button_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
+LRESULT gui_process_mouse_button_win32(HWND hwnd, UINT msg, WPARAM wp,
+				       LPARAM lp)
 {
 	gui_event_t evt;
 	memset(&evt, 0, sizeof(gui_event_t));
@@ -137,17 +138,20 @@ LRESULT gui_process_mouse_button_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp
 	case WM_RBUTTONUP:
 		evt.type = GUI_EVENT_MOUSE_BUTTON_UP;
 		evt.mouse.buttons[MOUSE_BUTTON_RIGHT].state = MOUSE_BUTTON_UP;
-		evt.mouse.buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
+		evt.mouse.buttons[MOUSE_BUTTON_RIGHT].button =
+			MOUSE_BUTTON_RIGHT;
 		break;
 	case WM_MBUTTONDOWN:
 		evt.type = GUI_EVENT_MOUSE_BUTTON_DOWN;
 		evt.mouse.buttons[MOUSE_BUTTON_RIGHT].state = MOUSE_BUTTON_DOWN;
-		evt.mouse.buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
+		evt.mouse.buttons[MOUSE_BUTTON_RIGHT].button =
+			MOUSE_BUTTON_RIGHT;
 		break;
 	case WM_MBUTTONUP:
 		evt.type = GUI_EVENT_MOUSE_BUTTON_UP;
 		evt.mouse.buttons[MOUSE_BUTTON_MIDDLE].state = MOUSE_BUTTON_UP;
-		evt.mouse.buttons[MOUSE_BUTTON_MIDDLE].button = MOUSE_BUTTON_MIDDLE;
+		evt.mouse.buttons[MOUSE_BUTTON_MIDDLE].button =
+			MOUSE_BUTTON_MIDDLE;
 		break;
 	}
 	vec_push_back(gui->events, &evt);
@@ -347,12 +351,13 @@ bool gui_create_window_win32(gui_window_t* window)
 	window->data->window = window;
 	window->data->wndproc = NULL;
 
-	RECT wr = { .left = 0, .top = 0, .right = window->w, .bottom = window->h };
+	RECT wr = {
+		.left = 0, .top = 0, .right = window->w, .bottom = window->h};
 	AdjustWindowRectEx(&wr, style, FALSE, style_ex);
 	hwnd = CreateWindowEx(style_ex, (LPCWSTR)g_atom, (LPCWSTR)window_title,
-			      style, wr.left, wr.top, wr.right - wr.left, wr.bottom - wr.top,
-			      parent_hwnd, menu, window->data->instance,
-			      window->data);
+			      style, wr.left, wr.top, wr.right - wr.left,
+			      wr.bottom - wr.top, parent_hwnd, menu,
+			      window->data->instance, window->data);
 	gui->set_window_pos(window, window->x, window->y);
 	gui->show_window(window, true);
 
@@ -381,7 +386,8 @@ void gui_set_window_pos_win32(gui_window_t* window, s32 cx, s32 cy)
 {
 	if (window) {
 		gui_window_data_t* data = (gui_window_data_t*)window->data;
-		SetWindowPos(data->hwnd, HWND_TOP, cx, cy, window->w, window->h, 0);
+		SetWindowPos(data->hwnd, HWND_TOP, cx, cy, window->w, window->h,
+			     0);
 	}
 }
 
@@ -392,7 +398,7 @@ void* gui_get_window_handle_win32(gui_window_t* window)
 
 void gui_get_global_mouse_state_win32(struct mouse_device* mouse)
 {
-	POINT pos = { .x = 0, .y = 0 };
+	POINT pos = {.x = 0, .y = 0};
 	GetCursorPos(&pos);
 	mouse->screen_pos.x = pos.x;
 	mouse->screen_pos.y = pos.y;

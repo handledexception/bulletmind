@@ -25,6 +25,8 @@
 extern "C" {
 #endif
 
+#define TRACK_MEMORY
+
 struct memory_allocator {
 	void* (*malloc)(size_t);
 	void* (*realloc)(void*, size_t);
@@ -39,14 +41,26 @@ BM_EXPORT void mem_copy_sse2(void* dst, void* src, size_t size);
 BM_EXPORT void mem_log_usage();
 BM_EXPORT int mem_report_leaks();
 
-#define BM_FUNC_SIG NULL
-#if _WIN32
+#define BM_FUNC_SIG __func__
+#if defined(_MSC_VER)
 #undef BM_FUNC_SIG
 #define BM_FUNC_SIG __FUNCSIG__
+#elif defined(__GNUC__)
+#undef BM_FUNC_SIG
+#define BM_FUNC_SIG __FUNCTION__
 #endif
 #ifndef MEM_ALLOC
-#define MEM_ALLOC(sz) mem_alloc(sz); logger(LOG_DEBUG, "mem_alloc: %s", BM_FUNC_SIG);
-#define BM_MEM_FREE(p) mem_free(p); logger(LOG_DEBUG, "mem_free: %s", BM_FUNC_SIG);
+#if defined(BM_DEBUG) && defined(TRACK_MEMORY)
+#define MEM_ALLOC(sz)  \
+	mem_alloc(sz); \
+	logger(LOG_DEBUG, "mem_alloc: %s", BM_FUNC_SIG)
+#define BM_MEM_FREE(p) \
+	mem_free(p);   \
+	logger(LOG_DEBUG, "mem_free: %s", BM_FUNC_SIG)
+#else
+#define MEM_ALLOC(sz) mem_alloc(sz)
+#define BM_MEM_FREE(p) mem_free(p)
+#endif
 #endif
 
 // Basic linear allocator

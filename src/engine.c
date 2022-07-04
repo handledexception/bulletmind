@@ -161,13 +161,13 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	u32 num_shader_vars = 2;
 	gfx_shader_var_t world_var;
 	world_var.name = "world";
-	world_var.type = GFX_SHADER_PARAM_MAT4;
+	world_var.type = GFX_SHADER_VAR_MAT4;
 	world_var.data = MEM_ALLOC(sizeof(struct mat4f));
 	world_var.offset = 0;
 
 	gfx_shader_var_t view_proj_var;
 	view_proj_var.name = "view_proj";
-	view_proj_var.type = GFX_SHADER_PARAM_MAT4;
+	view_proj_var.type = GFX_SHADER_VAR_MAT4;
 	view_proj_var.data = MEM_ALLOC(sizeof(struct mat4f));
 	view_proj_var.offset = sizeof(struct mat4f);
 
@@ -350,7 +350,7 @@ void eng_refresh(engine_t* eng, f64 dt)
 			gfx_shader_var_t* shader_var =
 				&scene->shader_vars.elems[vdx];
 			size_t shader_var_size =
-				gfx_get_shader_var_size(shader_var->type);
+				gfx_shader_var_size(shader_var->type);
 			memcpy(&eng->gfx.cbuffer_data[cbd_offset],
 			       (const void*)shader_var->data, shader_var_size);
 			cbd_offset += (shader_var_size + 15) & ~15;
