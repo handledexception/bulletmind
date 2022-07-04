@@ -91,7 +91,13 @@
         "atomic": "c",
         "intrinsics.h": "c",
         "deque": "c",
-        "win32_types.h": "c"
+        "win32_types.h": "c",
+        "iomanip": "c",
+        "malloc.h": "c",
+        "locale": "c",
+        "xlocinfo": "c",
+        "xlocnum": "c",
+        "corecrt.h": "c"
     },
     "cmake.configureOnOpen": false
 }

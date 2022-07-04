@@ -116,6 +116,13 @@ struct gfx_texture_desc {
 	u32 flags;
 };
 
+struct gfx_texture {
+	enum gfx_texture_type type;
+	u8* data;
+	size_t size;
+	void* impl; // gfx_texture2d, etc.
+};
+
 // 1D, 2D, 3D texel data
 struct texture_vertex {
 	size_t size;
@@ -133,7 +140,8 @@ struct gfx_vertex_data {
 };
 
 extern gfx_system_t* gfx;
-extern bool gfx_ok;
+extern bool gfx_sys_ok;
+extern bool gfx_module_ok;
 
 BM_EXPORT result gfx_init(const struct gfx_config* cfg, s32 flags);
 BM_EXPORT void gfx_shutdown(void);
@@ -141,6 +149,7 @@ BM_EXPORT void gfx_shutdown(void);
 #if defined(_WIN32)
 BM_EXPORT result gfx_init_dx11(const struct gfx_config* cfg, s32 flags);
 BM_EXPORT void gfx_shutdown_dx11(void);
+BM_EXPORT bool gfx_ok(void);
 #endif
 
 /* system ------------------------------------------------------------------ */
@@ -149,7 +158,6 @@ BM_EXPORT result gfx_enumerate_adapters(struct vector* adapters,
 BM_EXPORT result gfx_enumerate_displays(const gfx_adapter_t* adapter,
 					struct vector* displays);
 BM_EXPORT void gfx_set_viewport(u32 width, u32 height);
-BM_EXPORT bool gfx_system_ok(void);
 BM_EXPORT gfx_shader_t* gfx_system_get_vertex_shader();
 BM_EXPORT gfx_shader_t* gfx_system_get_pixel_shader();
 BM_EXPORT void gfx_system_bind_render_target(void);
@@ -157,6 +165,7 @@ BM_EXPORT void gfx_system_bind_input_layout(gfx_shader_t* shader);
 BM_EXPORT result gfx_create_swap_chain(const struct gfx_config* cfg);
 BM_EXPORT result gfx_create_device(s32 adapter);
 BM_EXPORT void gfx_destroy_device(void);
+
 
 BM_EXPORT void gfx_render_clear(const rgba_t* color);
 BM_EXPORT void gfx_render_begin(void);
@@ -171,24 +180,24 @@ BM_EXPORT void gfx_draw_sprite(gfx_texture_t* texture, u32 width, u32 height,
 			       u32 flags);
 
 /* buffer ------------------------------------------------------------------ */
-BM_EXPORT result gfx_buffer_new(size_t size, enum gfx_buffer_type type, enum gfx_buffer_usage usage, gfx_buffer_t** buf);
 BM_EXPORT result gfx_buffer_create(const void* data, size_t size,
 				   enum gfx_buffer_type type,
 				   enum gfx_buffer_usage usage,
 				   gfx_buffer_t** buffer);
 BM_EXPORT void gfx_buffer_free(gfx_buffer_t* buffer);
+BM_EXPORT size_t gfx_buffer_get_size(gfx_buffer_t* buffer);
 BM_EXPORT result gfx_buffer_copy(gfx_buffer_t* buffer, const void* data,
 				 size_t size);
 BM_EXPORT void gfx_bind_vertex_buffer(gfx_buffer_t* vb, u32 stride, u32 offset);
-BM_EXPORT void gfx_buffer_upload_constants(const gfx_buffer_t* buffer,
-					   enum gfx_shader_type type);
+BM_EXPORT void gfx_buffer_upload_constants(const gfx_shader_t* shader);
 BM_EXPORT enum gfx_vertex_type gfx_vertex_type_from_string(const char* s);
 
 /* shader ------------------------------------------------------------------ */
 BM_EXPORT void gfx_shader_init(gfx_shader_t* shader);
 BM_EXPORT gfx_shader_t* gfx_shader_new(enum gfx_shader_type type);
 BM_EXPORT void gfx_shader_free(gfx_shader_t* shader);
-BM_EXPORT result gfx_shader_cbuffer_new(gfx_shader_t* shader);
+BM_EXPORT size_t gfx_shader_cbuffer_resize(gfx_shader_t* shader);
+BM_EXPORT size_t gfx_shader_cbuffer_fill(gfx_shader_t* shader);
 BM_EXPORT void gfx_vertex_shader_init(gfx_vertex_shader_t* vs);
 BM_EXPORT gfx_vertex_shader_t* gfx_vertex_shader_create(void);
 BM_EXPORT void gfx_vertex_shader_free(gfx_vertex_shader_t* vs);
@@ -241,17 +250,18 @@ BM_EXPORT result gfx_init_rasterizer(enum gfx_culling_mode culling,
 BM_EXPORT void gfx_bind_rasterizer(void);
 
 /* texture ----------------------------------------------------------------- */
-BM_EXPORT result gfx_create_texture(const u8* data,
+BM_EXPORT result gfx_texture_create(const u8* data,
 				    const struct gfx_texture_desc* desc,
 				    gfx_texture_t** texture);
-BM_EXPORT void gfx_destroy_texture(gfx_texture_t* texture);
-BM_EXPORT result gfx_create_texture2d(const u8* data,
+BM_EXPORT void gfx_texture_init(gfx_texture_t* texture);
+BM_EXPORT void gfx_texture_destroy(gfx_texture_t* texture);
+BM_EXPORT result gfx_texture2d_create(const u8* data,
 				      const struct gfx_texture_desc* desc,
 				      gfx_texture_t** texture2d);
-BM_EXPORT void gfx_destroy_texture2d(gfx_texture_t* texture);
-BM_EXPORT result gfx_init_render_target(u32 width, u32 height,
+BM_EXPORT void gfx_texture2d_destroy(gfx_texture_t* texture);
+BM_EXPORT result gfx_render_target_init(u32 width, u32 height,
 					enum gfx_pixel_format pf);
-BM_EXPORT void gfx_destroy_render_target(void);
+BM_EXPORT void gfx_render_target_destroy(void);
 BM_EXPORT void gfx_set_render_target(gfx_texture_t* texture,
 				     gfx_texture_t* zstencil);
 BM_EXPORT result gfx_create_zstencil_state(bool enable,

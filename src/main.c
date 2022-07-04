@@ -76,6 +76,7 @@ void app_refresh_gfx(struct application* app)
 	gfx_bind_sampler_state(NULL, 0); // TODO: this func probably not correct
 	size_t vertex_stride = gfx_get_vertex_stride(gfx_get_vertex_type());
 	gfx_bind_vertex_buffer(app->vbuf, (u32)vertex_stride, 0);
+	gfx_buffer_upload_constants(vs);
 	gfx_render_begin();
 	gfx_render_end(false, 0);
 }
@@ -166,7 +167,7 @@ result app_init_scenes(struct application* app)
 	vec_push_back(app->scenes, &sprite);
 	gfx_shader_add_var(sprite->vertex_shader, &world_var);
 	gfx_shader_add_var(sprite->vertex_shader, &view_proj_var);
-	gfx_shader_cbuffer_new(sprite->vertex_shader);
+	gfx_shader_cbuffer_resize(sprite->vertex_shader);
 
 	return RESULT_OK;
 }

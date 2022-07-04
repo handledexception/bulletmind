@@ -3,7 +3,8 @@
 #include "core/memory.h"
 
 gfx_system_t* gfx = NULL;
-bool gfx_ok = false;
+bool gfx_sys_ok = false;
+bool gfx_module_ok = false;
 
 size_t gfx_shader_var_size(enum gfx_shader_var_type type)
 {
@@ -80,7 +81,7 @@ result gfx_init(const struct gfx_config* cfg, s32 flags)
 void gfx_shutdown(void)
 {
 	if (gfx) {
-		gfx_destroy_render_target();
+		gfx_render_target_destroy();
 		gfx_destroy_zstencil();
 		gfx_destroy_device();
 		if (gfx->type == GFX_MODULE_DX11)
@@ -88,6 +89,12 @@ void gfx_shutdown(void)
 		BM_MEM_FREE(gfx);
 		gfx = NULL;
 	}
+}
+
+bool gfx_ok(void)
+{
+	// Should be OK if gfx initialization completed successfully
+	return gfx_sys_ok;
 }
 
 enum gfx_vertex_type gfx_vertex_type_from_string(const char* s)
@@ -123,14 +130,10 @@ u32 gfx_get_vertex_stride(enum gfx_vertex_type type)
 	return stride;
 }
 
-result gfx_shader_cbuffer_new(gfx_shader_t* shader)
+size_t gfx_shader_cbuffer_resize(gfx_shader_t* shader)
 {
 	if (shader == NULL)
-		return RESULT_NULL;
-	if (shader->cbuffer != NULL) {
-		gfx_buffer_free(shader->cbuffer);
-		shader->cbuffer = NULL;
-	}
+		return 0;
 	size_t buf_size = 0;
 	for (size_t i = 0; i < shader->vars.num_elems; i++) {
 		size_t var_size =
@@ -138,8 +141,15 @@ result gfx_shader_cbuffer_new(gfx_shader_t* shader)
 		buf_size += var_size;
 	}
 	buf_size = (buf_size + 15 & 0xfffffff0);
-	return gfx_buffer_create(NULL, buf_size, GFX_BUFFER_CONSTANT,
-				 GFX_BUFFER_USAGE_DYNAMIC, &shader->cbuffer);
+	if (shader->cbuffer != NULL && gfx_buffer_get_size(shader->cbuffer) < buf_size) {
+		gfx_buffer_free(shader->cbuffer);
+		shader->cbuffer = NULL;
+	}
+	if (gfx_buffer_create(NULL, buf_size, GFX_BUFFER_CONSTANT,
+				 GFX_BUFFER_USAGE_DYNAMIC, &shader->cbuffer) != RESULT_OK) {
+		return 0;
+	}
+	return buf_size;
 }
 
 gfx_shader_var_t* gfx_shader_var_new(const char* name,
@@ -277,4 +287,74 @@ const char* gfx_shader_type_to_string(enum gfx_shader_type type)
 		return "compute";
 	}
 	return NULL;
+}
+
+result gfx_texture_create(const u8* data, const struct gfx_texture_desc* desc,
+			  gfx_texture_t** texture)
+{
+	result res = RESULT_OK;
+
+	gfx_texture_t* tex = (gfx_texture_t*)MEM_ALLOC(sizeof(*tex));
+	gfx_texture_init(tex);
+
+	switch (desc->type) {
+	case GFX_TEXTURE_2D:
+		res = gfx_texture2d_create(data, desc, &tex);
+		tex->type = GFX_TEXTURE_2D;
+		break;
+	case GFX_TEXTURE_1D:
+	case GFX_TEXTURE_3D:
+	case GFX_TEXTURE_CUBE:
+	default:
+		res = RESULT_NOT_IMPL;
+		break;
+	}
+
+	if (res == RESULT_OK) {
+		*texture = tex;
+	} else {
+		BM_MEM_FREE(tex);
+		tex = NULL;
+	}
+
+	return res;
+}
+
+//
+// gfx texture
+//
+void gfx_texture_init(gfx_texture_t* texture)
+{
+	if (texture != NULL) {
+		texture->data = NULL;
+		texture->impl = NULL;
+		texture->size = 0;
+		texture->type = GFX_TEXTURE_UNKNOWN;
+	}
+}
+
+void gfx_texture_destroy(gfx_texture_t* texture)
+{
+	if (texture != NULL) {
+		if (texture->data != NULL) {
+			BM_MEM_FREE(texture->data);
+			texture->data = NULL;
+		}
+		switch (texture->type) {
+		case GFX_TEXTURE_2D:
+			gfx_texture2d_destroy(texture);
+			break;
+		case GFX_TEXTURE_1D:
+		case GFX_TEXTURE_3D:
+		case GFX_TEXTURE_CUBE:
+		default:
+			break;
+		}
+		if (texture->impl != NULL) {
+			BM_MEM_FREE(texture->impl);
+			texture->impl = NULL;
+		}
+		BM_MEM_FREE(texture);
+		texture = NULL;
+	}
 }
