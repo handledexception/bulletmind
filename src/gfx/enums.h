@@ -155,4 +155,4 @@ typedef enum {
 }
 #endif
 
-#endif
+#endif // H_GFX_ENUMS

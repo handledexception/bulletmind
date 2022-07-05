@@ -26,6 +26,8 @@
 #include <emmintrin.h>
 #endif
 
+#define ALIGN_SIZE(size, align) size = (((size) + (align - 1)) & (~(align - 1)))
+
 static struct memory_allocator allocator = {malloc, realloc, free};
 
 // #define LOG_ALLOCATIONS
@@ -249,4 +251,9 @@ void* mem_arena_alloc(arena_t* arena, size_t size, size_t align)
 	}
 
 	return NULL;
+}
+
+int mem_base_alignment()
+{
+	return BASE_ALIGNMENT;
 }

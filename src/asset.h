@@ -24,14 +24,14 @@
 typedef struct toml_table_t toml_table_t;
 
 typedef enum {
-	kAssetSprite,
-	kAssetSpriteSheet,
-	kAssetSpriteFont,
-	kAssetSoundEffect,
-	kAssetMusic,
-	kAssetShader,
-	kAssetUnknown,
-	kAssetMax = kAssetUnknown
+	ASSET_SPRITE,
+	ASSET_SPRITE_SHEET,
+	ASSET_SPRITE_FONT,
+	ASSET_SOUND,
+	ASSET_MUSIC,
+	ASSET_SHADER,
+	ASSET_UNKNOWN,
+	ASSET_MAX = ASSET_UNKNOWN
 } asset_kind_t;
 
 typedef struct asset asset_t;
@@ -58,4 +58,5 @@ void asset_init(asset_t* asset);
 bool asset_from_toml(const toml_table_t* table, struct asset_manager* mgr,
 		     asset_t** asset);
 bool asset_make_shader(const toml_table_t* table, asset_t* asset);
+bool asset_make_sprite(const toml_table_t* table, asset_t* asset);
 asset_kind_t asset_kind_from_string(const char* kind);

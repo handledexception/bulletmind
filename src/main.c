@@ -24,8 +24,8 @@
 #define APP_VER_REV 0
 #define APP_ASSETS_TOML_PATH "assets/assets.toml"
 #define GFX_ADAPTER_INDEX 1
-#define VIEW_WIDTH 1280
-#define VIEW_HEIGHT 1024
+#define VIEW_WIDTH 960
+#define VIEW_HEIGHT 540
 
 static const rgba_t kClearColor = {
 	.r = 0,
@@ -43,9 +43,9 @@ struct application {
 	struct asset_manager* assets;
 	camera_t cam;
 	VECTOR(struct gfx_scene*) scenes;
-	u8* vbuf_data;
+	// u8* vbuf_data;
 	gfx_buffer_t* vbuf;
-	u8* cbuf_data;
+	// u8* cbuf_data;
 	gfx_buffer_t* cbuf;
 };
 
@@ -71,12 +71,18 @@ void app_refresh_gfx(struct application* app)
 	gfx_toggle_zstencil(true);
 	gfx_bind_primitive_topology(GFX_TOPOLOGY_TRIANGLE_LIST);
 	gfx_shader_t* vs = gfx_system_get_vertex_shader();
+	gfx_shader_t* ps = gfx_system_get_pixel_shader();
 	gfx_system_bind_input_layout(vs);
 	gfx_bind_rasterizer();
 	gfx_bind_sampler_state(NULL, 0); // TODO: this func probably not correct
 	size_t vertex_stride = gfx_get_vertex_stride(gfx_get_vertex_type());
 	gfx_bind_vertex_buffer(app->vbuf, (u32)vertex_stride, 0);
-	gfx_buffer_upload_constants(vs);
+	if (gfx_shader_cbuffer_fill(vs) > 0) {
+		gfx_buffer_upload_constants(vs);
+	}
+	if (gfx_shader_cbuffer_fill(ps) > 0) {
+		gfx_buffer_upload_constants(ps);
+	}
 	gfx_render_begin();
 	gfx_render_end(false, 0);
 }
@@ -142,10 +148,10 @@ result app_init_scenes(struct application* app)
 	gfx_set_pixel_shader((gfx_shader_t*)ps_pos_uv->data);
 	size_t vertex_buffer_size = (sizeof(vec3f_t) * BM_GFX_MAX_VERTICES) +
 				    (sizeof(vec4f_t) * BM_GFX_MAX_VERTICES);
-	app->vbuf_data = (u8*)MEM_ALLOC(vertex_buffer_size);
-	memset(app->vbuf_data, 0, vertex_buffer_size);
-	gfx_buffer_create(app->vbuf_data, vertex_buffer_size, GFX_BUFFER_VERTEX,
-			  GFX_BUFFER_USAGE_DYNAMIC, &app->vbuf);
+	// app->vbuf_data = (u8*)MEM_ALLOC(vertex_buffer_size);
+	// memset(app->vbuf_data, 0, vertex_buffer_size);
+	gfx_buffer_new(NULL, vertex_buffer_size, GFX_BUFFER_VERTEX,
+		       GFX_BUFFER_USAGE_DYNAMIC, &app->vbuf);
 	struct gfx_scene* sprite = gfx_scene_new(4, 2, GFX_VERTEX_POS_UV);
 	sprite->vertex_shader = (gfx_shader_t*)vs_pos_uv->data;
 	sprite->pixel_shader = (gfx_shader_t*)ps_pos_uv->data;
@@ -167,7 +173,10 @@ result app_init_scenes(struct application* app)
 	vec_push_back(app->scenes, &sprite);
 	gfx_shader_add_var(sprite->vertex_shader, &world_var);
 	gfx_shader_add_var(sprite->vertex_shader, &view_proj_var);
-	gfx_shader_cbuffer_resize(sprite->vertex_shader);
+	size_t cbuf_size = gfx_shader_get_vars_size(sprite->vertex_shader);
+	gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
+		       GFX_BUFFER_USAGE_DYNAMIC,
+		       &sprite->vertex_shader->cbuffer);
 
 	return RESULT_OK;
 }
@@ -239,7 +248,7 @@ void app_refresh(struct application* app)
 void app_shutdown(struct application* app)
 {
 	if (app != NULL) {
-		BM_MEM_FREE(app->vbuf_data);
+		// BM_MEM_FREE(app->vbuf_data);
 		gfx_buffer_free(app->vbuf);
 		for (size_t i = 0; i < app->scenes.num_elems; i++)
 			gfx_scene_free(app->scenes.elems[i]);

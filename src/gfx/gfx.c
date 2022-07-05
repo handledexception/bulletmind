@@ -130,28 +130,6 @@ u32 gfx_get_vertex_stride(enum gfx_vertex_type type)
 	return stride;
 }
 
-size_t gfx_shader_cbuffer_resize(gfx_shader_t* shader)
-{
-	if (shader == NULL)
-		return 0;
-	size_t buf_size = 0;
-	for (size_t i = 0; i < shader->vars.num_elems; i++) {
-		size_t var_size =
-			gfx_shader_var_size(shader->vars.elems[i].type);
-		buf_size += var_size;
-	}
-	buf_size = (buf_size + 15 & 0xfffffff0);
-	if (shader->cbuffer != NULL && gfx_buffer_get_size(shader->cbuffer) < buf_size) {
-		gfx_buffer_free(shader->cbuffer);
-		shader->cbuffer = NULL;
-	}
-	if (gfx_buffer_create(NULL, buf_size, GFX_BUFFER_CONSTANT,
-				 GFX_BUFFER_USAGE_DYNAMIC, &shader->cbuffer) != RESULT_OK) {
-		return 0;
-	}
-	return buf_size;
-}
-
 gfx_shader_var_t* gfx_shader_var_new(const char* name,
 				     enum gfx_shader_var_type type)
 {
@@ -230,6 +208,24 @@ bool gfx_shader_set_var_by_name(gfx_shader_t* shader, const char* name,
 	return false;
 }
 
+size_t gfx_shader_get_vars_size(gfx_shader_t* shader)
+{
+	if (shader == NULL)
+		return 0;
+
+	size_t buf_size = 0;
+	for (size_t i = 0; i < shader->vars.num_elems; i++) {
+		size_t var_size =
+			gfx_shader_var_size(shader->vars.elems[i].type);
+		buf_size += var_size;
+	}
+
+	if (buf_size > 0)
+		buf_size = (buf_size + 15 & 0xfffffff0);
+
+	return buf_size;
+}
+
 gfx_shader_var_t* gfx_shader_get_var_by_name(gfx_shader_t* shader,
 					     const char* name)
 {
@@ -257,8 +253,8 @@ void gfx_init_sprite(gfx_buffer_t* vertex_buffer)
 	size_t sz_tex_verts = sizeof(vec2f_t) * 4;
 	vd->tex_verts->data = MEM_ALLOC(sz_tex_verts);
 	vd->tex_verts->size = sizeof(vec2f_t);
-	gfx_buffer_create(vd, sz_positions + sz_tex_verts, GFX_BUFFER_VERTEX,
-			  GFX_BUFFER_USAGE_DYNAMIC, &vertex_buffer);
+	gfx_buffer_new(vd, sz_positions + sz_tex_verts, GFX_BUFFER_VERTEX,
+		       GFX_BUFFER_USAGE_DYNAMIC, &vertex_buffer);
 }
 
 // void gfx_destroy_sprite(gfx_buffer_t* vertex_buffer)

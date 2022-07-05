@@ -109,6 +109,7 @@ struct gfx_buffer {
 	ID3D11Buffer* buffer;
 	enum gfx_buffer_type type;
 	enum gfx_buffer_usage usage;
+	bool own_data;
 };
 
 struct gfx_vertex_shader {
@@ -330,7 +331,8 @@ void unpack_driver_version(u64 ver, u16* aa, u16* bb, u16* ccccc, u64* ddddd)
 
 result gfx_enumerate_adapters(struct vector* adapters, bool enum_displays)
 {
-	if (gfx == NULL || gfx->module == NULL || gfx->module->dxgi_factory == NULL) {
+	if (gfx == NULL || gfx->module == NULL ||
+	    gfx->module->dxgi_factory == NULL) {
 		return RESULT_NULL;
 	}
 
@@ -644,7 +646,8 @@ void gfx_system_bind_input_layout(gfx_shader_t* shader)
 
 result gfx_create_swap_chain(const struct gfx_config* cfg)
 {
-	if (gfx == NULL || gfx->module == NULL || gfx->module->dxgi_factory == NULL) {
+	if (gfx == NULL || gfx->module == NULL ||
+	    gfx->module->dxgi_factory == NULL) {
 		return RESULT_NULL;
 	}
 
@@ -668,8 +671,7 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 		.BufferDesc.Width = cfg->width,
 		.BufferDesc.Height = cfg->height,
 		.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED,
-		.BufferDesc.RefreshRate.Denominator =
-			(UINT)cfg->fps_den,
+		.BufferDesc.RefreshRate.Denominator = (UINT)cfg->fps_den,
 		.BufferDesc.RefreshRate.Numerator = (UINT)cfg->fps_num,
 		.BufferDesc.ScanlineOrdering =
 			DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE,
@@ -680,23 +682,20 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 		.OutputWindow = hwnd,
 		.Windowed = (BOOL)!cfg->fullscreen,
 		.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
-		.Flags =
-			DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT,
+		.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT,
 	};
 
 	IDXGISwapChain* dxgi_swap_chain = NULL;
 	// if(SUCCEEDED(IDXGIFactory2_CreateSwapChainForHwnd(gfx->module->dxgi_factory, (IUnknown*)gfx->module->device, hwnd, &swap_desc1, NULL, NULL, &dxgi_swap_chain)))
 	if (SUCCEEDED(IDXGIFactory2_CreateSwapChain(
-			gfx->module->dxgi_factory,
-			(IUnknown*)gfx->module->device, &swap_desc,
-			&dxgi_swap_chain))) {
+		    gfx->module->dxgi_factory, (IUnknown*)gfx->module->device,
+		    &swap_desc, &dxgi_swap_chain))) {
 		if (SUCCEEDED(IDXGISwapChain1_QueryInterface(
-				dxgi_swap_chain, &BM_IID_IDXGISwapChain2,
-				(void**)&gfx->module->dxgi_swap_chain))) {
+			    dxgi_swap_chain, &BM_IID_IDXGISwapChain2,
+			    (void**)&gfx->module->dxgi_swap_chain))) {
 			if (cfg->fullscreen)
 				IDXGIFactory2_MakeWindowAssociation(
-					gfx->module->dxgi_factory, hwnd,
-					0);
+					gfx->module->dxgi_factory, hwnd, 0);
 			else
 				IDXGIFactory2_MakeWindowAssociation(
 					gfx->module->dxgi_factory, hwnd,
@@ -953,7 +952,7 @@ enum gfx_vertex_type gfx_get_vertex_type(void)
 // 	size_t sz_tex_verts = sizeof(vec2f_t) * 4;
 // 	vd->tex_verts->data = MEM_ALLOC(sz_tex_verts);
 // 	vd->tex_verts->size = sizeof(vec2f_t);
-// 	gfx_buffer_create(gfx, vd, sz_positions + sz_tex_verts,
+// 	gfx_buffer_new(gfx, vd, sz_positions + sz_tex_verts,
 // 			  GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DYNAMIC,
 // 			  &vertex_buffer);
 // }
@@ -966,25 +965,23 @@ enum gfx_vertex_type gfx_get_vertex_type(void)
 //
 // gfx buffer
 //
-result gfx_buffer_create(const void* data, size_t size,
-			 enum gfx_buffer_type type, enum gfx_buffer_usage usage,
-			 gfx_buffer_t** buffer)
+result gfx_buffer_make(gfx_buffer_t* buf, const void* data, size_t size)
 {
-	if (!gfx_ok())
+	if (buf == NULL)
 		return RESULT_NULL;
 
-	gfx_buffer_t* buf = MEM_ALLOC(sizeof(gfx_buffer_t));
-	buf->usage = usage;
-	buf->type = type;
-	buf->data = (u8*)data;
-	buf->size = size;
+	if (data != NULL && size > 0) {
+		buf->data = MEM_ALLOC(size);
+		buf->size = size;
+		memcpy(buf->data, data, size);
+	}
 
 	u32 cpu_access_flags = 0;
-	if (usage == GFX_BUFFER_USAGE_DYNAMIC)
+	if (buf->usage == GFX_BUFFER_USAGE_DYNAMIC)
 		cpu_access_flags = D3D11_CPU_ACCESS_WRITE;
 
 	u32 bind_flags = 0;
-	switch (type) {
+	switch (buf->type) {
 	case GFX_BUFFER_VERTEX:
 		bind_flags = D3D11_BIND_VERTEX_BUFFER;
 		break;
@@ -1000,7 +997,7 @@ result gfx_buffer_create(const void* data, size_t size,
 	}
 
 	D3D11_BUFFER_DESC desc = {
-		.Usage = gfx_buffer_usage_to_d3d11_usage(usage),
+		.Usage = gfx_buffer_usage_to_d3d11_usage(buf->usage),
 		.CPUAccessFlags = (UINT)cpu_access_flags,
 		.ByteWidth = (UINT)size,
 		.BindFlags = (UINT)bind_flags,
@@ -1018,7 +1015,87 @@ result gfx_buffer_create(const void* data, size_t size,
 			    gfx->module->device, &desc, NULL, &buf->buffer)))
 			return RESULT_NULL;
 	}
-	*buffer = buf;
+
+	return RESULT_OK;
+}
+
+result gfx_buffer_new(const void* data, size_t size, enum gfx_buffer_type type,
+		      enum gfx_buffer_usage usage, gfx_buffer_t** buf)
+{
+	if (!gfx_ok() || buf == NULL)
+		return RESULT_NULL;
+
+	if (type >= GFX_BUFFER_UNKNOWN) {
+		logger(LOG_ERROR, "gfx_buffer_new: invalid type specified!");
+		return RESULT_UNKNOWN;
+	}
+	if (usage >= GFX_BUFFER_USAGE_UNKNOWN) {
+		logger(LOG_ERROR, "gfx_buffer_new: invalid usage specified!");
+		return RESULT_UNKNOWN;
+	}
+
+	gfx_buffer_t* buffer = MEM_ALLOC(sizeof(*buffer));
+	buffer->buffer = NULL;
+	buffer->data = NULL;
+	buffer->own_data = false;
+	buffer->size = size;
+	buffer->type = type;
+	buffer->usage = usage;
+	if (data != NULL && size > 0) {
+		buffer->data = MEM_ALLOC(size);
+		memcpy(buffer->data, data, size);
+		buffer->own_data = true;
+	} else if (data == NULL && size > 0) {
+		buffer->data = MEM_ALLOC(size);
+		memset(buffer->data, 0, size);
+		buffer->own_data = true;
+	} else {
+		buffer->data = data;
+		buffer->own_data = false;
+	}
+
+	u32 cpu_access_flags = 0;
+	if (buffer->usage == GFX_BUFFER_USAGE_DYNAMIC)
+		cpu_access_flags = D3D11_CPU_ACCESS_WRITE;
+
+	u32 bind_flags = 0;
+	switch (buffer->type) {
+	case GFX_BUFFER_VERTEX:
+		bind_flags = D3D11_BIND_VERTEX_BUFFER;
+		break;
+	case GFX_BUFFER_INDEX:
+		bind_flags = D3D11_BIND_INDEX_BUFFER;
+		break;
+	case GFX_BUFFER_CONSTANT:
+		bind_flags = D3D11_BIND_CONSTANT_BUFFER;
+		break;
+	default:
+	case GFX_BUFFER_UNKNOWN:
+		return RESULT_UNKNOWN;
+	}
+
+	D3D11_BUFFER_DESC desc = {
+		.Usage = gfx_buffer_usage_to_d3d11_usage(buffer->usage),
+		.CPUAccessFlags = (UINT)cpu_access_flags,
+		.ByteWidth = (UINT)size,
+		.BindFlags = (UINT)bind_flags,
+		.MiscFlags = 0,
+		.StructureByteStride = 0};
+	if (buffer->data != NULL) {
+		D3D11_SUBRESOURCE_DATA srd = {.pSysMem = buffer->data,
+					      .SysMemPitch = 0,
+					      .SysMemSlicePitch = 0};
+		if (FAILED(ID3D11Device1_CreateBuffer(
+			    gfx->module->device, &desc, &srd, &buffer->buffer)))
+			return RESULT_NULL;
+	} else {
+		if (FAILED(ID3D11Device1_CreateBuffer(
+			    gfx->module->device, &desc, NULL, &buffer->buffer)))
+			return RESULT_NULL;
+	}
+
+	*buf = buffer;
+
 	return RESULT_OK;
 }
 
@@ -1029,22 +1106,26 @@ void gfx_buffer_free(gfx_buffer_t* buffer)
 			ID3D11Buffer_Release(buffer->buffer);
 			buffer->buffer = NULL;
 		}
+		if (buffer->data != NULL && buffer->own_data) {
+			BM_MEM_FREE(buffer->data);
+			buffer->data = NULL;
+		}
 		BM_MEM_FREE(buffer);
 		buffer = NULL;
 	}
 }
 
-size_t gfx_buffer_get_size(gfx_buffer_t* buffer)
+size_t gfx_buffer_get_size(gfx_buffer_t* buf)
 {
-	if (buffer != NULL) {
-		return buffer->size;
+	if (buf != NULL) {
+		return buf->size;
 	}
 	return 0;
 }
 
-result gfx_buffer_copy(gfx_buffer_t* buffer, const void* data, size_t size)
+result gfx_buffer_copy(gfx_buffer_t* buf, const void* data, size_t size)
 {
-	if (!gfx_ok() || !buffer || !data || size == 0)
+	if (!gfx_ok() || !buf || !data || size == 0)
 		return RESULT_NULL;
 
 	D3D11_MAPPED_SUBRESOURCE sr = {
@@ -1054,21 +1135,21 @@ result gfx_buffer_copy(gfx_buffer_t* buffer, const void* data, size_t size)
 	};
 
 	if (FAILED(ID3D11DeviceContext1_Map(gfx->module->ctx,
-					    (ID3D11Resource*)buffer->buffer, 0,
+					    (ID3D11Resource*)buf->buffer, 0,
 					    D3D11_MAP_WRITE_DISCARD, 0, &sr)))
 		return RESULT_ERROR;
 
 	memcpy(sr.pData, data, size);
 
 	ID3D11DeviceContext1_Unmap(gfx->module->ctx,
-				   (ID3D11Resource*)buffer->buffer, 0);
+				   (ID3D11Resource*)buf->buffer, 0);
 
 	return RESULT_OK;
 }
 
 void gfx_bind_vertex_buffer(gfx_buffer_t* vb, u32 stride, u32 offset)
 {
-	if (gfx && gfx->module->ctx) {
+	if (gfx_ok()) {
 		ID3D11DeviceContext1_IASetVertexBuffers(gfx->module->ctx, 0, 1,
 							&vb->buffer,
 							(UINT*)&stride,
@@ -1078,16 +1159,14 @@ void gfx_bind_vertex_buffer(gfx_buffer_t* vb, u32 stride, u32 offset)
 
 void gfx_buffer_upload_constants(const gfx_shader_t* shader)
 {
-	if (gfx && shader) {
-		if (gfx_shader_cbuffer_fill(shader) > 0) {
-			gfx_buffer_t* buf = shader->cbuffer;
-			if (shader->type == GFX_SHADER_VERTEX)
-				ID3D11DeviceContext1_VSSetConstantBuffers(
-					gfx->module->ctx, 0, 1, &buf->buffer);
-			else if (shader->type == GFX_SHADER_PIXEL)
-				ID3D11DeviceContext1_PSSetConstantBuffers(
-					gfx->module->ctx, 0, 1, &buf->buffer);
-		}
+	if (gfx_ok() && shader != NULL) {
+		gfx_buffer_t* buf = shader->cbuffer;
+		if (shader->type == GFX_SHADER_VERTEX)
+			ID3D11DeviceContext1_VSSetConstantBuffers(
+				gfx->module->ctx, 0, 1, &buf->buffer);
+		else if (shader->type == GFX_SHADER_PIXEL)
+			ID3D11DeviceContext1_PSSetConstantBuffers(
+				gfx->module->ctx, 0, 1, &buf->buffer);
 	}
 }
 
@@ -1155,19 +1234,28 @@ void gfx_shader_free(gfx_shader_t* shader)
 size_t gfx_shader_cbuffer_fill(gfx_shader_t* shader)
 {
 	/* Copy shader vars into the constant buffer */
-	size_t num_vars = shader->vars.num_elems;
-	if (shader == NULL || num_vars == 0)
+	if (shader == NULL || shader->cbuffer == NULL ||
+	    shader->cbuffer->data == NULL) {
 		return 0;
-	size_t buf_size = gfx_shader_cbuffer_resize(shader);
-	u8* data = shader->cbuffer->data;
-	size_t offset = 0;
-	for (size_t vdx = 0; vdx < num_vars; vdx++) {
-		gfx_shader_var_t* var = &shader->vars.elems[vdx];
-		size_t var_size = gfx_shader_var_size(var->type);
-		memcpy(&data[offset], (const void*)var->data, var_size);
-		offset += (var_size + 15) & ~15;
 	}
-	return buf_size;
+
+	size_t num_vars = shader->vars.num_elems;
+	if (num_vars == 0)
+		return 0;
+
+	size_t cbuf_size = gfx_shader_get_vars_size(shader);
+	if (cbuf_size > 0) {
+		u8* data = shader->cbuffer->data;
+		size_t offset = 0;
+		for (size_t vdx = 0; vdx < num_vars; vdx++) {
+			gfx_shader_var_t* var = &shader->vars.elems[vdx];
+			size_t var_size = gfx_shader_var_size(var->type);
+			memcpy(&data[offset], (const void*)var->data, var_size);
+			offset += (var_size + 15) & ~15;
+		}
+	}
+
+	return cbuf_size;
 }
 
 void gfx_vertex_shader_init(gfx_vertex_shader_t* vs)

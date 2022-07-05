@@ -25,6 +25,8 @@
 extern "C" {
 #endif
 
+#define BASE_ALIGNMENT 32
+
 #define TRACK_MEMORY
 
 struct memory_allocator {
@@ -32,6 +34,8 @@ struct memory_allocator {
 	void* (*realloc)(void*, size_t);
 	void (*free)(void*);
 };
+
+BM_EXPORT int mem_base_alignment();
 
 BM_EXPORT void* mem_alloc(size_t size);
 BM_EXPORT void* mem_realloc(void* ptr, size_t size);

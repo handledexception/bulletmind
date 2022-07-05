@@ -30,7 +30,8 @@ void str_init(string_t* s);
 void str_reserve(string_t* s, size_t capacity);
 void str_resize(string_t* s, size_t size);
 void str_assign(string_t* s, const char* text);
-void str_copy(string_t* dst, string_t* src);
+void str_copy(string_t* dst, const string_t* src);
+u32 str_len(string_t* s);
 
 bool cstr_contains(const char* str, const char* substring);
 char* cstr_upper_no_copy(char* str, size_t len);

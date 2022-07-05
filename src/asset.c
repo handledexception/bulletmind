@@ -6,6 +6,7 @@
 #include "core/toml_config.h"
 #include "core/vector.h"
 #include "platform/platform.h"
+#include "media/image.h"
 
 #include "gfx/gfx.h"
 #include "gui/gui.h"
@@ -115,7 +116,7 @@ void asset_init(asset_t* asset)
 {
 	memset(asset->name, 0, BM_ASSET_NAME_MAX_LENGTH);
 	memset(asset->path, 0, BM_MAX_PATH);
-	asset->kind = kAssetUnknown;
+	asset->kind = ASSET_UNKNOWN;
 	asset->data = NULL;
 	asset->lazy_load = false;
 }
@@ -123,8 +124,12 @@ void asset_init(asset_t* asset)
 void asset_free(asset_t* asset)
 {
 	if (asset != NULL) {
-		if (asset->kind == kAssetShader) {
+		if (asset->kind == ASSET_SHADER) {
 			gfx_shader_free(asset->data);
+		} else if (asset->kind == ASSET_SPRITE) {
+			struct media_image* img = (struct media_image*)asset->data;
+			video_frame_free(&img->frame);
+			media_image_free(img);
 		}
 		asset_init(asset);
 		BM_MEM_FREE(asset);
@@ -161,30 +166,29 @@ bool asset_from_toml(const toml_table_t* table, struct asset_manager* mgr,
 
 	bool res = false;
 	switch (asset_kind) {
-	case kAssetSprite:
-		logger(LOG_WARNING,
-		       "asset_from_toml: sprite not yet implemented!");
+	case ASSET_SPRITE:
+		res = asset_make_sprite(table, new_asset);
 		break;
-	case kAssetSpriteSheet:
+	case ASSET_SPRITE_SHEET:
 		logger(LOG_WARNING,
 		       "asset_from_toml: sprite sheet not yet implemented!");
 		break;
-	case kAssetSpriteFont:
+	case ASSET_SPRITE_FONT:
 		logger(LOG_WARNING,
 		       "asset_from_toml: sprite font not yet implemented!");
 		break;
-	case kAssetSoundEffect:
+	case ASSET_SOUND:
 		logger(LOG_WARNING,
 		       "asset_from_toml: sound effect not yet implemented!");
 		break;
-	case kAssetMusic:
+	case ASSET_MUSIC:
 		logger(LOG_WARNING,
 		       "asset_from_toml: music not yet implemented!");
 		break;
-	case kAssetShader:
+	case ASSET_SHADER:
 		res = asset_make_shader(table, new_asset);
 		break;
-	case kAssetUnknown:
+	case ASSET_UNKNOWN:
 	default:
 		break;
 	}
@@ -210,7 +214,7 @@ bool asset_make_shader(const toml_table_t* table, asset_t* asset)
 			entrypoint = "VSMain";
 			target = "vs_5_0";
 			shader_type = GFX_SHADER_VERTEX;
-			char* vertex_type_str = NULL;
+			const char* vertex_type_str = NULL;
 			read_table_string(table, "vertex_type",
 					  &vertex_type_str);
 			vertex_type =
@@ -238,19 +242,29 @@ bool asset_make_shader(const toml_table_t* table, asset_t* asset)
 	return false;
 }
 
+bool asset_make_sprite(const toml_table_t* table, asset_t* asset)
+{
+	struct media_image* img = media_image_new();
+	result res = media_image_load(asset->path, img);
+	asset->data = (void*)img;
+	if (res == RESULT_OK)
+		return true;
+	return false;
+}
+
 asset_kind_t asset_kind_from_string(const char* kind)
 {
 	if (!strcmp(kind, "sprite_sheet"))
-		return kAssetSpriteSheet;
+		return ASSET_SPRITE_SHEET;
 	if (!strcmp(kind, "sprite_font"))
-		return kAssetSpriteFont;
+		return ASSET_SPRITE_FONT;
 	if (!strcmp(kind, "sprite"))
-		return kAssetSprite;
+		return ASSET_SPRITE;
 	if (!strcmp(kind, "sfx"))
-		return kAssetSoundEffect;
+		return ASSET_SOUND;
 	if (!strcmp(kind, "music"))
-		return kAssetMusic;
+		return ASSET_MUSIC;
 	if (!strcmp(kind, "shader"))
-		return kAssetShader;
-	return kAssetMax;
+		return ASSET_SHADER;
+	return ASSET_MAX;
 }

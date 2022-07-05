@@ -166,7 +166,6 @@ BM_EXPORT result gfx_create_swap_chain(const struct gfx_config* cfg);
 BM_EXPORT result gfx_create_device(s32 adapter);
 BM_EXPORT void gfx_destroy_device(void);
 
-
 BM_EXPORT void gfx_render_clear(const rgba_t* color);
 BM_EXPORT void gfx_render_begin(void);
 BM_EXPORT void gfx_render_end(bool vsync, u32 flags);
@@ -180,13 +179,13 @@ BM_EXPORT void gfx_draw_sprite(gfx_texture_t* texture, u32 width, u32 height,
 			       u32 flags);
 
 /* buffer ------------------------------------------------------------------ */
-BM_EXPORT result gfx_buffer_create(const void* data, size_t size,
-				   enum gfx_buffer_type type,
-				   enum gfx_buffer_usage usage,
-				   gfx_buffer_t** buffer);
-BM_EXPORT void gfx_buffer_free(gfx_buffer_t* buffer);
-BM_EXPORT size_t gfx_buffer_get_size(gfx_buffer_t* buffer);
-BM_EXPORT result gfx_buffer_copy(gfx_buffer_t* buffer, const void* data,
+BM_EXPORT result gfx_buffer_new(const void* data, size_t size,
+				enum gfx_buffer_type type,
+				enum gfx_buffer_usage usage,
+				gfx_buffer_t** buf);
+BM_EXPORT void gfx_buffer_free(gfx_buffer_t* buf);
+BM_EXPORT size_t gfx_buffer_get_size(gfx_buffer_t* buf);
+BM_EXPORT result gfx_buffer_copy(gfx_buffer_t* buf, const void* data,
 				 size_t size);
 BM_EXPORT void gfx_bind_vertex_buffer(gfx_buffer_t* vb, u32 stride, u32 offset);
 BM_EXPORT void gfx_buffer_upload_constants(const gfx_shader_t* shader);
@@ -196,7 +195,6 @@ BM_EXPORT enum gfx_vertex_type gfx_vertex_type_from_string(const char* s);
 BM_EXPORT void gfx_shader_init(gfx_shader_t* shader);
 BM_EXPORT gfx_shader_t* gfx_shader_new(enum gfx_shader_type type);
 BM_EXPORT void gfx_shader_free(gfx_shader_t* shader);
-BM_EXPORT size_t gfx_shader_cbuffer_resize(gfx_shader_t* shader);
 BM_EXPORT size_t gfx_shader_cbuffer_fill(gfx_shader_t* shader);
 BM_EXPORT void gfx_vertex_shader_init(gfx_vertex_shader_t* vs);
 BM_EXPORT gfx_vertex_shader_t* gfx_vertex_shader_create(void);
@@ -236,6 +234,7 @@ BM_EXPORT bool gfx_shader_add_var(gfx_shader_t* shader,
 BM_EXPORT bool gfx_shader_set_var_by_name(gfx_shader_t* shader,
 					  const char* name, const void* value,
 					  size_t size);
+BM_EXPORT size_t gfx_shader_get_vars_size(gfx_shader_t* shader);
 BM_EXPORT gfx_shader_var_t* gfx_shader_get_var_by_name(gfx_shader_t* shader,
 						       const char* name);
 BM_EXPORT size_t gfx_shader_var_size(enum gfx_shader_var_type type);

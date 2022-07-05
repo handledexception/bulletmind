@@ -75,13 +75,22 @@ void str_assign(string_t* s, const char* text)
 	}
 }
 
-void str_copy(string_t* dst, string_t* src)
+void str_copy(string_t* dst, const string_t* src)
 {
 	str_reserve(dst, src->capacity);
 	if (dst->capacity < SSO_SIZE)
 		memcpy(dst->text, src->text, src->capacity);
 	else
 		memcpy(dst->data, src->data, src->capacity);
+}
+
+u32 str_length(string_t* s)
+{
+	u32 sz = 0;
+	while (s->data != NULL && s->data[sz++] != '\0') {
+		s->size = sz;
+	}
+	return sz;
 }
 
 bool cstr_contains(const char* str, const char* substring)

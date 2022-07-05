@@ -191,9 +191,9 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 			      0xfffffff0;
 	eng->gfx.cbuffer_size = cbuffer_size;
 	eng->gfx.cbuffer_data = (u8*)MEM_ALLOC(cbuffer_size);
-	gfx_buffer_create(eng->gfx.system, eng->gfx.cbuffer_data, cbuffer_size,
-			  GFX_BUFFER_CONSTANT, GFX_BUFFER_USAGE_DYNAMIC,
-			  &eng->gfx.cbuffer);
+	gfx_buffer_new(eng->gfx.system, eng->gfx.cbuffer_data, cbuffer_size,
+		       GFX_BUFFER_CONSTANT, GFX_BUFFER_USAGE_DYNAMIC,
+		       &eng->gfx.cbuffer);
 	memcpy(&eng->gfx.cbuffer_data[0], (const void*)world_matrix,
 	       sizeof(mat4f_t));
 	memcpy(&eng->gfx.cbuffer_data[(sizeof(mat4f_t) + 15) & ~15],
@@ -237,9 +237,9 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	size_t vertex_buffer_size = (sizeof(vec3f_t) * BM_GFX_MAX_VERTICES) +
 				    (sizeof(vec4f_t) * BM_GFX_MAX_VERTICES);
 	eng->gfx.vbuffer_data = (u8*)MEM_ALLOC(vertex_buffer_size);
-	gfx_buffer_create(eng->gfx.system, eng->gfx.vbuffer_data,
-			  vertex_buffer_size, GFX_BUFFER_VERTEX,
-			  GFX_BUFFER_USAGE_DYNAMIC, &eng->gfx.vertex_buffer);
+	gfx_buffer_new(eng->gfx.system, eng->gfx.vbuffer_data,
+		       vertex_buffer_size, GFX_BUFFER_VERTEX,
+		       GFX_BUFFER_USAGE_DYNAMIC, &eng->gfx.vertex_buffer);
 
 	gfx_init_sampler_state(eng->gfx.system);
 	gfx_init_rasterizer(eng->gfx.system, GFX_CULLING_NONE, 0);
