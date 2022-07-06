@@ -96,9 +96,99 @@ enum pixel_format {
 	PIX_FMT_Y410 = FourCC('Y410'),
 	PIX_FMT_Y416 = FourCC('Y416'),
 	/* DirectX Specific */
-	PIX_FMT_DEPTH_24_8 = FourCC('D248'),
+	PIX_FMT_DEPTH_U16 = FourCC('DU16'),
+	PIX_FMT_DEPTH_F32 = FourCC('DF32'),
+	PIX_FMT_DEPTH_U24_S8 = FourCC('D248'),
 	PIX_FMT_UNKNOWN = FourCC('NONE')
 };
+
+static inline pix_fmt_bits_per_pixel(enum pixel_format pf)
+{
+	switch (pf) {
+	case PIX_FMT_NONE:
+		return 0;
+	case PIX_FMT_RGB8:
+		return 24;
+	case PIX_FMT_RGB555:
+		return 15;
+	case PIX_FMT_RGB565:
+		return 16;
+	case PIX_FMT_RGB24:
+		return 24;
+	case PIX_FMT_RGB32:
+		return 32;
+	case PIX_FMT_RGBA32:
+		return 32;
+	case PIX_FMT_ARGB32:
+		return 32;
+	case PIX_FMT_BGRA32:
+		return 32;
+	case PIX_FMT_A2R10G10B10:
+		return 32;
+	case PIX_FMT_A16B16G16R16F:
+		return 64;
+	case PIX_FMT_AI44:
+		return 0;
+	case PIX_FMT_AYUV:
+		return 32;
+	case PIX_FMT_I420:
+		return 0;
+	case PIX_FMT_IYUV:
+		return 0;
+	case PIX_FMT_NV11:
+		return 0;
+	case PIX_FMT_NV12:
+		return 12;
+	case PIX_FMT_UYVY:
+		return 16;
+	case PIX_FMT_Y41P:
+		return 0;
+	case PIX_FMT_Y41T:
+		return 0;
+	case PIX_FMT_Y42T:
+		return 0;
+	case PIX_FMT_YUY2:
+		return 16;
+	case PIX_FMT_YVU9:
+		return 0;
+	case PIX_FMT_YV12:
+		return 12;
+	case PIX_FMT_YVYU:
+		return 0;
+	case PIX_FMT_P010:
+		return 0;
+	case PIX_FMT_P016:
+		return 0;
+	case PIX_FMT_P210:
+		return 0;
+	case PIX_FMT_P216:
+		return 0;
+	case PIX_FMT_v210:
+		return 0;
+	case PIX_FMT_v216:
+		return 0;
+	case PIX_FMT_v410:
+		return 0;
+	case PIX_FMT_Y210:
+		return 0;
+	case PIX_FMT_Y216:
+		return 0;
+	case PIX_FMT_Y410:
+		return 0;
+	case PIX_FMT_Y416:
+		return 0;
+	case PIX_FMT_DEPTH_U16:
+		return 16;
+	case PIX_FMT_DEPTH_U24_S8:
+		return 32;
+	case PIX_FMT_DEPTH_F32:
+		return 32;
+	default:
+	case PIX_FMT_UNKNOWN:
+		return 0;
+	}
+	return 0;
+}
 
 // struct FrameRate {
 // 	u32 numerator;

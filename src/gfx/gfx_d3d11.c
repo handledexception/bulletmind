@@ -125,7 +125,7 @@ struct gfx_pixel_shader {
 };
 
 struct gfx_texture2d {
-	enum gfx_pixel_format pix_fmt;
+	enum pixel_format pix_fmt;
 	u32 width;
 	u32 height;
 	u32 mip_levels;
@@ -222,24 +222,24 @@ D3D11_USAGE gfx_buffer_usage_to_d3d11_usage(enum gfx_buffer_usage usage)
 	return d3d11_usage;
 }
 
-DXGI_FORMAT gfx_pixel_format_to_dxgi_format(enum gfx_pixel_format pf)
+DXGI_FORMAT pixel_format_to_dxgi_format(enum pixel_format pf)
 {
 	switch (pf) {
-	case GFX_FORMAT_BGRA:
+	case PIX_FMT_BGRA32:
 		return DXGI_FORMAT_B8G8R8A8_UNORM;
-	case GFX_FORMAT_RGBA:
+	case PIX_FMT_RGBA32:
 		return DXGI_FORMAT_R8G8B8A8_UNORM;
-	case GFX_FORMAT_NV12:
+	case PIX_FMT_NV12:
 		return DXGI_FORMAT_NV12;
-	case GFX_FORMAT_DEPTH_U16:
+	case PIX_FMT_DEPTH_U16:
 		return DXGI_FORMAT_D16_UNORM;
-	case GFX_FORMAT_DEPTH_U24:
+	case PIX_FMT_DEPTH_U24_S8:
 		return DXGI_FORMAT_D24_UNORM_S8_UINT;
-	case GFX_FORMAT_DEPTH_F32:
+	case PIX_FMT_DEPTH_F32:
 		return DXGI_FORMAT_D32_FLOAT;
 	default:
-	case GFX_FORMAT_ARGB:
-	case GFX_FORMAT_RGB24:
+	case PIX_FMT_ARGB32:
+	case PIX_FMT_RGB24:
 		return DXGI_FORMAT_UNKNOWN;
 	}
 	return DXGI_FORMAT_UNKNOWN;
@@ -572,7 +572,7 @@ result gfx_init_dx11(const struct gfx_config* cfg, s32 flags)
 
 	if (gfx_render_target_init(cfg->width, cfg->height, cfg->pix_fmt) !=
 		    RESULT_OK ||
-	    gfx_init_zstencil(cfg->width, cfg->height, GFX_FORMAT_DEPTH_U24,
+	    gfx_init_zstencil(cfg->width, cfg->height, PIX_FMT_DEPTH_U24_S8,
 			      flags & GFX_USE_ZBUFFER) != RESULT_OK) {
 		gfx_com_release_d3d11();
 		return RESULT_ERROR;
@@ -658,7 +658,7 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 	//     .BufferCount = 1,
 	//     .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
 	//     .Flags = 0,
-	//     .Format = gfx_pixel_format_to_dxgi_format(cfg->pix_fmt),
+	//     .Format = pixel_format_to_dxgi_format(cfg->pix_fmt),
 	//     .Width = cfg->width,
 	//     .Height = cfg->height,
 	//     .SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
@@ -666,8 +666,7 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 	//     .SampleDesc = { 1, 0 }
 	// };
 	DXGI_SWAP_CHAIN_DESC swap_desc = {
-		.BufferDesc.Format =
-			gfx_pixel_format_to_dxgi_format(cfg->pix_fmt),
+		.BufferDesc.Format = pixel_format_to_dxgi_format(cfg->pix_fmt),
 		.BufferDesc.Width = cfg->width,
 		.BufferDesc.Height = cfg->height,
 		.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED,
@@ -890,22 +889,31 @@ void gfx_render_clear(const rgba_t* color)
 	}
 }
 
-void gfx_render_begin(void)
+void gfx_render_begin(bool draw_indexed)
 {
 	if (!gfx_ok())
 		return;
+
 	gfx_vertex_shader_t* vs =
 		(gfx_vertex_shader_t*)gfx->module->vertex_shader->impl;
 	gfx_pixel_shader_t* ps =
 		(gfx_pixel_shader_t*)gfx->module->pixel_shader->impl;
-	u32 vertex_count = BM_GFX_MAX_VERTICES;
-	u32 start_vertex = 0;
+
 	ID3D11DeviceContext1* ctx = gfx->module->ctx;
 	ID3D11DeviceContext1_VSSetShader(ctx, vs->program, NULL, 0);
 	ID3D11DeviceContext1_PSSetShader(ctx, ps->program, NULL, 0);
 	ID3D11DeviceContext1_PSSetSamplers(ctx, 0, 1,
 					   &gfx->module->sampler_state);
-	ID3D11DeviceContext1_Draw(ctx, vertex_count, start_vertex);
+	u32 start = 0;
+	if (draw_indexed) {
+		u32 base_vertex = 0;
+		u32 index_count = BM_GFX_MAX_INDICES;
+		ID3D11DeviceContext1_DrawIndexed(ctx, index_count, start, 0);
+	} else {
+		u32 vertex_count = BM_GFX_MAX_VERTICES;
+		u32 start_vertex = 0;
+		ID3D11DeviceContext1_Draw(ctx, vertex_count, start);
+	}
 }
 
 void gfx_render_end(bool vsync, u32 flags)
@@ -965,6 +973,14 @@ enum gfx_vertex_type gfx_get_vertex_type(void)
 //
 // gfx buffer
 //
+u8* gfx_buffer_get_data_reference(gfx_buffer_t* buf)
+{
+	if (buf != NULL) {
+		return buf->data;
+	}
+	return NULL;
+}
+
 result gfx_buffer_make(gfx_buffer_t* buf, const void* data, size_t size)
 {
 	if (buf == NULL)
@@ -1050,7 +1066,7 @@ result gfx_buffer_new(const void* data, size_t size, enum gfx_buffer_type type,
 		memset(buffer->data, 0, size);
 		buffer->own_data = true;
 	} else {
-		buffer->data = data;
+		buffer->data = (u8*)data;
 		buffer->own_data = false;
 	}
 
@@ -1157,6 +1173,16 @@ void gfx_bind_vertex_buffer(gfx_buffer_t* vb, u32 stride, u32 offset)
 	}
 }
 
+void gfx_bind_index_buffer(gfx_buffer_t* ib, u32 offset)
+{
+	if (gfx_ok()) {
+		ID3D11DeviceContext1_IASetIndexBuffer(gfx->module->ctx,
+						      ib->buffer,
+						      DXGI_FORMAT_R32_UINT,
+						      offset);
+	}
+}
+
 void gfx_buffer_upload_constants(const gfx_shader_t* shader)
 {
 	if (gfx_ok() && shader != NULL) {
@@ -1225,6 +1251,9 @@ void gfx_shader_free(gfx_shader_t* shader)
 			       gfx_shader_type_to_string(shader->type));
 			break;
 		}
+		for (size_t i = 0; i < shader->vars.num_elems; i++) {
+			gfx_shader_var_free(&shader->vars.elems[i]);
+		}
 		vec_free(shader->vars);
 		BM_MEM_FREE(shader);
 		shader = NULL;
@@ -1250,10 +1279,17 @@ size_t gfx_shader_cbuffer_fill(gfx_shader_t* shader)
 		for (size_t vdx = 0; vdx < num_vars; vdx++) {
 			gfx_shader_var_t* var = &shader->vars.elems[vdx];
 			size_t var_size = gfx_shader_var_size(var->type);
-			memcpy(&data[offset], (const void*)var->data, var_size);
-			offset += (var_size + 15) & ~15;
+			if (var->type == GFX_SHADER_VAR_TEX) {
+				// bind sampler state here?
+			} else {
+				memcpy(&data[offset], (const void*)var->data,
+				       var_size);
+				offset += (var_size + 15) & ~15;
+			}
 		}
 	}
+
+	gfx_buffer_copy(shader->cbuffer, shader->cbuffer->data, cbuf_size);
 
 	return cbuf_size;
 }
@@ -1599,7 +1635,7 @@ void gfx_bind_rasterizer(void)
 void gfx_texture_init2d(struct gfx_texture2d* tex2d)
 {
 	if (tex2d != NULL) {
-		tex2d->pix_fmt = GFX_FORMAT_UNKNOWN;
+		tex2d->pix_fmt = PIX_FMT_UNKNOWN;
 		tex2d->width = 0;
 		tex2d->height = 0;
 		tex2d->mip_levels = 0;
@@ -1621,9 +1657,11 @@ result gfx_texture2d_create(const u8* data, const struct gfx_texture_desc* desc,
 	tex->impl = MEM_ALLOC(sizeof(struct gfx_texture2d));
 	struct gfx_texture2d* tex2d = (struct gfx_texture2d*)tex->impl;
 	gfx_texture_init2d(tex2d);
-
-	DXGI_FORMAT dxgi_format =
-		gfx_pixel_format_to_dxgi_format(desc->pix_fmt);
+	tex2d->width = desc->width;
+	tex2d->height = desc->height;
+	tex2d->pix_fmt = desc->pix_fmt;
+	tex2d->mip_levels = desc->mip_levels;
+	DXGI_FORMAT dxgi_format = pixel_format_to_dxgi_format(desc->pix_fmt);
 
 	DXGI_SAMPLE_DESC sample_desc = {
 		.Count = 1,
@@ -1664,7 +1702,7 @@ result gfx_texture2d_create(const u8* data, const struct gfx_texture_desc* desc,
 	};
 
 	// cache texture data
-	u32 stride = desc->width * (gfx_get_bits_per_pixel(desc->pix_fmt) / 8);
+	u32 stride = desc->width * (pix_fmt_bits_per_pixel(desc->pix_fmt) / 8);
 	tex->size = desc->height * stride;
 	if (data) {
 		tex->data = (u8*)MEM_ALLOC(tex->size);
@@ -1740,7 +1778,7 @@ void gfx_texture2d_destroy(gfx_texture_t* texture)
 }
 
 // TODO(paulh): Release stuff if failed!!!!!
-result gfx_render_target_init(u32 width, u32 height, enum gfx_pixel_format pf)
+result gfx_render_target_init(u32 width, u32 height, enum pixel_format pf)
 {
 	if (gfx == NULL || gfx->module == NULL)
 		return RESULT_NULL;
@@ -1837,7 +1875,7 @@ result gfx_create_zstencil_state(bool enable, struct gfx_zstencil_state** state)
 }
 
 // TODO(paulh): Release stuff if failed!!!!!
-result gfx_init_zstencil(u32 width, u32 height, enum gfx_pixel_format pix_fmt,
+result gfx_init_zstencil(u32 width, u32 height, enum pixel_format pix_fmt,
 			 bool enabled)
 {
 	if (gfx == NULL || gfx->module->device == NULL)

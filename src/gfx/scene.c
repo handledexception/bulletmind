@@ -2,14 +2,21 @@
 #include "math/types.h"
 #include "core/memory.h"
 
-struct gfx_scene* gfx_scene_new(u32 num_verts, u32 num_vars,
+struct gfx_scene* gfx_scene_new(u32 num_verts, u32 num_indices,
 				enum gfx_vertex_type vert_type)
 {
+	// allocate the scene
 	struct gfx_scene* scene = MEM_ALLOC(sizeof(*scene));
 	memset(scene, 0, sizeof(*scene));
+	// allocate vertex data
 	scene->vert_data = MEM_ALLOC(sizeof(*scene->vert_data));
 	memset(scene->vert_data, 0, sizeof(*scene->vert_data));
+	// allocate index data
 	scene->vert_data->type = vert_type;
+	scene->index_data = MEM_ALLOC(sizeof(u32) * num_indices);
+	memset(scene->index_data, 0, sizeof(u32) * num_indices);
+
+	// allocate texture vertices
 	if (vert_type == GFX_VERTEX_POS_COLOR) {
 		scene->vert_data->num_vertices = num_verts;
 		scene->vert_data->positions =
@@ -89,6 +96,10 @@ void gfx_scene_free(struct gfx_scene* scene)
 			}
 			BM_MEM_FREE(scene->vert_data);
 			scene->vert_data = NULL;
+		}
+		if (scene->index_data != NULL) {
+			BM_MEM_FREE(scene->index_data);
+			scene->index_data = NULL;
 		}
 	}
 	BM_MEM_FREE(scene);

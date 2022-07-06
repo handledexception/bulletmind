@@ -1,6 +1,7 @@
 #include "gfx/gfx.h"
 #include "math/types.h"
 #include "core/memory.h"
+#include "media/image.h"
 
 gfx_system_t* gfx = NULL;
 bool gfx_sys_ok = false;
@@ -31,41 +32,6 @@ size_t gfx_shader_var_size(enum gfx_shader_var_type type)
 		return sizeof(void*);
 	}
 	return 0;
-}
-
-u32 gfx_get_bits_per_pixel(enum gfx_pixel_format pf)
-{
-	u32 bpp = 0;
-	switch (pf) {
-	case GFX_FORMAT_BGRA:
-		bpp = 32;
-		break;
-	case GFX_FORMAT_RGBA:
-		bpp = 32;
-		break;
-	case GFX_FORMAT_ARGB:
-		bpp = 32;
-		break;
-	case GFX_FORMAT_RGB24:
-		bpp = 24;
-		break;
-	case GFX_FORMAT_NV12:
-		bpp = 16;
-		break;
-	case GFX_FORMAT_DEPTH_U16:
-		bpp = 16;
-		break;
-	case GFX_FORMAT_DEPTH_U24:
-		bpp = 24;
-		break;
-	case GFX_FORMAT_DEPTH_F32:
-		bpp = 32;
-		break;
-	case GFX_FORMAT_UNKNOWN:
-	default:
-		break;
-	}
-	return bpp;
 }
 
 result gfx_init(const struct gfx_config* cfg, s32 flags)
@@ -158,12 +124,16 @@ void gfx_shader_var_init(gfx_shader_var_t* var)
 void gfx_shader_var_free(gfx_shader_var_t* var)
 {
 	if (var != NULL) {
-		if (var->data != NULL) {
-			BM_MEM_FREE(var->data);
+		if (var->data != NULL && var->own_data) {
+			if (var->type == GFX_SHADER_VAR_TEX) {
+				gfx_texture_destroy(var->data);
+			} else {
+				BM_MEM_FREE(var->data);
+			}
 			var->data = NULL;
 		}
-		BM_MEM_FREE(var);
-		var = NULL;
+		// BM_MEM_FREE(var);
+		// var = NULL;
 	}
 }
 
@@ -179,6 +149,7 @@ void gfx_shader_var_set(gfx_shader_var_t* var, const void* data)
 			var->data = MEM_ALLOC(szd);
 		}
 		memcpy(var->data, data, szd);
+		var->own_data = true;
 	}
 }
 
@@ -202,6 +173,7 @@ bool gfx_shader_set_var_by_name(gfx_shader_t* shader, const char* name,
 		if (var != NULL && !strcmp(var->name, name) &&
 		    gfx_shader_var_size(var->type) == size) {
 			memcpy(var->data, value, size);
+			var->own_data = true;
 			return true;
 		}
 	}
@@ -353,4 +325,17 @@ void gfx_texture_destroy(gfx_texture_t* texture)
 		BM_MEM_FREE(texture);
 		texture = NULL;
 	}
+}
+
+result gfx_texture_from_image(struct media_image* img, gfx_texture_t** tex)
+{
+	if (img == NULL || tex == NULL)
+		return RESULT_NULL;
+	struct gfx_texture_desc td = {.width = img->width,
+				      .height = img->height,
+				      .type = GFX_TEXTURE_2D,
+				      .pix_fmt = img->pix_fmt,
+				      .flags = 0,
+				      .mip_levels = 1};
+	return gfx_texture_create(img->frame.data[0], &td, tex);
 }

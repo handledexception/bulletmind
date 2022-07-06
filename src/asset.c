@@ -127,7 +127,8 @@ void asset_free(asset_t* asset)
 		if (asset->kind == ASSET_SHADER) {
 			gfx_shader_free(asset->data);
 		} else if (asset->kind == ASSET_SPRITE) {
-			struct media_image* img = (struct media_image*)asset->data;
+			struct media_image* img =
+				(struct media_image*)asset->data;
 			video_frame_free(&img->frame);
 			media_image_free(img);
 		}
