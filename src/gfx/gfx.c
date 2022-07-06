@@ -4,8 +4,8 @@
 #include "media/image.h"
 
 gfx_system_t* gfx = NULL;
-bool gfx_sys_ok = false;
-bool gfx_module_ok = false;
+bool gfx_hardware_ready = false;
+bool gfx_system_ready = false;
 
 size_t gfx_shader_var_size(enum gfx_shader_var_type type)
 {
@@ -39,7 +39,10 @@ result gfx_init(const struct gfx_config* cfg, s32 flags)
 	if (cfg->module == GFX_MODULE_DX11) {
 		gfx = (gfx_system_t*)MEM_ALLOC(sizeof(gfx_system_t));
 		memset(gfx, 0, sizeof(*gfx));
-		return gfx_init_dx11(cfg, flags);
+		result res = gfx_init_dx11(cfg, flags);
+		if (res == RESULT_OK)
+			res = gfx_init_renderer(cfg, flags);
+		return res;
 	}
 	return RESULT_NOT_IMPL;
 }
@@ -57,10 +60,15 @@ void gfx_shutdown(void)
 	}
 }
 
+bool gfx_hardware_ok(void)
+{
+	return gfx_hardware_ready;
+}
+
 bool gfx_ok(void)
 {
 	// Should be OK if gfx initialization completed successfully
-	return gfx_sys_ok;
+	return gfx_hardware_ready && gfx_system_ready;
 }
 
 enum gfx_vertex_type gfx_vertex_type_from_string(const char* s)

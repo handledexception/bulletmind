@@ -136,7 +136,7 @@ struct gfx_texture2d {
 	ID3D11DepthStencilView* dsv;
 };
 
-struct gfx_zstencil_state {
+struct gfx_depth_state {
 	bool enabled;
 	ID3D11DepthStencilState* dss;
 };
@@ -161,8 +161,8 @@ struct gfx_module {
 
 	/* z-buffer */
 	gfx_texture_t* zstencil_target;
-	struct gfx_zstencil_state* zstencil_state_enabled;
-	struct gfx_zstencil_state* zstencil_state_disabled;
+	struct gfx_depth_state* zstencil_state_enabled;
+	struct gfx_depth_state* zstencil_state_disabled;
 
 	/* sampler */
 	ID3D11SamplerState* sampler_state;
@@ -535,7 +535,7 @@ result gfx_enumerate_displays(const gfx_adapter_t* adapter,
 
 void gfx_set_viewport(u32 width, u32 height)
 {
-	D3D11_VIEWPORT viewport = {
+	D3D11_VIEWPORT vp = {
 		.Width = (FLOAT)width,
 		.Height = (FLOAT)height,
 		.MaxDepth = 1.f,
@@ -543,12 +543,21 @@ void gfx_set_viewport(u32 width, u32 height)
 		.TopLeftX = 0.f,
 		.TopLeftY = 0.f,
 	};
-	ID3D11DeviceContext1_RSSetViewports(gfx->module->ctx, 1, &viewport);
+	ID3D11DeviceContext1_RSSetViewports(gfx->module->ctx, 1, &vp);
+	logger(LOG_INFO, "\033[7mgfx\033[m Set D3D11 Viewport:\n"
+		"Width: %f, Height: %f\n"
+		"Min Depth: %f, Max Depth: %f\n"
+		"Top Left X: %f, Top Left Y: %f",
+		vp.Width, vp.Height,
+		vp.MinDepth, vp.MaxDepth,
+		vp.TopLeftX, vp.TopLeftY);
 }
 
 // TODO(paulh): Refactor to initialize D3D11 once, and allow instantiating multple swap chains
 result gfx_init_dx11(const struct gfx_config* cfg, s32 flags)
 {
+	gfx_hardware_ready = false;
+
 	if (gfx == NULL)
 		return RESULT_NULL;
 
@@ -570,22 +579,7 @@ result gfx_init_dx11(const struct gfx_config* cfg, s32 flags)
 		return RESULT_ERROR;
 	}
 
-	if (gfx_render_target_init(cfg->width, cfg->height, cfg->pix_fmt) !=
-		    RESULT_OK ||
-	    gfx_init_zstencil(cfg->width, cfg->height, PIX_FMT_DEPTH_U24_S8,
-			      flags & GFX_USE_ZBUFFER) != RESULT_OK) {
-		gfx_com_release_d3d11();
-		return RESULT_ERROR;
-	}
-	logger(LOG_INFO,
-	       "\033[7mgfx\033[m Created render target and zbuffer\n");
-
-	gfx_set_render_target(gfx->module->render_target,
-			      gfx->module->zstencil_target);
-	gfx_set_viewport(cfg->width, cfg->height);
-	// gfx_init_sprite(gfx->module->sprite_vb);
-
-	gfx_sys_ok = true;
+	gfx_hardware_ready = true;
 
 	return RESULT_OK;
 }
@@ -615,6 +609,31 @@ void gfx_shutdown_dx11(void)
 	}
 }
 
+result gfx_init_renderer(const struct gfx_config* cfg, s32 flags)
+{
+	if (!gfx_hardware_ok())
+		return RESULT_ERROR;
+
+	if (gfx_render_target_init(cfg->width, cfg->height, cfg->pix_fmt) !=
+		    RESULT_OK ||
+	    gfx_init_zstencil(cfg->width, cfg->height, PIX_FMT_DEPTH_U24_S8,
+			      flags & GFX_USE_ZBUFFER) != RESULT_OK) {
+		gfx_com_release_d3d11();
+		return RESULT_ERROR;
+	}
+	logger(LOG_INFO,
+	       "\033[7mgfx\033[m Created render target and zbuffer\n");
+
+	gfx_set_render_targets(gfx->module->render_target,
+			      gfx->module->zstencil_target);
+	gfx_set_viewport(cfg->width, cfg->height);
+	// gfx_init_sprite(gfx->module->sprite_vb);
+
+	gfx_system_ready = true;
+
+	return RESULT_OK;
+}
+
 gfx_shader_t* gfx_system_get_vertex_shader()
 {
 	if (gfx_ok())
@@ -631,7 +650,7 @@ gfx_shader_t* gfx_system_get_pixel_shader()
 
 void gfx_system_bind_render_target(void)
 {
-	gfx_set_render_target(gfx->module->render_target,
+	gfx_set_render_targets(gfx->module->render_target,
 			      gfx->module->zstencil_target);
 }
 
@@ -647,11 +666,13 @@ void gfx_system_bind_input_layout(gfx_shader_t* shader)
 result gfx_create_swap_chain(const struct gfx_config* cfg)
 {
 	if (gfx == NULL || gfx->module == NULL ||
-	    gfx->module->dxgi_factory == NULL) {
+	    gfx->module->dxgi_factory == NULL ||
+		cfg == NULL || cfg->window.hwnd == NULL) {
 		return RESULT_NULL;
 	}
 
 	result res = RESULT_OK;
+	HRESULT hr = S_OK;
 	HWND hwnd = (HWND)cfg->window.hwnd;
 	// DXGI_SWAP_CHAIN_DESC1 swap_desc1 = {
 	//     .AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED,
@@ -684,30 +705,42 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 		.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT,
 	};
 
-	IDXGISwapChain* dxgi_swap_chain = NULL;
 	// if(SUCCEEDED(IDXGIFactory2_CreateSwapChainForHwnd(gfx->module->dxgi_factory, (IUnknown*)gfx->module->device, hwnd, &swap_desc1, NULL, NULL, &dxgi_swap_chain)))
-	if (SUCCEEDED(IDXGIFactory2_CreateSwapChain(
-		    gfx->module->dxgi_factory, (IUnknown*)gfx->module->device,
-		    &swap_desc, &dxgi_swap_chain))) {
-		if (SUCCEEDED(IDXGISwapChain1_QueryInterface(
-			    dxgi_swap_chain, &BM_IID_IDXGISwapChain2,
-			    (void**)&gfx->module->dxgi_swap_chain))) {
-			if (cfg->fullscreen)
-				IDXGIFactory2_MakeWindowAssociation(
-					gfx->module->dxgi_factory, hwnd, 0);
-			else
-				IDXGIFactory2_MakeWindowAssociation(
-					gfx->module->dxgi_factory, hwnd,
-					DXGI_MWA_NO_ALT_ENTER |
-						DXGI_MWA_NO_WINDOW_CHANGES);
-		} else {
-			res = RESULT_NULL;
+	IDXGISwapChain* sc = NULL;
+	hr = IDXGIFactory2_CreateSwapChain(gfx->module->dxgi_factory, (IUnknown*)gfx->module->device, &swap_desc, &sc);
+	if (FAILED(hr)) {
+		logger(LOG_ERROR, "\033[7mgfx\033[m IDXGIFactory2 CreateSwapChain failed!");
+		goto cleanup;
+	}
+	hr = IDXGISwapChain1_QueryInterface(sc, &BM_IID_IDXGISwapChain2, (void**)&gfx->module->dxgi_swap_chain);
+	if (FAILED(hr)) {
+		logger(LOG_ERROR, "\033[7mgfx\033[m IDXGISwapChain1 QI failed!");
+		goto cleanup;
+	}
+	if (cfg->fullscreen) {
+		hr = IDXGIFactory2_MakeWindowAssociation(
+			gfx->module->dxgi_factory, hwnd, 0);
+		if (FAILED(hr)) {
+			logger(LOG_ERROR, "\033[7mgfx\033[m IDXGIFactory2 MakeWindowAssociation (fullscreen) failed!");
+			goto cleanup;
 		}
-
-		IDXGISwapChain1_Release(dxgi_swap_chain);
 	} else {
-		logger(LOG_ERROR, "[gfx] Error creating swap chain!");
-		res = RESULT_NULL;
+		hr = IDXGIFactory2_MakeWindowAssociation(
+			gfx->module->dxgi_factory, hwnd,
+			DXGI_MWA_NO_ALT_ENTER |
+				DXGI_MWA_NO_WINDOW_CHANGES);
+		if (FAILED(hr)) {
+			logger(LOG_ERROR, "\033[7mgfx\033[m IDXGIFactory2 MakeWindowAssociation (windowed) failed!");
+			goto cleanup;
+		}
+	}
+
+cleanup:
+	if (hr != S_OK) {
+		IDXGISwapChain1_Release(sc);
+		sc = NULL;
+		IDXGISwapChain1_Release(gfx->module->dxgi_swap_chain);
+		gfx->module->dxgi_swap_chain = NULL;
 	}
 
 	if (res == RESULT_OK)
@@ -723,10 +756,13 @@ result gfx_load_dx11_dlls()
 		if (!gfx->module->dxgi_dll) {
 			return RESULT_NULL;
 		}
+		logger(LOG_INFO, "\033[7mgfx\033[m Loaded dxgi.dll");
+
 		gfx->module->d3d11_dll = os_dlopen("d3d11.dll");
 		if (!gfx->module->d3d11_dll) {
 			return RESULT_NULL;
 		}
+		logger(LOG_INFO, "\033[7mgfx\033[m Loaded d3d11.dll");
 	}
 	return RESULT_OK;
 }
@@ -797,18 +833,18 @@ result gfx_create_device(s32 adapter)
 #endif
 
 	const D3D_FEATURE_LEVEL feature_levels[] = {
-		// D3D_FEATURE_LEVEL_11_1,
+		D3D_FEATURE_LEVEL_11_1,
 		D3D_FEATURE_LEVEL_11_0,
-		// D3D_FEATURE_LEVEL_10_1,
-		// D3D_FEATURE_LEVEL_10_0,
-		// D3D_FEATURE_LEVEL_9_3,
-		// D3D_FEATURE_LEVEL_9_2,
-		// D3D_FEATURE_LEVEL_9_1
+		D3D_FEATURE_LEVEL_10_1,
+		D3D_FEATURE_LEVEL_10_0,
+		D3D_FEATURE_LEVEL_9_3,
+		D3D_FEATURE_LEVEL_9_2,
+		D3D_FEATURE_LEVEL_9_1
 	};
 
-	D3D_FEATURE_LEVEL feature_level = D3D_FEATURE_LEVEL_11_0;
 	UINT num_feature_levels = ARRAY_SIZE(feature_levels);
 
+	D3D_FEATURE_LEVEL feature_level;
 	hr = D3D11CreateDeviceFunc((IDXGIAdapter*)gfx->module->dxgi_adapter,
 				   D3D_DRIVER_TYPE_UNKNOWN, NULL, create_flags,
 				   feature_levels, num_feature_levels,
@@ -817,6 +853,7 @@ result gfx_create_device(s32 adapter)
 				   &feature_level,
 				   (ID3D11DeviceContext**)&gfx->module->ctx);
 	if (FAILED(hr)) {
+		logger(LOG_ERROR, "\033[7mgfx\033[m D3D11CreateDevice failed!");
 		return RESULT_ERROR;
 	}
 
@@ -824,6 +861,7 @@ result gfx_create_device(s32 adapter)
 					 &BM_IID_ID3D11Device1,
 					 (void**)&gfx->module->device);
 	if (FAILED(hr)) {
+		logger(LOG_ERROR, "\033[7mgfx\033[m ID3D11Device1 QI failed!");
 		return RESULT_ERROR;
 	}
 
@@ -833,6 +871,7 @@ result gfx_create_device(s32 adapter)
 						&BM_IID_ID3D11DeviceContext1,
 						(void**)&gfx->module->ctx);
 	if (FAILED(hr)) {
+		logger(LOG_ERROR, "\033[7mgfx\033[m ID3D11DeviceContext1 QI failed!");
 		return RESULT_ERROR;
 	}
 
@@ -842,6 +881,7 @@ result gfx_create_device(s32 adapter)
 					 &BM_IID_IDXGIDevice1,
 					 (void**)&gfx->module->dxgi_device);
 	if (FAILED(hr)) {
+		logger(LOG_ERROR, "\033[7mgfx\033[m IDXGIDevice1 QI failed!");
 		return RESULT_ERROR;
 	}
 
@@ -1650,6 +1690,9 @@ void gfx_texture_init2d(struct gfx_texture2d* tex2d)
 result gfx_texture2d_create(const u8* data, const struct gfx_texture_desc* desc,
 			    gfx_texture_t** texture)
 {
+	if (!gfx_hardware_ok())
+		return RESULT_ERROR;
+
 	if (!texture || !*texture)
 		return RESULT_NULL;
 
@@ -1780,7 +1823,7 @@ void gfx_texture2d_destroy(gfx_texture_t* texture)
 // TODO(paulh): Release stuff if failed!!!!!
 result gfx_render_target_init(u32 width, u32 height, enum pixel_format pf)
 {
-	if (gfx == NULL || gfx->module == NULL)
+	if (!gfx_hardware_ok())
 		return RESULT_NULL;
 
 	struct gfx_texture_desc desc = {
@@ -1818,9 +1861,9 @@ void gfx_render_target_destroy(void)
 	}
 }
 
-void gfx_set_render_target(gfx_texture_t* texture, gfx_texture_t* zstencil)
+void gfx_set_render_targets(gfx_texture_t* texture, gfx_texture_t* zstencil)
 {
-	if (gfx && gfx->module->ctx) {
+	if (gfx_hardware_ok()) {
 		ID3D11RenderTargetView* rtv = NULL;
 		ID3D11DepthStencilView* dsv = NULL;
 		if (texture && texture->impl) {
@@ -1838,18 +1881,18 @@ void gfx_set_render_target(gfx_texture_t* texture, gfx_texture_t* zstencil)
 	}
 }
 
-result gfx_create_zstencil_state(bool enable, struct gfx_zstencil_state** state)
+result gfx_create_depth_state(bool enable, struct gfx_depth_state** state)
 {
 	if (!gfx || !gfx->module->device || !state)
 		return RESULT_NULL;
 
-	struct gfx_zstencil_state* zss = *state;
+	struct gfx_depth_state* zss = *state;
 	if (!zss)
 		return RESULT_NULL;
 
 	zss->enabled = enable;
 
-	// TODO(paulh): Port the other aspects of this config to gfx_zstencil_state
+	// TODO(paulh): Port the other aspects of this config to gfx_depth_state
 	D3D11_DEPTH_STENCIL_DESC desc = {
 		.DepthEnable = enable,
 		.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL,
@@ -1878,7 +1921,7 @@ result gfx_create_zstencil_state(bool enable, struct gfx_zstencil_state** state)
 result gfx_init_zstencil(u32 width, u32 height, enum pixel_format pix_fmt,
 			 bool enabled)
 {
-	if (gfx == NULL || gfx->module->device == NULL)
+	if (!gfx_hardware_ok())
 		return RESULT_NULL;
 
 	struct gfx_texture_desc desc = {
@@ -1897,8 +1940,8 @@ result gfx_init_zstencil(u32 width, u32 height, enum pixel_format pix_fmt,
 		MEM_ALLOC(sizeof(*gfx->module->zstencil_state_enabled));
 	gfx->module->zstencil_state_disabled =
 		MEM_ALLOC(sizeof(*gfx->module->zstencil_state_disabled));
-	gfx_create_zstencil_state(false, &gfx->module->zstencil_state_disabled);
-	gfx_create_zstencil_state(true, &gfx->module->zstencil_state_enabled);
+	gfx_create_depth_state(false, &gfx->module->zstencil_state_disabled);
+	gfx_create_depth_state(true, &gfx->module->zstencil_state_enabled);
 	gfx_toggle_zstencil(enabled);
 
 	return RESULT_OK;
@@ -1920,16 +1963,14 @@ void gfx_destroy_zstencil(void)
 		gfx->module->zstencil_state_disabled = NULL;
 
 		gfx_texture_destroy(gfx->module->zstencil_target);
-		// BM_MEM_FREE(gfx->module->zstencil_target->impl);
-		// BM_MEM_FREE(gfx->module->zstencil_target);
-		// gfx->module->zstencil_target->impl = NULL;
-		// gfx->module->zstencil_target = NULL;
 	}
 }
 
-void gfx_bind_zstencil_state(const struct gfx_zstencil_state* state)
+void gfx_bind_zstencil_state(const struct gfx_depth_state* state)
 {
-	if (gfx && state) {
+	if (gfx != NULL && gfx->module != NULL
+		&& gfx->module->ctx != NULL && state != NULL
+		&& state->dss != NULL) {
 		ID3D11DeviceContext1_OMSetDepthStencilState(gfx->module->ctx,
 							    state->dss, 1);
 	}
@@ -1937,13 +1978,14 @@ void gfx_bind_zstencil_state(const struct gfx_zstencil_state* state)
 
 void gfx_toggle_zstencil(bool enabled)
 {
-	if (gfx) {
-		if (enabled)
+	if (gfx != NULL && gfx->module != NULL) {
+		if (enabled) {
 			gfx_bind_zstencil_state(
 				gfx->module->zstencil_state_enabled);
-		else
+		} else {
 			gfx_bind_zstencil_state(
 				gfx->module->zstencil_state_disabled);
+		}
 	}
 }
 

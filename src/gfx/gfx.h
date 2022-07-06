@@ -41,7 +41,7 @@ struct gfx_system;
 struct gfx_texture;
 struct gfx_vertex_shader;
 struct gfx_zstencil;
-struct gfx_zstencil_state;
+struct gfx_depth_state;
 
 typedef struct gfx_adapter gfx_adapter_t;
 typedef struct gfx_buffer gfx_buffer_t;
@@ -58,7 +58,7 @@ typedef struct gfx_system gfx_system_t;
 typedef struct gfx_texture gfx_texture_t;
 typedef struct gfx_vertex_shader gfx_vertex_shader_t;
 typedef struct gfx_zstencil gfx_zstencil_t;
-typedef struct gfx_zstencil_state gfx_zstencil_state_t;
+typedef struct gfx_depth_state gfx_depth_state_t;
 
 struct gfx_window {
 #if defined(_WIN32)
@@ -145,16 +145,18 @@ struct gfx_vertex_data {
 };
 
 extern gfx_system_t* gfx;
-extern bool gfx_sys_ok;
-extern bool gfx_module_ok;
+extern bool gfx_hardware_ready;
+extern bool gfx_system_ready;
 
 BM_EXPORT result gfx_init(const struct gfx_config* cfg, s32 flags);
 BM_EXPORT void gfx_shutdown(void);
+BM_EXPORT bool gfx_hardware_ok(void);
+BM_EXPORT bool gfx_ok(void);
 
 #if defined(_WIN32)
 BM_EXPORT result gfx_init_dx11(const struct gfx_config* cfg, s32 flags);
+BM_EXPORT result gfx_init_renderer(const struct gfx_config* cfg, s32 flags);
 BM_EXPORT void gfx_shutdown_dx11(void);
-BM_EXPORT bool gfx_ok(void);
 #endif
 
 /* system ------------------------------------------------------------------ */
@@ -270,14 +272,14 @@ BM_EXPORT void gfx_texture2d_destroy(gfx_texture_t* texture);
 BM_EXPORT result gfx_render_target_init(u32 width, u32 height,
 					enum pixel_format pf);
 BM_EXPORT void gfx_render_target_destroy(void);
-BM_EXPORT void gfx_set_render_target(gfx_texture_t* texture,
+BM_EXPORT void gfx_set_render_targets(gfx_texture_t* texture,
 				     gfx_texture_t* zstencil);
-BM_EXPORT result gfx_create_zstencil_state(bool enable,
-					   struct gfx_zstencil_state** state);
+BM_EXPORT result gfx_create_depth_state(bool enable,
+					   struct gfx_depth_state** state);
 BM_EXPORT result gfx_init_zstencil(u32 width, u32 height,
 				   enum pixel_format pix_fmt, bool enabled);
 BM_EXPORT void gfx_destroy_zstencil(void);
-BM_EXPORT void gfx_bind_zstencil_state(const struct gfx_zstencil_state* state);
+BM_EXPORT void gfx_bind_zstencil_state(const struct gfx_depth_state* state);
 BM_EXPORT void gfx_toggle_zstencil(bool enabled);
 
 /* misc -------------------------------------------------------------------- */

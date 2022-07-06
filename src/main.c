@@ -46,7 +46,6 @@ struct application {
 	VECTOR(struct gfx_scene*) scenes;
 	gfx_buffer_t* vbuf;
 	gfx_buffer_t* ibuf;
-	// gfx_buffer_t* cbuf;
 };
 
 result app_init_gfx(struct application* app, const struct gfx_config* cfg)
@@ -60,7 +59,7 @@ result app_init_gfx(struct application* app, const struct gfx_config* cfg)
 	vec3f_t cam_up = {0.f, 1.f, 0.f};
 	gfx_camera_new(&app->cam);
 	gfx_camera_persp(&app->cam, &cam_eye, &cam_dir, &cam_up, &viewport,
-			 60.f, Z_NEAR, Z_FAR);
+			 75.f, Z_NEAR, Z_FAR);
 	return RESULT_OK;
 }
 
@@ -73,6 +72,11 @@ void app_refresh_gfx(struct application* app)
 	size_t vert_stride = 0;
 	u8* vbuf_data = gfx_buffer_get_data_reference(app->vbuf);
 	u32* ibuf_data = (u32*)gfx_buffer_get_data_reference(app->ibuf);
+	size_t vertex_buffer_size = (BM_GFX_MAX_VERTICES * sizeof(vec3f_t)) +
+		(BM_GFX_MAX_VERTICES * sizeof(vec2f_t));
+	size_t index_buffer_size = sizeof(u32) * BM_GFX_MAX_INDICES;
+	memset(vbuf_data, 0, vertex_buffer_size);
+	memset(ibuf_data, 0, index_buffer_size);
 	for (size_t sdx = 0; sdx < app->scenes.num_elems; sdx++) {
 		struct gfx_scene* scene =
 			(struct gfx_scene*)app->scenes.elems[sdx];
@@ -116,7 +120,7 @@ void app_refresh_gfx(struct application* app)
 		gfx_buffer_copy(app->vbuf, vbuf_data, vbd_size);
 		gfx_buffer_copy(app->ibuf, ibuf_data, 6 * sizeof(u32));
 		gfx_system_bind_render_target();
-		gfx_toggle_zstencil(false);
+		gfx_toggle_zstencil(true);
 		gfx_bind_primitive_topology(GFX_TOPOLOGY_TRIANGLE_LIST);
 		gfx_bind_rasterizer();
 		gfx_render_begin(true);
@@ -153,11 +157,12 @@ result app_init_scenes(struct application* app)
 	mat4f_identity(&world_matrix);
 	mat4f_identity(&trans_matrix);
 	mat4f_identity(&scale_matrix);
-	const vec4f_t trans_vec = {0.f, 0.f, 0.f, 1.f};
+	// const vec4f_t trans_vec = {0.f, 0.f, 0.f, 1.f};
 	const vec4f_t scale_vec = {0.5f, 0.5, 0.f, 1.f};
-	mat4f_translate(&trans_matrix, &trans_vec);
+	// mat4f_translate(&trans_matrix, &trans_vec);
 	mat4f_scale(&scale_matrix, &scale_vec);
-	mat4f_mul(&world_matrix, &trans_matrix, &scale_matrix);
+	// mat4f_mul(&world_matrix, &trans_matrix, &scale_matrix);
+	mat4f_mul(&world_matrix, &world_matrix, &scale_matrix);
 
 	mat4f_t view_proj_matrix;
 	mat4f_identity(&view_proj_matrix);
