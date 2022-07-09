@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-#define Z_NEAR 0.0f
+#define Z_NEAR 0.01f
 #define Z_FAR 100.f
 #define FOV_Y 90.f
 #define BM_GFX_MAX_VERTICES 256
@@ -40,7 +40,7 @@ struct gfx_swapchain;
 struct gfx_system;
 struct gfx_texture;
 struct gfx_vertex_shader;
-struct gfx_zstencil;
+struct gfx_depth;
 struct gfx_depth_state;
 
 typedef struct gfx_adapter gfx_adapter_t;
@@ -57,7 +57,7 @@ typedef struct gfx_swapchain gfx_swapchain_t;
 typedef struct gfx_system gfx_system_t;
 typedef struct gfx_texture gfx_texture_t;
 typedef struct gfx_vertex_shader gfx_vertex_shader_t;
-typedef struct gfx_zstencil gfx_zstencil_t;
+typedef struct gfx_depth gfx_depth_t;
 typedef struct gfx_depth_state gfx_depth_state_t;
 
 struct gfx_window {
@@ -198,7 +198,7 @@ BM_EXPORT void gfx_bind_vertex_buffer(gfx_buffer_t* vb, u32 stride, u32 offset);
 BM_EXPORT void gfx_bind_index_buffer(gfx_buffer_t* ib, u32 offset);
 BM_EXPORT void gfx_buffer_upload_constants(const gfx_shader_t* shader);
 BM_EXPORT enum gfx_vertex_type gfx_vertex_type_from_string(const char* s);
-BM_EXPORT u8* gfx_buffer_get_data_reference(gfx_buffer_t* buf);
+BM_EXPORT u8* gfx_buffer_get_data(gfx_buffer_t* buf);
 
 /* shader ------------------------------------------------------------------ */
 BM_EXPORT void gfx_shader_init(gfx_shader_t* shader);
@@ -273,14 +273,14 @@ BM_EXPORT result gfx_render_target_init(u32 width, u32 height,
 					enum pixel_format pf);
 BM_EXPORT void gfx_render_target_destroy(void);
 BM_EXPORT void gfx_set_render_targets(gfx_texture_t* texture,
-				     gfx_texture_t* zstencil);
+				      gfx_texture_t* depth);
 BM_EXPORT result gfx_create_depth_state(bool enable,
-					   struct gfx_depth_state** state);
-BM_EXPORT result gfx_init_zstencil(u32 width, u32 height,
-				   enum pixel_format pix_fmt, bool enabled);
-BM_EXPORT void gfx_destroy_zstencil(void);
-BM_EXPORT void gfx_bind_zstencil_state(const struct gfx_depth_state* state);
-BM_EXPORT void gfx_toggle_zstencil(bool enabled);
+					struct gfx_depth_state** state);
+BM_EXPORT result gfx_init_depth(u32 width, u32 height,
+				enum pixel_format pix_fmt, bool enabled);
+BM_EXPORT void gfx_destroy_depth(void);
+BM_EXPORT void gfx_bind_depth_state(const struct gfx_depth_state* state);
+BM_EXPORT void gfx_toggle_depth(bool enabled);
 
 /* misc -------------------------------------------------------------------- */
 BM_EXPORT u32 gfx_texture_get_width(gfx_texture_t* texture);

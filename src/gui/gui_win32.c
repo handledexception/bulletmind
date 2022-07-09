@@ -319,6 +319,37 @@ LRESULT CALLBACK gui_win32_wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	return DefWindowProc(hwnd, msg, wp, lp);
 }
 
+void get_window_bounds_for_client_bounds(const rect_t* bounds, DWORD style, DWORD ex_style, rect_t* new_bounds)
+{
+	RECT wr;
+	wr.left = bounds->x;
+	wr.top = bounds->y;
+	wr.right = bounds->x + bounds->w;
+	wr.bottom = bounds->y + bounds->h;
+	AdjustWindowRectEx(&wr, style, FALSE, ex_style);
+	new_bounds->x = max(0, wr.left);
+	new_bounds->y =  max(0, wr.top);
+	new_bounds->w = wr.right - wr.left;
+	new_bounds->h = wr.bottom - wr.top;
+}
+
+void update_window_position(gui_window_t* window)
+{
+	rect_t* b = &window->bounds;
+	HWND hwnd = (HWND)gui->get_handle(window);
+	DWORD window_style =
+		GetWindowLong(hwnd, GWL_STYLE);
+	DWORD window_style_ex =
+		GetWindowLong(hwnd, GWL_EXSTYLE);
+	rect_t new_bounds;
+	get_window_bounds_for_client_bounds(b, window_style, window_style_ex, &new_bounds);
+	window->bounds.x = new_bounds.x;
+	window->bounds.y = new_bounds.y;
+	window->bounds.w = new_bounds.w;
+	window->bounds.h = new_bounds.h;
+	SetWindowPos(hwnd, NULL, new_bounds.x, new_bounds.y, new_bounds.w, new_bounds.h, SWP_NOREPOSITION);
+}
+
 bool gui_create_window_win32(gui_window_t* window)
 {
 	if (!gui || !window)
@@ -336,9 +367,9 @@ bool gui_create_window_win32(gui_window_t* window)
 		parent_hwnd = window->parent->data->hwnd;
 	}
 
-	if (parent_hwnd == HWND_DESKTOP)
-		parent_hwnd = get_window_to_parent_to(false);
-	else if (parent_hwnd == GetDesktopWindow())
+	// if (parent_hwnd == HWND_DESKTOP)
+	// 	parent_hwnd = get_window_to_parent_to(false);
+	if (parent_hwnd == GetDesktopWindow() || parent_hwnd == HWND_DESKTOP)
 		parent_hwnd = get_window_to_parent_to(true);
 
 	wchar_t window_title[512];
@@ -358,6 +389,10 @@ bool gui_create_window_win32(gui_window_t* window)
 			      style, wr.left, wr.top, wr.right - wr.left,
 			      wr.bottom - wr.top, parent_hwnd, menu,
 			      window->data->instance, window->data);
+	window->bounds.x = wr.left;
+	window->bounds.y = wr.top;
+	window->bounds.w = wr.right - wr.left;
+	window->bounds.h = wr.bottom - wr.top;
 	gui->set_window_pos(window, window->x, window->y);
 	gui->show_window(window, true);
 
@@ -391,9 +426,57 @@ void gui_set_window_pos_win32(gui_window_t* window, s32 cx, s32 cy)
 	}
 }
 
+void rect_to_win32_rect(rect_t* r, RECT* wr)
+{
+	wr->left = r->x;
+	wr->top = r->y;
+	wr->right = r->w;
+	wr->bottom = r->h;
+}
+
+void gui_center_window_win32(gui_window_t* window)
+{
+	if (window) {
+		gui_window_data_t* data = (gui_window_data_t*)window->data;
+		HWND parent_hwnd = (HWND)gui->get_handle(window->parent);
+		if (parent_hwnd == HWND_DESKTOP)
+			parent_hwnd = get_window_to_parent_to(true);
+		if (parent_hwnd != NULL) {
+			RECT wr, wr_parent;
+			GetWindowRect(parent_hwnd, &wr_parent);
+			rect_to_win32_rect(&window->bounds, &wr);
+
+			int width = wr.right - wr.left;
+			int height = wr.bottom - wr.top;
+			int x = ((wr_parent.right - wr_parent.left) - width) / 2 +
+				wr_parent.left;
+			int y = ((wr_parent.bottom - wr_parent.top) - height) / 2 +
+				wr_parent.top;
+			int screen_width = GetSystemMetrics(SM_CXSCREEN);
+			int screen_height = GetSystemMetrics(SM_CYSCREEN);
+			// make sure that the dialog box never moves outside of the screen
+			if (x < 0)
+				x = 0;
+			if (y < 0)
+				y = 0;
+			if (x + width > screen_width)
+				x = screen_width - width;
+			if (y + height > screen_height)
+				y = screen_height - height;
+			window->bounds.x = x;
+			window->bounds.y = y;
+			window->bounds.w = width;
+			window->bounds.h = height;
+			MoveWindow((HWND)gui->get_handle(window), x, y, width, height, FALSE);
+		}
+	}
+}
+
 void* gui_get_window_handle_win32(gui_window_t* window)
 {
-	return (void*)window->data->hwnd;
+	if (window && window->data && window->data->hwnd)
+		return (void*)window->data->hwnd;
+	return NULL;
 }
 
 void gui_get_global_mouse_state_win32(struct mouse_device* mouse)
@@ -446,6 +529,7 @@ result gui_init_win32(gui_system_t* gp)
 	gp->destroy_window = gui_destroy_window_win32;
 	gp->show_window = gui_show_window_win32;
 	gp->set_window_pos = gui_set_window_pos_win32;
+	gp->center_window = gui_center_window_win32;
 	gp->get_handle = gui_get_window_handle_win32;
 	gp->get_global_mouse_state = gui_get_global_mouse_state_win32;
 

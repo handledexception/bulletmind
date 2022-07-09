@@ -136,6 +136,13 @@ void gui_set_window_pos(gui_window_t* window, s32 cx, s32 cy)
 	gui->set_window_pos(window, cx, cy);
 }
 
+void gui_center_window(gui_window_t* window)
+{
+	if (!gui || !window)
+		return;
+	gui->center_window(window);
+}
+
 void* gui_get_window_handle(gui_window_t* window)
 {
 	if (window && window->data)

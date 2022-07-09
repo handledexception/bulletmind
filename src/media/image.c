@@ -24,7 +24,9 @@ void video_frame_new(u32 width, u32 height, enum pixel_format pix_fmt,
 		frame->data[0] = MEM_ALLOC(size);
 		frame->stride[0] = width * 3;
 		break;
+    case PIX_FMT_ARGB32:
 	case PIX_FMT_RGBA32:
+    case PIX_FMT_BGRA32:
 		size = width * height * 4;
 		ALIGN_SIZE(size, alignment);
 		frame->data[0] = MEM_ALLOC(size);
@@ -61,7 +63,7 @@ result media_image_load(const char* path, struct media_image* img)
 	// absolute most janky file extension comparison
 	const char* file_ext = path_get_extension(path);
 	if (strcmp(file_ext, "tga") == 0) {
-		img->pix_fmt = PIX_FMT_RGBA32;
+		img->pix_fmt = PIX_FMT_BGRA32;
 		img->img_fmt = IMG_TYPE_TARGA;
 		file_ptr = fopen(path, "rb");
 		fseek(file_ptr, 0, SEEK_END);

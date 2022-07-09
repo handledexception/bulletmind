@@ -24,9 +24,9 @@
 #define APP_VER_MIN 0
 #define APP_VER_REV 0
 #define APP_ASSETS_TOML_PATH "assets/assets.toml"
-#define GFX_ADAPTER_INDEX 1
-#define VIEW_WIDTH 960
-#define VIEW_HEIGHT 540
+#define GFX_ADAPTER_INDEX 0
+#define VIEW_WIDTH 1280
+#define VIEW_HEIGHT 720
 
 static const rgba_t kClearColor = {
 	.r = 0,
@@ -54,12 +54,12 @@ result app_init_gfx(struct application* app, const struct gfx_config* cfg)
 	ENSURE_OK(gfx_init(cfg, GFX_D3D11 | GFX_USE_ZBUFFER));
 	ENSURE_OK(gfx_init_sampler_state());
 	ENSURE_OK(gfx_init_rasterizer(GFX_CULLING_NONE, 0));
-	vec3f_t cam_eye = {0.f, 0.f, -1.f};
-	vec3f_t cam_dir = {0.f, 0.f, 0.f};
+	vec3f_t cam_eye = {0.f, 0.f, 0.f};
+	vec3f_t cam_dir = {0.f, 0.f, 1.f};
 	vec3f_t cam_up = {0.f, 1.f, 0.f};
 	gfx_camera_new(&app->cam);
-	gfx_camera_persp(&app->cam, &cam_eye, &cam_dir, &cam_up, &viewport,
-			 75.f, Z_NEAR, Z_FAR);
+	gfx_camera_ortho(&app->cam, &cam_eye, &cam_dir, &cam_up, &viewport, -100.f, 100.f);
+	// gfx_camera_persp(&app->cam, &cam_eye, &cam_dir, &cam_up, &viewport, 70.f, Z_NEAR, Z_FAR);
 	return RESULT_OK;
 }
 
@@ -70,10 +70,10 @@ void app_refresh_gfx(struct application* app)
 	size_t vbd_offs = 0;
 	size_t tex_vert_size = 0;
 	size_t vert_stride = 0;
-	u8* vbuf_data = gfx_buffer_get_data_reference(app->vbuf);
-	u32* ibuf_data = (u32*)gfx_buffer_get_data_reference(app->ibuf);
+	u8* vbuf_data = gfx_buffer_get_data(app->vbuf);
+	u32* ibuf_data = (u32*)gfx_buffer_get_data(app->ibuf);
 	size_t vertex_buffer_size = (BM_GFX_MAX_VERTICES * sizeof(vec3f_t)) +
-		(BM_GFX_MAX_VERTICES * sizeof(vec2f_t));
+				    (BM_GFX_MAX_VERTICES * sizeof(vec2f_t));
 	size_t index_buffer_size = sizeof(u32) * BM_GFX_MAX_INDICES;
 	memset(vbuf_data, 0, vertex_buffer_size);
 	memset(ibuf_data, 0, index_buffer_size);
@@ -120,7 +120,7 @@ void app_refresh_gfx(struct application* app)
 		gfx_buffer_copy(app->vbuf, vbuf_data, vbd_size);
 		gfx_buffer_copy(app->ibuf, ibuf_data, 6 * sizeof(u32));
 		gfx_system_bind_render_target();
-		gfx_toggle_zstencil(true);
+		gfx_toggle_depth(false);
 		gfx_bind_primitive_topology(GFX_TOPOLOGY_TRIANGLE_LIST);
 		gfx_bind_rasterizer();
 		gfx_render_begin(true);
@@ -152,42 +152,15 @@ result app_init_assets(struct application* app, const char* assets_toml_path)
 
 result app_init_scenes(struct application* app)
 {
-	mat4f_t world_matrix;
-	mat4f_t trans_matrix, scale_matrix;
-	mat4f_identity(&world_matrix);
-	mat4f_identity(&trans_matrix);
-	mat4f_identity(&scale_matrix);
-	// const vec4f_t trans_vec = {0.f, 0.f, 0.f, 1.f};
-	const vec4f_t scale_vec = {0.5f, 0.5, 0.f, 1.f};
-	// mat4f_translate(&trans_matrix, &trans_vec);
-	mat4f_scale(&scale_matrix, &scale_vec);
-	// mat4f_mul(&world_matrix, &trans_matrix, &scale_matrix);
-	mat4f_mul(&world_matrix, &world_matrix, &scale_matrix);
-
-	mat4f_t view_proj_matrix;
-	mat4f_identity(&view_proj_matrix);
-	mat4f_mul(&view_proj_matrix, &app->cam.view_matrix,
-		  &app->cam.proj_matrix);
-	mat4f_transpose(&view_proj_matrix, &view_proj_matrix);
-	gfx_shader_var_t world_var = {.name = "world",
-				      .type = GFX_SHADER_VAR_MAT4,
-				      .data = NULL,
-				      .own_data = true};
-	gfx_shader_var_set(&world_var, &world_matrix);
-	gfx_shader_var_t view_proj_var = {.name = "view_proj",
-					  .type = GFX_SHADER_VAR_MAT4,
-					  .data = NULL,
-					  .own_data = true};
-	gfx_shader_var_set(&view_proj_var, &view_proj_matrix);
-
-	asset_t* rgba_asset;
-	ENSURE_OK(asset_manager_find("rgba", app->assets, &rgba_asset));
-	gfx_shader_var_t rgba_tex_var = {.name = "rgba",
+	asset_t* img_asset;
+	ENSURE_OK(asset_manager_find("metro", app->assets, &img_asset));
+	gfx_shader_var_t tex_var = {.name = "metro",
 					 .type = GFX_SHADER_VAR_TEX,
 					 .data = NULL,
 					 .own_data = true};
-	ENSURE_OK(gfx_texture_from_image((struct media_image*)rgba_asset->data,
-					 (gfx_texture_t**)&rgba_tex_var.data));
+	struct media_image* image = (struct media_image*)img_asset->data;
+	ENSURE_OK(gfx_texture_from_image(image,
+					 (gfx_texture_t**)&tex_var.data));
 
 	asset_t* vs_asset = NULL;
 	asset_t* ps_asset = NULL;
@@ -231,10 +204,41 @@ result app_init_scenes(struct application* app)
 	sprite->index_data[4] = 2;
 	sprite->index_data[5] = 3;
 
+	mat4f_t world_matrix;
+	mat4f_t trans_matrix, scale_matrix;
+	mat4f_identity(&world_matrix);
+	mat4f_identity(&trans_matrix);
+	mat4f_identity(&scale_matrix);
+	const vec4f_t trans_vec = {0.f, 0.0f, 0.f, 0.f};
+	const vec4f_t scale_vec = {
+		image->width * 0.33f,
+		image->height * 0.33f,
+		0.f, 0.f};
+	mat4f_translate(&trans_matrix, &trans_vec);
+	mat4f_scale(&scale_matrix, &scale_vec);
+	mat4f_mul(&world_matrix, &trans_matrix, &scale_matrix);
+	// mat4f_mul(&world_matrix, &world_matrix, &scale_matrix);
+
+	mat4f_t view_proj_matrix;
+	mat4f_identity(&view_proj_matrix);
+	mat4f_mul(&view_proj_matrix, &app->cam.view_matrix,
+		  &app->cam.proj_matrix);
+	mat4f_transpose(&view_proj_matrix, &view_proj_matrix);
+	gfx_shader_var_t world_var = {.name = "world",
+				      .type = GFX_SHADER_VAR_MAT4,
+				      .data = NULL,
+				      .own_data = true};
+	gfx_shader_var_set(&world_var, &world_matrix);
+	gfx_shader_var_t view_proj_var = {.name = "view_proj",
+					  .type = GFX_SHADER_VAR_MAT4,
+					  .data = NULL,
+					  .own_data = true};
+	gfx_shader_var_set(&view_proj_var, &view_proj_matrix);
+
 	vec_push_back(app->scenes, &sprite);
 	gfx_shader_add_var(sprite->vertex_shader, &world_var);
 	gfx_shader_add_var(sprite->vertex_shader, &view_proj_var);
-	gfx_shader_add_var(sprite->pixel_shader, &rgba_tex_var);
+	gfx_shader_add_var(sprite->pixel_shader, &tex_var);
 	vec2f_t vp_res = {VIEW_WIDTH, VIEW_HEIGHT};
 	gfx_shader_var_t viewport_res_var = {.name = "viewport_res",
 					     .type = GFX_SHADER_VAR_VEC2,
@@ -271,7 +275,8 @@ result app_init(struct application* app, s32 version, u32 vx, u32 vy,
 	snprintf(window_title, (sizeof(APP_NAME) + 1 + 16) + 1, "%s %s",
 		 APP_NAME, ver_str);
 	gui_window_t* main_window =
-		gui_create_window(window_title, 100, 100, vx, vy, 0, NULL);
+		gui_create_window(window_title, 0, 0, vx, vy, 0, NULL);
+	gui_center_window(main_window);
 	vec_push_back(app->windows, &main_window);
 	gui_window_t* view_window = gui_create_window(
 		"canvas_view", 0, 0, vx, vy, 0, gui->windows.elems[0]);
@@ -283,7 +288,7 @@ result app_init(struct application* app, s32 version, u32 vx, u32 vy,
 		.adapter = GFX_ADAPTER_INDEX,
 		.width = vx,
 		.height = vy,
-		.fps_num = 60,
+		.fps_num = 144,
 		.fps_den = 1,
 		.fullscreen = false,
 		.pix_fmt = PIX_FMT_RGBA32,
@@ -303,8 +308,8 @@ void app_refresh(struct application* app)
 		gui_refresh();
 		gui_event_t evt;
 		while (gui_poll_event(&evt)) {
-			// if (evt.type == GUI_EVENT_MOUSE_MOTION)
-			// 	printf("mx: %d my: %d\n", evt.mouse.screen_pos.x, evt.mouse.screen_pos.y);
+			if (evt.type == GUI_EVENT_MOUSE_MOTION)
+				printf("mx: %d my: %d\n", evt.mouse.screen_pos.x, evt.mouse.screen_pos.y);
 			inp_refresh_pressed(app->inputs, &evt);
 			if (inp_cmd_get_state(app->inputs, kCommandQuit))
 				app->running = false;

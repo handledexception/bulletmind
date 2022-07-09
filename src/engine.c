@@ -360,7 +360,7 @@ void eng_refresh(engine_t* eng, f64 dt)
 			eng->gfx.vbuffer_data, vbd_size);
 
 	gfx_system_bind_render_target(eng->gfx.system);
-	gfx_toggle_zstencil(eng->gfx.system, true);
+	gfx_toggle_depth(eng->gfx.system, true);
 	gfx_bind_primitive_topology(eng->gfx.system,
 				    GFX_TOPOLOGY_TRIANGLE_LIST);
 	gfx_bind_vertex_shader_input_layout(eng->gfx.system);

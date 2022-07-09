@@ -42,6 +42,11 @@ result gfx_init(const struct gfx_config* cfg, s32 flags)
 		result res = gfx_init_dx11(cfg, flags);
 		if (res == RESULT_OK)
 			res = gfx_init_renderer(cfg, flags);
+		if (res != RESULT_OK) {
+			logger(LOG_ERROR,
+			       "\033[7mgfx\033[m Error initializing Direct3D11!");
+			gfx_shutdown_dx11();
+		}
 		return res;
 	}
 	return RESULT_NOT_IMPL;
@@ -51,7 +56,7 @@ void gfx_shutdown(void)
 {
 	if (gfx) {
 		gfx_render_target_destroy();
-		gfx_destroy_zstencil();
+		gfx_destroy_depth();
 		gfx_destroy_device();
 		if (gfx->type == GFX_MODULE_DX11)
 			gfx_shutdown_dx11();
