@@ -8,5 +8,7 @@ clang-format --style=file -i .\src\gui\*.h
 clang-format --style=file -i .\src\gui\*.c
 clang-format --style=file -i .\src\math\*.h
 clang-format --style=file -i .\src\math\*.c
+clang-format --style=file -i .\src\media\*.h
+clang-format --style=file -i .\src\media\*.c
 clang-format --style=file -i .\src\platform\*.h
 clang-format --style=file -i .\src\platform\*.c

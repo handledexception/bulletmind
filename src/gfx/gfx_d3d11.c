@@ -23,13 +23,7 @@
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "d3dcompiler")
 
-// #include <malloc.h>
-// #define GFX_LOG(__lvl__, __msg__, ...) \
-// 	size_t len = strlen(__msg__); \
-// 	char* tmp = malloc(len+12); \
-// 	sprintf(tmp, "%s%s", "\033[7mgfx\033[m\t", __msg__); \
-// 	logger(__lvl__, tmp, __VA_ARGS__); \
-// 	free(tmp);
+#include "gfx/gfx_d3d11_input_layout.h"
 
 #define COM_RELEASE(obj)                          \
 	if ((obj)) {                              \
@@ -41,38 +35,6 @@ typedef HRESULT(WINAPI* PFN_CREATE_DXGI_FACTORY2)(UINT flags, REFIID riid,
 						  void** ppFactory);
 static PFN_CREATE_DXGI_FACTORY2 CreateDXGIFactory2Func = NULL;
 static PFN_D3D11_CREATE_DEVICE D3D11CreateDeviceFunc = NULL;
-
-static const D3D11_INPUT_ELEMENT_DESC kVertexDescPositionUV[2] = {
-	{"SV_Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
-	 D3D11_INPUT_PER_VERTEX_DATA, 0},
-	{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-	 D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-};
-
-static const D3D11_INPUT_ELEMENT_DESC kVertexDescPositionNormalUV[3] = {
-	{"SV_Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
-	 D3D11_INPUT_PER_VERTEX_DATA, 0},
-	{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
-	 D3D11_INPUT_PER_VERTEX_DATA, 0},
-	{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-	 D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-};
-
-static const D3D11_INPUT_ELEMENT_DESC kVertexDescPositionColor[2] = {
-	{"SV_Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
-	 D3D11_INPUT_PER_VERTEX_DATA, 0},
-	{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-	 D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-};
-
-static const D3D11_INPUT_ELEMENT_DESC kVertexDescPositionNormalColor[3] = {
-	{"SV_Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
-	 D3D11_INPUT_PER_VERTEX_DATA, 0},
-	{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
-	 D3D11_INPUT_PER_VERTEX_DATA, 0},
-	{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-	 D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-};
 
 struct gfx_display {
 	char name[128];
@@ -1538,6 +1500,10 @@ result gfx_shader_new_input_layout(gfx_shader_t* shader)
 	const D3D11_INPUT_ELEMENT_DESC* descs = NULL;
 	size_t num_elems = 0;
 	switch (vs->vertex_type) {
+	case GFX_VERTEX_ID:
+		descs = &kVertexDescID[0];
+		num_elems = 1;
+		break;
 	case GFX_VERTEX_POS_UV:
 		descs = &kVertexDescPositionUV[0];
 		num_elems = 2;

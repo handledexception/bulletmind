@@ -146,6 +146,13 @@ set(BM_GFX_SOURCES
     src/gfx/camera.c
     src/gfx/scene.c)
 
+set(BM_MEDIA_HEADERS
+    src/media/enums.h
+    src/media/image.h
+    src/media/targa.h)
+set(BM_MEDIA_SOURCES
+    src/media/image.c)
+
 # gui
 set(BM_GUI_HEADERS
     src/gui/gui.h)
@@ -197,7 +204,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
         ${BM_GFX_HEADERS}
         src/gfx/dxguids.h
         src/gfx/win32_types.h
-        src/gfx/gfx_d3d11.h)
+        src/gfx/gfx_d3d11.h
+        src/gfx/gfx_d3d11_input_layout.h)
     set(BM_GFX_SOURCES
         ${BM_GFX_SOURCES}
         src/gfx/gfx_d3d11.c)
@@ -246,9 +254,10 @@ set(BM_TARGET_SOURCES
     ${BM_GFX_SOURCES}
     ${BM_GUI_HEADERS}
     ${BM_GUI_SOURCES}
+    ${BM_MEDIA_HEADERS}
+    ${BM_MEDIA_SOURCES}
     ${BM_GAME_HEADERS}
     ${BM_GAME_SOURCES})
-
 
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     add_executable(bulletmind WIN32 ${BM_TARGET_SOURCES})

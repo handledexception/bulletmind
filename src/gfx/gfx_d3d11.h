@@ -1,5 +1,4 @@
-#ifndef H_GFX_D3D11
-#define H_GFX_D3D11
+#pragma once
 
 #include "gfx/gfx.h"
 #include "gfx/win32_types.h"
@@ -20,5 +19,3 @@ BM_EXPORT result gfx_com_release_d3d11(void);
 #ifdef __cplusplus
 }
 #endif
-
-#endif // H_GFX_D3D11

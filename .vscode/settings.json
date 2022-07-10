@@ -97,7 +97,8 @@
         "locale": "c",
         "xlocinfo": "c",
         "xlocnum": "c",
-        "corecrt.h": "c"
+        "corecrt.h": "c",
+        "enums.h": "c"
     },
     "cmake.configureOnOpen": false
 }

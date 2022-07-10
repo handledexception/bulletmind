@@ -1,5 +1,4 @@
-#ifndef H_GFX_DXGUIDS
-#define H_GFX_DXGUIDS
+#pragma once
 
 #include <guiddef.h>
 
@@ -73,5 +72,3 @@ static const GUID BM_IID_IDXGISwapChain2 = {0xa8be2ac4,
 					    0x4946,
 					    {0xb3, 0x31, 0x79, 0x59, 0x9f, 0xb9,
 					     0x8d, 0xe7}};
-
-#endif

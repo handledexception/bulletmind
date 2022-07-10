@@ -78,10 +78,10 @@ float4 TextureFilterBilinear(Texture2D<float4> tex, SamplerState state, float2 u
 // https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/Samples/Desktop/D3D12HeterogeneousMultiadapter/src/blurShaders.hlsl
 float4 PSMain(VSOutput input) : SV_TARGET0
 {
-    float2 tex_size = { gViewportResolution.x, gViewportResolution.y };
-    // gInputTexture.GetDimensions(tex_size.x, tex_size.y);
-    return gInputTexture.Sample(gSampleState, input.tex + (1.f / tex_size));
-    // return SampleTextureCatmullRom(gInputTexture, gSampleState, input.tex, float2(1280.f, 720.f));
-    // return TextureFilterBilinear(gInputTexture, gSampleState, input.tex, float2(1280.f, 720.f));
+    float2 tex_size;
+    gInputTexture.GetDimensions(tex_size.x, tex_size.y);
+    return gInputTexture.Sample(gSampleState, input.tex + (1.f / gViewportResolution));
+    // return SampleTextureCatmullRom(gInputTexture, gSampleState, input.tex, tex_size);
+    // return TextureFilterBilinear(gInputTexture, gSampleState, input.tex, tex_size);
     // return float4(1.f, 0.f, 0.f, 1.f);
 }
