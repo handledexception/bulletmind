@@ -109,11 +109,10 @@ float4 TextureFilterPoint(SamplerState samp, Texture2D<float4> tex, float2 uv, f
 
 // https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/Samples/Desktop/D3D12HeterogeneousMultiadapter/src/blurShaders.hlsl
 float4 PSMain(VSOutput input) : SV_TARGET0
-{ // c += tex2D(implicitSampler, (IN.UV.xy + float2(0.5,0.5))*scale);
+{
     float2 tex_size;
     gInputTexture.GetDimensions(tex_size.x, tex_size.y);
     return TextureFilterPoint(gSampleState, gInputTexture, input.uv, tex_size);
-    // return gInputTexture.Sample(gSampleState, input.uv * tex_size);
     // return SampleTextureCatmullRom(gInputTexture, gSampleState, input.uv, tex_size);
     // return TextureFilterBilinear(gInputTexture, gSampleState, input.uv, tex_size);
 }
