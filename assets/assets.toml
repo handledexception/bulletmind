@@ -16,6 +16,11 @@ name = "pos_color_vs"
 path = "assets/shader/pos_color.vs.hlsl"
 kind = "shader"
 vertex_type = "poscol"
+[[assets]]
+name = "fullscreen_vs"
+path = "assets/shader/fullscreen.vs.hlsl"
+kind = "shader"
+vertex_type = "posuv"
 
 [[assets]]
 name = "font_7px"

@@ -54,12 +54,13 @@ result app_init_gfx(struct application* app, const struct gfx_config* cfg)
 	ENSURE_OK(gfx_init(cfg, GFX_D3D11 | GFX_USE_ZBUFFER));
 	ENSURE_OK(gfx_init_sampler_state());
 	ENSURE_OK(gfx_init_rasterizer(GFX_CULLING_NONE, 0));
-	vec3f_t cam_eye = {0.f, 0.f, 0.f};
+	vec3f_t cam_eye = {0.f, 0.f, -1.f};
 	vec3f_t cam_dir = {0.f, 0.f, 1.f};
 	vec3f_t cam_up = {0.f, 1.f, 0.f};
 	gfx_camera_new(&app->cam);
-	gfx_camera_ortho(&app->cam, &cam_eye, &cam_dir, &cam_up, &viewport, -100.f, 100.f);
-	// gfx_camera_persp(&app->cam, &cam_eye, &cam_dir, &cam_up, &viewport, 70.f, Z_NEAR, Z_FAR);
+	gfx_camera_ortho(&app->cam, &cam_eye, &cam_dir, &cam_up, &viewport, Z_NEAR, Z_FAR);
+	// gfx_camera_persp(&app->cam, &cam_eye, &cam_dir, &cam_up, &viewport, 90.f, Z_NEAR, Z_FAR);
+
 	return RESULT_OK;
 }
 
@@ -165,6 +166,7 @@ result app_init_scenes(struct application* app)
 	asset_t* vs_asset = NULL;
 	asset_t* ps_asset = NULL;
 	ENSURE_OK(asset_manager_find("pos_uv_vs", app->assets, &vs_asset));
+	// ENSURE_OK(asset_manager_find("fullscreen_vs", app->assets, &vs_asset));
 	ENSURE_OK(asset_manager_find("pos_uv_ps", app->assets, &ps_asset));
 
 	size_t vertex_buffer_size = (BM_GFX_MAX_VERTICES * sizeof(vec3f_t)) +
@@ -180,9 +182,9 @@ result app_init_scenes(struct application* app)
 	sprite->pixel_shader = (gfx_shader_t*)ps_asset->data;
 	vec3f_t positions[4] = {
 		{-1.f, -1.f, 0.f},
-		{-1.f, 1.f, 0.f},
-		{1.f, 1.f, 0.f},
-		{1.f, -1.f, 0.f},
+		{-1.f,  1.f, 0.f},
+		{ 1.f,  1.f, 0.f},
+		{ 1.f, -1.f, 0.f},
 	};
 	memcpy(sprite->vert_data->positions, positions, sizeof(vec3f_t) * 4);
 	vec2f_t uv = {0.f, 1.f};
@@ -209,15 +211,18 @@ result app_init_scenes(struct application* app)
 	mat4f_identity(&world_matrix);
 	mat4f_identity(&trans_matrix);
 	mat4f_identity(&scale_matrix);
-	const vec4f_t trans_vec = {0.f, 0.0f, 0.f, 0.f};
+	const vec4f_t trans_vec = {0.f, 0.f, 0.f, 0.f};
 	const vec4f_t scale_vec = {
-		image->width * 0.33f,
-		image->height * 0.33f,
+		// 1.f,
+		(float)image->width - (float)VIEW_WIDTH,
+		(float)image->height - (float)VIEW_HEIGHT,
+		// (float)VIEW_HEIGHT / (float)image->height,
+		// image->width * 0.667f, image->height * 0.667f,
 		0.f, 0.f};
 	mat4f_translate(&trans_matrix, &trans_vec);
 	mat4f_scale(&scale_matrix, &scale_vec);
-	mat4f_mul(&world_matrix, &trans_matrix, &scale_matrix);
-	// mat4f_mul(&world_matrix, &world_matrix, &scale_matrix);
+	mat4f_mul(&world_matrix, &world_matrix, &trans_matrix);
+	mat4f_mul(&world_matrix, &world_matrix, &scale_matrix);
 
 	mat4f_t view_proj_matrix;
 	mat4f_identity(&view_proj_matrix);
@@ -309,13 +314,15 @@ void app_refresh(struct application* app)
 		gui_event_t evt;
 		while (gui_poll_event(&evt)) {
 			if (evt.type == GUI_EVENT_MOUSE_MOTION)
-				printf("mx: %d my: %d\n", evt.mouse.screen_pos.x, evt.mouse.screen_pos.y);
+				printf("sx: %d sy: %d | wx: %d wy: %d\n",
+					evt.mouse.screen_pos.x, evt.mouse.screen_pos.y,
+					evt.mouse.window_pos.x, evt.mouse.window_pos.y);
 			inp_refresh_pressed(app->inputs, &evt);
 			if (inp_cmd_get_state(app->inputs, kCommandQuit))
 				app->running = false;
 		}
-		struct mouse_device mouse;
-		gui_get_global_mouse_state(&mouse);
+		// struct mouse_device mouse;
+		// gui_get_global_mouse_state(&mouse);
 		// printf("sx: %d sy: %d | wx: %d wy: %d\n",
 		// 	mouse.screen_pos.x, mouse.screen_pos.y,
 		// 	mouse.window_pos.x, mouse.window_pos.y);

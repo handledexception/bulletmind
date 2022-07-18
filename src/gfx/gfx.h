@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-#define Z_NEAR 0.01f
+#define Z_NEAR 0
 #define Z_FAR 100.f
 #define FOV_Y 90.f
 #define BM_GFX_MAX_VERTICES 256

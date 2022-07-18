@@ -4,8 +4,8 @@ float2 gViewportResolution;
 
 struct VSOutput
 {
-    float4 position : SV_Position;
-    float2 tex : TEXCOORD0;
+    float4 pos : SV_Position;
+    float2 uv : TEXCOORD0;
 };
 
 float4 SampleTextureCatmullRom(in Texture2D<float4> tex, in SamplerState linearSampler, in float2 uv, in float2 texSize)
@@ -75,13 +75,45 @@ float4 TextureFilterBilinear(Texture2D<float4> tex, SamplerState state, float2 u
     );
 }
 
+float undistort_factor = 1.0;
+
+float AspectUndistortX(float x, float a)
+{
+	// The higher the power, the longer the linear part will be.
+	return (1.0 - a) * (x * x * x * x * x) + a * x;
+}
+
+float AspectUndistortU(float u)
+{
+	// Normalize texture coord to -1.0 to 1.0 range, and back.
+	return AspectUndistortX((u - 0.5) * 2.0, undistort_factor) * 0.5 + 0.5;
+}
+
+float2 undistort_coord(float xpos, float ypos)
+{
+	return float2(AspectUndistortU(xpos), ypos);
+}
+
+float4 undistort_pixel(SamplerState samp, Texture2D<float4> tex, float xpos, float ypos)
+{
+	return tex.Sample(samp, undistort_coord(xpos, ypos));
+}
+
+float4 TextureFilterPoint(SamplerState samp, Texture2D<float4> tex, float2 uv, float2 tex_size)
+{
+    float2 texel_size = 1.f / tex_size;
+    float2 texel_pos = tex_size * uv;
+    // return undistort_pixel(samp, tex, uv.x, uv.y);
+    return tex.Sample(samp, uv);
+}
+
 // https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/Samples/Desktop/D3D12HeterogeneousMultiadapter/src/blurShaders.hlsl
 float4 PSMain(VSOutput input) : SV_TARGET0
-{
+{ // c += tex2D(implicitSampler, (IN.UV.xy + float2(0.5,0.5))*scale);
     float2 tex_size;
     gInputTexture.GetDimensions(tex_size.x, tex_size.y);
-    return gInputTexture.Sample(gSampleState, input.tex + (1.f / gViewportResolution));
-    // return SampleTextureCatmullRom(gInputTexture, gSampleState, input.tex, tex_size);
-    // return TextureFilterBilinear(gInputTexture, gSampleState, input.tex, tex_size);
-    // return float4(1.f, 0.f, 0.f, 1.f);
+    return TextureFilterPoint(gSampleState, gInputTexture, input.uv, tex_size);
+    // return gInputTexture.Sample(gSampleState, input.uv * tex_size);
+    // return SampleTextureCatmullRom(gInputTexture, gSampleState, input.uv, tex_size);
+    // return TextureFilterBilinear(gInputTexture, gSampleState, input.uv, tex_size);
 }
