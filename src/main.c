@@ -213,12 +213,12 @@ result app_init_scenes(struct application* app)
 	mat4f_identity(&scale_matrix);
 	const vec4f_t trans_vec = {0.f, 0.f, 0.f, 0.f};
 	const vec4f_t scale_vec = {
-		// 1.f,
-		(float)image->width - (float)VIEW_WIDTH,
-		(float)image->height - (float)VIEW_HEIGHT,
+		(float)image->width - (float)VIEW_WIDTH,    // ortho scaling
+		(float)image->height - (float)VIEW_HEIGHT,  // ortho scaling
+		// (float)VIEW_WIDTH, (float)VIEW_HEIGHT,
 		// (float)VIEW_HEIGHT / (float)image->height,
 		// image->width * 0.667f, image->height * 0.667f,
-		0.f, 0.f};
+		0.f, 1.f};
 	mat4f_translate(&trans_matrix, &trans_vec);
 	mat4f_scale(&scale_matrix, &scale_vec);
 	mat4f_mul(&world_matrix, &world_matrix, &trans_matrix);

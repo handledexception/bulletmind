@@ -8,17 +8,25 @@
 #include "platform/keyboard-vkey-win32.h"
 
 #include <Windows.h>
+#include <dwmapi.h>
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 
+// #define WS_OVERLAPPEDWINDOW (WS_OVERLAPPED     | \
+//                              WS_CAPTION        | \
+//                              WS_SYSMENU        | \
+//                              WS_THICKFRAME     | \
+//                              WS_MINIMIZEBOX    | \
+//                              WS_MAXIMIZEBOX)
+
 #define GUI_WIN32_CLASS_STYLE CS_DBLCLKS
-#define GUI_WIN32_WINDOW_STYLE (WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN)
+#define GUI_WIN32_WINDOW_STYLE (WS_OVERLAPPEDWINDOW|WS_CLIPCHILDREN)
 #define GUI_WIN32_WINDOW_CHILD_STYLE \
-	(WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS)
-#define GUI_WIN32_WINDOW_STYLE_EX                    \
-	(WS_EX_APPWINDOW | WS_EX_OVERLAPPEDWINDOW) & \
-		~(WS_EX_DLGMODALFRAME | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
+	(WS_CHILD|WS_VISIBLE|WS_CLIPCHILDREN|WS_CLIPSIBLINGS)
+#define GUI_WIN32_WINDOW_STYLE_EX \
+	(WS_EX_APPWINDOW|WS_EX_OVERLAPPEDWINDOW) & \
+	~(WS_EX_DLGMODALFRAME|WS_EX_STATICEDGE|WS_EX_CLIENTEDGE)
 
 struct gui_window_data {
 	gui_window_t* window;
@@ -350,6 +358,33 @@ void update_window_position(gui_window_t* window)
 	SetWindowPos(hwnd, NULL, new_bounds.x, new_bounds.y, new_bounds.w, new_bounds.h, SWP_NOREPOSITION);
 }
 
+typedef HRESULT (WINAPI * DwmIsCompositionEnabledFunction)(__out BOOL* isEnabled);
+typedef HRESULT (WINAPI *DwmGetWindowAttributeFunction) (
+ __in  HWND hwnd,
+ __in  DWORD dwAttribute,
+ __out PVOID pvAttribute,
+ DWORD cbAttribute
+);
+
+static void get_extended_bounds(HWND hwnd, RECT* ex_bounds)
+{
+	RECT extendedBounds;
+	DWORD resultSize;
+	HINSTANCE dwmapiDllHandle  = (HINSTANCE)os_dlopen("dwmapi.dll");
+	if (NULL != dwmapiDllHandle ) // not on Vista/Windows7 so no aero so no need to account for aero.
+	{
+		DwmIsCompositionEnabledFunction DwmIsCompositionEnabled;
+		DwmIsCompositionEnabled = (DwmIsCompositionEnabledFunction)os_dlsym(dwmapiDllHandle, "DwmIsCompositionEnabled" );
+		if( NULL != DwmIsCompositionEnabled ) {
+			BOOL isEnabled;
+			HRESULT hr = DwmIsCompositionEnabled(&isEnabled);
+			DwmGetWindowAttributeFunction DwmGetWindowAttribute;
+			DwmGetWindowAttribute = (DwmGetWindowAttributeFunction)os_dlsym(dwmapiDllHandle, "DwmGetWindowAttribute" ) ;
+			hr = DwmGetWindowAttribute( hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, &extendedBounds, sizeof( RECT) ) ;
+		}
+	}
+}
+
 bool gui_create_window_win32(gui_window_t* window)
 {
 	if (!gui || !window)
@@ -384,9 +419,10 @@ bool gui_create_window_win32(gui_window_t* window)
 
 	RECT wr = {
 		.left = 0, .top = 0, .right = window->w, .bottom = window->h};
+
 	AdjustWindowRectEx(&wr, style, FALSE, style_ex);
 	hwnd = CreateWindowEx(style_ex, (LPCWSTR)g_atom, (LPCWSTR)window_title,
-			      style, wr.left, wr.top, wr.right - wr.left,
+			      style, CW_USEDEFAULT, CW_USEDEFAULT, wr.right - wr.left,
 			      wr.bottom - wr.top, parent_hwnd, menu,
 			      window->data->instance, window->data);
 	window->bounds.x = wr.left;

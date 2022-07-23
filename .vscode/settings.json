@@ -98,7 +98,8 @@
         "xlocinfo": "c",
         "xlocnum": "c",
         "corecrt.h": "c",
-        "enums.h": "c"
+        "enums.h": "c",
+        "*.rh": "c"
     },
     "cmake.configureOnOpen": false
 }
