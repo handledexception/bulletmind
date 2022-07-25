@@ -198,10 +198,10 @@ bool gfx_shader_set_var_by_name(gfx_shader_t* shader, const char* name,
 		if (var != NULL && !strcmp(var->name, name)) {
 			if (own_data)
 				gfx_shader_var_set(var, value);
-			else	
+			else
 				gfx_shader_var_set_from(var, value);
 		}
-			return true;
+		return true;
 	}
 	return false;
 }

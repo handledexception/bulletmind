@@ -646,16 +646,16 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 		.Windowed = (BOOL)!cfg->fullscreen,
 	};
 	DXGI_SWAP_CHAIN_DESC1 swap_desc1 = {
-	    .AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED,
-	    .BufferCount = 2,
-	    .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
-	    .Flags = 0,
-	    .Format = pixel_format_to_dxgi_format(cfg->pix_fmt),
-	    .Width = cfg->width,
-	    .Height = cfg->height,
-	    .SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
-	    .Scaling = DXGI_SCALING_NONE,
-	    .SampleDesc = { 1, 0 },
+		.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED,
+		.BufferCount = 2,
+		.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
+		.Flags = 0,
+		.Format = pixel_format_to_dxgi_format(cfg->pix_fmt),
+		.Width = cfg->width,
+		.Height = cfg->height,
+		.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
+		.Scaling = DXGI_SCALING_NONE,
+		.SampleDesc = {1, 0},
 	};
 	// DXGI_SWAP_CHAIN_DESC swap_desc = {
 	// 	.BufferDesc.Format = pixel_format_to_dxgi_format(cfg->pix_fmt),
@@ -677,8 +677,8 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 	// };
 	IDXGISwapChain1* sc1;
 	hr = IDXGIFactory2_CreateSwapChainForHwnd(
-		gfx->module->dxgi_factory,
-		(IUnknown*)gfx->module->device, hwnd, &swap_desc1, &fsd, NULL, &sc1);
+		gfx->module->dxgi_factory, (IUnknown*)gfx->module->device, hwnd,
+		&swap_desc1, &fsd, NULL, &sc1);
 	if (FAILED(hr)) {
 		logger(LOG_ERROR, "Error creating Swap Chain!");
 		goto cleanup;
@@ -1662,16 +1662,9 @@ void gfx_bind_rasterizer(void)
 //
 // gfx blend
 //
-result gfx_init_blend_state()
-{
+result gfx_init_blend_state() {}
 
-}
-
-void gfx_bind_blend_state()
-{
-
-}
-
+void gfx_bind_blend_state() {}
 
 //
 // gfx texture

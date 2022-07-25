@@ -83,8 +83,7 @@ gui_window_t* gui_create_window(const char* title, s32 x, s32 y, s32 w, s32 h,
 	window->bounds.w = w;
 	window->bounds.h = h;
 	window->parent = parent;
-	if (GUI_WINDOW_POS_IS_UNDEFINED(x) ||
-	    GUI_WINDOW_POS_IS_UNDEFINED(y)) {
+	if (GUI_WINDOW_POS_IS_UNDEFINED(x) || GUI_WINDOW_POS_IS_UNDEFINED(y)) {
 	}
 
 	window->destroy_me = false;

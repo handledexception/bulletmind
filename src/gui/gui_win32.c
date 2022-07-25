@@ -21,12 +21,12 @@
 //                              WS_MAXIMIZEBOX)
 
 #define GUI_WIN32_CLASS_STYLE CS_DBLCLKS
-#define GUI_WIN32_WINDOW_STYLE (WS_OVERLAPPEDWINDOW|WS_CLIPCHILDREN)
+#define GUI_WIN32_WINDOW_STYLE (WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN)
 #define GUI_WIN32_WINDOW_CHILD_STYLE \
-	(WS_CHILD|WS_VISIBLE|WS_CLIPCHILDREN|WS_CLIPSIBLINGS)
-#define GUI_WIN32_WINDOW_STYLE_EX \
-	(WS_EX_APPWINDOW|WS_EX_OVERLAPPEDWINDOW) & \
-	~(WS_EX_DLGMODALFRAME|WS_EX_STATICEDGE|WS_EX_CLIENTEDGE)
+	(WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS)
+#define GUI_WIN32_WINDOW_STYLE_EX                    \
+	(WS_EX_APPWINDOW | WS_EX_OVERLAPPEDWINDOW) & \
+		~(WS_EX_DLGMODALFRAME | WS_EX_STATICEDGE | WS_EX_CLIENTEDGE)
 
 struct gui_window_data {
 	gui_window_t* window;
@@ -324,7 +324,8 @@ LRESULT CALLBACK gui_win32_wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	return DefWindowProc(hwnd, msg, wp, lp);
 }
 
-void get_window_bounds_for_client_bounds(const rect_t* bounds, DWORD style, DWORD ex_style, rect_t* new_bounds)
+void get_window_bounds_for_client_bounds(const rect_t* bounds, DWORD style,
+					 DWORD ex_style, rect_t* new_bounds)
 {
 	RECT wr;
 	wr.left = bounds->x;
@@ -333,7 +334,7 @@ void get_window_bounds_for_client_bounds(const rect_t* bounds, DWORD style, DWOR
 	wr.bottom = bounds->y + bounds->h;
 	AdjustWindowRectEx(&wr, style, FALSE, ex_style);
 	new_bounds->x = max(0, wr.left);
-	new_bounds->y =  max(0, wr.top);
+	new_bounds->y = max(0, wr.top);
 	new_bounds->w = wr.right - wr.left;
 	new_bounds->h = wr.bottom - wr.top;
 }
@@ -342,42 +343,49 @@ void update_window_position(gui_window_t* window)
 {
 	rect_t* b = &window->bounds;
 	HWND hwnd = (HWND)gui->get_handle(window);
-	DWORD window_style =
-		GetWindowLong(hwnd, GWL_STYLE);
-	DWORD window_style_ex =
-		GetWindowLong(hwnd, GWL_EXSTYLE);
+	DWORD window_style = GetWindowLong(hwnd, GWL_STYLE);
+	DWORD window_style_ex = GetWindowLong(hwnd, GWL_EXSTYLE);
 	rect_t new_bounds;
-	get_window_bounds_for_client_bounds(b, window_style, window_style_ex, &new_bounds);
+	get_window_bounds_for_client_bounds(b, window_style, window_style_ex,
+					    &new_bounds);
 	window->bounds.x = new_bounds.x;
 	window->bounds.y = new_bounds.y;
 	window->bounds.w = new_bounds.w;
 	window->bounds.h = new_bounds.h;
-	SetWindowPos(hwnd, NULL, new_bounds.x, new_bounds.y, new_bounds.w, new_bounds.h, SWP_NOREPOSITION);
+	SetWindowPos(hwnd, NULL, new_bounds.x, new_bounds.y, new_bounds.w,
+		     new_bounds.h, SWP_NOREPOSITION);
 }
 
-typedef HRESULT (WINAPI * DwmIsCompositionEnabledFunction)(__out BOOL* isEnabled);
-typedef HRESULT (WINAPI *DwmGetWindowAttributeFunction) (
- __in  HWND hwnd,
- __in  DWORD dwAttribute,
- __out PVOID pvAttribute,
- DWORD cbAttribute
-);
+typedef HRESULT(WINAPI* DwmIsCompositionEnabledFunction)(__out BOOL* isEnabled);
+typedef HRESULT(WINAPI* DwmGetWindowAttributeFunction)(__in HWND hwnd,
+						       __in DWORD dwAttribute,
+						       __out PVOID pvAttribute,
+						       DWORD cbAttribute);
 
 static void get_extended_bounds(HWND hwnd, RECT* ex_bounds)
 {
 	RECT extendedBounds;
 	// DWORD resultSize;
-	HINSTANCE dwmapiDllHandle  = (HINSTANCE)os_dlopen("dwmapi.dll");
-	if (NULL != dwmapiDllHandle ) // not on Vista/Windows7 so no aero so no need to account for aero.
+	HINSTANCE dwmapiDllHandle = (HINSTANCE)os_dlopen("dwmapi.dll");
+	if (NULL !=
+	    dwmapiDllHandle) // not on Vista/Windows7 so no aero so no need to account for aero.
 	{
 		DwmIsCompositionEnabledFunction DwmIsCompositionEnabled;
-		DwmIsCompositionEnabled = (DwmIsCompositionEnabledFunction)os_dlsym(dwmapiDllHandle, "DwmIsCompositionEnabled" );
-		if( NULL != DwmIsCompositionEnabled ) {
+		DwmIsCompositionEnabled =
+			(DwmIsCompositionEnabledFunction)os_dlsym(
+				dwmapiDllHandle, "DwmIsCompositionEnabled");
+		if (NULL != DwmIsCompositionEnabled) {
 			BOOL isEnabled;
 			HRESULT hr = DwmIsCompositionEnabled(&isEnabled);
 			DwmGetWindowAttributeFunction DwmGetWindowAttribute;
-			DwmGetWindowAttribute = (DwmGetWindowAttributeFunction)os_dlsym(dwmapiDllHandle, "DwmGetWindowAttribute" ) ;
-			hr = DwmGetWindowAttribute( hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, &extendedBounds, sizeof( RECT) ) ;
+			DwmGetWindowAttribute =
+				(DwmGetWindowAttributeFunction)os_dlsym(
+					dwmapiDllHandle,
+					"DwmGetWindowAttribute");
+			hr = DwmGetWindowAttribute(hwnd,
+						   DWMWA_EXTENDED_FRAME_BOUNDS,
+						   &extendedBounds,
+						   sizeof(RECT));
 		}
 	}
 }
@@ -422,9 +430,10 @@ bool gui_create_window_win32(gui_window_t* window)
 
 	AdjustWindowRectEx(&wr, style, FALSE, style_ex);
 	hwnd = CreateWindowEx(style_ex, (LPCWSTR)g_atom, (LPCWSTR)window_title,
-			      style, CW_USEDEFAULT, CW_USEDEFAULT, wr.right - wr.left,
-			      wr.bottom - wr.top, parent_hwnd, menu,
-			      window->data->instance, window->data);
+			      style, CW_USEDEFAULT, CW_USEDEFAULT,
+			      wr.right - wr.left, wr.bottom - wr.top,
+			      parent_hwnd, menu, window->data->instance,
+			      window->data);
 	window->bounds.x = wr.left;
 	window->bounds.y = wr.top;
 	window->bounds.w = wr.right - wr.left;
@@ -459,8 +468,8 @@ void gui_set_window_pos_win32(gui_window_t* window, const rect_t* rect)
 {
 	if (window) {
 		gui_window_data_t* data = (gui_window_data_t*)window->data;
-		SetWindowPos(data->hwnd, HWND_TOP, rect->x, rect->y, rect->w, rect->h,
-			     SWP_NOSIZE);
+		SetWindowPos(data->hwnd, HWND_TOP, rect->x, rect->y, rect->w,
+			     rect->h, SWP_NOSIZE);
 	}
 }
 
@@ -494,9 +503,11 @@ void gui_center_window_win32(gui_window_t* window)
 
 			int width = wr.right - wr.left;
 			int height = wr.bottom - wr.top;
-			int x = ((wr_parent.right - wr_parent.left) - width) / 2 +
+			int x = ((wr_parent.right - wr_parent.left) - width) /
+					2 +
 				wr_parent.left;
-			int y = ((wr_parent.bottom - wr_parent.top) - height) / 2 +
+			int y = ((wr_parent.bottom - wr_parent.top) - height) /
+					2 +
 				wr_parent.top;
 			int screen_width = GetSystemMetrics(SM_CXSCREEN);
 			int screen_height = GetSystemMetrics(SM_CYSCREEN);
@@ -514,13 +525,15 @@ void gui_center_window_win32(gui_window_t* window)
 			new_bounds.top = y;
 			new_bounds.right = width;
 			new_bounds.bottom = height;
-			AdjustWindowRectEx(&new_bounds, window->data->style, FALSE, window->data->style_ex);
+			AdjustWindowRectEx(&new_bounds, window->data->style,
+					   FALSE, window->data->style_ex);
 			gui->set_window_pos(window, &new_bounds);
 		}
 	}
 }
 
-bool gui_get_window_rect_win32(const gui_window_t* window, rect_t* rect, bool client)
+bool gui_get_window_rect_win32(const gui_window_t* window, rect_t* rect,
+			       bool client)
 {
 	BOOL ok = FALSE;
 	RECT r;

@@ -60,7 +60,8 @@ result app_init_gfx(struct application* app, const struct gfx_config* cfg)
 	vec3f_t cam_dir = {0.f, 0.f, 1.f};
 	vec3f_t cam_up = {0.f, 1.f, 0.f};
 	gfx_camera_new(&app->cam);
-	gfx_camera_ortho(&app->cam, &cam_eye, &cam_dir, &cam_up, &viewport, Z_NEAR, Z_FAR);
+	gfx_camera_ortho(&app->cam, &cam_eye, &cam_dir, &cam_up, &viewport,
+			 Z_NEAR, Z_FAR);
 	// gfx_camera_persp(&app->cam, &cam_eye, &cam_dir, &cam_up, &viewport, 90.f, Z_NEAR, Z_FAR);
 
 	return RESULT_OK;
@@ -114,12 +115,15 @@ void app_refresh_gfx(struct application* app)
 		gfx_set_pixel_shader(ps);
 		gfx_system_bind_input_layout(vs);
 		if (os_get_time_msec() - app->frame_timer >= 250.) {
-			gfx_shader_set_var_by_name(ps, "texture", scene->textures.elems[tex_index], 0, false);
+			gfx_shader_set_var_by_name(
+				ps, "texture", scene->textures.elems[tex_index],
+				0, false);
 			if (++tex_index >= scene->textures.num_elems)
 				tex_index = 0;
 			app->frame_timer = 0.0;
 		}
-		gfx_bind_sampler_state((gfx_texture_t*)ps->vars.elems[0].data, 0);
+		gfx_bind_sampler_state((gfx_texture_t*)ps->vars.elems[0].data,
+				       0);
 		gfx_bind_vertex_buffer(app->vbuf, (u32)vert_stride, 0);
 		gfx_bind_index_buffer(app->ibuf, 0);
 		if (gfx_shader_cbuffer_fill(vs) > 0) {
@@ -175,7 +179,7 @@ result app_init_scenes(struct application* app)
 					 .data = NULL,
 					 .own_data = true};
 	struct media_image* rgba_img = (struct media_image*)img_asset->data;
-	
+
 	gfx_texture_t* rgba_tex;
 	gfx_texture_t* metro_tex;
 	ENSURE_OK(gfx_texture_from_image(rgba_img, &rgba_tex));
@@ -202,9 +206,9 @@ result app_init_scenes(struct application* app)
 	sprite->pixel_shader = (gfx_shader_t*)ps_asset->data;
 	vec3f_t positions[4] = {
 		{-1.f, -1.f, 0.f},
-		{-1.f,  1.f, 0.f},
-		{ 1.f,  1.f, 0.f},
-		{ 1.f, -1.f, 0.f},
+		{-1.f, 1.f, 0.f},
+		{1.f, 1.f, 0.f},
+		{1.f, -1.f, 0.f},
 	};
 	memcpy(sprite->vert_data->positions, positions, sizeof(vec3f_t) * 4);
 	vec2f_t uv = {0.f, 1.f};
@@ -233,8 +237,8 @@ result app_init_scenes(struct application* app)
 	mat4f_identity(&scale_matrix);
 	const vec4f_t trans_vec = {0.f, 0.f, 0.f, 0.f};
 	const vec4f_t scale_vec = {
-		(float)metro_img->width - (float)VIEW_WIDTH,    // ortho scaling
-		(float)metro_img->height - (float)VIEW_HEIGHT,  // ortho scaling
+		(float)metro_img->width - (float)VIEW_WIDTH,   // ortho scaling
+		(float)metro_img->height - (float)VIEW_HEIGHT, // ortho scaling
 		0.f, 1.f};
 	mat4f_translate(&trans_matrix, &trans_vec);
 	mat4f_scale(&scale_matrix, &scale_vec);
@@ -261,9 +265,9 @@ result app_init_scenes(struct application* app)
 	gfx_shader_add_var(sprite->vertex_shader, &world_var);
 	gfx_shader_add_var(sprite->vertex_shader, &view_proj_var);
 	gfx_shader_var_t texture_var = {.name = "texture",
-					 .type = GFX_SHADER_VAR_TEX,
-					 .data = metro_tex,
-					 .own_data = false};
+					.type = GFX_SHADER_VAR_TEX,
+					.data = metro_tex,
+					.own_data = false};
 	gfx_shader_add_var(sprite->pixel_shader, &texture_var);
 	vec2f_t vp_res = {VIEW_WIDTH, VIEW_HEIGHT};
 	gfx_shader_var_t viewport_res_var = {.name = "viewport_res",
@@ -303,13 +307,13 @@ result app_init(struct application* app, s32 version, u32 vx, u32 vy,
 	snprintf(window_title, (sizeof(APP_NAME) + 1 + 16) + 1, "%s %s",
 		 APP_NAME, ver_str);
 	s32 window_flags = GUI_WINDOW_SHOW;
-	gui_window_t* main_window = gui_create_window(
-		window_title, 0, 0, vx, vy,
-		window_flags|GUI_WINDOW_CENTERED, NULL);
+	gui_window_t* main_window =
+		gui_create_window(window_title, 0, 0, vx, vy,
+				  window_flags | GUI_WINDOW_CENTERED, NULL);
 	vec_push_back(app->windows, &main_window);
-	gui_window_t* view_window = gui_create_window(
-		"canvas_view", 0, 0, vx, vy,
-		window_flags, gui->windows.elems[0]);
+	gui_window_t* view_window = gui_create_window("canvas_view", 0, 0, vx,
+						      vy, window_flags,
+						      gui->windows.elems[0]);
 	vec_push_back(app->windows, &view_window);
 	void* gfx_view_handle = gui_get_window_handle(app->windows.elems[1]);
 	const struct gfx_config gfx_cfg = {
@@ -340,8 +344,10 @@ void app_refresh(struct application* app)
 		while (gui_poll_event(&evt)) {
 			if (evt.type == GUI_EVENT_MOUSE_MOTION)
 				printf("sx: %d sy: %d | wx: %d wy: %d\n",
-					evt.mouse.screen_pos.x, evt.mouse.screen_pos.y,
-					evt.mouse.window_pos.x, evt.mouse.window_pos.y);
+				       evt.mouse.screen_pos.x,
+				       evt.mouse.screen_pos.y,
+				       evt.mouse.window_pos.x,
+				       evt.mouse.window_pos.y);
 			inp_refresh_pressed(app->inputs, &evt);
 			if (inp_cmd_get_state(app->inputs, kCommandQuit))
 				app->running = false;

@@ -71,8 +71,8 @@ typedef enum {
 } gui_event_type_t;
 
 enum gui_window_flags {
-	GUI_WINDOW_SHOW = (1<<0),
-	GUI_WINDOW_CENTERED = (1<<1),
+	GUI_WINDOW_SHOW = (1 << 0),
+	GUI_WINDOW_CENTERED = (1 << 1),
 };
 
 typedef struct gui_event {
@@ -151,7 +151,8 @@ BM_EXPORT void gui_destroy_window(gui_window_t* window);
 BM_EXPORT void gui_show_window(gui_window_t* window, bool shown);
 BM_EXPORT void gui_set_window_pos(gui_window_t* window, const rect_t* rect);
 BM_EXPORT void gui_center_window(gui_window_t* window);
-BM_EXPORT bool gui_get_window_rect(const gui_window_t* window, rect_t* rect, bool client);
+BM_EXPORT bool gui_get_window_rect(const gui_window_t* window, rect_t* rect,
+				   bool client);
 BM_EXPORT void* gui_get_window_handle(gui_window_t* window);
 BM_EXPORT gui_window_t* gui_get_window_by_handle(void* handle);
 BM_EXPORT void gui_clear_key_state();

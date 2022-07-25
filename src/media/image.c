@@ -24,9 +24,9 @@ void video_frame_new(u32 width, u32 height, enum pixel_format pix_fmt,
 		frame->data[0] = MEM_ALLOC(size);
 		frame->stride[0] = width * 3;
 		break;
-    case PIX_FMT_ARGB32:
+	case PIX_FMT_ARGB32:
 	case PIX_FMT_RGBA32:
-    case PIX_FMT_BGRA32:
+	case PIX_FMT_BGRA32:
 		size = width * height * 4;
 		ALIGN_SIZE(size, alignment);
 		frame->data[0] = MEM_ALLOC(size);
