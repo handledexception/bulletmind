@@ -16,6 +16,8 @@ struct gfx_scene* gfx_scene_new(u32 num_verts, u32 num_indices,
 	scene->index_data = MEM_ALLOC(sizeof(u32) * num_indices);
 	memset(scene->index_data, 0, sizeof(u32) * num_indices);
 
+	vec_init(scene->textures);
+
 	// allocate texture vertices
 	if (vert_type == GFX_VERTEX_POS_COLOR) {
 		scene->vert_data->num_vertices = num_verts;
@@ -101,6 +103,11 @@ void gfx_scene_free(struct gfx_scene* scene)
 			BM_MEM_FREE(scene->index_data);
 			scene->index_data = NULL;
 		}
+
+		for (size_t i = 0; i < scene->textures.num_elems; i++) {
+			gfx_texture_destroy(scene->textures.elems[i]);
+		}
+		vec_free(scene->textures);
 	}
 	BM_MEM_FREE(scene);
 	scene = NULL;

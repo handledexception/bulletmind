@@ -7,6 +7,7 @@
 
 #include "platform/platform.h"
 
+#include "gfx/gfx.h"
 #include "gfx/gfx_d3d11.h"
 #include "gfx/dxguids.h"
 
@@ -15,6 +16,7 @@
 #include <dxgi.h>
 #include <dxgi1_2.h>
 #include <dxgi1_3.h>
+#include <dxgiformat.h>
 #include <d3d11.h>
 #include <d3d11_1.h>
 #include <d3dcompiler.h>
@@ -1658,6 +1660,20 @@ void gfx_bind_rasterizer(void)
 }
 
 //
+// gfx blend
+//
+result gfx_init_blend_state()
+{
+
+}
+
+void gfx_bind_blend_state()
+{
+
+}
+
+
+//
 // gfx texture
 //
 void gfx_texture_init2d(struct gfx_texture2d* tex2d)
@@ -2004,4 +2020,51 @@ void gfx_texture_get_size(gfx_texture_t* texture, vec2f_t* size)
 			size->y = (f32)impl->height;
 		}
 	}
+}
+
+D3D11_BLEND gfx_blend_mode_to_d3d11_blend(enum gfx_blend_mode mode)
+{
+	switch (mode) {
+	case GFX_BLEND_ZERO:
+		return D3D11_BLEND_ZERO;
+	case GFX_BLEND_ONE:
+		return D3D11_BLEND_ONE;
+	case GFX_BLEND_SRCCOLOR:
+		return D3D11_BLEND_SRC_COLOR;
+	case GFX_BLEND_INVSRCCOLOR:
+		return D3D11_BLEND_INV_SRC_COLOR;
+	case GFX_BLEND_SRCALPHA:
+		return D3D11_BLEND_SRC_ALPHA;
+	case GFX_BLEND_INVSRCALPHA:
+		return D3D11_BLEND_INV_SRC_ALPHA;
+	case GFX_BLEND_DSTCOLOR:
+		return D3D11_BLEND_DEST_COLOR;
+	case GFX_BLEND_INVDSTCOLOR:
+		return D3D11_BLEND_INV_DEST_COLOR;
+	case GFX_BLEND_DSTALPHA:
+		return D3D11_BLEND_DEST_ALPHA;
+	case GFX_BLEND_INVDSTALPHA:
+		return D3D11_BLEND_INV_DEST_ALPHA;
+	case GFX_BLEND_SRCALPHASAT:
+		return D3D11_BLEND_SRC_ALPHA_SAT;
+	}
+
+	return D3D11_BLEND_ONE;
+}
+
+D3D11_BLEND_OP gfx_blend_op_to_d3d11_blend_op(enum gfx_blend_op op)
+{
+	switch (op) {
+	case GFX_BLEND_OP_ADD:
+		return D3D11_BLEND_OP_ADD;
+	case GFX_BLEND_OP_SUBTRACT:
+		return D3D11_BLEND_OP_SUBTRACT;
+	case GFX_BLEND_OP_REVERSE_SUBTRACT:
+		return D3D11_BLEND_OP_REV_SUBTRACT;
+	case GFX_BLEND_OP_MIN:
+		return D3D11_BLEND_OP_MIN;
+	case GFX_BLEND_OP_MAX:
+		return D3D11_BLEND_OP_MAX;
+	}
+	return D3D11_BLEND_OP_ADD;
 }

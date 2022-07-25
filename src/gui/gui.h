@@ -20,11 +20,11 @@ extern "C" {
 #define GUI_WINDOW_POS_IS_UNDEFINED(x) \
 	(((x)&0xFFFF0000) == GUI_WINDOW_POS_UNDEFINED_MASK)
 
-#define GUI_WINDOW_POS_CENTERED_MASK 0x2fff0000u
-#define GUI_WINDOW_POS_CENTERED_DO_MASK(x) (GUI_WINDOW_POS_CENTERED_MASK | (x))
-#define GUI_WINDOW_POS_CENTERED GUI_WINDOW_POS_CENTERED_DO_MASK(0)
-#define GUI_WINDOW_POS_IS_CENTERED(x) \
-	(((x)&0xFFFF0000) == GUI_WINDOW_POS_CENTERED_MASK)
+// #define GUI_WINDOW_POS_CENTERED_MASK 0x2fff0000u
+// #define GUI_WINDOW_POS_CENTERED_DO_MASK(x) (GUI_WINDOW_POS_CENTERED_MASK | (x))
+// #define GUI_WINDOW_POS_CENTERED GUI_WINDOW_POS_CENTERED_DO_MASK(0)
+// #define GUI_WINDOW_POS_IS_CENTERED(x) \
+// 	(((x)&0xFFFF0000) == GUI_WINDOW_POS_CENTERED_MASK)
 
 typedef struct gui_window gui_window_t;
 typedef struct gui_window_data gui_window_data_t;
@@ -70,6 +70,11 @@ typedef enum {
 	GUI_EVENT_APP
 } gui_event_type_t;
 
+enum gui_window_flags {
+	GUI_WINDOW_SHOW = (1<<0),
+	GUI_WINDOW_CENTERED = (1<<1),
+};
+
 typedef struct gui_event {
 	u32 index;
 	gui_event_type_t type;
@@ -85,10 +90,6 @@ struct gui_window {
 	s32 id;
 	s32 flags;
 	char title[4096];
-	s32 x;
-	s32 y;
-	s32 w;
-	s32 h;
 	s32 min_w;
 	s32 min_h;
 	s32 max_w;
@@ -99,25 +100,22 @@ struct gui_window {
 	gui_window_t* parent;
 };
 
+/* clang-format off */
 struct gui_system {
-	VECTOR(gui_window_t*) windows;                   /* window list */
-	VECTOR(gui_event_t) events;                      /* GUI events */
-	struct keyboard_key keyboard[MAX_KEYBOARD_KEYS]; /* raw keyboard state */
-	struct mouse_device mouse;                       /* raw mouse state */
-	bool (*create_window)(
-		gui_window_t* window); /* platform window create function */
-	void (*destroy_window)(
-		gui_window_t* window); /* platform window destroy function */
-	void (*show_window)(gui_window_t* window,
-			    bool shown); /* platform window show function */
-	void (*set_window_pos)(gui_window_t* window, s32 cx, s32 cy);
-	void (*center_window)(gui_window_t* window); /* center window within parent/screen */
-	void* (*get_handle)(
-		gui_window_t* window); /* platform window get handle function */
-	void (*get_global_mouse_state)(
-		struct mouse_device*
-			mouse); /* platform window get global mouse state function */
+	VECTOR(gui_window_t*) windows;                                  /* window list */
+	VECTOR(gui_event_t) events;                                     /* GUI events */
+	struct keyboard_key keyboard[MAX_KEYBOARD_KEYS];                /* raw keyboard state */
+	struct mouse_device mouse;                                      /* raw mouse state */
+	bool (*create_window)(gui_window_t* window);                    /* platform window create function */
+	void (*destroy_window)(gui_window_t* window);                   /* platform window destroy function */
+	void (*show_window)(gui_window_t* window, bool shown);          /* platform window show function */
+	void (*set_window_pos)(gui_window_t* window, const rect_t* rect);
+	bool (*get_window_rect)(const gui_window_t* window, rect_t* rect, bool client);
+	void (*center_window)(gui_window_t* window);                    /* center window within parent/screen */
+	void* (*get_handle)(gui_window_t* window);                      /* platform window get handle function */
+	void (*get_global_mouse_state)(struct mouse_device* mouse);     /* platform window get global mouse state function */
 };
+/* clang-format on */
 
 struct gui_display {
 	s32 id;
@@ -151,8 +149,9 @@ BM_EXPORT gui_window_t* gui_create_window(const char* title, s32 x, s32 y,
 					  gui_window_t* parent);
 BM_EXPORT void gui_destroy_window(gui_window_t* window);
 BM_EXPORT void gui_show_window(gui_window_t* window, bool shown);
-BM_EXPORT void gui_set_window_pos(gui_window_t* window, s32 cx, s32 cy);
+BM_EXPORT void gui_set_window_pos(gui_window_t* window, const rect_t* rect);
 BM_EXPORT void gui_center_window(gui_window_t* window);
+BM_EXPORT bool gui_get_window_rect(const gui_window_t* window, rect_t* rect, bool client);
 BM_EXPORT void* gui_get_window_handle(gui_window_t* window);
 BM_EXPORT gui_window_t* gui_get_window_by_handle(void* handle);
 BM_EXPORT void gui_clear_key_state();

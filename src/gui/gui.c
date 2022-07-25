@@ -77,18 +77,14 @@ gui_window_t* gui_create_window(const char* title, s32 x, s32 y, s32 w, s32 h,
 	// window->title = MEM_ALLOC(window->title, sizeof(title));
 	memset(window->title, 0, 4096);
 	strcpy(window->title, title);
-	window->x = x;
-	window->y = y;
-	window->w = w;
-	window->h = h;
 	window->flags = flags;
-	window->bounds.x = window->x;
-	window->bounds.y = window->x;
-	window->bounds.w = window->w;
-	window->bounds.h = window->h;
+	window->bounds.x = x;
+	window->bounds.y = x;
+	window->bounds.w = w;
+	window->bounds.h = h;
 	window->parent = parent;
-	if (GUI_WINDOW_POS_IS_UNDEFINED(window->x) ||
-	    GUI_WINDOW_POS_IS_UNDEFINED(window->y)) {
+	if (GUI_WINDOW_POS_IS_UNDEFINED(x) ||
+	    GUI_WINDOW_POS_IS_UNDEFINED(y)) {
 	}
 
 	window->destroy_me = false;
@@ -129,11 +125,11 @@ void gui_show_window(gui_window_t* window, bool shown)
 	gui->show_window(window, shown);
 }
 
-void gui_set_window_pos(gui_window_t* window, s32 cx, s32 cy)
+void gui_set_window_pos(gui_window_t* window, const rect_t* rect)
 {
-	if (!gui || !window)
+	if (!gui || !window || !rect)
 		return;
-	gui->set_window_pos(window, cx, cy);
+	gui->set_window_pos(window, rect);
 }
 
 void gui_center_window(gui_window_t* window)
@@ -141,6 +137,13 @@ void gui_center_window(gui_window_t* window)
 	if (!gui || !window)
 		return;
 	gui->center_window(window);
+}
+
+bool gui_get_window_rect(const gui_window_t* window, rect_t* rect, bool client)
+{
+	if (!gui || !window || !rect)
+		return false;
+	return gui->get_window_rect(window, rect, client);
 }
 
 void* gui_get_window_handle(gui_window_t* window)

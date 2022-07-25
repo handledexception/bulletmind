@@ -238,11 +238,12 @@ BM_EXPORT gfx_shader_var_t* gfx_shader_var_new(const char* name,
 BM_EXPORT void gfx_shader_var_init(gfx_shader_var_t* var);
 BM_EXPORT void gfx_shader_var_free(gfx_shader_var_t* var);
 BM_EXPORT void gfx_shader_var_set(gfx_shader_var_t* var, const void* data);
+BM_EXPORT void gfx_shader_var_set_from(gfx_shader_var_t* var, const void* data);
 BM_EXPORT bool gfx_shader_add_var(gfx_shader_t* shader,
 				  const gfx_shader_var_t* var);
 BM_EXPORT bool gfx_shader_set_var_by_name(gfx_shader_t* shader,
 					  const char* name, const void* value,
-					  size_t size);
+					  size_t size, bool own_data);
 BM_EXPORT size_t gfx_shader_get_vars_size(gfx_shader_t* shader);
 BM_EXPORT gfx_shader_var_t* gfx_shader_get_var_by_name(gfx_shader_t* shader,
 						       const char* name);
@@ -256,6 +257,10 @@ BM_EXPORT void gfx_bind_sampler_state(gfx_texture_t* texture, u32 slot);
 BM_EXPORT result gfx_init_rasterizer(enum gfx_culling_mode culling,
 				     enum gfx_raster_flags flags);
 BM_EXPORT void gfx_bind_rasterizer(void);
+
+/* blend ----------------------------------------------------------------- */
+BM_EXPORT result gfx_init_blend_state();
+BM_EXPORT void gfx_bind_blend_state();
 
 /* texture ----------------------------------------------------------------- */
 BM_EXPORT result gfx_texture_create(const u8* data,

@@ -31,3 +31,8 @@ kind = "sprite_font"
 name = "metro"
 path = "assets/image/metro_1080p.tga"
 kind = "sprite"
+
+[[assets]]
+name = "rgba_test"
+path = "assets/image/rgba.tga"
+kind = "sprite"

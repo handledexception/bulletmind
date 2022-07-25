@@ -154,7 +154,7 @@ void gfx_shader_var_set(gfx_shader_var_t* var, const void* data)
 {
 	if (var != NULL && data != NULL) {
 		size_t szd = gfx_shader_var_size(var->type);
-		if (var->data != NULL) {
+		if (var->data != NULL && var->own_data) {
 			BM_MEM_FREE(var->data);
 			var->data = NULL;
 		}
@@ -163,6 +163,18 @@ void gfx_shader_var_set(gfx_shader_var_t* var, const void* data)
 		}
 		memcpy(var->data, data, szd);
 		var->own_data = true;
+	}
+}
+
+void gfx_shader_var_set_from(gfx_shader_var_t* var, const void* data)
+{
+	if (var != NULL) {
+		if (var->data != NULL && var->own_data) {
+			BM_MEM_FREE(var->data);
+			var->data = NULL;
+		}
+		var->data = data;
+		var->own_data = false;
 	}
 }
 
@@ -178,17 +190,18 @@ bool gfx_shader_add_var(gfx_shader_t* shader, const gfx_shader_var_t* var)
 }
 
 bool gfx_shader_set_var_by_name(gfx_shader_t* shader, const char* name,
-				const void* value, size_t size)
+				const void* value, size_t size, bool own_data)
 {
 	for (size_t i = 0; i < shader->vars.num_elems; i++) {
 		gfx_shader_var_t* var =
 			(gfx_shader_var_t*)&shader->vars.elems[i];
-		if (var != NULL && !strcmp(var->name, name) &&
-		    gfx_shader_var_size(var->type) == size) {
-			memcpy(var->data, value, size);
-			var->own_data = true;
-			return true;
+		if (var != NULL && !strcmp(var->name, name)) {
+			if (own_data)
+				gfx_shader_var_set(var, value);
+			else	
+				gfx_shader_var_set_from(var, value);
 		}
+			return true;
 	}
 	return false;
 }

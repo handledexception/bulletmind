@@ -99,7 +99,10 @@
         "xlocnum": "c",
         "corecrt.h": "c",
         "enums.h": "c",
-        "*.rh": "c"
+        "*.rh": "c",
+        "gfx.h": "c",
+        "dxgiformat.h": "c",
+        "d3d11.h": "c"
     },
     "cmake.configureOnOpen": false
 }

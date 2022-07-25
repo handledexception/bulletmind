@@ -11,6 +11,7 @@ struct gfx_scene {
 	gfx_shader_t* vertex_shader;
 	struct gfx_vertex_data* vert_data;
 	u32* index_data;
+	VECTOR(gfx_texture_t*) textures;
 };
 
 BM_EXPORT struct gfx_scene* gfx_scene_new(u32 num_verts, u32 num_indices,

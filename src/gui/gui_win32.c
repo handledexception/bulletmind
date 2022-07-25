@@ -34,6 +34,8 @@ struct gui_window_data {
 	HDC hdc;
 	HINSTANCE instance;
 	WNDPROC wndproc;
+	DWORD style;
+	DWORD style_ex;
 };
 
 static HINSTANCE g_hinstance = NULL;
@@ -264,11 +266,6 @@ HMODULE get_module_from_wndproc(WNDPROC wp)
 	return instance;
 }
 
-HWND get_window_to_parent_to(bool get_real_hwnd)
-{
-	return get_real_hwnd ? GetDesktopWindow() : HWND_DESKTOP;
-}
-
 void* set_window_user_data(HWND hwnd, void* user_data)
 {
 	return (void*)SetWindowLongPtr(hwnd, GWLP_USERDATA,
@@ -369,7 +366,7 @@ typedef HRESULT (WINAPI *DwmGetWindowAttributeFunction) (
 static void get_extended_bounds(HWND hwnd, RECT* ex_bounds)
 {
 	RECT extendedBounds;
-	DWORD resultSize;
+	// DWORD resultSize;
 	HINSTANCE dwmapiDllHandle  = (HINSTANCE)os_dlopen("dwmapi.dll");
 	if (NULL != dwmapiDllHandle ) // not on Vista/Windows7 so no aero so no need to account for aero.
 	{
@@ -393,7 +390,6 @@ bool gui_create_window_win32(gui_window_t* window)
 	HWND hwnd = NULL;
 	HWND parent_hwnd = NULL;
 	HMENU menu = NULL;
-
 	DWORD style = GUI_WIN32_WINDOW_STYLE;
 	DWORD style_ex = GUI_WIN32_WINDOW_STYLE_EX;
 
@@ -402,10 +398,8 @@ bool gui_create_window_win32(gui_window_t* window)
 		parent_hwnd = window->parent->data->hwnd;
 	}
 
-	// if (parent_hwnd == HWND_DESKTOP)
-	// 	parent_hwnd = get_window_to_parent_to(false);
-	if (parent_hwnd == GetDesktopWindow() || parent_hwnd == HWND_DESKTOP)
-		parent_hwnd = get_window_to_parent_to(true);
+	if (parent_hwnd == HWND_DESKTOP)
+		parent_hwnd = GetDesktopWindow();
 
 	wchar_t window_title[512];
 	memset(&window_title, 0, sizeof(window_title));
@@ -416,9 +410,15 @@ bool gui_create_window_win32(gui_window_t* window)
 	window->data->instance = g_hinstance;
 	window->data->window = window;
 	window->data->wndproc = NULL;
+	window->data->style = style;
+	window->data->style_ex = style_ex;
 
 	RECT wr = {
-		.left = 0, .top = 0, .right = window->w, .bottom = window->h};
+		.left = window->bounds.x,
+		.top = window->bounds.y,
+		.right = window->bounds.w,
+		.bottom = window->bounds.h,
+	};
 
 	AdjustWindowRectEx(&wr, style, FALSE, style_ex);
 	hwnd = CreateWindowEx(style_ex, (LPCWSTR)g_atom, (LPCWSTR)window_title,
@@ -429,10 +429,12 @@ bool gui_create_window_win32(gui_window_t* window)
 	window->bounds.y = wr.top;
 	window->bounds.w = wr.right - wr.left;
 	window->bounds.h = wr.bottom - wr.top;
-	gui->set_window_pos(window, window->x, window->y);
-	gui->show_window(window, true);
+	if (window->flags & GUI_WINDOW_SHOW)
+		gui->show_window(window, true);
+	if (window->flags & GUI_WINDOW_CENTERED)
+		gui->center_window(window);
 
-	return true;
+	return hwnd != NULL;
 }
 
 void gui_destroy_window_win32(gui_window_t* window)
@@ -453,21 +455,29 @@ void gui_show_window_win32(gui_window_t* window, bool shown)
 	}
 }
 
-void gui_set_window_pos_win32(gui_window_t* window, s32 cx, s32 cy)
+void gui_set_window_pos_win32(gui_window_t* window, const rect_t* rect)
 {
 	if (window) {
 		gui_window_data_t* data = (gui_window_data_t*)window->data;
-		SetWindowPos(data->hwnd, HWND_TOP, cx, cy, window->w, window->h,
-			     0);
+		SetWindowPos(data->hwnd, HWND_TOP, rect->x, rect->y, rect->w, rect->h,
+			     SWP_NOSIZE);
 	}
 }
 
-void rect_to_win32_rect(rect_t* r, RECT* wr)
+void rect_to_win32_rect(const rect_t* r, RECT* wr)
 {
 	wr->left = r->x;
 	wr->top = r->y;
 	wr->right = r->w;
 	wr->bottom = r->h;
+}
+
+void win32_rect_to_rect(const RECT* wr, rect_t* r)
+{
+	r->x = wr->left;
+	r->y = wr->top;
+	r->w = wr->right;
+	r->h = wr->bottom;
 }
 
 void gui_center_window_win32(gui_window_t* window)
@@ -476,7 +486,7 @@ void gui_center_window_win32(gui_window_t* window)
 		gui_window_data_t* data = (gui_window_data_t*)window->data;
 		HWND parent_hwnd = (HWND)gui->get_handle(window->parent);
 		if (parent_hwnd == HWND_DESKTOP)
-			parent_hwnd = get_window_to_parent_to(true);
+			parent_hwnd = GetDesktopWindow();
 		if (parent_hwnd != NULL) {
 			RECT wr, wr_parent;
 			GetWindowRect(parent_hwnd, &wr_parent);
@@ -499,13 +509,26 @@ void gui_center_window_win32(gui_window_t* window)
 				x = screen_width - width;
 			if (y + height > screen_height)
 				y = screen_height - height;
-			window->bounds.x = x;
-			window->bounds.y = y;
-			window->bounds.w = width;
-			window->bounds.h = height;
-			MoveWindow((HWND)gui->get_handle(window), x, y, width, height, FALSE);
+			RECT new_bounds;
+			new_bounds.left = x;
+			new_bounds.top = y;
+			new_bounds.right = width;
+			new_bounds.bottom = height;
+			AdjustWindowRectEx(&new_bounds, window->data->style, FALSE, window->data->style_ex);
+			gui->set_window_pos(window, &new_bounds);
 		}
 	}
+}
+
+bool gui_get_window_rect_win32(const gui_window_t* window, rect_t* rect, bool client)
+{
+	BOOL ok = FALSE;
+	RECT r;
+	if (client)
+		ok = GetClientRect(window->data->hwnd, &r);
+	else
+		ok = GetWindowRect(window->data->hwnd, &r);
+	return (bool)ok;
 }
 
 void* gui_get_window_handle_win32(gui_window_t* window)
@@ -566,6 +589,7 @@ result gui_init_win32(gui_system_t* gp)
 	gp->show_window = gui_show_window_win32;
 	gp->set_window_pos = gui_set_window_pos_win32;
 	gp->center_window = gui_center_window_win32;
+	gp->get_window_rect = gui_get_window_rect_win32;
 	gp->get_handle = gui_get_window_handle_win32;
 	gp->get_global_mouse_state = gui_get_global_mouse_state_win32;
 

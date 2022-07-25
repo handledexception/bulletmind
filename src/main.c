@@ -46,6 +46,8 @@ struct application {
 	VECTOR(struct gfx_scene*) scenes;
 	gfx_buffer_t* vbuf;
 	gfx_buffer_t* ibuf;
+	uint64_t frame_count;
+	f64 frame_timer;
 };
 
 result app_init_gfx(struct application* app, const struct gfx_config* cfg)
@@ -66,6 +68,9 @@ result app_init_gfx(struct application* app, const struct gfx_config* cfg)
 
 void app_refresh_gfx(struct application* app)
 {
+	static size_t tex_index = 0;
+	if (app->frame_timer == 0.0)
+		app->frame_timer = os_get_time_msec();
 	gfx_render_clear(&kClearColor);
 	size_t vbd_size = 0;
 	size_t vbd_offs = 0;
@@ -108,8 +113,13 @@ void app_refresh_gfx(struct application* app)
 		gfx_set_vertex_shader(vs);
 		gfx_set_pixel_shader(ps);
 		gfx_system_bind_input_layout(vs);
-		gfx_bind_sampler_state((gfx_texture_t*)ps->vars.elems[0].data,
-				       0);
+		if (os_get_time_msec() - app->frame_timer >= 250.) {
+			gfx_shader_set_var_by_name(ps, "texture", scene->textures.elems[tex_index], 0, false);
+			if (++tex_index >= scene->textures.num_elems)
+				tex_index = 0;
+			app->frame_timer = 0.0;
+		}
+		gfx_bind_sampler_state((gfx_texture_t*)ps->vars.elems[0].data, 0);
 		gfx_bind_vertex_buffer(app->vbuf, (u32)vert_stride, 0);
 		gfx_bind_index_buffer(app->ibuf, 0);
 		if (gfx_shader_cbuffer_fill(vs) > 0) {
@@ -127,6 +137,7 @@ void app_refresh_gfx(struct application* app)
 		gfx_render_begin(true);
 		gfx_render_end(false, 0);
 	}
+	app->frame_count++;
 }
 
 result app_init_inputs(struct application* app)
@@ -155,13 +166,20 @@ result app_init_scenes(struct application* app)
 {
 	asset_t* img_asset;
 	ENSURE_OK(asset_manager_find("metro", app->assets, &img_asset));
-	gfx_shader_var_t tex_var = {.name = "metro",
+	struct media_image* metro_img = (struct media_image*)img_asset->data;
+	// ENSURE_OK(gfx_texture_from_image(metro_img,
+	// 				 (gfx_texture_t**)&metro_tex_var.data));
+	ENSURE_OK(asset_manager_find("rgba_test", app->assets, &img_asset));
+	gfx_shader_var_t rgba_tex_var = {.name = "rgba_test",
 					 .type = GFX_SHADER_VAR_TEX,
 					 .data = NULL,
 					 .own_data = true};
-	struct media_image* image = (struct media_image*)img_asset->data;
-	ENSURE_OK(gfx_texture_from_image(image,
-					 (gfx_texture_t**)&tex_var.data));
+	struct media_image* rgba_img = (struct media_image*)img_asset->data;
+	
+	gfx_texture_t* rgba_tex;
+	gfx_texture_t* metro_tex;
+	ENSURE_OK(gfx_texture_from_image(rgba_img, &rgba_tex));
+	ENSURE_OK(gfx_texture_from_image(metro_img, &metro_tex));
 
 	asset_t* vs_asset = NULL;
 	asset_t* ps_asset = NULL;
@@ -178,6 +196,8 @@ result app_init_scenes(struct application* app)
 		       GFX_BUFFER_USAGE_DYNAMIC, &app->ibuf);
 
 	struct gfx_scene* sprite = gfx_scene_new(4, 6, GFX_VERTEX_POS_UV);
+	vec_push_back(sprite->textures, &rgba_tex);
+	vec_push_back(sprite->textures, &metro_tex);
 	sprite->vertex_shader = (gfx_shader_t*)vs_asset->data;
 	sprite->pixel_shader = (gfx_shader_t*)ps_asset->data;
 	vec3f_t positions[4] = {
@@ -213,11 +233,8 @@ result app_init_scenes(struct application* app)
 	mat4f_identity(&scale_matrix);
 	const vec4f_t trans_vec = {0.f, 0.f, 0.f, 0.f};
 	const vec4f_t scale_vec = {
-		(float)image->width - (float)VIEW_WIDTH,    // ortho scaling
-		(float)image->height - (float)VIEW_HEIGHT,  // ortho scaling
-		// (float)VIEW_WIDTH, (float)VIEW_HEIGHT,
-		// (float)VIEW_HEIGHT / (float)image->height,
-		// image->width * 0.667f, image->height * 0.667f,
+		(float)metro_img->width - (float)VIEW_WIDTH,    // ortho scaling
+		(float)metro_img->height - (float)VIEW_HEIGHT,  // ortho scaling
 		0.f, 1.f};
 	mat4f_translate(&trans_matrix, &trans_vec);
 	mat4f_scale(&scale_matrix, &scale_vec);
@@ -243,7 +260,11 @@ result app_init_scenes(struct application* app)
 	vec_push_back(app->scenes, &sprite);
 	gfx_shader_add_var(sprite->vertex_shader, &world_var);
 	gfx_shader_add_var(sprite->vertex_shader, &view_proj_var);
-	gfx_shader_add_var(sprite->pixel_shader, &tex_var);
+	gfx_shader_var_t texture_var = {.name = "texture",
+					 .type = GFX_SHADER_VAR_TEX,
+					 .data = metro_tex,
+					 .own_data = false};
+	gfx_shader_add_var(sprite->pixel_shader, &texture_var);
 	vec2f_t vp_res = {VIEW_WIDTH, VIEW_HEIGHT};
 	gfx_shader_var_t viewport_res_var = {.name = "viewport_res",
 					     .type = GFX_SHADER_VAR_VEC2,
@@ -270,6 +291,8 @@ result app_init(struct application* app, s32 version, u32 vx, u32 vy,
 		return RESULT_NULL;
 	app->running = false;
 	app->version = version;
+	app->frame_count = 0;
+	app->frame_timer = 0.0;
 	vec_init(app->windows);
 	vec_init(app->scenes);
 
@@ -279,12 +302,14 @@ result app_init(struct application* app, s32 version, u32 vx, u32 vy,
 	char window_title[256];
 	snprintf(window_title, (sizeof(APP_NAME) + 1 + 16) + 1, "%s %s",
 		 APP_NAME, ver_str);
-	gui_window_t* main_window =
-		gui_create_window(window_title, 0, 0, vx, vy, 0, NULL);
-	gui_center_window(main_window);
+	s32 window_flags = GUI_WINDOW_SHOW;
+	gui_window_t* main_window = gui_create_window(
+		window_title, 0, 0, vx, vy,
+		window_flags|GUI_WINDOW_CENTERED, NULL);
 	vec_push_back(app->windows, &main_window);
 	gui_window_t* view_window = gui_create_window(
-		"canvas_view", 0, 0, vx, vy, 0, gui->windows.elems[0]);
+		"canvas_view", 0, 0, vx, vy,
+		window_flags, gui->windows.elems[0]);
 	vec_push_back(app->windows, &view_window);
 	void* gfx_view_handle = gui_get_window_handle(app->windows.elems[1]);
 	const struct gfx_config gfx_cfg = {
