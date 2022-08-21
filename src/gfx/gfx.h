@@ -42,6 +42,9 @@ struct gfx_texture;
 struct gfx_vertex_shader;
 struct gfx_depth;
 struct gfx_depth_state;
+struct gfx_sprite;
+struct gfx_sprite_sheet;
+struct gfx_ss_frame;
 
 typedef struct gfx_adapter gfx_adapter_t;
 typedef struct gfx_buffer gfx_buffer_t;
@@ -59,6 +62,9 @@ typedef struct gfx_texture gfx_texture_t;
 typedef struct gfx_vertex_shader gfx_vertex_shader_t;
 typedef struct gfx_depth gfx_depth_t;
 typedef struct gfx_depth_state gfx_depth_state_t;
+typedef struct gfx_sprite gfx_sprite_t;
+typedef struct gfx_sprite_sheet gfx_sprite_sheet_t;
+typedef struct gfx_ss_frame gfx_ss_frame_t; /* sprite sheet frame */
 
 struct gfx_window {
 #if defined(_WIN32)

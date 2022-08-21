@@ -79,6 +79,7 @@ set(TOMLC99_SOURCES
 
 # core
 set(BM_CORE_HEADERS
+    src/core/asset.h
     src/core/algorithm.h
     src/core/binary.h
     src/core/buffer.h
@@ -99,6 +100,7 @@ set(BM_CORE_HEADERS
     src/core/utils.h
     src/core/vector.h)
 set(BM_CORE_SOURCES
+    src/core/asset.c
     src/core/binary.c
     src/core/buffer.c
     src/core/hashmap.c
@@ -144,7 +146,8 @@ set(BM_GFX_HEADERS
 set(BM_GFX_SOURCES
     src/gfx/gfx.c
     src/gfx/camera.c
-    src/gfx/scene.c)
+    src/gfx/scene.c
+    src/gfx/sprite.c)
 
 set(BM_MEDIA_HEADERS
     src/media/enums.h
@@ -161,7 +164,6 @@ set(BM_GUI_SOURCES
 
 # game
 set(BM_GAME_HEADERS
-    src/asset.h
     # src/audio.h
     src/command.h
     # src/engine.h
@@ -173,7 +175,6 @@ set(BM_GAME_HEADERS
     # src/sprite.h
 )
 set(BM_GAME_SOURCES
-    src/asset.c
     # src/audio.c
     src/command.c
     # src/engine.c
@@ -409,6 +410,10 @@ add_executable(bm_tests
     ${TOMLC99_SOURCES}
     ${BM_CORE_HEADERS}
     ${BM_CORE_SOURCES}
+    ${BM_GFX_HEADERS}
+    ${BM_GFX_SOURCES}
+    ${BM_MEDIA_HEADERS}
+    ${BM_MEDIA_SOURCES}
     ${BM_MATH_HEADERS}
     ${BM_MATH_SOURCES}
     ${BM_PLATFORM_HEADERS}

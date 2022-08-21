@@ -102,7 +102,9 @@
         "*.rh": "c",
         "gfx.h": "c",
         "dxgiformat.h": "c",
-        "d3d11.h": "c"
+        "d3d11.h": "c",
+        "codecvt": "c",
+        "fstream": "c"
     },
     "cmake.configureOnOpen": false
 }

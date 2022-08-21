@@ -23,6 +23,11 @@ kind = "shader"
 vertex_type = "posuv"
 
 [[assets]]
+name = "player"
+path = "assets/image/ss_player.toml"
+kind = "sprite_sheet"
+
+[[assets]]
 name = "font_7px"
 path = "assets/image/font_7px_rgba.tga"
 kind = "sprite_font"

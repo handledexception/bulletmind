@@ -1662,7 +1662,7 @@ void gfx_bind_rasterizer(void)
 //
 // gfx blend
 //
-result gfx_init_blend_state() {}
+result gfx_init_blend_state() { return RESULT_OK; }
 
 void gfx_bind_blend_state() {}
 

@@ -1,4 +1,5 @@
 #include "core/types.h"
+#include "core/asset.h"
 #include "core/logger.h"
 #include "core/utils.h"
 #include "core/vector.h"
@@ -10,7 +11,6 @@
 #include "gfx/scene.h"
 #include "media/image.h"
 
-#include "asset.h"
 #include "command.h"
 #include "input.h"
 
@@ -114,7 +114,7 @@ void app_refresh_gfx(struct application* app)
 		gfx_set_vertex_shader(vs);
 		gfx_set_pixel_shader(ps);
 		gfx_system_bind_input_layout(vs);
-		if (os_get_time_msec() - app->frame_timer >= 250.) {
+		if (os_get_time_msec() - app->frame_timer >= 2000.) {
 			gfx_shader_set_var_by_name(
 				ps, "texture", scene->textures.elems[tex_index],
 				0, false);
