@@ -23,27 +23,34 @@
 #include <math.h>
 
 typedef struct mat4f {
-	vec4f_t x;
-	vec4f_t y;
-	vec4f_t z;
-	vec4f_t w;
+	union {
+		vec4f_t rows[4];
+		float m[4][4];
+		float elements[16];
+		struct {
+			vec4f_t x;
+			vec4f_t y;
+			vec4f_t z;
+			vec4f_t w;
+		} v;
+	};
 } mat4f_t;
 
 static inline void mat4f_zero(struct mat4f* m)
 {
-	vec4f_zero(&m->x);
-	vec4f_zero(&m->y);
-	vec4f_zero(&m->z);
-	vec4f_zero(&m->w);
+	vec4f_zero(&m->v.x);
+	vec4f_zero(&m->v.y);
+	vec4f_zero(&m->v.z);
+	vec4f_zero(&m->v.w);
 }
 
 static inline void mat4f_identity(struct mat4f* m)
 {
 	mat4f_zero(m);
-	m->x.x = 1.f;
-	m->y.y = 1.f;
-	m->z.z = 1.f;
-	m->w.w = 1.f;
+	m->v.x.x = 1.f;
+	m->v.y.y = 1.f;
+	m->v.z.z = 1.f;
+	m->v.w.w = 1.f;
 }
 
 BM_EXPORT void mat4f_transpose(struct mat4f* dst, const struct mat4f* m);

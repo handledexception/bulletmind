@@ -21,7 +21,7 @@ struct asset_manager {
 
 struct asset_manager* asset_manager_new(void)
 {
-	struct asset_manager* mgr = MEM_ALLOC(sizeof(*mgr));
+	struct asset_manager* mgr = BM_ALLOC(sizeof(*mgr));
 	asset_manager_init(mgr);
 	return mgr;
 }
@@ -46,7 +46,7 @@ void asset_manager_free(struct asset_manager* mgr)
 			toml_free(mgr->toml);
 			mgr->toml = NULL;
 		}
-		BM_MEM_FREE(mgr);
+		BM_FREE(mgr);
 	}
 }
 
@@ -107,7 +107,7 @@ result asset_manager_find(const char* name, struct asset_manager* mgr,
 
 asset_t* asset_new()
 {
-	asset_t* asset = MEM_ALLOC(sizeof(*asset));
+	asset_t* asset = BM_ALLOC(sizeof(*asset));
 	asset_init(asset);
 	return asset;
 }
@@ -126,15 +126,18 @@ void asset_free(asset_t* asset)
 	if (asset != NULL) {
 		switch (asset->kind) {
 		case ASSET_SPRITE:
-		case ASSET_SPRITE_SHEET:
-		case ASSET_SPRITE_FONT:
-			{
-				struct media_image* img =
-					(struct media_image*)asset->data;
-				video_frame_free(&img->frame);
-				media_image_free(img);
-				break;
-			}
+		case ASSET_SPRITE_FONT: {
+			struct gfx_sprite* sprite =
+				(struct gfx_sprite*)asset->data;
+			gfx_sprite_free(sprite);
+			break;
+		}
+		case ASSET_SPRITE_SHEET: {
+			struct gfx_sheet* sheet =
+				(struct gfx_sheet*)asset->data;
+			gfx_sheet_free(sheet);
+			break;
+		}
 		case ASSET_SOUND:
 		case ASSET_MUSIC:
 			break;
@@ -146,7 +149,7 @@ void asset_free(asset_t* asset)
 		}
 
 		asset_init(asset);
-		BM_MEM_FREE(asset);
+		BM_FREE(asset);
 		asset = NULL;
 	}
 }
@@ -183,11 +186,10 @@ bool asset_from_toml(const toml_table_t* table, struct asset_manager* mgr,
 	case ASSET_SPRITE:
 		res = asset_make_sprite(table, new_asset);
 		break;
-	case ASSET_SPRITE_SHEET:
-		{
-			res = asset_make_sprite_sheet(table, new_asset);
-			break;
-		}
+	case ASSET_SPRITE_SHEET: {
+		res = asset_make_sprite_sheet(table, new_asset);
+		break;
+	}
 	case ASSET_SPRITE_FONT:
 		logger(LOG_WARNING,
 		       "asset_from_toml: sprite font not yet implemented!");
@@ -259,11 +261,12 @@ bool asset_make_shader(const toml_table_t* table, asset_t* asset)
 
 bool asset_make_sprite(const toml_table_t* table, asset_t* asset)
 {
-	struct media_image* img = media_image_new();
-	result res = media_image_load(asset->path, img);
-	asset->data = (void*)img;
-	if (res == RESULT_OK)
+	struct gfx_sprite* sprite = gfx_sprite_new();
+	if (media_image_load(asset->path, sprite->img) == RESULT_OK &&
+	    gfx_sprite_make_texture(sprite) == RESULT_OK) {
+		asset->data = (void*)sprite;
 		return true;
+	}
 	return false;
 }
 
@@ -290,7 +293,36 @@ bool asset_make_sprite_sheet(const toml_table_t* table, asset_t* asset)
 	// Read sprite sheet frames info
 	toml_array_t* frames = toml_array_in(ss_toml, "frames");
 	s32 num_frames = toml_array_nelem(frames);
-	return asset_make_sprite(table, asset);
+	struct gfx_sheet* sheet = gfx_sheet_new(num_frames);
+	for (u32 i = 0; i < num_frames; i++) {
+		struct gfx_sheet_frame* frm = &sheet->frames[i];
+		toml_table_t* frame_nfo = toml_table_at(frames, i);
+		s32 x = 0;
+		s32 y = 0;
+		s32 width = 0;
+		s32 height = 0;
+		f64 duration = 0;
+		read_table_int32(frame_nfo, "x", &frm->bbox.x);
+		read_table_int32(frame_nfo, "y", &frm->bbox.y);
+		read_table_int32(frame_nfo, "w", &frm->bbox.w);
+		read_table_int32(frame_nfo, "h", &frm->bbox.h);
+		read_table_f64(frame_nfo, "duration", &frm->duration);
+		logger(LOG_INFO,
+		       "Sprite Sheet Frame %d: x=%d y=%d w=%d h=%d duration=%.3f",
+		       i, frm->bbox.x, frm->bbox.y, frm->bbox.w, frm->bbox.h,
+		       frm->duration);
+	}
+	sheet->sheet_width = sheet_width;
+	sheet->sheet_height = sheet_height;
+	sheet->num_frames = num_frames;
+	if (media_image_load(asset->path, sheet->sprite->img) == RESULT_OK &&
+	    gfx_sprite_make_texture(sheet->sprite) == RESULT_OK) {
+		asset->data = (void*)sheet;
+		return true;
+	} else {
+		asset->data = NULL;
+	}
+	return false;
 }
 
 asset_kind_t asset_kind_from_string(const char* kind)

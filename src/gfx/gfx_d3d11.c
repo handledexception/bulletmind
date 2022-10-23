@@ -81,11 +81,13 @@ struct gfx_vertex_shader {
 	ID3DBlob* blob;
 	ID3D11VertexShader* program;
 	ID3D11InputLayout* input_layout;
+	s32 ref_count;
 };
 
 struct gfx_pixel_shader {
 	ID3DBlob* blob;
 	ID3D11PixelShader* program;
+	s32 ref_count;
 };
 
 struct gfx_texture2d {
@@ -132,7 +134,7 @@ struct gfx_module {
 	ID3D11SamplerState* sampler_state;
 
 	/* rasterizer */
-	struct gfx_raster_opts raster_opts;
+	struct gfx_raster_state_desc raster_desc;
 	ID3D11RasterizerState* raster_state;
 
 	gfx_shader_t* vertex_shader;
@@ -373,10 +375,10 @@ static bool gfx_get_monitor_target(const MONITORINFOEX* info,
 	if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &num_paths,
 					&num_modes) == ERROR_SUCCESS) {
 		DISPLAYCONFIG_PATH_INFO* paths =
-			(DISPLAYCONFIG_PATH_INFO*)MEM_ALLOC(
+			(DISPLAYCONFIG_PATH_INFO*)BM_ALLOC(
 				num_paths * (sizeof(DISPLAYCONFIG_PATH_INFO)));
 		DISPLAYCONFIG_MODE_INFO* modes =
-			(DISPLAYCONFIG_MODE_INFO*)MEM_ALLOC(
+			(DISPLAYCONFIG_MODE_INFO*)BM_ALLOC(
 				num_modes * (sizeof(DISPLAYCONFIG_MODE_INFO)));
 		if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &num_paths, paths,
 				       &num_modes, modes,
@@ -415,8 +417,8 @@ static bool gfx_get_monitor_target(const MONITORINFOEX* info,
 				}
 			}
 		}
-		BM_MEM_FREE(paths);
-		BM_MEM_FREE(modes);
+		BM_FREE(paths);
+		BM_FREE(modes);
 		paths = NULL;
 		modes = NULL;
 	}
@@ -526,10 +528,10 @@ result gfx_init_dx11(const struct gfx_config* cfg, s32 flags)
 		return RESULT_NULL;
 
 	if (gfx->module != NULL) {
-		BM_MEM_FREE(gfx->module);
+		BM_FREE(gfx->module);
 		gfx->module = NULL;
 	}
-	gfx->module = MEM_ALLOC(sizeof(*gfx->module));
+	gfx->module = BM_ALLOC(sizeof(*gfx->module));
 	memset(gfx->module, 0, sizeof(*gfx->module));
 
 	if (gfx_create_device(cfg->adapter) != RESULT_OK) {
@@ -568,7 +570,7 @@ void gfx_shutdown_dx11(void)
 
 	if (gfx->module != NULL) {
 		gfx_com_release_d3d11();
-		BM_MEM_FREE(gfx->module);
+		BM_FREE(gfx->module);
 		gfx->module = NULL;
 	}
 }
@@ -976,15 +978,15 @@ enum gfx_vertex_type gfx_get_vertex_type(void)
 // void gfx_init_sprite(gfx_buffer_t* vertex_buffer)
 // {
 // 	size_t sz = sizeof(struct gfx_vertex_data);
-// 	struct gfx_vertex_data* vd = (struct gfx_vertex_data*)MEM_ALLOC(sz);
+// 	struct gfx_vertex_data* vd = (struct gfx_vertex_data*)BM_ALLOC(sz);
 // 	memset(vd, 0, sz);
 // 	vd->num_vertices = 4;
 // 	size_t sz_positions = sizeof(vec3f_t) * vd->num_vertices;
-// 	vd->positions = (vec3f_t*)MEM_ALLOC(sz_positions);
-// 	vd->tex_verts = (struct texture_vertex*)MEM_ALLOC(
+// 	vd->positions = (vec3f_t*)BM_ALLOC(sz_positions);
+// 	vd->tex_verts = (struct texture_vertex*)BM_ALLOC(
 // 		sizeof(struct texture_vertex));
 // 	size_t sz_tex_verts = sizeof(vec2f_t) * 4;
-// 	vd->tex_verts->data = MEM_ALLOC(sz_tex_verts);
+// 	vd->tex_verts->data = BM_ALLOC(sz_tex_verts);
 // 	vd->tex_verts->size = sizeof(vec2f_t);
 // 	gfx_buffer_new(gfx, vd, sz_positions + sz_tex_verts,
 // 			  GFX_BUFFER_VERTEX, GFX_BUFFER_USAGE_DYNAMIC,
@@ -1013,7 +1015,7 @@ result gfx_buffer_make(gfx_buffer_t* buf, const void* data, size_t size)
 		return RESULT_NULL;
 
 	if (data != NULL && size > 0) {
-		buf->data = MEM_ALLOC(size);
+		buf->data = BM_ALLOC(size);
 		buf->size = size;
 		memcpy(buf->data, data, size);
 	}
@@ -1076,7 +1078,7 @@ result gfx_buffer_new(const void* data, size_t size, enum gfx_buffer_type type,
 		return RESULT_UNKNOWN;
 	}
 
-	gfx_buffer_t* buffer = MEM_ALLOC(sizeof(*buffer));
+	gfx_buffer_t* buffer = BM_ALLOC(sizeof(*buffer));
 	buffer->buffer = NULL;
 	buffer->data = NULL;
 	buffer->own_data = false;
@@ -1084,11 +1086,11 @@ result gfx_buffer_new(const void* data, size_t size, enum gfx_buffer_type type,
 	buffer->type = type;
 	buffer->usage = usage;
 	if (data != NULL && size > 0) {
-		buffer->data = MEM_ALLOC(size);
+		buffer->data = BM_ALLOC(size);
 		memcpy(buffer->data, data, size);
 		buffer->own_data = true;
 	} else if (data == NULL && size > 0) {
-		buffer->data = MEM_ALLOC(size);
+		buffer->data = BM_ALLOC(size);
 		memset(buffer->data, 0, size);
 		buffer->own_data = true;
 	} else {
@@ -1149,10 +1151,10 @@ void gfx_buffer_free(gfx_buffer_t* buffer)
 			buffer->buffer = NULL;
 		}
 		if (buffer->data != NULL && buffer->own_data) {
-			BM_MEM_FREE(buffer->data);
+			BM_FREE(buffer->data);
 			buffer->data = NULL;
 		}
-		BM_MEM_FREE(buffer);
+		BM_FREE(buffer);
 		buffer = NULL;
 	}
 }
@@ -1225,50 +1227,25 @@ void gfx_buffer_upload_constants(const gfx_shader_t* shader)
 /*
  * gfx shader
  */
-void gfx_shader_init(gfx_shader_t* shader)
-{
-	if (shader != NULL) {
-		shader->type = GFX_SHADER_UNKNOWN;
-		shader->impl = NULL;
-		shader->cbuffer = NULL;
-		vec_init(shader->vars);
-	}
-}
-
-gfx_shader_t* gfx_shader_new(enum gfx_shader_type type)
-{
-	gfx_shader_t* shader = (gfx_shader_t*)MEM_ALLOC(sizeof(gfx_shader_t));
-	gfx_shader_init(shader);
-	shader->type = type;
-	switch (shader->type) {
-	case GFX_SHADER_VERTEX:
-		shader->impl = (gfx_vertex_shader_t*)gfx_vertex_shader_create();
-		break;
-	case GFX_SHADER_PIXEL:
-		shader->impl = (gfx_pixel_shader_t*)gfx_pixel_shader_create();
-		break;
-	case GFX_SHADER_GEOMETRY:
-	case GFX_SHADER_COMPUTE:
-	default:
-		break;
-	}
-	return shader;
-}
-
 void gfx_shader_free(gfx_shader_t* shader)
 {
 	if (shader != NULL) {
 		gfx_buffer_free(shader->cbuffer);
-		shader->cbuffer = NULL;
 		switch (shader->type) {
-		case GFX_SHADER_VERTEX:
-			gfx_vertex_shader_free(
-				(gfx_vertex_shader_t*)shader->impl);
+		case GFX_SHADER_VERTEX: {
+			if (!gfx_vertex_shader_free(
+				    (gfx_vertex_shader_t*)shader->impl)) {
+				gfx_vertex_shader_release(shader->impl);
+			}
 			break;
-		case GFX_SHADER_PIXEL:
-			gfx_pixel_shader_free(
-				(gfx_pixel_shader_t*)shader->impl);
+		}
+		case GFX_SHADER_PIXEL: {
+			if (!gfx_pixel_shader_free(
+				    (gfx_pixel_shader_t*)shader->impl)) {
+				gfx_pixel_shader_release(shader->impl);
+			}
 			break;
+		}
 		case GFX_SHADER_GEOMETRY:
 		case GFX_SHADER_COMPUTE:
 		default:
@@ -1281,7 +1258,7 @@ void gfx_shader_free(gfx_shader_t* shader)
 			gfx_shader_var_free(&shader->vars.elems[i]);
 		}
 		vec_free(shader->vars);
-		BM_MEM_FREE(shader);
+		BM_FREE(shader);
 		shader = NULL;
 	}
 }
@@ -1327,27 +1304,53 @@ void gfx_vertex_shader_init(gfx_vertex_shader_t* vs)
 		vs->input_layout = NULL;
 		vs->program = NULL;
 		vs->vertex_type = GFX_VERTEX_UNKNOWN;
+		os_atomic_set_s32(&vs->ref_count, 0);
 	}
 }
-gfx_vertex_shader_t* gfx_vertex_shader_create()
+
+gfx_vertex_shader_t* gfx_vertex_shader_new()
 {
-	gfx_vertex_shader_t* vs = MEM_ALLOC(sizeof(gfx_vertex_shader_t));
+	gfx_vertex_shader_t* vs = BM_ALLOC(sizeof(gfx_vertex_shader_t));
 	gfx_vertex_shader_init(vs);
 	return vs;
 }
-void gfx_vertex_shader_free(gfx_vertex_shader_t* vs)
+
+bool gfx_vertex_shader_addref(gfx_vertex_shader_t* vs)
+{
+	if (vs) {
+		os_atomic_inc_s32(&vs->ref_count);
+		return true;
+	}
+	return false;
+}
+
+bool gfx_vertex_shader_release(gfx_vertex_shader_t* vs)
+{
+	if (vs) {
+		os_atomic_dec_s32(&vs->ref_count);
+		return true;
+	}
+	return false;
+}
+
+bool gfx_vertex_shader_free(gfx_vertex_shader_t* vs)
 {
 	if (vs != NULL) {
-		ID3D10Blob_Release(vs->blob);
-		vs->blob = NULL;
-		ID3D11InputLayout_Release(vs->input_layout);
-		vs->input_layout = NULL;
-		ID3D11VertexShader_Release(vs->program);
-		vs->program = NULL;
-		vs->vertex_type = GFX_VERTEX_UNKNOWN;
-		BM_MEM_FREE(vs);
-		vs = NULL;
+		s32 refs = os_atomic_get_s32(&vs->ref_count);
+		if (refs <= 0) {
+			ID3D10Blob_Release(vs->blob);
+			vs->blob = NULL;
+			ID3D11InputLayout_Release(vs->input_layout);
+			vs->input_layout = NULL;
+			ID3D11VertexShader_Release(vs->program);
+			vs->program = NULL;
+			vs->vertex_type = GFX_VERTEX_UNKNOWN;
+			BM_FREE(vs);
+			vs = NULL;
+			return true;
+		}
 	}
+	return false;
 }
 
 enum gfx_vertex_type gfx_vertex_shader_get_vertex_type(gfx_vertex_shader_t* vs)
@@ -1366,24 +1369,50 @@ void gfx_pixel_shader_init(gfx_pixel_shader_t* ps)
 	if (ps != NULL) {
 		ps->blob = NULL;
 		ps->program = NULL;
+		os_atomic_set_s32(&ps->ref_count, 0);
 	}
 }
-gfx_pixel_shader_t* gfx_pixel_shader_create()
+
+gfx_pixel_shader_t* gfx_pixel_shader_new()
 {
-	gfx_pixel_shader_t* ps = MEM_ALLOC(sizeof(gfx_pixel_shader_t));
+	gfx_pixel_shader_t* ps = BM_ALLOC(sizeof(gfx_pixel_shader_t));
 	gfx_pixel_shader_init(ps);
 	return ps;
 }
-void gfx_pixel_shader_free(gfx_pixel_shader_t* ps)
+
+bool gfx_pixel_shader_addref(gfx_pixel_shader_t* ps)
+{
+	if (ps) {
+		os_atomic_inc_s32(&ps->ref_count);
+		return true;
+	}
+	return false;
+}
+
+bool gfx_pixel_shader_release(gfx_pixel_shader_t* ps)
+{
+	if (ps) {
+		os_atomic_dec_s32(&ps->ref_count);
+		return true;
+	}
+	return false;
+}
+
+bool gfx_pixel_shader_free(gfx_pixel_shader_t* ps)
 {
 	if (ps != NULL) {
-		ID3D10Blob_Release(ps->blob);
-		ps->blob = NULL;
-		ID3D11PixelShader_Release(ps->program);
-		ps->program = NULL;
-		BM_MEM_FREE(ps);
-		ps = NULL;
+		s32 refs = os_atomic_get_s32(&ps->ref_count);
+		if (refs <= 0) {
+			ID3D10Blob_Release(ps->blob);
+			ps->blob = NULL;
+			ID3D11PixelShader_Release(ps->program);
+			ps->program = NULL;
+			BM_FREE(ps);
+			ps = NULL;
+			return true;
+		}
 	}
+	return false;
 }
 
 // original stuff -----------------------------------------------------------------------------------------
@@ -1609,12 +1638,15 @@ void gfx_bind_sampler_state(gfx_texture_t* texture, u32 slot)
 //
 // gfx rasterizer
 //
-result gfx_init_rasterizer(enum gfx_culling_mode culling,
-			   enum gfx_raster_flags flags)
+result gfx_init_rasterizer(const struct gfx_raster_state_desc* desc)
 {
+	if (!desc)
+		return RESULT_NULL;
+
 	bool changed = false;
-	if (gfx->module->raster_opts.culling_mode != culling ||
-	    gfx->module->raster_opts.raster_flags != flags) {
+	if (gfx->module->raster_desc.culling_mode != desc->culling_mode ||
+	    gfx->module->raster_desc.winding_order != desc->winding_order ||
+	    gfx->module->raster_desc.raster_flags != desc->raster_flags) {
 		changed = true;
 	}
 
@@ -1624,25 +1656,27 @@ result gfx_init_rasterizer(enum gfx_culling_mode culling,
 	}
 
 	if (!gfx->module->raster_state) {
-		D3D11_RASTERIZER_DESC desc = {
-			.FillMode = (flags & GFX_RASTER_WIREFRAME)
+		D3D11_RASTERIZER_DESC rd = {
+			.FillMode = (desc->raster_flags & GFX_RASTER_WIREFRAME)
 					    ? D3D11_FILL_WIREFRAME
 					    : D3D11_FILL_SOLID,
-			.CullMode =
-				gfx_culling_mode_to_d3d11_cull_mode(culling),
+			.CullMode = gfx_culling_mode_to_d3d11_cull_mode(
+				desc->culling_mode),
 			.FrontCounterClockwise =
-				(BOOL)(flags & GFX_RASTER_WINDING_CCW),
+				(BOOL)(desc->winding_order == GFX_WINDING_CCW),
 			.DepthBias = 0,
 			.DepthBiasClamp = 0.f,
 			.SlopeScaledDepthBias = 0.f,
 			.DepthClipEnable = TRUE,
-			.ScissorEnable = (flags & GFX_RASTER_SCISSOR),
-			.MultisampleEnable = (flags & GFX_RASTER_MULTI_SAMPLE),
-			.AntialiasedLineEnable =
-				(flags & GFX_RASTER_ANTIALIAS_LINES),
+			.ScissorEnable =
+				(desc->raster_flags & GFX_RASTER_SCISSOR),
+			.MultisampleEnable =
+				(desc->raster_flags & GFX_RASTER_MULTI_SAMPLE),
+			.AntialiasedLineEnable = (desc->raster_flags &
+						  GFX_RASTER_ANTIALIAS_LINES),
 		};
 		if (FAILED(ID3D11Device1_CreateRasterizerState(
-			    gfx->module->device, &desc,
+			    gfx->module->device, &rd,
 			    &gfx->module->raster_state))) {
 			return RESULT_NULL;
 		}
@@ -1662,7 +1696,10 @@ void gfx_bind_rasterizer(void)
 //
 // gfx blend
 //
-result gfx_init_blend_state() { return RESULT_OK; }
+result gfx_init_blend_state()
+{
+	return RESULT_OK;
+}
 
 void gfx_bind_blend_state() {}
 
@@ -1694,7 +1731,7 @@ result gfx_texture2d_create(const u8* data, const struct gfx_texture_desc* desc,
 		return RESULT_NULL;
 
 	gfx_texture_t* tex = *texture;
-	tex->impl = MEM_ALLOC(sizeof(struct gfx_texture2d));
+	tex->impl = BM_ALLOC(sizeof(struct gfx_texture2d));
 	struct gfx_texture2d* tex2d = (struct gfx_texture2d*)tex->impl;
 	gfx_texture_init2d(tex2d);
 	tex2d->width = desc->width;
@@ -1745,7 +1782,7 @@ result gfx_texture2d_create(const u8* data, const struct gfx_texture_desc* desc,
 	u32 stride = desc->width * (pix_fmt_bits_per_pixel(desc->pix_fmt) / 8);
 	tex->size = desc->height * stride;
 	if (data) {
-		tex->data = (u8*)MEM_ALLOC(tex->size);
+		tex->data = (u8*)BM_ALLOC(tex->size);
 		memcpy(tex->data, data, tex->size);
 
 		D3D11_SUBRESOURCE_DATA srd = {
@@ -1933,9 +1970,9 @@ result gfx_init_depth(u32 width, u32 height, enum pixel_format pix_fmt,
 	ENSURE_OK(gfx_texture_create(NULL, &desc, &gfx->module->depth_target));
 	// TODO(paulh): Add more depth state options eventually
 	gfx->module->depth_state_enabled =
-		MEM_ALLOC(sizeof(*gfx->module->depth_state_enabled));
+		BM_ALLOC(sizeof(*gfx->module->depth_state_enabled));
 	gfx->module->depth_state_disabled =
-		MEM_ALLOC(sizeof(*gfx->module->depth_state_disabled));
+		BM_ALLOC(sizeof(*gfx->module->depth_state_disabled));
 	gfx_create_depth_state(false, &gfx->module->depth_state_disabled);
 	gfx_create_depth_state(true, &gfx->module->depth_state_enabled);
 	gfx_toggle_depth(enabled);
@@ -1949,12 +1986,12 @@ void gfx_destroy_depth(void)
 	    gfx->module->depth_state_disabled && gfx->module->depth_target) {
 		ID3D11DepthStencilState_Release(
 			gfx->module->depth_state_enabled->dss);
-		BM_MEM_FREE(gfx->module->depth_state_enabled);
+		BM_FREE(gfx->module->depth_state_enabled);
 		gfx->module->depth_state_enabled = NULL;
 
 		ID3D11DepthStencilState_Release(
 			gfx->module->depth_state_disabled->dss);
-		BM_MEM_FREE(gfx->module->depth_state_disabled);
+		BM_FREE(gfx->module->depth_state_disabled);
 		gfx->module->depth_state_disabled = NULL;
 
 		gfx_texture_destroy(gfx->module->depth_target);

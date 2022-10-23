@@ -6,6 +6,7 @@
 #include "core/vector.h"
 
 #include "gfx/enums.h"
+#include "math/types.h"
 #include "media/enums.h"
 
 #ifdef __cplusplus
@@ -32,6 +33,7 @@ struct gfx_device;
 struct gfx_display;
 struct gfx_module;
 struct gfx_monitor;
+struct gfx_pipeline_desc;
 struct gfx_pixel_shader;
 struct gfx_sampler_state;
 struct gfx_shader;
@@ -43,8 +45,8 @@ struct gfx_vertex_shader;
 struct gfx_depth;
 struct gfx_depth_state;
 struct gfx_sprite;
-struct gfx_sprite_sheet;
-struct gfx_ss_frame;
+struct gfx_sheet;
+struct gfx_sheet_frame;
 
 typedef struct gfx_adapter gfx_adapter_t;
 typedef struct gfx_buffer gfx_buffer_t;
@@ -52,6 +54,7 @@ typedef struct gfx_device gfx_device_t;
 typedef struct gfx_display gfx_display_t;
 typedef struct gfx_module gfx_module_t;
 typedef struct gfx_monitor gfx_monitor_t;
+typedef struct gfx_pipeline_desc gfx_pipeline_desc_t;
 typedef struct gfx_pixel_shader gfx_pixel_shader_t;
 typedef struct gfx_sampler_state gfx_sampler_state_t;
 typedef struct gfx_shader gfx_shader_t;
@@ -63,8 +66,8 @@ typedef struct gfx_vertex_shader gfx_vertex_shader_t;
 typedef struct gfx_depth gfx_depth_t;
 typedef struct gfx_depth_state gfx_depth_state_t;
 typedef struct gfx_sprite gfx_sprite_t;
-typedef struct gfx_sprite_sheet gfx_sprite_sheet_t;
-typedef struct gfx_ss_frame gfx_ss_frame_t; /* sprite sheet frame */
+typedef struct gfx_sheet gfx_sheet_t;             /* sprite sheet */
+typedef struct gfx_sheet_frame gfx_sheet_frame_t; /* sprite sheet frame */
 
 struct gfx_window {
 #if defined(_WIN32)
@@ -104,8 +107,9 @@ struct gfx_shader {
 	VECTOR(gfx_shader_var_t) vars;
 };
 
-struct gfx_raster_opts {
+struct gfx_raster_state_desc {
 	enum gfx_culling_mode culling_mode;
+	enum gfx_winding_order winding_order;
 	enum gfx_raster_flags raster_flags;
 };
 
@@ -148,6 +152,47 @@ struct gfx_vertex_data {
 	struct vec4f* colors;
 	struct texture_vertex* tex_verts;
 	size_t num_vertices;
+};
+
+struct gfx_sprite {
+	struct media_image* img;
+	struct gfx_texture* tex;
+	vec2f_t scale;
+};
+
+struct gfx_sheet_frame {
+	rect_t bbox;
+	f64 duration;
+};
+
+struct gfx_sheet {
+	s32 sheet_width;
+	s32 sheet_height;
+	s32 cel_width;
+	s32 cel_height;
+	s32 num_frames;
+	struct gfx_sheet_frame* frames;
+	struct gfx_sprite* sprite;
+};
+
+// typedef struct gs_graphics_stencil_state_desc_t
+// {
+//     gs_graphics_stencil_func_type   func;        // Function to set for stencil test
+//     uint32_t                        ref;         // Specifies reference val for stencil test
+//     uint32_t                        comp_mask;   // Specifies mask that is ANDed with both ref val and stored stencil val
+//     uint32_t                        write_mask;  // Specifies mask that is ANDed with both ref val and stored stencil val
+//     gs_graphics_stencil_op_type     sfail;       // Action to take when stencil test fails
+//     gs_graphics_stencil_op_type     dpfail;      // Action to take when stencil test passes but depth test fails
+//     gs_graphics_stencil_op_type     dppass;      // Action to take when both stencil test passes and either depth passes or is not enabled
+// } gs_graphics_stencil_state_desc_t;
+
+struct gfx_pipeline_desc {
+	// gs_graphics_blend_state_desc_t blend;       // Blend state desc for pipeline
+	// gs_graphics_depth_state_desc_t depth;       // Depth state desc for pipeline
+	struct gfx_raster_state_desc raster; // Raster state desc for pipeline
+	// gs_graphics_stencil_state_desc_t stencil;   // Stencil state desc for pipeline
+	// gs_graphics_compute_state_desc_t compute;   // Compute state desc for pipeline
+	// gs_graphics_vertex_layout_desc_t layout; // Vertex layout desc for pipeline
 };
 
 extern gfx_system_t* gfx;
@@ -206,31 +251,27 @@ BM_EXPORT void gfx_buffer_upload_constants(const gfx_shader_t* shader);
 BM_EXPORT enum gfx_vertex_type gfx_vertex_type_from_string(const char* s);
 BM_EXPORT u8* gfx_buffer_get_data(gfx_buffer_t* buf);
 
-/* shader ------------------------------------------------------------------ */
+/* gfx_shader --------------------------------------------------------------- */
 BM_EXPORT void gfx_shader_init(gfx_shader_t* shader);
 BM_EXPORT gfx_shader_t* gfx_shader_new(enum gfx_shader_type type);
+BM_EXPORT gfx_shader_t* gfx_shader_adopt(gfx_shader_t* other);
 BM_EXPORT void gfx_shader_free(gfx_shader_t* shader);
 BM_EXPORT size_t gfx_shader_cbuffer_fill(gfx_shader_t* shader);
-BM_EXPORT void gfx_vertex_shader_init(gfx_vertex_shader_t* vs);
-BM_EXPORT gfx_vertex_shader_t* gfx_vertex_shader_create(void);
-BM_EXPORT void gfx_vertex_shader_free(gfx_vertex_shader_t* vs);
-BM_EXPORT void gfx_pixel_shader_init(gfx_pixel_shader_t* ps);
-BM_EXPORT gfx_pixel_shader_t* gfx_pixel_shader_create();
-BM_EXPORT void gfx_pixel_shader_free(gfx_pixel_shader_t* ps);
 BM_EXPORT result gfx_shader_compile_from_file(const char* path,
 					      const char* entrypoint,
 					      const char* target,
 					      gfx_shader_t* shader);
 BM_EXPORT result gfx_shader_build_program(gfx_shader_t* shader);
 BM_EXPORT result gfx_shader_new_input_layout(gfx_shader_t* vs);
-
+/* gfx_vertex_shader -------------------------------------------------------- */
+BM_EXPORT void gfx_vertex_shader_init(gfx_vertex_shader_t* vs);
+BM_EXPORT gfx_vertex_shader_t* gfx_vertex_shader_new(void);
+BM_EXPORT bool gfx_vertex_shader_addref(gfx_vertex_shader_t* vs);
+BM_EXPORT bool gfx_vertex_shader_release(gfx_vertex_shader_t* vs);
+BM_EXPORT bool gfx_vertex_shader_free(gfx_vertex_shader_t* vs);
 BM_EXPORT gfx_vertex_shader_t*
-gfx_vertex_shader_create_from_file(const char* path, const char* entrypoint,
-				   const char* target,
-				   enum gfx_vertex_type type);
-
-BM_EXPORT void gfx_vertex_shader_free(gfx_vertex_shader_t* vs);
-
+gfx_vertex_shader_new_from_file(const char* path, const char* entrypoint,
+				const char* target, enum gfx_vertex_type type);
 BM_EXPORT enum gfx_vertex_type
 gfx_vertex_shader_get_vertex_type(gfx_vertex_shader_t* vs);
 BM_EXPORT void gfx_vertex_shader_set_vertex_type(gfx_vertex_shader_t* vs,
@@ -238,7 +279,14 @@ BM_EXPORT void gfx_vertex_shader_set_vertex_type(gfx_vertex_shader_t* vs,
 BM_EXPORT void gfx_bind_primitive_topology(enum gfx_topology topo);
 BM_EXPORT void
 gfx_vertex_shader_bind_input_layout(const gfx_vertex_shader_t* vs);
+/* gfx_pixel_shader --------------------------------------------------------- */
+BM_EXPORT void gfx_pixel_shader_init(gfx_pixel_shader_t* ps);
+BM_EXPORT gfx_pixel_shader_t* gfx_pixel_shader_new();
+BM_EXPORT bool gfx_pixel_shader_addref(gfx_pixel_shader_t* ps);
+BM_EXPORT bool gfx_pixel_shader_release(gfx_pixel_shader_t* ps);
+BM_EXPORT bool gfx_pixel_shader_free(gfx_pixel_shader_t* ps);
 
+/* gfx_shader_var ----------------------------------------------------------- */
 BM_EXPORT gfx_shader_var_t* gfx_shader_var_new(const char* name,
 					       enum gfx_shader_var_type type);
 BM_EXPORT void gfx_shader_var_init(gfx_shader_var_t* var);
@@ -260,8 +308,7 @@ BM_EXPORT result gfx_init_sampler_state(void);
 BM_EXPORT void gfx_bind_sampler_state(gfx_texture_t* texture, u32 slot);
 
 /* rasterizer -------------------------------------------------------------- */
-BM_EXPORT result gfx_init_rasterizer(enum gfx_culling_mode culling,
-				     enum gfx_raster_flags flags);
+BM_EXPORT result gfx_init_rasterizer(const struct gfx_raster_state_desc* desc);
 BM_EXPORT void gfx_bind_rasterizer(void);
 
 /* blend ----------------------------------------------------------------- */
@@ -292,6 +339,13 @@ BM_EXPORT result gfx_init_depth(u32 width, u32 height,
 BM_EXPORT void gfx_destroy_depth(void);
 BM_EXPORT void gfx_bind_depth_state(const struct gfx_depth_state* state);
 BM_EXPORT void gfx_toggle_depth(bool enabled);
+
+/* sprite ------------------------------------------------------------------ */
+BM_EXPORT struct gfx_sprite* gfx_sprite_new();
+BM_EXPORT void gfx_sprite_free(struct gfx_sprite* sprite);
+BM_EXPORT result gfx_sprite_make_texture(struct gfx_sprite* sprite);
+BM_EXPORT struct gfx_sheet* gfx_sheet_new(u32 num_frames);
+BM_EXPORT void gfx_sheet_free(struct gfx_sheet* sheet);
 
 /* misc -------------------------------------------------------------------- */
 BM_EXPORT u32 gfx_texture_get_width(gfx_texture_t* texture);

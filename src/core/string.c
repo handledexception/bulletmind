@@ -9,7 +9,7 @@
 
 struct string* str_new(size_t size)
 {
-	struct string* s = MEM_ALLOC(sizeof(*s));
+	struct string* s = BM_ALLOC(sizeof(*s));
 	str_init(s);
 	if (size > 0)
 		str_reserve(s, size);
@@ -19,7 +19,7 @@ struct string* str_new(size_t size)
 void str_free(struct string* s)
 {
 	if (s != NULL) {
-		BM_MEM_FREE(s);
+		BM_FREE(s);
 		s = NULL;
 	}
 }
@@ -43,7 +43,7 @@ void str_reserve(string_t* s, size_t capacity)
 			char tmp[SSO_SIZE];
 			memcpy(tmp, s->text, SSO_SIZE);
 			s->capacity = capacity + 1;
-			s->data = MEM_ALLOC(s->capacity);
+			s->data = BM_ALLOC(s->capacity);
 			memcpy(s->data, tmp, SSO_SIZE);
 		} else {
 			s->capacity = capacity + 1;

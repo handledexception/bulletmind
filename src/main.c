@@ -55,7 +55,11 @@ result app_init_gfx(struct application* app, const struct gfx_config* cfg)
 	rect_t viewport = {.x = 0, .y = 0, .w = VIEW_WIDTH, .h = VIEW_HEIGHT};
 	ENSURE_OK(gfx_init(cfg, GFX_D3D11 | GFX_USE_ZBUFFER));
 	ENSURE_OK(gfx_init_sampler_state());
-	ENSURE_OK(gfx_init_rasterizer(GFX_CULLING_NONE, 0));
+	struct gfx_raster_state_desc raster_desc = {
+		.culling_mode = GFX_CULLING_NONE,
+		.winding_order = GFX_WINDING_CW,
+		.raster_flags = 0};
+	ENSURE_OK(gfx_init_rasterizer(&raster_desc));
 	vec3f_t cam_eye = {0.f, 0.f, -1.f};
 	vec3f_t cam_dir = {0.f, 0.f, 1.f};
 	vec3f_t cam_up = {0.f, 1.f, 0.f};
@@ -69,12 +73,12 @@ result app_init_gfx(struct application* app, const struct gfx_config* cfg)
 
 void app_refresh_gfx(struct application* app)
 {
-	static size_t tex_index = 0;
+	static size_t sprite_index = 0;
 	if (app->frame_timer == 0.0)
 		app->frame_timer = os_get_time_msec();
 	gfx_render_clear(&kClearColor);
-	size_t vbd_size = 0;
-	size_t vbd_offs = 0;
+	size_t vb_data_size = 0;
+	size_t vb_data_offs = 0;
 	size_t tex_vert_size = 0;
 	size_t vert_stride = 0;
 	u8* vbuf_data = gfx_buffer_get_data(app->vbuf);
@@ -85,6 +89,7 @@ void app_refresh_gfx(struct application* app)
 	memset(vbuf_data, 0, vertex_buffer_size);
 	memset(ibuf_data, 0, index_buffer_size);
 	for (size_t sdx = 0; sdx < app->scenes.num_elems; sdx++) {
+		vb_data_offs = 0;
 		struct gfx_scene* scene =
 			(struct gfx_scene*)app->scenes.elems[sdx];
 		gfx_shader_t* vs = scene->vertex_shader;
@@ -93,19 +98,20 @@ void app_refresh_gfx(struct application* app)
 			GFX_VERTEX_POS_UV); // FIXME: need a function to get vertex shader stride from gfx_shader_t*
 		// Copy vertex buffer data
 		for (u32 vdx = 0; vdx < scene->vert_data->num_vertices; vdx++) {
-			memcpy((void*)&vbuf_data[vbd_offs],
+			memcpy((void*)&vbuf_data[vb_data_offs],
 			       (const void*)&scene->vert_data->positions[vdx],
 			       sizeof(struct vec3f));
-			vbd_offs += sizeof(struct vec3f);
+			vb_data_offs += sizeof(struct vec3f);
 			struct texture_vertex* tex_vert =
 				&scene->vert_data->tex_verts[vdx];
 			tex_vert_size = tex_vert->size;
-			memcpy((void*)&vbuf_data[vbd_offs],
+			memcpy((void*)&vbuf_data[vb_data_offs],
 			       (const void*)tex_vert->data, tex_vert_size);
-			vbd_offs += tex_vert_size;
+			vb_data_offs += tex_vert_size;
 		}
-		vbd_size += (sizeof(vec3f_t) * scene->vert_data->num_vertices) +
-			    (tex_vert_size * scene->vert_data->num_vertices);
+		vb_data_size +=
+			(sizeof(vec3f_t) * scene->vert_data->num_vertices) +
+			(tex_vert_size * scene->vert_data->num_vertices);
 		for (u32 idx = 0; idx < 6; idx++) {
 			memcpy(&ibuf_data[idx], &scene->index_data[idx],
 			       sizeof(u32));
@@ -114,13 +120,21 @@ void app_refresh_gfx(struct application* app)
 		gfx_set_vertex_shader(vs);
 		gfx_set_pixel_shader(ps);
 		gfx_system_bind_input_layout(vs);
-		if (os_get_time_msec() - app->frame_timer >= 2000.) {
-			gfx_shader_set_var_by_name(
-				ps, "texture", scene->textures.elems[tex_index],
-				0, false);
-			if (++tex_index >= scene->textures.num_elems)
-				tex_index = 0;
-			app->frame_timer = 0.0;
+
+		if (sdx == 0) {
+			gfx_sprite_t* sprite =
+				scene->sprites.elems[sprite_index];
+			gfx_shader_set_var_by_name(ps, "texture", sprite->tex,
+						   0, false);
+			if (os_get_time_msec() - app->frame_timer >= 2000.) {
+				if (++sprite_index >= scene->sprites.num_elems)
+					sprite_index = 0;
+				app->frame_timer = 0.0;
+			}
+		} else {
+			gfx_sprite_t* sprite = scene->sprites.elems[0];
+			gfx_shader_set_var_by_name(ps, "texture", sprite->tex,
+						   0, false);
 		}
 		gfx_bind_sampler_state((gfx_texture_t*)ps->vars.elems[0].data,
 				       0);
@@ -132,15 +146,16 @@ void app_refresh_gfx(struct application* app)
 		if (gfx_shader_cbuffer_fill(ps) > 0) {
 			gfx_buffer_upload_constants(ps);
 		}
-		gfx_buffer_copy(app->vbuf, vbuf_data, vbd_size);
+		gfx_buffer_copy(app->vbuf, vbuf_data, vb_data_size);
 		gfx_buffer_copy(app->ibuf, ibuf_data, 6 * sizeof(u32));
 		gfx_system_bind_render_target();
 		gfx_toggle_depth(false);
 		gfx_bind_primitive_topology(GFX_TOPOLOGY_TRIANGLE_LIST);
 		gfx_bind_rasterizer();
 		gfx_render_begin(true);
-		gfx_render_end(false, 0);
 	}
+	gfx_render_end(false, 0);
+	os_sleep_ms(16);
 	app->frame_count++;
 }
 
@@ -168,67 +183,70 @@ result app_init_assets(struct application* app, const char* assets_toml_path)
 
 result app_init_scenes(struct application* app)
 {
-	asset_t* img_asset;
-	ENSURE_OK(asset_manager_find("metro", app->assets, &img_asset));
-	struct media_image* metro_img = (struct media_image*)img_asset->data;
-	// ENSURE_OK(gfx_texture_from_image(metro_img,
-	// 				 (gfx_texture_t**)&metro_tex_var.data));
-	ENSURE_OK(asset_manager_find("rgba_test", app->assets, &img_asset));
+	asset_t* asset;
+	ENSURE_OK(asset_manager_find("metro", app->assets, &asset));
+	struct gfx_sprite* metro_sprite = (struct gfx_sprite*)asset->data;
+	ENSURE_OK(asset_manager_find("rgba_test", app->assets, &asset));
 	gfx_shader_var_t rgba_tex_var = {.name = "rgba_test",
 					 .type = GFX_SHADER_VAR_TEX,
 					 .data = NULL,
-					 .own_data = true};
-	struct media_image* rgba_img = (struct media_image*)img_asset->data;
-
-	gfx_texture_t* rgba_tex;
-	gfx_texture_t* metro_tex;
-	ENSURE_OK(gfx_texture_from_image(rgba_img, &rgba_tex));
-	ENSURE_OK(gfx_texture_from_image(metro_img, &metro_tex));
+					 .own_data = false};
+	struct gfx_sprite* rgba_sprite = (struct gfx_sprite*)asset->data;
+	ENSURE_OK(asset_manager_find("player", app->assets, &asset));
+	struct gfx_sheet* player_sheet = (struct gfx_sheet*)asset->data;
 
 	asset_t* vs_asset = NULL;
 	asset_t* ps_asset = NULL;
 	ENSURE_OK(asset_manager_find("pos_uv_vs", app->assets, &vs_asset));
 	// ENSURE_OK(asset_manager_find("fullscreen_vs", app->assets, &vs_asset));
 	ENSURE_OK(asset_manager_find("pos_uv_ps", app->assets, &ps_asset));
+	gfx_shader_t* vshader = (gfx_shader_t*)vs_asset->data;
+	gfx_shader_t* pshader = (gfx_shader_t*)ps_asset->data;
 
 	size_t vertex_buffer_size = (BM_GFX_MAX_VERTICES * sizeof(vec3f_t)) +
 				    (BM_GFX_MAX_VERTICES * sizeof(vec2f_t));
 	gfx_buffer_new(NULL, vertex_buffer_size, GFX_BUFFER_VERTEX,
 		       GFX_BUFFER_USAGE_DYNAMIC, &app->vbuf);
+	logger(LOG_INFO, "Created vertex buffer (%zu bytes)",
+	       vertex_buffer_size);
 	size_t index_buffer_size = sizeof(u32) * BM_GFX_MAX_INDICES;
 	gfx_buffer_new(NULL, index_buffer_size, GFX_BUFFER_INDEX,
 		       GFX_BUFFER_USAGE_DYNAMIC, &app->ibuf);
+	logger(LOG_INFO, "Created index buffer (%zu bytes)", index_buffer_size);
+	struct gfx_scene* bg_scene = gfx_scene_new(4, 6, GFX_VERTEX_POS_UV);
+	// TODO: Make assets a member of scenes and access textures through the asset?
+	vec_push_back(bg_scene->sprites, &rgba_sprite);
+	vec_push_back(bg_scene->sprites, &metro_sprite);
 
-	struct gfx_scene* sprite = gfx_scene_new(4, 6, GFX_VERTEX_POS_UV);
-	vec_push_back(sprite->textures, &rgba_tex);
-	vec_push_back(sprite->textures, &metro_tex);
-	sprite->vertex_shader = (gfx_shader_t*)vs_asset->data;
-	sprite->pixel_shader = (gfx_shader_t*)ps_asset->data;
+	// borrow vertex/pixel shader implementation from shader assets (ref-counted)
+	bg_scene->vertex_shader = gfx_shader_adopt(vshader);
+	bg_scene->pixel_shader = gfx_shader_adopt(pshader);
+
 	vec3f_t positions[4] = {
 		{-1.f, -1.f, 0.f},
 		{-1.f, 1.f, 0.f},
 		{1.f, 1.f, 0.f},
 		{1.f, -1.f, 0.f},
 	};
-	memcpy(sprite->vert_data->positions, positions, sizeof(vec3f_t) * 4);
+	memcpy(bg_scene->vert_data->positions, positions, sizeof(vec3f_t) * 4);
 	vec2f_t uv = {0.f, 1.f};
-	memcpy(sprite->vert_data->tex_verts[0].data, &uv, sizeof(vec2f_t));
+	memcpy(bg_scene->vert_data->tex_verts[0].data, &uv, sizeof(vec2f_t));
 	uv.x = 0.f;
 	uv.y = 0.f;
-	memcpy(sprite->vert_data->tex_verts[1].data, &uv, sizeof(vec2f_t));
+	memcpy(bg_scene->vert_data->tex_verts[1].data, &uv, sizeof(vec2f_t));
 	uv.x = 1.f;
 	uv.y = 0.f;
-	memcpy(sprite->vert_data->tex_verts[2].data, &uv, sizeof(vec2f_t));
+	memcpy(bg_scene->vert_data->tex_verts[2].data, &uv, sizeof(vec2f_t));
 	uv.x = 1.f;
 	uv.y = 1.f;
-	memcpy(sprite->vert_data->tex_verts[3].data, &uv, sizeof(vec2f_t));
+	memcpy(bg_scene->vert_data->tex_verts[3].data, &uv, sizeof(vec2f_t));
 
-	sprite->index_data[0] = 0;
-	sprite->index_data[1] = 1;
-	sprite->index_data[2] = 2;
-	sprite->index_data[3] = 0;
-	sprite->index_data[4] = 2;
-	sprite->index_data[5] = 3;
+	bg_scene->index_data[0] = 0;
+	bg_scene->index_data[1] = 1;
+	bg_scene->index_data[2] = 2;
+	bg_scene->index_data[3] = 0;
+	bg_scene->index_data[4] = 2;
+	bg_scene->index_data[5] = 3;
 
 	mat4f_t world_matrix;
 	mat4f_t trans_matrix, scale_matrix;
@@ -236,10 +254,11 @@ result app_init_scenes(struct application* app)
 	mat4f_identity(&trans_matrix);
 	mat4f_identity(&scale_matrix);
 	const vec4f_t trans_vec = {0.f, 0.f, 0.f, 0.f};
-	const vec4f_t scale_vec = {
-		(float)metro_img->width - (float)VIEW_WIDTH,   // ortho scaling
-		(float)metro_img->height - (float)VIEW_HEIGHT, // ortho scaling
-		0.f, 1.f};
+	const vec4f_t scale_vec = {(float)metro_sprite->img->width -
+					   (float)VIEW_WIDTH, // ortho scaling
+				   (float)metro_sprite->img->height -
+					   (float)VIEW_HEIGHT, // ortho scaling
+				   0.f, 1.f};
 	mat4f_translate(&trans_matrix, &trans_vec);
 	mat4f_scale(&scale_matrix, &scale_vec);
 	mat4f_mul(&world_matrix, &world_matrix, &trans_matrix);
@@ -260,30 +279,118 @@ result app_init_scenes(struct application* app)
 					  .data = NULL,
 					  .own_data = true};
 	gfx_shader_var_set(&view_proj_var, &view_proj_matrix);
-
-	vec_push_back(app->scenes, &sprite);
-	gfx_shader_add_var(sprite->vertex_shader, &world_var);
-	gfx_shader_add_var(sprite->vertex_shader, &view_proj_var);
+	gfx_shader_add_var(bg_scene->vertex_shader, &world_var);
+	gfx_shader_add_var(bg_scene->vertex_shader, &view_proj_var);
 	gfx_shader_var_t texture_var = {.name = "texture",
 					.type = GFX_SHADER_VAR_TEX,
-					.data = metro_tex,
+					.data = metro_sprite->tex,
 					.own_data = false};
-	gfx_shader_add_var(sprite->pixel_shader, &texture_var);
+	gfx_shader_add_var(bg_scene->pixel_shader, &texture_var);
 	vec2f_t vp_res = {VIEW_WIDTH, VIEW_HEIGHT};
 	gfx_shader_var_t viewport_res_var = {.name = "viewport_res",
 					     .type = GFX_SHADER_VAR_VEC2,
 					     .data = NULL,
 					     .own_data = true};
 	gfx_shader_var_set(&viewport_res_var, &vp_res);
-	gfx_shader_add_var(sprite->pixel_shader, &viewport_res_var);
-	size_t cbuf_size = gfx_shader_get_vars_size(sprite->vertex_shader);
+	gfx_shader_add_var(bg_scene->pixel_shader, &viewport_res_var);
+	size_t cbuf_size = gfx_shader_get_vars_size(bg_scene->vertex_shader);
 	gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
 		       GFX_BUFFER_USAGE_DYNAMIC,
-		       &sprite->vertex_shader->cbuffer);
-	cbuf_size = gfx_shader_get_vars_size(sprite->pixel_shader);
+		       &bg_scene->vertex_shader->cbuffer);
+	cbuf_size = gfx_shader_get_vars_size(bg_scene->pixel_shader);
 	gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
 		       GFX_BUFFER_USAGE_DYNAMIC,
-		       &sprite->pixel_shader->cbuffer);
+		       &bg_scene->pixel_shader->cbuffer);
+	vec_push_back(app->scenes, &bg_scene);
+
+	//
+	// FIXME: MEMORY LEAKS HERE
+	// FIXME: MEMORY LEAKS HERE
+	// FIXME: MEMORY LEAKS HERE
+	// Allocate/free the scene shaders like we do above
+	// struct gfx_scene* player_scene = gfx_scene_new(4, 6, GFX_VERTEX_POS_UV);
+	// vec_push_back(player_scene->sprites, &player_sheet->sprite);
+	// player_scene->vertex_shader = gfx_shader_new(vshader->type);
+	// player_scene->pixel_shader = gfx_shader_new(pshader->type);
+	// player_scene->vertex_shader->impl = vshader->impl;
+	// player_scene->pixel_shader->impl = pshader->impl;
+	// memcpy(player_scene->vert_data->positions, positions,
+	//        sizeof(vec3f_t) * 4);
+	// float ss_frame_uv_x = 1.f / (float)(player_sheet->num_frames);
+	// vec2f_t player_uv = {0.f, 1.f};
+	// memcpy(player_scene->vert_data->tex_verts[0].data, &player_uv,
+	//        sizeof(vec2f_t));
+	// player_uv.x = 0.f;
+	// player_uv.y = 0.f;
+	// memcpy(player_scene->vert_data->tex_verts[1].data, &player_uv,
+	//        sizeof(vec2f_t));
+	// player_uv.x = ss_frame_uv_x;
+	// player_uv.y = 0.f;
+	// memcpy(player_scene->vert_data->tex_verts[2].data, &player_uv,
+	//        sizeof(vec2f_t));
+	// player_uv.x = ss_frame_uv_x;
+	// player_uv.y = 1.f;
+	// memcpy(player_scene->vert_data->tex_verts[3].data, &player_uv,
+	//        sizeof(vec2f_t));
+
+	// player_scene->index_data[0] = 0;
+	// player_scene->index_data[1] = 1;
+	// player_scene->index_data[2] = 2;
+	// player_scene->index_data[3] = 0;
+	// player_scene->index_data[4] = 2;
+	// player_scene->index_data[5] = 3;
+
+	// mat4f_t player_world_matrix;
+	// mat4f_t player_trans_matrix, player_scale_matrix;
+	// mat4f_identity(&player_world_matrix);
+	// mat4f_identity(&player_trans_matrix);
+	// mat4f_identity(&player_scale_matrix);
+	// const vec4f_t player_trans_vec = {0.f, 0.f, -0.01f, 0.f};
+	// const vec4f_t player_scale_vec = {
+	// 	(float)player_sheet->sprite->img->width /
+	// 		player_sheet->num_frames,         // ortho scaling
+	// 	(float)player_sheet->sprite->img->height, // ortho scaling
+	// 	0.f, 1.f};
+	// mat4f_translate(&player_trans_matrix, &player_trans_vec);
+	// mat4f_scale(&player_scale_matrix, &player_scale_vec);
+	// mat4f_mul(&player_world_matrix, &player_world_matrix,
+	// 	  &player_trans_matrix);
+	// mat4f_mul(&player_world_matrix, &player_world_matrix,
+	// 	  &player_scale_matrix);
+
+	// mat4f_t player_vp_matrix;
+	// mat4f_identity(&player_vp_matrix);
+	// mat4f_mul(&player_vp_matrix, &app->cam.view_matrix,
+	// 	  &app->cam.proj_matrix);
+	// mat4f_transpose(&player_vp_matrix, &player_vp_matrix);
+	// gfx_shader_var_t player_world_var = {.name = "world",
+	// 				     .type = GFX_SHADER_VAR_MAT4,
+	// 				     .data = NULL,
+	// 				     .own_data = true};
+	// gfx_shader_var_set(&player_world_var, &player_world_matrix);
+	// gfx_shader_var_t player_vp_var = {.name = "view_proj",
+	// 				  .type = GFX_SHADER_VAR_MAT4,
+	// 				  .data = NULL,
+	// 				  .own_data = true};
+	// gfx_shader_var_set(&player_vp_var, &player_vp_matrix);
+	// gfx_shader_add_var(player_scene->vertex_shader, &player_world_var);
+	// gfx_shader_add_var(player_scene->vertex_shader, &player_vp_var);
+	// gfx_shader_var_t player_tex_var = {.name = "texture",
+	// 				   .type = GFX_SHADER_VAR_TEX,
+	// 				   .data = player_sheet->sprite->tex,
+	// 				   .own_data = false};
+	// gfx_shader_add_var(player_scene->pixel_shader, &player_tex_var);
+	// gfx_shader_var_set(&viewport_res_var, &vp_res);
+	// gfx_shader_add_var(player_scene->pixel_shader, &viewport_res_var);
+	// cbuf_size = gfx_shader_get_vars_size(player_scene->vertex_shader);
+	// gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
+	// 	       GFX_BUFFER_USAGE_DYNAMIC,
+	// 	       &player_scene->vertex_shader->cbuffer);
+	// cbuf_size = gfx_shader_get_vars_size(player_scene->pixel_shader);
+	// gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
+	// 	       GFX_BUFFER_USAGE_DYNAMIC,
+	// 	       &player_scene->pixel_shader->cbuffer);
+	// vec_push_back(app->scenes, &player_scene);
 
 	return RESULT_OK;
 }
@@ -366,8 +473,10 @@ void app_shutdown(struct application* app)
 	if (app != NULL) {
 		gfx_buffer_free(app->ibuf);
 		gfx_buffer_free(app->vbuf);
-		for (size_t i = 0; i < app->scenes.num_elems; i++)
+		for (size_t i = 0; i < app->scenes.num_elems; i++) {
+			struct gfx_scene* scene = app->scenes.elems[i];
 			gfx_scene_free(app->scenes.elems[i]);
+		}
 		vec_free(app->scenes);
 		asset_manager_free(app->assets);
 		inp_free(app->inputs);

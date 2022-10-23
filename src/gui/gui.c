@@ -14,7 +14,7 @@ result gui_init(void)
 	if (gui)
 		gui_shutdown();
 
-	gui = (gui_system_t*)MEM_ALLOC(sizeof(*gui));
+	gui = (gui_system_t*)BM_ALLOC(sizeof(*gui));
 	memset(gui, 0, sizeof(*gui));
 	vec_init(gui->windows);
 	vec_init(gui->events);
@@ -51,7 +51,7 @@ void gui_shutdown(void)
 		}
 		vec_free(gui->windows);
 		vec_free(gui->events);
-		BM_MEM_FREE(gui);
+		BM_FREE(gui);
 		gui = NULL;
 	}
 }
@@ -70,11 +70,11 @@ gui_window_t* gui_create_window(const char* title, s32 x, s32 y, s32 w, s32 h,
 	if (!gui)
 		return NULL;
 
-	gui_window_t* window = (gui_window_t*)MEM_ALLOC(sizeof(*window));
+	gui_window_t* window = (gui_window_t*)BM_ALLOC(sizeof(*window));
 	memset(window, 0, sizeof(*window));
 
 	// TODO(paulh): Fix mem_realloc...
-	// window->title = MEM_ALLOC(window->title, sizeof(title));
+	// window->title = BM_ALLOC(window->title, sizeof(title));
 	memset(window->title, 0, 4096);
 	strcpy(window->title, title);
 	window->flags = flags;
@@ -108,12 +108,12 @@ void gui_destroy_window(gui_window_t* window)
 	// }
 	window->destroy_me = true;
 	// if (window->title) {
-	// 	BM_MEM_FREE(window->title);
+	// 	BM_FREE(window->title);
 	// 	window->title = NULL;
 	// }
 
 	gui->destroy_window(window);
-	BM_MEM_FREE(window);
+	BM_FREE(window);
 	window = NULL;
 }
 

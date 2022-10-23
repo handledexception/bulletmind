@@ -5,7 +5,7 @@
 void gfx_camera_new(camera_t* cam)
 {
 	if (cam == NULL)
-		cam = (camera_t*)MEM_ALLOC(sizeof(*cam));
+		cam = (camera_t*)BM_ALLOC(sizeof(*cam));
 	vec3f_zero(&cam->eye);
 	vec3f_zero(&cam->dir);
 	vec3f_zero(&cam->up);
@@ -23,7 +23,7 @@ void gfx_camera_new(camera_t* cam)
 void gfx_camera_free(camera_t* cam)
 {
 	if (cam != NULL) {
-		BM_MEM_FREE((void*)cam);
+		BM_FREE((void*)cam);
 		cam = NULL;
 	}
 }

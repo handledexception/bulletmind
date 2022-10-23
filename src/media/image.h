@@ -33,7 +33,7 @@ BM_EXPORT void video_frame_new(u32 width, u32 height, enum pixel_format pix_fmt,
 static inline void video_frame_free(struct video_frame* frame)
 {
 	if (frame) {
-		BM_MEM_FREE(frame->data[0]);
+		BM_FREE(frame->data[0]);
 		memset(frame, 0, sizeof(struct video_frame));
 	}
 }
@@ -47,7 +47,7 @@ video_frame_create(enum pixel_format format, uint32_t width, uint32_t height)
 {
 	struct video_frame* frame;
 
-	frame = (struct video_frame*)MEM_ALLOC(sizeof(struct video_frame));
+	frame = (struct video_frame*)BM_ALLOC(sizeof(struct video_frame));
 	video_frame_init(frame, format, width, height);
 	return frame;
 }
@@ -55,8 +55,8 @@ video_frame_create(enum pixel_format format, uint32_t width, uint32_t height)
 static inline void video_frame_destroy(struct video_frame* frame)
 {
 	if (frame) {
-		BM_MEM_FREE(frame->data[0]);
-		BM_MEM_FREE(frame);
+		BM_FREE(frame->data[0]);
+		BM_FREE(frame);
 	}
 }
 

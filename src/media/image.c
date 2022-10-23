@@ -21,7 +21,7 @@ void video_frame_new(u32 width, u32 height, enum pixel_format pix_fmt,
 	case PIX_FMT_RGB24:
 		size = width * height * 3;
 		ALIGN_SIZE(size, alignment);
-		frame->data[0] = MEM_ALLOC(size);
+		frame->data[0] = BM_ALLOC(size);
 		frame->stride[0] = width * 3;
 		break;
 	case PIX_FMT_ARGB32:
@@ -29,7 +29,7 @@ void video_frame_new(u32 width, u32 height, enum pixel_format pix_fmt,
 	case PIX_FMT_BGRA32:
 		size = width * height * 4;
 		ALIGN_SIZE(size, alignment);
-		frame->data[0] = MEM_ALLOC(size);
+		frame->data[0] = BM_ALLOC(size);
 		frame->stride[0] = width * 4;
 		break;
 	}
@@ -38,7 +38,7 @@ void video_frame_new(u32 width, u32 height, enum pixel_format pix_fmt,
 struct media_image* media_image_new()
 {
 	struct media_image* img;
-	img = (struct media_image*)MEM_ALLOC(sizeof(struct media_image));
+	img = (struct media_image*)BM_ALLOC(sizeof(struct media_image));
 	memset(img, 0, sizeof(struct media_image));
 	return img;
 }
@@ -46,7 +46,8 @@ struct media_image* media_image_new()
 void media_image_free(struct media_image* img)
 {
 	if (img != NULL) {
-		BM_MEM_FREE(img);
+		video_frame_free(&img->frame);
+		BM_FREE(img);
 		memset(img, 0, sizeof(struct media_image));
 	}
 }
@@ -69,7 +70,7 @@ result media_image_load(const char* path, struct media_image* img)
 		fseek(file_ptr, 0, SEEK_END);
 		fsize = ftell(file_ptr);
 		fseek(file_ptr, 0, SEEK_SET);
-		file_buf = (u8*)MEM_ALLOC(fsize);
+		file_buf = (u8*)BM_ALLOC(fsize);
 		if (file_ptr == NULL) {
 			logger(LOG_ERROR,
 			       "media_image_load: file %s has no data!\n",
@@ -80,7 +81,7 @@ result media_image_load(const char* path, struct media_image* img)
 			logger(LOG_ERROR,
 			       "media_image_load: could not read to end of file %s\n",
 			       path);
-			BM_MEM_FREE(file_buf);
+			BM_FREE(file_buf);
 			file_buf = NULL;
 			return RESULT_RANGE;
 		}
@@ -93,7 +94,7 @@ result media_image_load(const char* path, struct media_image* img)
 			logger(LOG_ERROR,
 			       "media_image_load: bad TGA header size (%zu bytes). 18 bytes expected.\n",
 			       tga_header_size);
-			BM_MEM_FREE(file_buf);
+			BM_FREE(file_buf);
 			file_buf = NULL;
 			return RESULT_NULL;
 		}
@@ -128,7 +129,7 @@ result media_image_load(const char* path, struct media_image* img)
 		img->height = height;
 		img->frame.stride[0] = stride;
 
-		BM_MEM_FREE(file_buf);
+		BM_FREE(file_buf);
 		fclose(file_ptr);
 	} else {
 		logger(LOG_ERROR, "media_image_load: unsupported extension %s",

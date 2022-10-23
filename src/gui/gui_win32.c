@@ -413,7 +413,7 @@ bool gui_create_window_win32(gui_window_t* window)
 	memset(&window_title, 0, sizeof(window_title));
 	os_utf8_to_wcs(window->title, 0, window_title, sizeof(window_title));
 
-	window->data = (gui_window_data_t*)MEM_ALLOC(sizeof(gui_window_data_t));
+	window->data = (gui_window_data_t*)BM_ALLOC(sizeof(gui_window_data_t));
 	memset(window->data, 0, sizeof(gui_window_data_t));
 	window->data->instance = g_hinstance;
 	window->data->window = window;
@@ -450,7 +450,7 @@ void gui_destroy_window_win32(gui_window_t* window)
 {
 	if (window) {
 		if (window->data) {
-			BM_MEM_FREE((gui_window_data_t*)window->data);
+			BM_FREE((gui_window_data_t*)window->data);
 			window->data = NULL;
 		}
 	}
