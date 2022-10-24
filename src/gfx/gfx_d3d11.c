@@ -102,9 +102,22 @@ struct gfx_texture2d {
 	ID3D11DepthStencilView* dsv;
 };
 
+struct gfx_blend_state {
+	struct gfx_blend_state_config config;
+	D3D11_BLEND_DESC desc;
+	ID3D11BlendState* bs;
+};
+
 struct gfx_depth_state {
 	bool enabled;
 	ID3D11DepthStencilState* dss;
+};
+
+struct gfx_sampler_state {
+	struct gfx_sampler_config conf;
+	D3D11_SAMPLER_DESC desc;
+	ID3D11SamplerState* state;
+	// s32 ref_count;
 };
 
 struct gfx_module {
@@ -130,12 +143,16 @@ struct gfx_module {
 	struct gfx_depth_state* depth_state_enabled;
 	struct gfx_depth_state* depth_state_disabled;
 
-	/* sampler */
-	ID3D11SamplerState* sampler_state;
-
 	/* rasterizer */
 	struct gfx_raster_state_desc raster_desc;
 	ID3D11RasterizerState* raster_state;
+
+	/* blend */
+	struct gfx_blend_state* blend_enabled;
+	struct gfx_blend_state* blend_disabled;
+
+	/* sampler */
+	struct gfx_sampler_state* sampler;
 
 	gfx_shader_t* vertex_shader;
 	gfx_shader_t* pixel_shader;
@@ -268,7 +285,12 @@ void gfx_activate_d3d11_debug_info(void)
 
 result gfx_com_release_d3d11(void)
 {
-	COM_RELEASE(gfx->module->sampler_state);
+	if (gfx->module->sampler)
+		gfx_sampler_state_free(gfx->module->sampler);
+	if (gfx->module->blend_enabled)
+		gfx_blend_state_free(gfx->module->blend_enabled);
+	if (gfx->module->blend_disabled)
+		gfx_blend_state_free(gfx->module->blend_disabled);
 	COM_RELEASE(gfx->module->raster_state);
 	COM_RELEASE(gfx->module->dxgi_swap_chain);
 	COM_RELEASE(gfx->module->dxgi_device);
@@ -581,6 +603,7 @@ result gfx_init_renderer(const struct gfx_config* cfg, s32 flags)
 		return RESULT_ERROR;
 
 	result res = RESULT_OK;
+
 	ENSURE_OK(
 		gfx_render_target_init(cfg->width, cfg->height, cfg->pix_fmt));
 	ENSURE_OK(gfx_init_depth(cfg->width, cfg->height, PIX_FMT_DEPTH_U24_S8,
@@ -595,6 +618,40 @@ result gfx_init_renderer(const struct gfx_config* cfg, s32 flags)
 	// gfx_init_sprite(gfx->module->sprite_vb);
 
 	gfx_system_ready = true;
+
+	//TODO: Move sampler state stuff into pixel shader
+	gfx->module->sampler = gfx_sampler_state_new();
+	if (!gfx->module->sampler)
+		return RESULT_ERROR;
+
+	//TODO: Move blend state stuff out of here
+	gfx->module->blend_enabled = gfx_blend_state_new();
+	if (!gfx->module->blend_enabled)
+		return RESULT_ERROR;
+	gfx->module->blend_disabled = gfx_blend_state_new();
+	if (!gfx->module->blend_disabled)
+		return RESULT_ERROR;
+	struct gfx_blend_state_config blend_cfg = {
+		.enabled = true,
+		.red_enabled = true,
+		.green_enabled = true,
+		.blue_enabled = true,
+		.alpha_enabled = true,
+		.mode_src = GFX_BLEND_SRCALPHA,
+		.mode_dst = GFX_BLEND_INVSRCALPHA,
+		.op = GFX_BLEND_OP_ADD,
+		.mode_src_alpha = GFX_BLEND_ZERO,
+		.mode_dst_alpha = GFX_BLEND_ONE,
+		.op_alpha = GFX_BLEND_OP_ADD};
+	if (gfx_blend_state_configure(gfx->module->blend_enabled, &blend_cfg) != RESULT_OK) {
+		gfx_system_ready = false;
+		return RESULT_ERROR;
+	}
+	blend_cfg.enabled = false;
+	if (gfx_blend_state_configure(gfx->module->blend_disabled, &blend_cfg) != RESULT_OK) {
+		gfx_system_ready = false;
+		return RESULT_ERROR;
+	}
 
 	return RESULT_OK;
 }
@@ -931,7 +988,7 @@ void gfx_render_begin(bool draw_indexed)
 	ID3D11DeviceContext1_VSSetShader(ctx, vs->program, NULL, 0);
 	ID3D11DeviceContext1_PSSetShader(ctx, ps->program, NULL, 0);
 	ID3D11DeviceContext1_PSSetSamplers(ctx, 0, 1,
-					   &gfx->module->sampler_state);
+					   &gfx->module->sampler->state);
 	u32 start = 0;
 	if (draw_indexed) {
 		u32 base_vertex = 0;
@@ -1588,10 +1645,13 @@ void gfx_vertex_shader_bind_input_layout(const gfx_vertex_shader_t* vs)
 //
 // gfx sampler
 //
-result gfx_init_sampler_state(void)
+gfx_sampler_state_t* gfx_sampler_state_new()
 {
 	if (!gfx_ok() || !gfx->module->device)
-		return RESULT_NULL;
+		return NULL;
+
+	gfx_sampler_state_t* sampler = BM_ALLOC(sizeof(gfx_sampler_state_t));
+	gfx_sampler_state_init(sampler);
 
 	D3D11_SAMPLER_DESC sd = {
 		.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
@@ -1606,17 +1666,33 @@ result gfx_init_sampler_state(void)
 		.BorderColor = {0.f, 0.f, 0.f, 0.f},
 	};
 
-	if (FAILED(ID3D11Device1_CreateSamplerState(
-		    gfx->module->device, &sd, &gfx->module->sampler_state))) {
+	if (FAILED(ID3D11Device1_CreateSamplerState(gfx->module->device, &sd,
+						    &sampler->state))) {
 		logger(LOG_DEBUG, "[gfx] Failed to create sampler state!");
-
-		ID3D11SamplerState_Release(gfx->module->sampler_state);
-		gfx->module->sampler_state = NULL;
-
-		return RESULT_ERROR;
+		gfx_sampler_state_free(sampler);
 	}
 
-	return RESULT_OK;
+	return sampler;
+}
+
+void gfx_sampler_state_free(gfx_sampler_state_t* sampler)
+{
+	if (sampler) {
+		if (sampler->state) {
+			COM_RELEASE(sampler->state);
+		}
+		BM_FREE(sampler);
+		sampler = NULL;
+	}
+}
+
+void gfx_sampler_state_init(gfx_sampler_state_t* sampler)
+{
+	if (sampler) {
+		memset(sampler, 0, sizeof(struct gfx_sampler_state));
+		sampler->state = NULL;
+		// sampler->ref_count = 0;
+	}
 }
 
 void gfx_bind_sampler_state(gfx_texture_t* texture, u32 slot)
@@ -1630,7 +1706,7 @@ void gfx_bind_sampler_state(gfx_texture_t* texture, u32 slot)
 				gfx->module->ctx, slot, views, &impl->srv);
 			ID3D11DeviceContext1_PSSetSamplers(
 				gfx->module->ctx, slot, 1,
-				&gfx->module->sampler_state);
+				&gfx->module->sampler->state);
 		}
 	}
 }
@@ -1693,15 +1769,77 @@ void gfx_bind_rasterizer(void)
 	}
 }
 
-//
+//FIXME: implement blend states
 // gfx blend
-//
-result gfx_init_blend_state()
+gfx_blend_state_t* gfx_blend_state_new()
 {
+	gfx_blend_state_t* state = BM_ALLOC(sizeof(struct gfx_blend_state));
+	gfx_blend_state_init(state);
+	return state;
+}
+
+void gfx_blend_state_init(gfx_blend_state_t* state)
+{
+	if (state) {
+		state->bs = NULL;
+		ZeroMemory(&state->desc, sizeof(D3D11_BLEND_DESC));
+		memset(&state->config, 0,
+		       sizeof(struct gfx_blend_state_config));
+	}
+}
+
+result gfx_blend_state_configure(gfx_blend_state_t* state,
+				 const struct gfx_blend_state_config* cfg)
+{
+	if (!state || !cfg)
+		return RESULT_NULL;
+	memcpy(&state->config, cfg, sizeof(struct gfx_blend_state_config));
+
+	for (size_t i = 0; i < 8; i++) {
+		state->desc.RenderTarget[i].BlendEnable = (BOOL)cfg->enabled;
+		state->desc.RenderTarget[i].RenderTargetWriteMask =
+			(cfg->red_enabled ? D3D11_COLOR_WRITE_ENABLE_RED : 0) |
+			(cfg->green_enabled ? D3D11_COLOR_WRITE_ENABLE_GREEN
+					    : 0) |
+			(cfg->blue_enabled ? D3D11_COLOR_WRITE_ENABLE_BLUE
+					   : 0) |
+			(cfg->alpha_enabled ? D3D11_COLOR_WRITE_ENABLE_ALPHA
+					    : 0);
+		state->desc.RenderTarget[i].SrcBlend =
+			gfx_blend_mode_to_d3d11_blend(cfg->mode_src);
+		state->desc.RenderTarget[i].DestBlend =
+			gfx_blend_mode_to_d3d11_blend(cfg->mode_dst);
+		state->desc.RenderTarget[i].BlendOp =
+			gfx_blend_op_to_d3d11_blend_op(cfg->op);
+		state->desc.RenderTarget[i].SrcBlendAlpha =
+			gfx_blend_mode_to_d3d11_blend(cfg->mode_src_alpha);
+		state->desc.RenderTarget[i].DestBlendAlpha =
+			gfx_blend_mode_to_d3d11_blend(cfg->mode_dst_alpha);
+		state->desc.RenderTarget[i].BlendOpAlpha =
+			gfx_blend_op_to_d3d11_blend_op(cfg->op_alpha);
+	}
+	if (FAILED(ID3D11Device1_CreateBlendState(gfx->module->device,
+						   &state->desc, &state->bs)))
+		return RESULT_ERROR;
 	return RESULT_OK;
 }
 
-void gfx_bind_blend_state() {}
+void gfx_blend_state_free(gfx_blend_state_t* state)
+{
+	if (state) {
+		COM_RELEASE(state->bs);
+		BM_FREE(state);
+		state = NULL;
+	}
+}
+
+void gfx_bind_blend_state()
+{
+	float blend_factor[4] = {1.f, 1.f, 1.f, 1.f};
+	ID3D11DeviceContext1_OMSetBlendState(gfx->module->ctx,
+					     gfx->module->blend_enabled->bs,
+					     blend_factor, 0xffffffff);
+}
 
 //
 // gfx texture
@@ -1854,7 +1992,7 @@ void gfx_texture2d_destroy(gfx_texture_t* texture)
 	}
 }
 
-// TODO(paulh): Release stuff if failed!!!!!
+// FIXME: Release stuff if failed!!!!!
 result gfx_render_target_init(u32 width, u32 height, enum pixel_format pf)
 {
 	if (!gfx_hardware_ok())
@@ -1951,7 +2089,7 @@ result gfx_create_depth_state(bool enable, struct gfx_depth_state** state)
 	return RESULT_OK;
 }
 
-// TODO(paulh): Release stuff if failed!!!!!
+// FIXME: Release stuff if failed!!!!!
 result gfx_init_depth(u32 width, u32 height, enum pixel_format pix_fmt,
 		      bool enabled)
 {

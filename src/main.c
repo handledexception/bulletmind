@@ -54,7 +54,6 @@ result app_init_gfx(struct application* app, const struct gfx_config* cfg)
 {
 	rect_t viewport = {.x = 0, .y = 0, .w = VIEW_WIDTH, .h = VIEW_HEIGHT};
 	ENSURE_OK(gfx_init(cfg, GFX_D3D11 | GFX_USE_ZBUFFER));
-	ENSURE_OK(gfx_init_sampler_state());
 	struct gfx_raster_state_desc raster_desc = {
 		.culling_mode = GFX_CULLING_NONE,
 		.winding_order = GFX_WINDING_CW,
@@ -64,8 +63,7 @@ result app_init_gfx(struct application* app, const struct gfx_config* cfg)
 	vec3f_t cam_dir = {0.f, 0.f, 1.f};
 	vec3f_t cam_up = {0.f, 1.f, 0.f};
 	gfx_camera_new(&app->cam);
-	gfx_camera_ortho(&app->cam, &cam_eye, &cam_dir, &cam_up, &viewport,
-			 Z_NEAR, Z_FAR);
+	gfx_camera_ortho(&app->cam, &cam_eye, &cam_dir, &cam_up, &viewport, Z_NEAR, Z_FAR);
 	// gfx_camera_persp(&app->cam, &cam_eye, &cam_dir, &cam_up, &viewport, 90.f, Z_NEAR, Z_FAR);
 
 	return RESULT_OK;
@@ -135,9 +133,18 @@ void app_refresh_gfx(struct application* app)
 			gfx_sprite_t* sprite = scene->sprites.elems[0];
 			gfx_shader_set_var_by_name(ps, "texture", sprite->tex,
 						   0, false);
+			gfx_shader_var_t* world_var = gfx_shader_get_var_by_name(vs, "world");
+			mat4f_t* world_matrix = (mat4f_t*)world_var->data;
+			vec4f_t tv = { .x = 0.05f, .y = 0.05f, .z = 0.f, .w = 0.f };
+			mat4f_t tm;
+			mat4f_identity(&tm);
+			mat4f_translate(&tm, &tv);
+			mat4f_mul(world_matrix, world_matrix, &tm);
+			float x = world_matrix->elements[0];
 		}
-		gfx_bind_sampler_state((gfx_texture_t*)ps->vars.elems[0].data,
-				       0);
+		//TODO: Move sampler state into pixel shader, add state param to bind function
+		gfx_bind_blend_state();
+		gfx_bind_sampler_state((gfx_texture_t*)ps->vars.elems[0].data, 0);
 		gfx_bind_vertex_buffer(app->vbuf, (u32)vert_stride, 0);
 		gfx_bind_index_buffer(app->ibuf, 0);
 		if (gfx_shader_cbuffer_fill(vs) > 0) {
@@ -213,12 +220,13 @@ result app_init_scenes(struct application* app)
 	gfx_buffer_new(NULL, index_buffer_size, GFX_BUFFER_INDEX,
 		       GFX_BUFFER_USAGE_DYNAMIC, &app->ibuf);
 	logger(LOG_INFO, "Created index buffer (%zu bytes)", index_buffer_size);
-	struct gfx_scene* bg_scene = gfx_scene_new(4, 6, GFX_VERTEX_POS_UV);
+	struct gfx_scene* bg_scene =
+		gfx_scene_new("background", 4, 6, GFX_VERTEX_POS_UV);
 	// TODO: Make assets a member of scenes and access textures through the asset?
 	vec_push_back(bg_scene->sprites, &rgba_sprite);
 	vec_push_back(bg_scene->sprites, &metro_sprite);
 
-	// borrow vertex/pixel shader implementation from shader assets (ref-counted)
+	// borrow ref-counted impls from shader assets
 	bg_scene->vertex_shader = gfx_shader_adopt(vshader);
 	bg_scene->pixel_shader = gfx_shader_adopt(pshader);
 
@@ -254,11 +262,15 @@ result app_init_scenes(struct application* app)
 	mat4f_identity(&trans_matrix);
 	mat4f_identity(&scale_matrix);
 	const vec4f_t trans_vec = {0.f, 0.f, 0.f, 0.f};
-	const vec4f_t scale_vec = {(float)metro_sprite->img->width -
-					   (float)VIEW_WIDTH, // ortho scaling
-				   (float)metro_sprite->img->height -
-					   (float)VIEW_HEIGHT, // ortho scaling
-				   0.f, 1.f};
+	// const vec4f_t scale_vec = {1.f, 0.5625f, // perspective scaling
+	// 			   0.f, 1.f};
+	const vec4f_t scale_vec = { /* ortho */
+		(float)metro_sprite->img->width -
+		(float)VIEW_WIDTH,
+		(float)metro_sprite->img->height -
+		(float)VIEW_HEIGHT,
+		0.f, 1.f
+	};
 	mat4f_translate(&trans_matrix, &trans_vec);
 	mat4f_scale(&scale_matrix, &scale_vec);
 	mat4f_mul(&world_matrix, &world_matrix, &trans_matrix);
@@ -279,20 +291,20 @@ result app_init_scenes(struct application* app)
 					  .data = NULL,
 					  .own_data = true};
 	gfx_shader_var_set(&view_proj_var, &view_proj_matrix);
-	gfx_shader_add_var(bg_scene->vertex_shader, &world_var);
-	gfx_shader_add_var(bg_scene->vertex_shader, &view_proj_var);
+	gfx_shader_add_var(bg_scene->vertex_shader, world_var);
+	gfx_shader_add_var(bg_scene->vertex_shader, view_proj_var);
 	gfx_shader_var_t texture_var = {.name = "texture",
 					.type = GFX_SHADER_VAR_TEX,
 					.data = metro_sprite->tex,
 					.own_data = false};
-	gfx_shader_add_var(bg_scene->pixel_shader, &texture_var);
+	gfx_shader_add_var(bg_scene->pixel_shader, texture_var);
 	vec2f_t vp_res = {VIEW_WIDTH, VIEW_HEIGHT};
 	gfx_shader_var_t viewport_res_var = {.name = "viewport_res",
 					     .type = GFX_SHADER_VAR_VEC2,
 					     .data = NULL,
 					     .own_data = true};
 	gfx_shader_var_set(&viewport_res_var, &vp_res);
-	gfx_shader_add_var(bg_scene->pixel_shader, &viewport_res_var);
+	gfx_shader_add_var(bg_scene->pixel_shader, viewport_res_var);
 	size_t cbuf_size = gfx_shader_get_vars_size(bg_scene->vertex_shader);
 	gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
 		       GFX_BUFFER_USAGE_DYNAMIC,
@@ -303,94 +315,96 @@ result app_init_scenes(struct application* app)
 		       &bg_scene->pixel_shader->cbuffer);
 	vec_push_back(app->scenes, &bg_scene);
 
-	//
-	// FIXME: MEMORY LEAKS HERE
-	// FIXME: MEMORY LEAKS HERE
-	// FIXME: MEMORY LEAKS HERE
-	// Allocate/free the scene shaders like we do above
-	// struct gfx_scene* player_scene = gfx_scene_new(4, 6, GFX_VERTEX_POS_UV);
-	// vec_push_back(player_scene->sprites, &player_sheet->sprite);
-	// player_scene->vertex_shader = gfx_shader_new(vshader->type);
-	// player_scene->pixel_shader = gfx_shader_new(pshader->type);
-	// player_scene->vertex_shader->impl = vshader->impl;
-	// player_scene->pixel_shader->impl = pshader->impl;
-	// memcpy(player_scene->vert_data->positions, positions,
-	//        sizeof(vec3f_t) * 4);
-	// float ss_frame_uv_x = 1.f / (float)(player_sheet->num_frames);
-	// vec2f_t player_uv = {0.f, 1.f};
-	// memcpy(player_scene->vert_data->tex_verts[0].data, &player_uv,
-	//        sizeof(vec2f_t));
-	// player_uv.x = 0.f;
-	// player_uv.y = 0.f;
-	// memcpy(player_scene->vert_data->tex_verts[1].data, &player_uv,
-	//        sizeof(vec2f_t));
-	// player_uv.x = ss_frame_uv_x;
-	// player_uv.y = 0.f;
-	// memcpy(player_scene->vert_data->tex_verts[2].data, &player_uv,
-	//        sizeof(vec2f_t));
-	// player_uv.x = ss_frame_uv_x;
-	// player_uv.y = 1.f;
-	// memcpy(player_scene->vert_data->tex_verts[3].data, &player_uv,
-	//        sizeof(vec2f_t));
+	// PLAYER
+	struct gfx_scene* player_scene =
+		gfx_scene_new("player-sprite", 4, 6, GFX_VERTEX_POS_UV);
+	vec_push_back(player_scene->sprites, &player_sheet->sprite);
+	// borrow ref-counted impls from shader assets
+	player_scene->vertex_shader = gfx_shader_adopt(vshader);
+	player_scene->pixel_shader = gfx_shader_adopt(pshader);
+	memcpy(player_scene->vert_data->positions, positions,
+	       sizeof(vec3f_t) * 4);
+	float ss_frame_uv_x = 1.f / (float)(player_sheet->num_frames);
+	vec2f_t player_uv = {0.f, 1.f};
+	memcpy(player_scene->vert_data->tex_verts[0].data, &player_uv,
+	       sizeof(vec2f_t));
+	player_uv.x = 0.f;
+	player_uv.y = 0.f;
+	memcpy(player_scene->vert_data->tex_verts[1].data, &player_uv,
+	       sizeof(vec2f_t));
+	player_uv.x = ss_frame_uv_x;
+	player_uv.y = 0.f;
+	memcpy(player_scene->vert_data->tex_verts[2].data, &player_uv,
+	       sizeof(vec2f_t));
+	player_uv.x = ss_frame_uv_x;
+	player_uv.y = 1.f;
+	memcpy(player_scene->vert_data->tex_verts[3].data, &player_uv,
+	       sizeof(vec2f_t));
 
-	// player_scene->index_data[0] = 0;
-	// player_scene->index_data[1] = 1;
-	// player_scene->index_data[2] = 2;
-	// player_scene->index_data[3] = 0;
-	// player_scene->index_data[4] = 2;
-	// player_scene->index_data[5] = 3;
+	player_scene->index_data[0] = 0;
+	player_scene->index_data[1] = 1;
+	player_scene->index_data[2] = 2;
+	player_scene->index_data[3] = 0;
+	player_scene->index_data[4] = 2;
+	player_scene->index_data[5] = 3;
 
-	// mat4f_t player_world_matrix;
-	// mat4f_t player_trans_matrix, player_scale_matrix;
-	// mat4f_identity(&player_world_matrix);
-	// mat4f_identity(&player_trans_matrix);
-	// mat4f_identity(&player_scale_matrix);
-	// const vec4f_t player_trans_vec = {0.f, 0.f, -0.01f, 0.f};
-	// const vec4f_t player_scale_vec = {
-	// 	(float)player_sheet->sprite->img->width /
-	// 		player_sheet->num_frames,         // ortho scaling
-	// 	(float)player_sheet->sprite->img->height, // ortho scaling
-	// 	0.f, 1.f};
-	// mat4f_translate(&player_trans_matrix, &player_trans_vec);
-	// mat4f_scale(&player_scale_matrix, &player_scale_vec);
-	// mat4f_mul(&player_world_matrix, &player_world_matrix,
-	// 	  &player_trans_matrix);
-	// mat4f_mul(&player_world_matrix, &player_world_matrix,
-	// 	  &player_scale_matrix);
+	mat4f_t player_world_matrix;
+	mat4f_t player_trans_matrix, player_scale_matrix;
+	mat4f_identity(&player_world_matrix);
+	mat4f_identity(&player_trans_matrix);
+	mat4f_identity(&player_scale_matrix);
+	const vec4f_t player_trans_vec = {-320.f, 0.f, 0.f, 0.f};
+	// const vec4f_t player_scale_vec = {1.f, 1.f, 0.f, 1.f}; // perspective scaling
+	const vec4f_t player_scale_vec = { /* ortho */
+		(float)player_sheet->sprite->img->width /
+			player_sheet->num_frames,         
+		(float)player_sheet->sprite->img->height,
+		0.f, 1.f};
+	mat4f_translate(&player_trans_matrix, &player_trans_vec);
+	mat4f_scale(&player_scale_matrix, &player_scale_vec);
+	mat4f_mul(&player_world_matrix, &player_world_matrix,
+		  &player_trans_matrix);
+	mat4f_mul(&player_world_matrix, &player_world_matrix,
+		  &player_scale_matrix);
 
-	// mat4f_t player_vp_matrix;
-	// mat4f_identity(&player_vp_matrix);
-	// mat4f_mul(&player_vp_matrix, &app->cam.view_matrix,
-	// 	  &app->cam.proj_matrix);
-	// mat4f_transpose(&player_vp_matrix, &player_vp_matrix);
-	// gfx_shader_var_t player_world_var = {.name = "world",
-	// 				     .type = GFX_SHADER_VAR_MAT4,
-	// 				     .data = NULL,
-	// 				     .own_data = true};
-	// gfx_shader_var_set(&player_world_var, &player_world_matrix);
-	// gfx_shader_var_t player_vp_var = {.name = "view_proj",
-	// 				  .type = GFX_SHADER_VAR_MAT4,
-	// 				  .data = NULL,
-	// 				  .own_data = true};
-	// gfx_shader_var_set(&player_vp_var, &player_vp_matrix);
-	// gfx_shader_add_var(player_scene->vertex_shader, &player_world_var);
-	// gfx_shader_add_var(player_scene->vertex_shader, &player_vp_var);
-	// gfx_shader_var_t player_tex_var = {.name = "texture",
-	// 				   .type = GFX_SHADER_VAR_TEX,
-	// 				   .data = player_sheet->sprite->tex,
-	// 				   .own_data = false};
-	// gfx_shader_add_var(player_scene->pixel_shader, &player_tex_var);
-	// gfx_shader_var_set(&viewport_res_var, &vp_res);
-	// gfx_shader_add_var(player_scene->pixel_shader, &viewport_res_var);
-	// cbuf_size = gfx_shader_get_vars_size(player_scene->vertex_shader);
-	// gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
-	// 	       GFX_BUFFER_USAGE_DYNAMIC,
-	// 	       &player_scene->vertex_shader->cbuffer);
-	// cbuf_size = gfx_shader_get_vars_size(player_scene->pixel_shader);
-	// gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
-	// 	       GFX_BUFFER_USAGE_DYNAMIC,
-	// 	       &player_scene->pixel_shader->cbuffer);
-	// vec_push_back(app->scenes, &player_scene);
+	mat4f_t player_vp_matrix;
+	mat4f_identity(&player_vp_matrix);
+	mat4f_mul(&player_vp_matrix, &app->cam.view_matrix,
+		  &app->cam.proj_matrix);
+	mat4f_transpose(&player_vp_matrix, &player_vp_matrix);
+	gfx_shader_var_t player_world_var = {.name = "world",
+					     .type = GFX_SHADER_VAR_MAT4,
+					     .data = NULL,
+					     .own_data = true};
+	gfx_shader_var_set(&player_world_var, &player_world_matrix);
+	gfx_shader_var_t player_vp_var = {.name = "view_proj",
+					  .type = GFX_SHADER_VAR_MAT4,
+					  .data = NULL,
+					  .own_data = true};
+	gfx_shader_var_set(&player_vp_var, &player_vp_matrix);
+	gfx_shader_add_var(player_scene->vertex_shader, player_world_var);
+	gfx_shader_add_var(player_scene->vertex_shader, player_vp_var);
+	gfx_shader_var_t player_tex_var = {.name = "texture",
+					   .type = GFX_SHADER_VAR_TEX,
+					   .data = player_sheet->sprite->tex,
+					   .own_data = false};
+	gfx_shader_add_var(player_scene->pixel_shader, player_tex_var);
+	vec2f_t player_vp_res = {VIEW_WIDTH, VIEW_HEIGHT};
+	gfx_shader_var_t player_viewport_res_var = {.name = "viewport_res",
+						    .type = GFX_SHADER_VAR_VEC2,
+						    .data = NULL,
+						    .own_data = true};
+	gfx_shader_var_set(&player_viewport_res_var, &player_vp_res);
+	gfx_shader_add_var(player_scene->pixel_shader, player_viewport_res_var);
+	cbuf_size = gfx_shader_get_vars_size(player_scene->vertex_shader);
+	gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
+		       GFX_BUFFER_USAGE_DYNAMIC,
+		       &player_scene->vertex_shader->cbuffer);
+	cbuf_size = gfx_shader_get_vars_size(player_scene->pixel_shader);
+	gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
+		       GFX_BUFFER_USAGE_DYNAMIC,
+		       &player_scene->pixel_shader->cbuffer);
+	vec_push_back(app->scenes, &player_scene);
 
 	return RESULT_OK;
 }

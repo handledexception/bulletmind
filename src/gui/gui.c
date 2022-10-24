@@ -73,7 +73,7 @@ gui_window_t* gui_create_window(const char* title, s32 x, s32 y, s32 w, s32 h,
 	gui_window_t* window = (gui_window_t*)BM_ALLOC(sizeof(*window));
 	memset(window, 0, sizeof(*window));
 
-	// TODO(paulh): Fix mem_realloc...
+	// FIXME: Fix mem_realloc...
 	// window->title = BM_ALLOC(window->title, sizeof(title));
 	memset(window->title, 0, 4096);
 	strcpy(window->title, title);

@@ -178,11 +178,12 @@ void gfx_shader_var_set_from(gfx_shader_var_t* var, const void* data)
 	}
 }
 
-bool gfx_shader_add_var(gfx_shader_t* shader, const gfx_shader_var_t* var)
+bool gfx_shader_add_var(gfx_shader_t* shader, const gfx_shader_var_t var)
 {
-	if (shader != NULL && var != NULL) {
-		if (vec_find(shader->vars, var, 0) == VEC_NOT_FOUND) {
-			vec_push_back(shader->vars, var);
+	// if (shader != NULL && var != NULL) {
+	if (shader) {
+		if (vec_find(shader->vars, &var, 0) == VEC_NOT_FOUND) {
+			vec_push_back(shader->vars, &var);
 			return true;
 		}
 	}
@@ -233,6 +234,7 @@ gfx_shader_var_t* gfx_shader_get_var_by_name(gfx_shader_t* shader,
 			(gfx_shader_var_t*)&shader->vars.elems[i];
 		if (var != NULL && !strcmp(var->name, name)) {
 			found = var;
+			break;
 		}
 	}
 	return found;

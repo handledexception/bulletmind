@@ -27,27 +27,6 @@ typedef struct vec4f vec4f_t;
 typedef struct mat4f mat4f_t;
 typedef struct rgba rgba_t;
 
-struct gfx_adapter;
-struct gfx_buffer;
-struct gfx_device;
-struct gfx_display;
-struct gfx_module;
-struct gfx_monitor;
-struct gfx_pipeline_desc;
-struct gfx_pixel_shader;
-struct gfx_sampler_state;
-struct gfx_shader;
-struct gfx_shader_var;
-struct gfx_swapchain;
-struct gfx_system;
-struct gfx_texture;
-struct gfx_vertex_shader;
-struct gfx_depth;
-struct gfx_depth_state;
-struct gfx_sprite;
-struct gfx_sheet;
-struct gfx_sheet_frame;
-
 typedef struct gfx_adapter gfx_adapter_t;
 typedef struct gfx_buffer gfx_buffer_t;
 typedef struct gfx_device gfx_device_t;
@@ -56,6 +35,8 @@ typedef struct gfx_module gfx_module_t;
 typedef struct gfx_monitor gfx_monitor_t;
 typedef struct gfx_pipeline_desc gfx_pipeline_desc_t;
 typedef struct gfx_pixel_shader gfx_pixel_shader_t;
+typedef struct gfx_blend_state gfx_blend_state_t;
+typedef struct gfx_raster_state gfx_raster_state_t;
 typedef struct gfx_sampler_state gfx_sampler_state_t;
 typedef struct gfx_shader gfx_shader_t;
 typedef struct gfx_shader_var gfx_shader_var_t;
@@ -111,6 +92,20 @@ struct gfx_raster_state_desc {
 	enum gfx_culling_mode culling_mode;
 	enum gfx_winding_order winding_order;
 	enum gfx_raster_flags raster_flags;
+};
+
+struct gfx_blend_state_config {
+	bool enabled;
+	bool red_enabled;
+	bool green_enabled;
+	bool blue_enabled;
+	bool alpha_enabled;
+	enum gfx_blend_mode mode_src;
+	enum gfx_blend_mode mode_dst;
+	enum gfx_blend_op op;
+	enum gfx_blend_mode mode_src_alpha;
+	enum gfx_blend_mode mode_dst_alpha;
+	enum gfx_blend_op op_alpha;
 };
 
 struct gfx_sampler_config {
@@ -199,7 +194,7 @@ extern gfx_system_t* gfx;
 extern bool gfx_hardware_ready;
 extern bool gfx_system_ready;
 
-BM_EXPORT result gfx_init(const struct gfx_config* cfg, s32 flags);
+BM_EXPORT result gfx_init_extra();
 BM_EXPORT void gfx_shutdown(void);
 BM_EXPORT bool gfx_hardware_ok(void);
 BM_EXPORT bool gfx_ok(void);
@@ -294,7 +289,7 @@ BM_EXPORT void gfx_shader_var_free(gfx_shader_var_t* var);
 BM_EXPORT void gfx_shader_var_set(gfx_shader_var_t* var, const void* data);
 BM_EXPORT void gfx_shader_var_set_from(gfx_shader_var_t* var, const void* data);
 BM_EXPORT bool gfx_shader_add_var(gfx_shader_t* shader,
-				  const gfx_shader_var_t* var);
+				  const gfx_shader_var_t var);
 BM_EXPORT bool gfx_shader_set_var_by_name(gfx_shader_t* shader,
 					  const char* name, const void* value,
 					  size_t size, bool own_data);
@@ -304,7 +299,9 @@ BM_EXPORT gfx_shader_var_t* gfx_shader_get_var_by_name(gfx_shader_t* shader,
 BM_EXPORT size_t gfx_shader_var_size(enum gfx_shader_var_type type);
 BM_EXPORT const char* gfx_shader_type_to_string(enum gfx_shader_type type);
 /* sampler ----------------------------------------------------------------- */
-BM_EXPORT result gfx_init_sampler_state(void);
+BM_EXPORT gfx_sampler_state_t* gfx_sampler_state_new();
+BM_EXPORT void gfx_sampler_state_free(gfx_sampler_state_t* sampler);
+BM_EXPORT void gfx_sampler_state_init(gfx_sampler_state_t* sampler);
 BM_EXPORT void gfx_bind_sampler_state(gfx_texture_t* texture, u32 slot);
 
 /* rasterizer -------------------------------------------------------------- */
@@ -312,7 +309,11 @@ BM_EXPORT result gfx_init_rasterizer(const struct gfx_raster_state_desc* desc);
 BM_EXPORT void gfx_bind_rasterizer(void);
 
 /* blend ----------------------------------------------------------------- */
-BM_EXPORT result gfx_init_blend_state();
+BM_EXPORT gfx_blend_state_t* gfx_blend_state_new();
+BM_EXPORT void gfx_blend_state_free(gfx_blend_state_t* state);
+BM_EXPORT void gfx_blend_state_init(gfx_blend_state_t* state);
+BM_EXPORT result gfx_blend_state_configure(
+	gfx_blend_state_t* state, const struct gfx_blend_state_config* cfg);
 BM_EXPORT void gfx_bind_blend_state();
 
 /* texture ----------------------------------------------------------------- */

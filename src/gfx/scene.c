@@ -2,12 +2,19 @@
 #include "math/types.h"
 #include "core/memory.h"
 
-struct gfx_scene* gfx_scene_new(u32 num_verts, u32 num_indices,
-				enum gfx_vertex_type vert_type)
+struct gfx_scene* gfx_scene_new(const char* name, u32 num_verts,
+				u32 num_indices, enum gfx_vertex_type vert_type)
 {
 	// allocate the scene
 	struct gfx_scene* scene = BM_ALLOC(sizeof(*scene));
 	memset(scene, 0, sizeof(*scene));
+	size_t sz_name = strlen(name);
+	if (sz_name > SCENE_NAME_LENGTH)
+		sz_name = SCENE_NAME_LENGTH;
+	strncpy(&scene->name[0], name, sz_name + 1);
+	if (scene->name[SCENE_NAME_LENGTH] != '\0')
+		scene->name[SCENE_NAME_LENGTH] = '\0';
+
 	// allocate vertex data
 	scene->vert_data = BM_ALLOC(sizeof(*scene->vert_data));
 	memset(scene->vert_data, 0, sizeof(*scene->vert_data));
