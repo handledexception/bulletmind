@@ -120,23 +120,26 @@ void* mem_alloc(size_t size)
 
 void* mem_realloc(void* ptr, size_t size)
 {
-	void* new_ptr = ptr;
+	if (ptr) {
+	// void* new_ptr = ptr;
 #ifdef TRACK_MEMORY
-	u8* curr_hdr = *(u8**)(&ptr) - sizeof(size_t);
-	size_t curr_size = *(s32*)(curr_hdr);
-	size_t new_size = curr_size + size + sizeof(size_t);
-	new_ptr = allocator.malloc(new_size);
-	recalculate_allocs(new_size);
-	u8* new_hdr = *(u8**)(&new_ptr);
-	*(size_t*)(new_hdr) = new_size;
-	*(u8**)(&new_ptr) += sizeof(size_t);
-	memcpy(new_ptr, ptr, curr_size);
-	mem_free(ptr);
-	recalculate_frees(curr_size);
+		size_t* p = (size_t*)(ptr)-1;
+		size_t alloc_size = *p;
+		size_t obj_size = alloc_size - sizeof(size_t);
+		p++;
+		// new size
+		u8* new_p = BM_ALLOC(size);
+		size_t copy_size = obj_size;
+		if (copy_size > size)
+			copy_size = size;
+		memcpy(new_p, p, copy_size);
+		BM_FREE(p);
+		ptr = (void*)new_p;
 #else
 	allocator.realloc(new_ptr, size);
 #endif
-	return new_ptr;
+	}
+	return ptr;
 }
 
 void mem_free(void* ptr)

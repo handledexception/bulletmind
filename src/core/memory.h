@@ -61,8 +61,12 @@ BM_EXPORT int mem_report_leaks();
 #define BM_FREE(p)   \
 	mem_free(p); \
 	logger(LOG_DEBUG, "mem_free: %s", BM_FUNC_SIG)
+#define BM_REALLOC(p, sz)   \
+	mem_realloc(p, sz); \
+	logger(LOG_DEBUG, "mem_realloc: %s", BM_FUNC_SIG);
 #else
 #define BM_ALLOC(sz) mem_alloc(sz)
+#define BM_REALLOC(p, sz) mem_realloc(p, sz)
 #define BM_FREE(p) mem_free(p)
 #endif
 #endif
