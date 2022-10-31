@@ -199,6 +199,11 @@ enum gfx_display_orientation {
 	GFX_DISPLAY_ORIENTATION_PORTRAIT_FLIPPED = GFX_DISPLAY_ORIENTATION_270
 };
 
+enum gfx_projection {
+	GFX_PROJECTION_PERSPECTIVE,
+	GFX_PROJECTION_ORTHOGRAPIC,
+};
+
 typedef enum {
 	GFX_D3D11 = 1 << 0,
 	GFX_OPENGL = 1 << 1,

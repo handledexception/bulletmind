@@ -18,6 +18,7 @@ void gfx_camera_new(camera_t* cam)
 	cam->fov = 0.f;
 	cam->z_far = 0.f;
 	cam->z_near = 0.f;
+	cam->projection = GFX_PROJECTION_PERSPECTIVE;
 }
 
 void gfx_camera_free(camera_t* cam)
@@ -42,6 +43,7 @@ void gfx_camera_ortho(camera_t* cam, const vec3f_t* eye, const vec3f_t* dir,
 	mat4f_look_at_lh(&cam->view_matrix, eye, dir, up);
 	mat4f_ortho_lh(&cam->proj_matrix, (f32)viewport->w, (f32)viewport->h,
 		       z_near, z_far);
+	cam->projection = GFX_PROJECTION_ORTHOGRAPIC;
 }
 
 void gfx_camera_persp(camera_t* cam, const vec3f_t* eye, const vec3f_t* dir,
@@ -59,4 +61,5 @@ void gfx_camera_persp(camera_t* cam, const vec3f_t* eye, const vec3f_t* dir,
 	f32 aspect = (f32)viewport->w / (f32)viewport->h;
 	mat4f_look_at_lh(&cam->view_matrix, &cam->eye, &cam->dir, &cam->up);
 	mat4f_perspective_fov_lh(&cam->proj_matrix, fov, aspect, z_near, z_far);
+	cam->projection = GFX_PROJECTION_PERSPECTIVE;
 }

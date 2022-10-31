@@ -13,6 +13,7 @@ typedef struct {
 	f32 fov;
 	f32 z_near;
 	f32 z_far;
+	enum gfx_projection projection;
 } camera_t;
 
 void gfx_camera_new(camera_t* cam);
