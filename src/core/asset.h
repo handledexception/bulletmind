@@ -42,6 +42,7 @@ struct asset {
 	char path[BM_MAX_PATH];
 	asset_kind_t kind;
 	void* data;
+	s32 ref_count;
 	bool lazy_load;
 };
 
@@ -55,6 +56,8 @@ result asset_manager_find(const char* name, struct asset_manager* mgr,
 asset_t* asset_new();
 void asset_free(asset_t* asset);
 void asset_init(asset_t* asset);
+bool asset_acquire(asset_t* asset);
+bool asset_release(asset_t* asset);
 bool asset_from_toml(const toml_table_t* table, struct asset_manager* mgr,
 		     asset_t** asset);
 bool asset_make_shader(const toml_table_t* table, asset_t* asset);

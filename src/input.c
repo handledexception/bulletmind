@@ -24,14 +24,14 @@
 #include <stdio.h>
 #include <string.h>
 
-struct input_state* inp_new()
+input_state_t* inp_new()
 {
-	struct input_state* inputs = BM_ALLOC(sizeof(struct input_state));
+	input_state_t* inputs = BM_ALLOC(sizeof(input_state_t));
 	inp_init(inputs);
 	return inputs;
 }
 
-void inp_free(struct input_state* inputs)
+void inp_free(input_state_t* inputs)
 {
 	if (inputs != NULL) {
 		BM_FREE(inputs);
@@ -39,7 +39,7 @@ void inp_free(struct input_state* inputs)
 	}
 }
 
-result inp_init(struct input_state* inputs)
+result inp_init(input_state_t* inputs)
 {
 	if (inputs == NULL)
 		return RESULT_NULL;
@@ -74,27 +74,27 @@ result inp_init(struct input_state* inputs)
 	return RESULT_OK;
 }
 
-// void inp_refresh_mouse(struct mouse_device* mouse, f32 scale_x, f32 scale_y)
-// {
-// 	int mx = 0;
-// 	int my = 0;
-// 	SDL_GetMouseState(&mx, &my);
-// 	f32 fmx = (f32)mx;
-// 	f32 fmy = (f32)my;
-// 	fmx /= scale_x;
-// 	fmy /= scale_y;
+void inp_refresh_mouse(mouse_t* mouse, f32 scale_x, f32 scale_y)
+{
+	// int mx = 0;
+	// int my = 0;
+	// SDL_GetMouseState(&mx, &my);
+	// f32 fmx = (f32)mx;
+	// f32 fmy = (f32)my;
+	// fmx /= scale_x;
+	// fmy /= scale_y;
 
-// 	vec2i_t mouse_window_pos;
-// 	mouse_window_pos.x = (s32)fmx;
-// 	mouse_window_pos.y = (s32)fmy;
+	// vec2i_t mouse_window_pos;
+	// mouse_window_pos.x = (s32)fmx;
+	// mouse_window_pos.y = (s32)fmy;
 
-// 	vec2i_t mouse_screen_pos;
-// 	SDL_GetGlobalMouseState(&mouse_screen_pos.x, &mouse_screen_pos.y);
+	// vec2i_t mouse_screen_pos;
+	// SDL_GetGlobalMouseState(&mouse_screen_pos.x, &mouse_screen_pos.y);
 
-// 	inp_set_mouse_pos(mouse, mouse_screen_pos, mouse_window_pos);
-// }
+	// inp_set_mouse_pos(mouse, mouse_screen_pos, mouse_window_pos);
+}
 
-void inp_refresh_pressed(struct input_state* inputs, const gui_event_t* evt)
+void inp_refresh_pressed(input_state_t* inputs, const gui_event_t* evt)
 {
 	if (evt) {
 		switch (evt->type) {
@@ -104,19 +104,17 @@ void inp_refresh_pressed(struct input_state* inputs, const gui_event_t* evt)
 					  evt->keyboard.key.scancode,
 					  evt->keyboard.key.state);
 			break;
+		case GUI_EVENT_MOUSE_BUTTON_DOWN:
+			inp_set_mouse_button_state(&inputs->mouse,
+						   evt->mouse.button.button,
+						   evt->mouse.button.state);
+			break;
+		case GUI_EVENT_MOUSE_BUTTON_UP:
+			inp_set_mouse_button_state(&inputs->mouse,
+						   evt->mouse.button.button,
+						   evt->mouse.button.state);
+			break;
 			/*
-		case SDL_MOUSEBUTTONDOWN:
-			//printf("Mouse Button %d DOWN\n", SDL_BUTTON(evt->button.button));
-			inp_set_mouse_button_state(&inputs->mouse,
-						   evt->button.button,
-						   evt->button.state);
-			break;
-		case SDL_MOUSEBUTTONUP:
-			//printf("Mouse Button %d UP\n", SDL_BUTTON(evt->button.button));
-			inp_set_mouse_button_state(&inputs->mouse,
-						   evt->button.button,
-						   evt->button.state);
-			break;
 		case SDL_CONTROLLERAXISMOTION:
 			for (size_t cdx = 0; cdx < MAX_GAMEPADS; cdx++) {
 				if (inputs->gamepads[cdx].index ==
@@ -168,12 +166,12 @@ void inp_refresh_pressed(struct input_state* inputs, const gui_event_t* evt)
 	}
 }
 
-void inp_shutdown(struct input_state* inputs)
+void inp_shutdown(input_state_t* inputs)
 {
 	logger(LOG_INFO, "inp_shutdown OK\n");
 }
 
-// bool inp_init_gamepads(struct input_state* inputs)
+// bool inp_init_gamepads(input_state_t* inputs)
 // {
 // 	const int num_joysticks = SDL_NumJoysticks();
 // 	if (num_joysticks == 0)
@@ -217,7 +215,7 @@ void inp_shutdown(struct input_state* inputs)
 // 	return !gamepad_err;
 // }
 
-void inp_set_key_state(struct keyboard_key* keys, u16 scancode, u8 state)
+void inp_set_key_state(keyboard_key_t* keys, u16 scancode, u8 state)
 {
 	if (keys) {
 		if (keys[scancode].state != state) {
@@ -227,7 +225,7 @@ void inp_set_key_state(struct keyboard_key* keys, u16 scancode, u8 state)
 	}
 }
 
-u8 inp_get_key_state(struct keyboard_key* keys, u16 scancode)
+u8 inp_get_key_state(keyboard_key_t* keys, u16 scancode)
 {
 	u8 state = 0;
 	if (keys)
@@ -235,8 +233,7 @@ u8 inp_get_key_state(struct keyboard_key* keys, u16 scancode)
 	return state;
 }
 
-void inp_set_mouse_pos(struct mouse_device* mouse, const vec2i_t scr,
-		       const vec2i_t wnd)
+void inp_set_mouse_pos(mouse_t* mouse, const vec2i_t scr, const vec2i_t wnd)
 {
 	if (mouse) {
 		mouse->screen_pos = scr;
@@ -244,8 +241,7 @@ void inp_set_mouse_pos(struct mouse_device* mouse, const vec2i_t scr,
 	}
 }
 
-void inp_set_mouse_button_state(struct mouse_device* mouse, u16 button,
-				u8 state)
+void inp_set_mouse_button_state(mouse_t* mouse, u16 button, u8 state)
 {
 	if (mouse) {
 		mouse->buttons[button].button = button;
@@ -257,7 +253,7 @@ void inp_set_mouse_button_state(struct mouse_device* mouse, u16 button,
 	}
 }
 
-u8 inp_get_mouse_button_state(struct mouse_device* mouse, u16 button)
+u8 inp_get_mouse_button_state(mouse_t* mouse, u16 button)
 {
 	u8 state = 0;
 	if (mouse && mouse->buttons[button].button == button)
@@ -507,8 +503,7 @@ u8 inp_get_mouse_button_state(struct mouse_device* mouse, u16 button)
 // 	return value;
 // }
 
-bool inp_bind_virtual_key(struct input_state* inputs, command_t cmd,
-			  u16 scancode)
+bool inp_bind_virtual_key(input_state_t* inputs, command_t cmd, u16 scancode)
 {
 	if (cmd < MAX_VIRTUAL_BUTTONS && scancode < SCANCODE_MAX) {
 		inputs->buttons[cmd].state = 0;
@@ -521,7 +516,7 @@ bool inp_bind_virtual_key(struct input_state* inputs, command_t cmd,
 	return false;
 }
 
-bool inp_bind_virtual_mouse_button(struct input_state* inputs, command_t cmd,
+bool inp_bind_virtual_mouse_button(input_state_t* inputs, command_t cmd,
 				   u16 mouse_button)
 {
 	if (cmd < MAX_VIRTUAL_BUTTONS && mouse_button < MAX_MOUSE_BUTTONS) {
@@ -536,7 +531,7 @@ bool inp_bind_virtual_mouse_button(struct input_state* inputs, command_t cmd,
 	return false;
 }
 
-bool inp_bind_virtual_gamepad_button(struct input_state* inputs, command_t cmd,
+bool inp_bind_virtual_gamepad_button(input_state_t* inputs, command_t cmd,
 				     u32 gamepad, gamepad_button_kind_t button)
 {
 	if (cmd < MAX_VIRTUAL_BUTTONS && button < GAMEPAD_BUTTON_MAX) {
@@ -555,7 +550,7 @@ bool inp_bind_virtual_gamepad_button(struct input_state* inputs, command_t cmd,
 	return false;
 }
 
-bool inp_cmd_get_state(struct input_state* inputs, command_t cmd)
+bool inp_cmd_get_state(input_state_t* inputs, command_t cmd)
 {
 	bool inputs_state = false;
 
@@ -566,9 +561,9 @@ bool inp_cmd_get_state(struct input_state* inputs, command_t cmd)
 		if (!vb)
 			return false;
 
-		struct keyboard_key* key = vb->keyboard_key;
-		struct gamepad_button* gb = vb->pad_button;
-		struct mouse_button* mb = vb->mouse_button;
+		keyboard_key_t* key = vb->keyboard_key;
+		gamepad_button_t* gb = vb->pad_button;
+		mouse_button_t* mb = vb->mouse_button;
 		u8 key_state = 0;
 		u8 mouse_button_state = 0;
 		u8 gamepad_button_state = 0;
@@ -587,7 +582,7 @@ bool inp_cmd_get_state(struct input_state* inputs, command_t cmd)
 	return inputs_state;
 }
 
-void inp_cmd_toggle(struct input_state* inputs, command_t cmd, bool* value)
+void inp_cmd_toggle(input_state_t* inputs, command_t cmd, bool* value)
 {
 	bool toggled = inputs->buttons[cmd].toggled;
 	if (inp_cmd_get_state(inputs, cmd)) {

@@ -109,6 +109,7 @@ asset_t* asset_new()
 {
 	asset_t* asset = BM_ALLOC(sizeof(*asset));
 	asset_init(asset);
+	asset_acquire(asset);
 	return asset;
 }
 
@@ -124,6 +125,11 @@ void asset_init(asset_t* asset)
 void asset_free(asset_t* asset)
 {
 	if (asset != NULL) {
+		asset_release(asset);
+		s32 refs = os_atomic_get_s32(&asset->ref_count);
+		if (refs > 0)
+			return;
+
 		switch (asset->kind) {
 		case ASSET_SPRITE:
 		case ASSET_SPRITE_FONT: {
@@ -152,6 +158,29 @@ void asset_free(asset_t* asset)
 		BM_FREE(asset);
 		asset = NULL;
 	}
+}
+
+bool asset_acquire(asset_t* asset)
+{
+	if (asset) {
+		s32 refs = os_atomic_get_s32(&asset->ref_count);
+		if (refs < 0)
+			os_atomic_set_s32(&asset->ref_count, 1);
+		else
+			os_atomic_inc_s32(&asset->ref_count);
+		return true;
+	}
+
+	return false;
+}
+
+bool asset_release(asset_t* asset)
+{
+	if (asset) {
+		os_atomic_dec_s32(&asset->ref_count);
+		return true;
+	}
+	return false;
 }
 
 bool asset_from_toml(const toml_table_t* table, struct asset_manager* mgr,

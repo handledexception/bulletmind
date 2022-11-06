@@ -18,10 +18,11 @@
 
 #include "core/types.h"
 
-// generic data buffer
 typedef struct buffer_s {
 	u8* data;
 	size_t size;
+	size_t pos;
+	size_t capacity;
 } buffer_t;
 
 buffer_t* buffer_new(size_t size);

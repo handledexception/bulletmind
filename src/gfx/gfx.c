@@ -7,6 +7,108 @@ gfx_system_t* gfx = NULL;
 bool gfx_hardware_ready = false;
 bool gfx_system_ready = false;
 
+gfx_mesh_t* gfx_mesh_new(enum gfx_vertex_type type, u32 num_verts)
+{
+	struct gfx_mesh* data = BM_ALLOC(sizeof(struct gfx_mesh));
+	data->type = type;
+	data->num_vertices = num_verts;
+	data->positions = NULL;
+	data->colors = NULL;
+	data->normals = NULL;
+	data->tangents = NULL;
+	data->tex_verts = NULL;
+
+	if (VERTEX_HAS_POS(type)) {
+		size_t sz_pos = sizeof(struct vec3f) * num_verts;
+		data->positions = BM_ALLOC(sz_pos);
+		memset(data->positions, 0, sz_pos);
+	}
+	if (VERTEX_HAS_NORMAL(type)) {
+		size_t sz_norm = sizeof(struct vec3f) * num_verts;
+		data->normals = BM_ALLOC(sz_norm);
+		memset(data->normals, 0, sz_norm);
+	}
+	if (VERTEX_HAS_COLOR(type)) {
+		size_t sz_col = sizeof(struct vec4f) * num_verts;
+		data->colors = BM_ALLOC(sz_col);
+		memset(data->colors, 0, sz_col);
+	}
+	if (VERTEX_HAS_UV(type)) {
+		data->tex_verts =
+			BM_ALLOC(sizeof(struct texture_vertex) * num_verts);
+		size_t uv_size = sizeof(struct vec2f);
+		for (size_t i = 0; i < num_verts; i++) {
+			data->tex_verts[i].data = BM_ALLOC(uv_size);
+			memset(data->tex_verts[i].data, 0, sizeof(uv_size));
+			data->tex_verts[i].size = uv_size;
+		}
+	}
+
+	return data;
+}
+void gfx_mesh_free(gfx_mesh_t* data)
+{
+	if (data != NULL) {
+		if (data->positions != NULL) {
+			BM_FREE(data->positions);
+			data->positions = NULL;
+		}
+		if (data->normals != NULL) {
+			BM_FREE(data->normals);
+			data->normals = NULL;
+		}
+		if (data->tangents != NULL) {
+			BM_FREE(data->tangents);
+			data->tangents = NULL;
+		}
+		if (data->colors != NULL) {
+			BM_FREE(data->colors);
+			data->colors = NULL;
+		}
+		if (data->tex_verts != NULL) {
+			for (size_t i = 0; i < data->num_vertices; i++) {
+				if (data->tex_verts[i].data != NULL) {
+					BM_FREE(data->tex_verts[i].data);
+					data->tex_verts[i].data = NULL;
+					data->tex_verts[i].size = 0;
+				}
+			}
+			BM_FREE(data->tex_verts);
+			data->tex_verts = NULL;
+		}
+		BM_FREE(data);
+		data = NULL;
+	}
+}
+
+size_t gfx_mesh_get_size(const gfx_mesh_t* mesh)
+{
+	size_t size = 0;
+	if (mesh) {
+		size += sizeof(struct gfx_mesh);
+		if (VERTEX_HAS_POS(mesh->type)) {
+			size += sizeof(vec3f_t) * mesh->num_vertices;
+		}
+		if (VERTEX_HAS_COLOR(mesh->type)) {
+			size += sizeof(vec4f_t) * mesh->num_vertices;
+		}
+		if (VERTEX_HAS_NORMAL(mesh->type)) {
+			size += sizeof(vec3f_t) * mesh->num_vertices;
+		}
+		if (VERTEX_HAS_TANGENT(mesh->type)) {
+			size += sizeof(vec3f_t) * mesh->num_vertices;
+		}
+		if (VERTEX_HAS_UV(mesh->type)) {
+			for (size_t i = 0; i < mesh->num_vertices; i++) {
+				size += sizeof(vec2f_t) +
+					sizeof(struct texture_vertex);
+			}
+		}
+	}
+
+	return size;
+}
+
 size_t gfx_shader_var_size(enum gfx_shader_var_type type)
 {
 	switch (type) {
@@ -269,10 +371,10 @@ gfx_shader_t* gfx_shader_adopt(gfx_shader_t* other)
 		bool adopted = false;
 		switch (other->type) {
 		case GFX_SHADER_VERTEX:
-			adopted = gfx_vertex_shader_addref(other->impl);
+			adopted = gfx_vertex_shader_acquire(other->impl);
 			break;
 		case GFX_SHADER_PIXEL:
-			adopted = gfx_pixel_shader_addref(other->impl);
+			adopted = gfx_pixel_shader_acquire(other->impl);
 			break;
 		case GFX_SHADER_UNKNOWN:
 		default:
@@ -284,6 +386,12 @@ gfx_shader_t* gfx_shader_adopt(gfx_shader_t* other)
 		}
 	}
 	return shader;
+}
+
+gfx_shader_t* gfx_shader_copy(gfx_shader_t* other)
+{
+	if (other) {
+	}
 }
 
 void gfx_shader_init(gfx_shader_t* shader)
@@ -298,8 +406,8 @@ void gfx_shader_init(gfx_shader_t* shader)
 
 void gfx_init_sprite(gfx_buffer_t* vertex_buffer)
 {
-	size_t sz = sizeof(struct gfx_vertex_data);
-	struct gfx_vertex_data* vd = (struct gfx_vertex_data*)BM_ALLOC(sz);
+	size_t sz = sizeof(struct gfx_mesh);
+	struct gfx_mesh* vd = (struct gfx_mesh*)BM_ALLOC(sz);
 	memset(vd, 0, sz);
 	vd->num_vertices = 4;
 	size_t sz_positions = sizeof(vec3f_t) * vd->num_vertices;

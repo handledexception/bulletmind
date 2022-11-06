@@ -202,27 +202,27 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	vec_init(eng->gfx.scenes);
 	struct gfx_scene* scene = gfx_scene_new(6, 2, GFX_VERTEX_POS_COLOR);
 	vec_init(scene->shader_vars);
-	scene->vert_data->positions[0] = (vec3f_t){-0.5f, 0.f, -0.5f};
-	scene->vert_data->positions[1] = (vec3f_t){0.5f, 0.f, -0.5f};
-	scene->vert_data->positions[2] = (vec3f_t){0.5f, 0.f, 0.5f};
-	scene->vert_data->positions[3] = (vec3f_t){-0.5f, 0.f, -0.5f};
-	scene->vert_data->positions[4] = (vec3f_t){0.5f, 0.f, 0.5f};
-	scene->vert_data->positions[5] = (vec3f_t){-0.5f, 0.f, 0.5f};
-	scene->vert_data->colors[0] = (vec4f_t){1.f, 0.f, 0.f, 1.f};
-	scene->vert_data->colors[1] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
-	scene->vert_data->colors[2] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
-	scene->vert_data->colors[3] = (vec4f_t){1.f, 0.f, 0.f, 1.f};
-	scene->vert_data->colors[4] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
-	scene->vert_data->colors[5] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
+	scene->mesh->positions[0] = (vec3f_t){-0.5f, 0.f, -0.5f};
+	scene->mesh->positions[1] = (vec3f_t){0.5f, 0.f, -0.5f};
+	scene->mesh->positions[2] = (vec3f_t){0.5f, 0.f, 0.5f};
+	scene->mesh->positions[3] = (vec3f_t){-0.5f, 0.f, -0.5f};
+	scene->mesh->positions[4] = (vec3f_t){0.5f, 0.f, 0.5f};
+	scene->mesh->positions[5] = (vec3f_t){-0.5f, 0.f, 0.5f};
+	scene->mesh->colors[0] = (vec4f_t){1.f, 0.f, 0.f, 1.f};
+	scene->mesh->colors[1] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
+	scene->mesh->colors[2] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
+	scene->mesh->colors[3] = (vec4f_t){1.f, 0.f, 0.f, 1.f};
+	scene->mesh->colors[4] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
+	scene->mesh->colors[5] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
 
 	struct gfx_scene* scene2 = gfx_scene_new(3, 2, GFX_VERTEX_POS_COLOR);
 	vec_init(scene2->shader_vars);
-	scene2->vert_data->positions[0] = (vec3f_t){-0.5f, 0.f, 0.5f};
-	scene2->vert_data->positions[1] = (vec3f_t){0.5f, 0.f, 0.5f};
-	scene2->vert_data->positions[2] = (vec3f_t){0.f, 0.5f, 0.5f};
-	scene2->vert_data->colors[0] = (vec4f_t){1.f, 0.f, 0.f, 1.f};
-	scene2->vert_data->colors[1] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
-	scene2->vert_data->colors[2] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
+	scene2->mesh->positions[0] = (vec3f_t){-0.5f, 0.f, 0.5f};
+	scene2->mesh->positions[1] = (vec3f_t){0.5f, 0.f, 0.5f};
+	scene2->mesh->positions[2] = (vec3f_t){0.f, 0.5f, 0.5f};
+	scene2->mesh->colors[0] = (vec4f_t){1.f, 0.f, 0.f, 1.f};
+	scene2->mesh->colors[1] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
+	scene2->mesh->colors[2] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
 	size_t vbd_size = (sizeof(vec3f_t) * 9) + (sizeof(vec4f_t) * 9);
 	eng->gfx.vbuffer_data = (u8*)BM_ALLOC(vbd_size);
 	gfx_shader_add_var(hlsl_vs, &world_var);
@@ -292,7 +292,7 @@ void eng_refresh(engine_t* eng, f64 dt)
 		inp_refresh_pressed(eng->inputs, &evt);
 	}
 
-	struct mouse_device mouse;
+	mouse_t mouse;
 	gui_get_global_mouse_state(&mouse);
 
 	// logger(LOG_DEBUG, "mouse pos %d, %d butttons %d %d %d %d %d\n",
@@ -331,18 +331,18 @@ void eng_refresh(engine_t* eng, f64 dt)
 			(struct gfx_scene*)eng->gfx.scenes.elems[i];
 
 		// Copy vertex buffer data
-		for (u32 i = 0; i < scene->vert_data->num_vertices; i++) {
+		for (u32 i = 0; i < scene->mesh->num_vertices; i++) {
 			memcpy((void*)&eng->gfx.vbuffer_data[vbd_offset],
-			       (const void*)&scene->vert_data->positions[i],
+			       (const void*)&scene->mesh->positions[i],
 			       sizeof(struct vec3f));
 			vbd_offset += sizeof(struct vec3f);
 			memcpy((void*)&eng->gfx.vbuffer_data[vbd_offset],
-			       (const void*)&scene->vert_data->colors[i],
+			       (const void*)&scene->mesh->colors[i],
 			       sizeof(struct vec4f));
 			vbd_offset += sizeof(struct vec4f);
 		}
-		vbd_size += (sizeof(vec3f_t) * scene->vert_data->num_vertices) +
-			    (sizeof(vec4f_t) * scene->vert_data->num_vertices);
+		vbd_size += (sizeof(vec3f_t) * scene->mesh->num_vertices) +
+			    (sizeof(vec4f_t) * scene->mesh->num_vertices);
 
 		// Copy constant buffer data (AKA shader vars) into the constant buffer
 		for (size_t vdx = 0; vdx < scene->shader_vars.num_elems;

@@ -121,24 +121,26 @@ void* mem_alloc(size_t size)
 void* mem_realloc(void* ptr, size_t size)
 {
 	if (ptr) {
-	// void* new_ptr = ptr;
 #ifdef TRACK_MEMORY
+		// rewind to retrieve size from header, then forward again to get data
 		size_t* p = (size_t*)(ptr)-1;
 		size_t alloc_size = *p;
 		size_t obj_size = alloc_size - sizeof(size_t);
 		p++;
-		// new size
+		// calculate new size
 		u8* new_p = BM_ALLOC(size);
-		size_t copy_size = obj_size;
-		if (copy_size > size)
-			copy_size = size;
+		size_t copy_size = size;
+		if (copy_size > obj_size)
+			copy_size = obj_size;
 		memcpy(new_p, p, copy_size);
 		BM_FREE(p);
 		ptr = (void*)new_p;
-#else
-	allocator.realloc(new_ptr, size);
-#endif
+	} else {
+		ptr = BM_ALLOC(size);
 	}
+#else
+		ptr = allocator.realloc(new_ptr, size);
+#endif
 	return ptr;
 }
 
@@ -155,12 +157,21 @@ void mem_free(void* ptr)
 		allocator.free(p);
 		recalculate_frees(alloc_size);
 #else
-		allocator.free(ptr);
+			allocator.free(ptr);
 #endif
 	}
 }
 
-void mem_copy(void* dst, void* src, size_t size)
+void* mem_dupe(const void* ptr, size_t size)
+{
+	void* out = mem_alloc(size);
+	if (size)
+		memcpy(out, ptr, size);
+
+	return out;
+}
+
+void mem_copy(void* dst, const void* src, size_t size)
 {
 	u8* to = (u8*)dst;
 	u8* from = (u8*)src;

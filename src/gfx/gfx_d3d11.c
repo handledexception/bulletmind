@@ -103,8 +103,7 @@ struct gfx_texture2d {
 };
 
 struct gfx_blend_state {
-	struct gfx_blend_state_config config;
-	D3D11_BLEND_DESC desc;
+	struct gfx_blend_desc desc;
 	ID3D11BlendState* bs;
 };
 
@@ -113,9 +112,13 @@ struct gfx_depth_state {
 	ID3D11DepthStencilState* dss;
 };
 
+struct gfx_raster_state {
+	struct gfx_raster_state_desc desc;
+	ID3D11RasterizerState* state;
+};
+
 struct gfx_sampler_state {
-	struct gfx_sampler_config conf;
-	D3D11_SAMPLER_DESC desc;
+	struct gfx_sampler_desc desc;
 	ID3D11SamplerState* state;
 	// s32 ref_count;
 };
@@ -148,11 +151,12 @@ struct gfx_module {
 	ID3D11RasterizerState* raster_state;
 
 	/* blend */
+	// VECTOR(gfx_blend_state_t*) blend_states;
 	struct gfx_blend_state* blend_enabled;
 	struct gfx_blend_state* blend_disabled;
 
 	/* sampler */
-	struct gfx_sampler_state* sampler;
+	VECTOR(gfx_sampler_state_t*) samplers;
 
 	gfx_shader_t* vertex_shader;
 	gfx_shader_t* pixel_shader;
@@ -165,7 +169,7 @@ struct gfx_module {
 };
 
 enum gfx_display_orientation
-gfx_dxgi_rotation_to_orientation(DXGI_MODE_ROTATION rotation)
+gfx_display_orientation_from_dxgi(DXGI_MODE_ROTATION rotation)
 {
 	switch (rotation) {
 	case DXGI_MODE_ROTATION_ROTATE90:
@@ -182,7 +186,8 @@ gfx_dxgi_rotation_to_orientation(DXGI_MODE_ROTATION rotation)
 	return GFX_DISPLAY_ORIENTATION_0;
 }
 
-D3D11_USAGE gfx_buffer_usage_to_d3d11_usage(enum gfx_buffer_usage usage)
+D3D11_USAGE
+gfx_buffer_usage_to_d3d11(enum gfx_buffer_usage usage)
 {
 	D3D11_USAGE d3d11_usage = D3D11_USAGE_DEFAULT;
 	switch (usage) {
@@ -205,7 +210,8 @@ D3D11_USAGE gfx_buffer_usage_to_d3d11_usage(enum gfx_buffer_usage usage)
 	return d3d11_usage;
 }
 
-DXGI_FORMAT pixel_format_to_dxgi_format(enum pixel_format pf)
+DXGI_FORMAT
+pixel_format_to_dxgi(enum pixel_format pf)
 {
 	switch (pf) {
 	case PIX_FMT_BGRA32:
@@ -229,7 +235,7 @@ DXGI_FORMAT pixel_format_to_dxgi_format(enum pixel_format pf)
 }
 
 D3D11_CULL_MODE
-gfx_culling_mode_to_d3d11_cull_mode(enum gfx_culling_mode culling)
+gfx_culling_mode_to_d3d11(enum gfx_culling_mode culling)
 {
 	switch (culling) {
 	case GFX_CULLING_FRONT_FACE:
@@ -243,7 +249,8 @@ gfx_culling_mode_to_d3d11_cull_mode(enum gfx_culling_mode culling)
 	return D3D11_CULL_NONE;
 }
 
-D3D11_PRIMITIVE_TOPOLOGY gfx_topology_to_d3d11_topology(enum gfx_topology topo)
+D3D11_PRIMITIVE_TOPOLOGY
+gfx_topology_to_d3d11(enum gfx_topology topo)
 {
 	switch (topo) {
 	case GFX_TOPOLOGY_POINT_LIST:
@@ -259,6 +266,52 @@ D3D11_PRIMITIVE_TOPOLOGY gfx_topology_to_d3d11_topology(enum gfx_topology topo)
 	}
 
 	return D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
+}
+
+D3D11_FILTER
+gfx_sample_filter_to_d3d11(enum gfx_sample_filter filter)
+{
+	switch (filter) {
+	case GFX_FILTER_POINT:
+		return D3D11_FILTER_MIN_MAG_MIP_POINT;
+	case GFX_FILTER_LINEAR:
+		return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	case GFX_FILTER_MIN_MAG_POINT_MIP_LINEAR:
+		return D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR;
+	case GFX_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT:
+		return D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
+	case GFX_FILTER_MIN_POINT_MAG_MIP_LINEAR:
+		return D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;
+	case GFX_FILTER_MIN_LINEAR_MAG_MIP_POINT:
+		return D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT;
+	case GFX_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR:
+		return D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
+	case GFX_FILTER_MIN_MAG_LINEAR_MIP_POINT:
+		return D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+	case GFX_FILTER_ANISOTROPIC:
+		return D3D11_FILTER_ANISOTROPIC;
+	}
+
+	return D3D11_FILTER_MIN_MAG_MIP_POINT;
+}
+
+D3D11_TEXTURE_ADDRESS_MODE
+gfx_sample_address_mode_to_d3d11(enum gfx_sample_address_mode mode)
+{
+	switch (mode) {
+	case GFX_SAMPLE_ADDRESS_WRAP:
+		return D3D11_TEXTURE_ADDRESS_WRAP;
+	case GFX_SAMPLE_ADDRESS_CLAMP:
+		return D3D11_TEXTURE_ADDRESS_CLAMP;
+	case GFX_SAMPLE_ADDRESS_MIRROR:
+		return D3D11_TEXTURE_ADDRESS_MIRROR;
+	case GFX_SAMPLE_ADDRESS_BORDER:
+		return D3D11_TEXTURE_ADDRESS_BORDER;
+	case GFX_SAMPLE_ADDRESS_MIRROR_ONCE:
+		return D3D11_TEXTURE_ADDRESS_MIRROR_ONCE;
+	}
+
+	return D3D11_TEXTURE_ADDRESS_WRAP;
 }
 
 void gfx_activate_d3d11_debug_info(void)
@@ -285,8 +338,11 @@ void gfx_activate_d3d11_debug_info(void)
 
 result gfx_com_release_d3d11(void)
 {
-	if (gfx->module->sampler)
-		gfx_sampler_state_free(gfx->module->sampler);
+	for (size_t i = 0; i < gfx->module->samplers.num_elems; i++) {
+		gfx_sampler_state_t* sampler = gfx->module->samplers.elems[i];
+		gfx_sampler_state_free(sampler);
+	}
+	vec_free(gfx->module->samplers);
 	if (gfx->module->blend_enabled)
 		gfx_blend_state_free(gfx->module->blend_enabled);
 	if (gfx->module->blend_disabled)
@@ -508,8 +564,8 @@ result gfx_enumerate_displays(const gfx_adapter_t* adapter,
 			gd.desktop_coords.h = rect.bottom;
 			gd.width = rect.right - rect.left;
 			gd.height = rect.bottom - rect.top;
-			gd.orientation =
-				gfx_dxgi_rotation_to_orientation(desc.Rotation);
+			gd.orientation = gfx_display_orientation_from_dxgi(
+				desc.Rotation);
 			gd.has_desktop = desc.AttachedToDesktop;
 			gd.refresh_rate = refresh_rate;
 			DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY output_tect =
@@ -619,11 +675,6 @@ result gfx_init_renderer(const struct gfx_config* cfg, s32 flags)
 
 	gfx_system_ready = true;
 
-	//TODO: Move sampler state stuff into pixel shader
-	gfx->module->sampler = gfx_sampler_state_new();
-	if (!gfx->module->sampler)
-		return RESULT_ERROR;
-
 	//TODO: Move blend state stuff out of here
 	gfx->module->blend_enabled = gfx_blend_state_new();
 	if (!gfx->module->blend_enabled)
@@ -631,24 +682,25 @@ result gfx_init_renderer(const struct gfx_config* cfg, s32 flags)
 	gfx->module->blend_disabled = gfx_blend_state_new();
 	if (!gfx->module->blend_disabled)
 		return RESULT_ERROR;
-	struct gfx_blend_state_config blend_cfg = {
-		.enabled = true,
-		.red_enabled = true,
-		.green_enabled = true,
-		.blue_enabled = true,
-		.alpha_enabled = true,
-		.mode_src = GFX_BLEND_SRCALPHA,
-		.mode_dst = GFX_BLEND_INVSRCALPHA,
-		.op = GFX_BLEND_OP_ADD,
-		.mode_src_alpha = GFX_BLEND_ZERO,
-		.mode_dst_alpha = GFX_BLEND_ONE,
-		.op_alpha = GFX_BLEND_OP_ADD};
-	if (gfx_blend_state_configure(gfx->module->blend_enabled, &blend_cfg) != RESULT_OK) {
+	struct gfx_blend_desc blend_cfg = {.enabled = true,
+					   .red_enabled = true,
+					   .green_enabled = true,
+					   .blue_enabled = true,
+					   .alpha_enabled = true,
+					   .mode_src = GFX_BLEND_SRCALPHA,
+					   .mode_dst = GFX_BLEND_INVSRCALPHA,
+					   .op = GFX_BLEND_OP_ADD,
+					   .mode_src_alpha = GFX_BLEND_ZERO,
+					   .mode_dst_alpha = GFX_BLEND_ONE,
+					   .op_alpha = GFX_BLEND_OP_ADD};
+	if (gfx_blend_configure(gfx->module->blend_enabled, &blend_cfg) !=
+	    RESULT_OK) {
 		gfx_system_ready = false;
 		return RESULT_ERROR;
 	}
 	blend_cfg.enabled = false;
-	if (gfx_blend_state_configure(gfx->module->blend_disabled, &blend_cfg) != RESULT_OK) {
+	if (gfx_blend_configure(gfx->module->blend_disabled, &blend_cfg) !=
+	    RESULT_OK) {
 		gfx_system_ready = false;
 		return RESULT_ERROR;
 	}
@@ -668,6 +720,15 @@ gfx_shader_t* gfx_system_get_pixel_shader()
 	if (gfx_ok())
 		return gfx->module->pixel_shader;
 	return NULL;
+}
+
+void gfx_system_sampler_push(gfx_sampler_state_t* sampler)
+{
+	vec_push_back(gfx->module->samplers, &sampler);
+}
+void gfx_system_sampler_pop()
+{
+	vec_pop_back(gfx->module->samplers);
 }
 
 void gfx_system_bind_render_target(void)
@@ -709,7 +770,7 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 		.BufferCount = 2,
 		.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
 		.Flags = 0,
-		.Format = pixel_format_to_dxgi_format(cfg->pix_fmt),
+		.Format = pixel_format_to_dxgi(cfg->pix_fmt),
 		.Width = cfg->width,
 		.Height = cfg->height,
 		.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
@@ -717,7 +778,7 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 		.SampleDesc = {1, 0},
 	};
 	// DXGI_SWAP_CHAIN_DESC swap_desc = {
-	// 	.BufferDesc.Format = pixel_format_to_dxgi_format(cfg->pix_fmt),
+	// 	.BufferDesc.Format = pixel_format_to_dxgi(cfg->pix_fmt),
 	// 	.BufferDesc.Width = cfg->width,
 	// 	.BufferDesc.Height = cfg->height,
 	// 	.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED,
@@ -983,12 +1044,14 @@ void gfx_render_begin(bool draw_indexed)
 		(gfx_vertex_shader_t*)gfx->module->vertex_shader->impl;
 	gfx_pixel_shader_t* ps =
 		(gfx_pixel_shader_t*)gfx->module->pixel_shader->impl;
-
 	ID3D11DeviceContext1* ctx = gfx->module->ctx;
 	ID3D11DeviceContext1_VSSetShader(ctx, vs->program, NULL, 0);
 	ID3D11DeviceContext1_PSSetShader(ctx, ps->program, NULL, 0);
-	ID3D11DeviceContext1_PSSetSamplers(ctx, 0, 1,
-					   &gfx->module->sampler->state);
+	gfx_sampler_state_t* sampler = NULL;
+	if (gfx->module->samplers.num_elems > 0) {
+		sampler = gfx->module->samplers.elems[0];
+	}
+	ID3D11DeviceContext1_PSSetSamplers(ctx, 0, 1, &sampler->state);
 	u32 start = 0;
 	if (draw_indexed) {
 		u32 base_vertex = 0;
@@ -1034,8 +1097,8 @@ enum gfx_vertex_type gfx_get_vertex_type(void)
 
 // void gfx_init_sprite(gfx_buffer_t* vertex_buffer)
 // {
-// 	size_t sz = sizeof(struct gfx_vertex_data);
-// 	struct gfx_vertex_data* vd = (struct gfx_vertex_data*)BM_ALLOC(sz);
+// 	size_t sz = sizeof(struct gfx_mesh);
+// 	struct gfx_mesh* vd = (struct gfx_mesh*)BM_ALLOC(sz);
 // 	memset(vd, 0, sz);
 // 	vd->num_vertices = 4;
 // 	size_t sz_positions = sizeof(vec3f_t) * vd->num_vertices;
@@ -1097,13 +1160,13 @@ result gfx_buffer_make(gfx_buffer_t* buf, const void* data, size_t size)
 		return RESULT_UNKNOWN;
 	}
 
-	D3D11_BUFFER_DESC desc = {
-		.Usage = gfx_buffer_usage_to_d3d11_usage(buf->usage),
-		.CPUAccessFlags = (UINT)cpu_access_flags,
-		.ByteWidth = (UINT)size,
-		.BindFlags = (UINT)bind_flags,
-		.MiscFlags = 0,
-		.StructureByteStride = 0};
+	D3D11_BUFFER_DESC desc = {.Usage =
+					  gfx_buffer_usage_to_d3d11(buf->usage),
+				  .CPUAccessFlags = (UINT)cpu_access_flags,
+				  .ByteWidth = (UINT)size,
+				  .BindFlags = (UINT)bind_flags,
+				  .MiscFlags = 0,
+				  .StructureByteStride = 0};
 	if (data != NULL) {
 		D3D11_SUBRESOURCE_DATA srd = {.pSysMem = buf->data,
 					      .SysMemPitch = 0,
@@ -1176,7 +1239,7 @@ result gfx_buffer_new(const void* data, size_t size, enum gfx_buffer_type type,
 	}
 
 	D3D11_BUFFER_DESC desc = {
-		.Usage = gfx_buffer_usage_to_d3d11_usage(buffer->usage),
+		.Usage = gfx_buffer_usage_to_d3d11(buffer->usage),
 		.CPUAccessFlags = (UINT)cpu_access_flags,
 		.ByteWidth = (UINT)size,
 		.BindFlags = (UINT)bind_flags,
@@ -1290,17 +1353,13 @@ void gfx_shader_free(gfx_shader_t* shader)
 		gfx_buffer_free(shader->cbuffer);
 		switch (shader->type) {
 		case GFX_SHADER_VERTEX: {
-			if (!gfx_vertex_shader_free(
-				    (gfx_vertex_shader_t*)shader->impl)) {
-				gfx_vertex_shader_release(shader->impl);
-			}
+			gfx_vertex_shader_free(
+				(gfx_vertex_shader_t*)shader->impl);
 			break;
 		}
 		case GFX_SHADER_PIXEL: {
-			if (!gfx_pixel_shader_free(
-				    (gfx_pixel_shader_t*)shader->impl)) {
-				gfx_pixel_shader_release(shader->impl);
-			}
+			gfx_pixel_shader_free(
+				(gfx_pixel_shader_t*)shader->impl);
 			break;
 		}
 		case GFX_SHADER_GEOMETRY:
@@ -1361,7 +1420,6 @@ void gfx_vertex_shader_init(gfx_vertex_shader_t* vs)
 		vs->input_layout = NULL;
 		vs->program = NULL;
 		vs->vertex_type = GFX_VERTEX_UNKNOWN;
-		os_atomic_set_s32(&vs->ref_count, 0);
 	}
 }
 
@@ -1369,13 +1427,18 @@ gfx_vertex_shader_t* gfx_vertex_shader_new()
 {
 	gfx_vertex_shader_t* vs = BM_ALLOC(sizeof(gfx_vertex_shader_t));
 	gfx_vertex_shader_init(vs);
+	gfx_vertex_shader_acquire(vs);
 	return vs;
 }
 
-bool gfx_vertex_shader_addref(gfx_vertex_shader_t* vs)
+bool gfx_vertex_shader_acquire(gfx_vertex_shader_t* vs)
 {
 	if (vs) {
-		os_atomic_inc_s32(&vs->ref_count);
+		s32 refs = os_atomic_get_s32(&vs->ref_count);
+		if (refs < 0)
+			os_atomic_set_s32(&vs->ref_count, 1);
+		else
+			os_atomic_inc_s32(&vs->ref_count);
 		return true;
 	}
 	return false;
@@ -1393,6 +1456,7 @@ bool gfx_vertex_shader_release(gfx_vertex_shader_t* vs)
 bool gfx_vertex_shader_free(gfx_vertex_shader_t* vs)
 {
 	if (vs != NULL) {
+		gfx_vertex_shader_release(vs);
 		s32 refs = os_atomic_get_s32(&vs->ref_count);
 		if (refs <= 0) {
 			ID3D10Blob_Release(vs->blob);
@@ -1426,7 +1490,6 @@ void gfx_pixel_shader_init(gfx_pixel_shader_t* ps)
 	if (ps != NULL) {
 		ps->blob = NULL;
 		ps->program = NULL;
-		os_atomic_set_s32(&ps->ref_count, 0);
 	}
 }
 
@@ -1434,13 +1497,18 @@ gfx_pixel_shader_t* gfx_pixel_shader_new()
 {
 	gfx_pixel_shader_t* ps = BM_ALLOC(sizeof(gfx_pixel_shader_t));
 	gfx_pixel_shader_init(ps);
+	gfx_pixel_shader_acquire(ps);
 	return ps;
 }
 
-bool gfx_pixel_shader_addref(gfx_pixel_shader_t* ps)
+bool gfx_pixel_shader_acquire(gfx_pixel_shader_t* ps)
 {
 	if (ps) {
-		os_atomic_inc_s32(&ps->ref_count);
+		s32 refs = os_atomic_get_s32(&ps->ref_count);
+		if (refs < 0)
+			os_atomic_set_s32(&ps->ref_count, 1);
+		else
+			os_atomic_inc_s32(&ps->ref_count);
 		return true;
 	}
 	return false;
@@ -1458,6 +1526,7 @@ bool gfx_pixel_shader_release(gfx_pixel_shader_t* ps)
 bool gfx_pixel_shader_free(gfx_pixel_shader_t* ps)
 {
 	if (ps != NULL) {
+		gfx_pixel_shader_release(ps);
 		s32 refs = os_atomic_get_s32(&ps->ref_count);
 		if (refs <= 0) {
 			ID3D10Blob_Release(ps->blob);
@@ -1630,7 +1699,7 @@ void gfx_bind_primitive_topology(enum gfx_topology topo)
 {
 	if (gfx && gfx->module->ctx) {
 		ID3D11DeviceContext1_IASetPrimitiveTopology(
-			gfx->module->ctx, gfx_topology_to_d3d11_topology(topo));
+			gfx->module->ctx, gfx_topology_to_d3d11(topo));
 	}
 }
 
@@ -1645,25 +1714,28 @@ void gfx_vertex_shader_bind_input_layout(const gfx_vertex_shader_t* vs)
 //
 // gfx sampler
 //
-gfx_sampler_state_t* gfx_sampler_state_new()
+gfx_sampler_state_t* gfx_sampler_state_new(struct gfx_sampler_desc* desc)
 {
-	if (!gfx_ok() || !gfx->module->device)
+	if (!gfx_ok() || !gfx->module->device || !desc)
 		return NULL;
 
 	gfx_sampler_state_t* sampler = BM_ALLOC(sizeof(gfx_sampler_state_t));
 	gfx_sampler_state_init(sampler);
 
 	D3D11_SAMPLER_DESC sd = {
-		.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
-		.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-		.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
-		.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.Filter = gfx_sample_filter_to_d3d11(desc->filter),
+		.AddressU = gfx_sample_address_mode_to_d3d11(desc->address_u),
+		.AddressV = gfx_sample_address_mode_to_d3d11(desc->address_v),
+		.AddressW = gfx_sample_address_mode_to_d3d11(desc->address_w),
 		.MipLODBias = 0.f,
-		.MaxAnisotropy = 1,
+		.MaxAnisotropy = desc->max_anisotropy,
 		.ComparisonFunc = D3D11_COMPARISON_ALWAYS,
 		.MinLOD = 0,
 		.MaxLOD = D3D11_FLOAT32_MAX,
-		.BorderColor = {0.f, 0.f, 0.f, 0.f},
+		.BorderColor[0] = desc->border_color[0],
+		.BorderColor[1] = desc->border_color[1],
+		.BorderColor[2] = desc->border_color[2],
+		.BorderColor[3] = desc->border_color[3],
 	};
 
 	if (FAILED(ID3D11Device1_CreateSamplerState(gfx->module->device, &sd,
@@ -1704,9 +1776,12 @@ void gfx_bind_sampler_state(gfx_texture_t* texture, u32 slot)
 			UINT views = 1;
 			ID3D11DeviceContext1_PSSetShaderResources(
 				gfx->module->ctx, slot, views, &impl->srv);
+			gfx_sampler_state_t* sampler = NULL;
+			if (gfx->module->samplers.num_elems > 0) {
+				sampler = gfx->module->samplers.elems[0];
+			}
 			ID3D11DeviceContext1_PSSetSamplers(
-				gfx->module->ctx, slot, 1,
-				&gfx->module->sampler->state);
+				gfx->module->ctx, slot, 1, &sampler->state);
 		}
 	}
 }
@@ -1736,8 +1811,8 @@ result gfx_init_rasterizer(const struct gfx_raster_state_desc* desc)
 			.FillMode = (desc->raster_flags & GFX_RASTER_WIREFRAME)
 					    ? D3D11_FILL_WIREFRAME
 					    : D3D11_FILL_SOLID,
-			.CullMode = gfx_culling_mode_to_d3d11_cull_mode(
-				desc->culling_mode),
+			.CullMode =
+				gfx_culling_mode_to_d3d11(desc->culling_mode),
 			.FrontCounterClockwise =
 				(BOOL)(desc->winding_order == GFX_WINDING_CCW),
 			.DepthBias = 0,
@@ -1782,22 +1857,22 @@ void gfx_blend_state_init(gfx_blend_state_t* state)
 {
 	if (state) {
 		state->bs = NULL;
-		ZeroMemory(&state->desc, sizeof(D3D11_BLEND_DESC));
-		memset(&state->config, 0,
-		       sizeof(struct gfx_blend_state_config));
+		memset(&state->desc, 0, sizeof(struct gfx_blend_desc));
 	}
 }
 
-result gfx_blend_state_configure(gfx_blend_state_t* state,
-				 const struct gfx_blend_state_config* cfg)
+result gfx_blend_configure(gfx_blend_state_t* state,
+			   const struct gfx_blend_desc* cfg)
 {
 	if (!state || !cfg)
 		return RESULT_NULL;
-	memcpy(&state->config, cfg, sizeof(struct gfx_blend_state_config));
+	memcpy(&state->desc, cfg, sizeof(struct gfx_blend_desc));
 
+	D3D11_BLEND_DESC bd;
+	ZeroMemory(&bd, sizeof(D3D11_BLEND_DESC));
 	for (size_t i = 0; i < 8; i++) {
-		state->desc.RenderTarget[i].BlendEnable = (BOOL)cfg->enabled;
-		state->desc.RenderTarget[i].RenderTargetWriteMask =
+		bd.RenderTarget[i].BlendEnable = (BOOL)cfg->enabled;
+		bd.RenderTarget[i].RenderTargetWriteMask =
 			(cfg->red_enabled ? D3D11_COLOR_WRITE_ENABLE_RED : 0) |
 			(cfg->green_enabled ? D3D11_COLOR_WRITE_ENABLE_GREEN
 					    : 0) |
@@ -1805,21 +1880,21 @@ result gfx_blend_state_configure(gfx_blend_state_t* state,
 					   : 0) |
 			(cfg->alpha_enabled ? D3D11_COLOR_WRITE_ENABLE_ALPHA
 					    : 0);
-		state->desc.RenderTarget[i].SrcBlend =
+		bd.RenderTarget[i].SrcBlend =
 			gfx_blend_mode_to_d3d11_blend(cfg->mode_src);
-		state->desc.RenderTarget[i].DestBlend =
+		bd.RenderTarget[i].DestBlend =
 			gfx_blend_mode_to_d3d11_blend(cfg->mode_dst);
-		state->desc.RenderTarget[i].BlendOp =
+		bd.RenderTarget[i].BlendOp =
 			gfx_blend_op_to_d3d11_blend_op(cfg->op);
-		state->desc.RenderTarget[i].SrcBlendAlpha =
+		bd.RenderTarget[i].SrcBlendAlpha =
 			gfx_blend_mode_to_d3d11_blend(cfg->mode_src_alpha);
-		state->desc.RenderTarget[i].DestBlendAlpha =
+		bd.RenderTarget[i].DestBlendAlpha =
 			gfx_blend_mode_to_d3d11_blend(cfg->mode_dst_alpha);
-		state->desc.RenderTarget[i].BlendOpAlpha =
+		bd.RenderTarget[i].BlendOpAlpha =
 			gfx_blend_op_to_d3d11_blend_op(cfg->op_alpha);
 	}
-	if (FAILED(ID3D11Device1_CreateBlendState(gfx->module->device,
-						   &state->desc, &state->bs)))
+	if (FAILED(ID3D11Device1_CreateBlendState(gfx->module->device, &bd,
+						  &state->bs)))
 		return RESULT_ERROR;
 	return RESULT_OK;
 }
@@ -1876,7 +1951,7 @@ result gfx_texture2d_create(const u8* data, const struct gfx_texture_desc* desc,
 	tex2d->height = desc->height;
 	tex2d->pix_fmt = desc->pix_fmt;
 	tex2d->mip_levels = desc->mip_levels;
-	DXGI_FORMAT dxgi_format = pixel_format_to_dxgi_format(desc->pix_fmt);
+	DXGI_FORMAT dxgi_format = pixel_format_to_dxgi(desc->pix_fmt);
 
 	DXGI_SAMPLE_DESC sample_desc = {
 		.Count = 1,

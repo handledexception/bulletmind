@@ -103,6 +103,9 @@ LRESULT gui_process_mouse_move_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	evt.mouse.screen_pos.y = gui->mouse.screen_pos.y;
 	evt.mouse.window_pos.x = gui->mouse.window_pos.x;
 	evt.mouse.window_pos.y = gui->mouse.window_pos.y;
+	evt.mouse.button.button = MOUSE_BUTTON_NONE;
+	evt.mouse.button.state = 0;
+	// evt.mouse.button.state = MOUSE_BUTTON_NON
 	// evt.mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
 	// evt.mouse.buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
 	// evt.mouse.buttons[MOUSE_BUTTON_MIDDLE].button = MOUSE_BUTTON_MIDDLE;
@@ -132,36 +135,33 @@ LRESULT gui_process_mouse_button_win32(HWND hwnd, UINT msg, WPARAM wp,
 	switch (msg) {
 	case WM_LBUTTONDOWN:
 		evt.type = GUI_EVENT_MOUSE_BUTTON_DOWN;
-		evt.mouse.buttons[MOUSE_BUTTON_LEFT].state = MOUSE_BUTTON_DOWN;
-		evt.mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
+		evt.mouse.button.button = MOUSE_BUTTON_LEFT;
+		evt.mouse.button.state = MOUSE_BUTTON_DOWN;
 		break;
 	case WM_LBUTTONUP:
 		evt.type = GUI_EVENT_MOUSE_BUTTON_UP;
-		evt.mouse.buttons[MOUSE_BUTTON_LEFT].state = MOUSE_BUTTON_UP;
-		evt.mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
+		evt.mouse.button.button = MOUSE_BUTTON_LEFT;
+		evt.mouse.button.state = MOUSE_BUTTON_UP;
 		break;
 	case WM_RBUTTONDOWN:
 		evt.type = GUI_EVENT_MOUSE_BUTTON_DOWN;
-		evt.mouse.buttons[MOUSE_BUTTON_LEFT].state = MOUSE_BUTTON_DOWN;
-		evt.mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
+		evt.mouse.button.button = MOUSE_BUTTON_RIGHT;
+		evt.mouse.button.state = MOUSE_BUTTON_DOWN;
 		break;
 	case WM_RBUTTONUP:
 		evt.type = GUI_EVENT_MOUSE_BUTTON_UP;
-		evt.mouse.buttons[MOUSE_BUTTON_RIGHT].state = MOUSE_BUTTON_UP;
-		evt.mouse.buttons[MOUSE_BUTTON_RIGHT].button =
-			MOUSE_BUTTON_RIGHT;
+		evt.mouse.button.button = MOUSE_BUTTON_RIGHT;
+		evt.mouse.button.state = MOUSE_BUTTON_UP;
 		break;
 	case WM_MBUTTONDOWN:
 		evt.type = GUI_EVENT_MOUSE_BUTTON_DOWN;
-		evt.mouse.buttons[MOUSE_BUTTON_RIGHT].state = MOUSE_BUTTON_DOWN;
-		evt.mouse.buttons[MOUSE_BUTTON_RIGHT].button =
-			MOUSE_BUTTON_RIGHT;
+		evt.mouse.button.button = MOUSE_BUTTON_MIDDLE;
+		evt.mouse.button.state = MOUSE_BUTTON_DOWN;
 		break;
 	case WM_MBUTTONUP:
 		evt.type = GUI_EVENT_MOUSE_BUTTON_UP;
-		evt.mouse.buttons[MOUSE_BUTTON_MIDDLE].state = MOUSE_BUTTON_UP;
-		evt.mouse.buttons[MOUSE_BUTTON_MIDDLE].button =
-			MOUSE_BUTTON_MIDDLE;
+		evt.mouse.button.button = MOUSE_BUTTON_MIDDLE;
+		evt.mouse.button.state = MOUSE_BUTTON_UP;
 		break;
 	}
 	vec_push_back(gui->events, &evt);
@@ -551,7 +551,7 @@ void* gui_get_window_handle_win32(gui_window_t* window)
 	return NULL;
 }
 
-void gui_get_global_mouse_state_win32(struct mouse_device* mouse)
+void gui_get_global_mouse_state_win32(mouse_t* mouse)
 {
 	POINT pos = {.x = 0, .y = 0};
 	GetCursorPos(&pos);

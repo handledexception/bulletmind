@@ -141,7 +141,7 @@ int main(int argc, char** argv)
 	engine = (engine_t*)bm_mem_arena_alloc(&mem_arena, sz_engine);
 	memset(engine, 0, sizeof(engine_t));
 	engine->inputs =
-		bm_mem_arena_alloc(&mem_arena, sizeof(struct input_state));
+		bm_mem_arena_alloc(&mem_arena, sizeof(input_state_t));
 	engine->adapter_index = -1; // SDL default to first available
 	engine->window_rect.x = -1; // SDL window position centered
 	engine->window_rect.y = -1; // ""

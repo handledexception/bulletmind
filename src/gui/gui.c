@@ -73,10 +73,12 @@ gui_window_t* gui_create_window(const char* title, s32 x, s32 y, s32 w, s32 h,
 	gui_window_t* window = (gui_window_t*)BM_ALLOC(sizeof(*window));
 	memset(window, 0, sizeof(*window));
 
-	// FIXME: Fix mem_realloc...
-	// window->title = BM_ALLOC(window->title, sizeof(title));
-	memset(window->title, 0, 4096);
-	strcpy(window->title, title);
+	size_t title_len = strlen(title);
+	window->title = BM_REALLOC(window->title, title_len + 1);
+	memset(window->title, 0, title_len + 1);
+	strncpy(window->title, title, title_len);
+	if (title[title_len] != '\0')
+		window->title[title_len] = '\0';
 	window->flags = flags;
 	window->bounds.x = x;
 	window->bounds.y = x;
@@ -101,16 +103,11 @@ void gui_destroy_window(gui_window_t* window)
 	if (!gui || !window)
 		return;
 
-	// for (int i = 0; i < gui->windows.num_elems; i++) {
-	// 	gui_window_t* wnd = (gui_window_t*)gui->windows.elems[i];
-	// 	if (wnd && wnd == window)
-	// 		vec_erase(gui->windows, i);
-	// }
 	window->destroy_me = true;
-	// if (window->title) {
-	// 	BM_FREE(window->title);
-	// 	window->title = NULL;
-	// }
+	if (window->title) {
+		BM_FREE(window->title);
+		window->title = NULL;
+	}
 
 	gui->destroy_window(window);
 	BM_FREE(window);
@@ -176,7 +173,7 @@ void gui_clear_key_state()
 		gui->keyboard[i].state = KEY_UP;
 }
 
-void gui_get_global_mouse_state(struct mouse_device* mouse)
+void gui_get_global_mouse_state(mouse_t* mouse)
 {
 	if (!gui || !mouse)
 		return;

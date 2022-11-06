@@ -104,7 +104,10 @@
         "dxgiformat.h": "c",
         "d3d11.h": "c",
         "codecvt": "c",
-        "fstream": "c"
+        "fstream": "c",
+        "mem_align.h": "c",
+        "gamepad.h": "c",
+        "scene.h": "c"
     },
     "cmake.configureOnOpen": false
 }

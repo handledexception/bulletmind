@@ -32,7 +32,7 @@ typedef struct SDL_Renderer SDL_Renderer;
 typedef struct SDL_Surface SDL_Surface;
 typedef struct SDL_Texture SDL_Texture;
 
-struct input_state;
+typedef struct input_state_s input_state_t;
 typedef struct game_resource_s game_resource_t;
 typedef struct audio_state_s audio_state_t;
 
@@ -74,7 +74,7 @@ typedef struct engine_s {
 	VECTOR(struct gui_window*) windows;
 	bool fullscreen;
 	struct engine_gfx gfx;
-	struct input_state* inputs;
+	input_state_t* inputs;
 	rect_t window_rect;
 	rect_t cam_rect;
 	rect_t cam_inset;

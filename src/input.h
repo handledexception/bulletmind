@@ -66,38 +66,35 @@ typedef struct gui_event gui_event_t;
 typedef struct virtual_button_s {
 	const char* name; // display name
 	u8 state;         // 0 = up/released, 1 = down/pressed
-	struct mouse_button* mouse_button;
-	struct keyboard_key* keyboard_key;
-	struct gamepad_button* pad_button;
+	mouse_button_t* mouse_button;
+	keyboard_key_t* keyboard_key;
+	gamepad_button_t* pad_button;
 	bool toggled;
 } virtual_button_t;
 
-struct input_state {
-	struct gamepad gamepads[MAX_GAMEPADS]; /* array of gamepad states */
-	struct keyboard_key
-		keys[MAX_KEYBOARD_KEYS]; /* array of keyboard key states */
-	struct mouse_device mouse;       /* mouse state */
+typedef struct {
+	gamepad_t gamepads[MAX_GAMEPADS];       /* array of gamepad states */
+	keyboard_key_t keys[MAX_KEYBOARD_KEYS]; /* array of keyboard key states */
+	mouse_t mouse;                          /* mouse state */
 	virtual_button_t buttons[MAX_VIRTUAL_BUTTONS];
 	input_mode_t mode;
-};
+} input_state_t;
 
-struct input_state* inp_new();
-void inp_free(struct input_state* inputs);
-result inp_init(struct input_state* inputs);
-// void inp_refresh_mouse(struct mouse_device* mouse, f32 scale_x, f32 scale_y);
-void inp_refresh_pressed(struct input_state* inputs, const gui_event_t* evt);
-void inp_shutdown(struct input_state* inputs);
+input_state_t* inp_new();
+void inp_free(input_state_t* inputs);
+result inp_init(input_state_t* inputs);
+// void inp_refresh_mouse(mouse_t* mouse, f32 scale_x, f32 scale_y);
+void inp_refresh_pressed(input_state_t* inputs, const gui_event_t* evt);
+void inp_shutdown(input_state_t* inputs);
 
-bool inp_init_gamepads(struct input_state* inputs);
+bool inp_init_gamepads(input_state_t* inputs);
 
-void inp_set_key_state(struct keyboard_key* keys, u16 scancode, u8 state);
-u8 inp_get_key_state(struct keyboard_key* keys, u16 scancode);
+void inp_set_key_state(keyboard_key_t* keys, u16 scancode, u8 state);
+u8 inp_get_key_state(keyboard_key_t* keys, u16 scancode);
 
-void inp_set_mouse_pos(struct mouse_device* mouse, const vec2i_t scr,
-		       const vec2i_t wnd);
-void inp_set_mouse_button_state(struct mouse_device* mouse, u16 button,
-				u8 state);
-u8 inp_get_mouse_button_state(struct mouse_device* mouse, u16 button);
+void inp_set_mouse_pos(mouse_t* mouse, const vec2i_t scr, const vec2i_t wnd);
+void inp_set_mouse_button_state(mouse_t* mouse, u16 button, u8 state);
+u8 inp_get_mouse_button_state(mouse_t* mouse, u16 button);
 
 // Gamepad deadzone
 // https://www.gamasutra.com/blogs/JoshSutphin/20130416/190541/Doing_Thumbstick_Dead_Zones_Right.php
@@ -117,12 +114,11 @@ u8 inp_get_mouse_button_state(struct mouse_device* mouse, u16 button);
 // s16 inp_get_gamepad_axis_value(struct gamepad* gamepad,
 // 			       gamepad_axis_kind_t axis);
 
-bool inp_bind_virtual_key(struct input_state* inputs, command_t cmd,
-			  u16 scancode);
-bool inp_bind_virtual_mouse_button(struct input_state* inputs, command_t cmd,
+bool inp_bind_virtual_key(input_state_t* inputs, command_t cmd, u16 scancode);
+bool inp_bind_virtual_mouse_button(input_state_t* inputs, command_t cmd,
 				   u16 mouse_button);
-// bool inp_bind_virtual_gamepad_button(struct input_state* inputs, command_t cmd,
+// bool inp_bind_virtual_gamepad_button(input_state_t* inputs, command_t cmd,
 // 				     u32 gamepad, gamepad_button_kind_t button);
 
-bool inp_cmd_get_state(struct input_state* inputs, command_t cmd);
-void inp_cmd_toggle(struct input_state* inputs, command_t cmd, bool* value);
+bool inp_cmd_get_state(input_state_t* inputs, command_t cmd);
+void inp_cmd_toggle(input_state_t* inputs, command_t cmd, bool* value);

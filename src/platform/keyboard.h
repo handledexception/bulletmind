@@ -9,12 +9,12 @@ enum key_state {
 	KEY_DOWN = 1,
 };
 
-struct keyboard_key {
+typedef struct {
 	keyboard_scancode_t scancode; /* keyboard scancode */
 	u8 state;                     /* key pressed or released state */
-};
+} keyboard_key_t;
 
 typedef struct {
-	struct keyboard_key key; /* the key */
-	keyboard_key_mod_t mod;  /* key modifier */
+	keyboard_key_t key;     /* the key */
+	keyboard_key_mod_t mod; /* key modifier */
 } keyboard_event_t;

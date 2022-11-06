@@ -89,7 +89,7 @@ typedef struct gui_event {
 struct gui_window {
 	s32 id;
 	s32 flags;
-	char title[4096];
+	char* title;
 	s32 min_w;
 	s32 min_h;
 	s32 max_w;
@@ -104,8 +104,8 @@ struct gui_window {
 struct gui_system {
 	VECTOR(gui_window_t*) windows;                                  /* window list */
 	VECTOR(gui_event_t) events;                                     /* GUI events */
-	struct keyboard_key keyboard[MAX_KEYBOARD_KEYS];                /* raw keyboard state */
-	struct mouse_device mouse;                                      /* raw mouse state */
+	keyboard_key_t keyboard[MAX_KEYBOARD_KEYS];                /* raw keyboard state */
+	mouse_t mouse;                                      /* raw mouse state */
 	bool (*create_window)(gui_window_t* window);                    /* platform window create function */
 	void (*destroy_window)(gui_window_t* window);                   /* platform window destroy function */
 	void (*show_window)(gui_window_t* window, bool shown);          /* platform window show function */
@@ -113,7 +113,7 @@ struct gui_system {
 	bool (*get_window_rect)(const gui_window_t* window, rect_t* rect, bool client);
 	void (*center_window)(gui_window_t* window);                    /* center window within parent/screen */
 	void* (*get_handle)(gui_window_t* window);                      /* platform window get handle function */
-	void (*get_global_mouse_state)(struct mouse_device* mouse);     /* platform window get global mouse state function */
+	void (*get_global_mouse_state)(mouse_t* mouse);     /* platform window get global mouse state function */
 };
 /* clang-format on */
 
@@ -156,7 +156,7 @@ BM_EXPORT bool gui_get_window_rect(const gui_window_t* window, rect_t* rect,
 BM_EXPORT void* gui_get_window_handle(gui_window_t* window);
 BM_EXPORT gui_window_t* gui_get_window_by_handle(void* handle);
 BM_EXPORT void gui_clear_key_state();
-BM_EXPORT void gui_get_global_mouse_state(struct mouse_device* mouse);
+BM_EXPORT void gui_get_global_mouse_state(mouse_t* mouse);
 
 BM_EXPORT bool gui_poll_event(gui_event_t* event);
 BM_EXPORT void gui_refresh_win32(gui_system_t* gp);

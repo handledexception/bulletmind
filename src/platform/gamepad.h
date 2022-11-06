@@ -35,24 +35,24 @@ typedef enum {
 	GAMEPAD_BUTTON_MAX = 15
 } gamepad_button_kind_t;
 
-struct gamepad_axis {
+typedef struct {
 	s32 index;
 	const char* name;
 	s16 value;
 	u64 timestamp;
 	gamepad_axis_kind_t kind;
-};
+} gamepad_axis_t;
 
-struct gamepad_button {
+typedef struct {
 	s32 index;
 	const char* name;
 	const char* alt_name;
 	gamepad_button_kind_t kind;
 	u8 state;
 	u64 timestamp;
-};
+} gamepad_button_t;
 
-struct gamepad {
+typedef struct {
 	const char* name;
 	void* instance;
 	s32 index;
@@ -60,6 +60,6 @@ struct gamepad {
 	u16 product_id;
 	u16 vendor_id;
 	u16 version;
-	struct gamepad_button buttons[GAMEPAD_BUTTON_MAX];
-	struct gamepad_axis axes[GAMEPAD_AXES_MAX];
-};
+	gamepad_button_t buttons[GAMEPAD_BUTTON_MAX];
+	gamepad_axis_t axes[GAMEPAD_AXES_MAX];
+} gamepad_t;

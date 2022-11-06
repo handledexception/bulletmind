@@ -1,23 +1,23 @@
 [[assets]]
-name = "pos_uv_vs"
+name = "vs_pos_uv"
 path = "assets/shader/solid.vs.hlsl"
 kind = "shader"
 vertex_type = "posuv"
 [[assets]]
-name = "pos_uv_ps"
+name = "ps_pos_uv"
 path = "assets/shader/solid.ps.hlsl"
 kind = "shader"
 [[assets]]
-name = "pos_color_ps"
-path = "assets/shader/pos_color.ps.hlsl"
-kind = "shader"
-[[assets]]
-name = "pos_color_vs"
+name = "vs_pos_color"
 path = "assets/shader/pos_color.vs.hlsl"
 kind = "shader"
 vertex_type = "poscol"
 [[assets]]
-name = "fullscreen_vs"
+name = "ps_pos_color"
+path = "assets/shader/pos_color.ps.hlsl"
+kind = "shader"
+[[assets]]
+name = "vs_fullscreen"
 path = "assets/shader/fullscreen.vs.hlsl"
 kind = "shader"
 vertex_type = "posuv"

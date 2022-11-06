@@ -19,6 +19,21 @@ extern "C" {
 #define BM_GFX_MAX_VERTICES 256
 #define BM_GFX_MAX_INDICES 256
 
+#define VERTEX_HAS_POS(__vtype__)                                         \
+	(__vtype__ == GFX_VERTEX_POS || __vtype__ == GFX_VERTEX_POS_UV || \
+	 __vtype__ == GFX_VERTEX_POS_NORM_UV ||                           \
+	 __vtype__ == GFX_VERTEX_POS_COLOR ||                             \
+	 __vtype__ == GFX_VERTEX_POS_NORM_COLOR)
+#define VERTEX_HAS_NORMAL(__vtype__)            \
+	(__vtype__ == GFX_VERTEX_POS_NORM_UV || \
+	 __vtype__ == GFX_VERTEX_POS_NORM_COLOR)
+#define VERTEX_HAS_UV(__vtype__) \
+	(__vtype__ == GFX_VERTEX_POS_UV || __vtype__ == GFX_VERTEX_POS_NORM_UV)
+#define VERTEX_HAS_COLOR(__vtype__)           \
+	(__vtype__ == GFX_VERTEX_POS_COLOR || \
+	 __vtype__ == GFX_VERTEX_POS_NORM_COLOR)
+#define VERTEX_HAS_TANGENT(__vtype__) (0)
+
 struct media_image; // foward decl
 
 typedef struct vec2f vec2f_t;
@@ -49,6 +64,7 @@ typedef struct gfx_depth_state gfx_depth_state_t;
 typedef struct gfx_sprite gfx_sprite_t;
 typedef struct gfx_sheet gfx_sheet_t;             /* sprite sheet */
 typedef struct gfx_sheet_frame gfx_sheet_frame_t; /* sprite sheet frame */
+typedef struct gfx_mesh gfx_mesh_t;
 
 struct gfx_window {
 #if defined(_WIN32)
@@ -94,7 +110,7 @@ struct gfx_raster_state_desc {
 	enum gfx_raster_flags raster_flags;
 };
 
-struct gfx_blend_state_config {
+struct gfx_blend_desc {
 	bool enabled;
 	bool red_enabled;
 	bool green_enabled;
@@ -108,13 +124,13 @@ struct gfx_blend_state_config {
 	enum gfx_blend_op op_alpha;
 };
 
-struct gfx_sampler_config {
+struct gfx_sampler_desc {
 	enum gfx_sample_filter filter;
 	enum gfx_sample_address_mode address_u;
 	enum gfx_sample_address_mode address_v;
 	enum gfx_sample_address_mode address_w;
 	s32 max_anisotropy;
-	u32 border_color;
+	float border_color[4];
 };
 
 struct gfx_texture_desc {
@@ -139,7 +155,7 @@ struct texture_vertex {
 	void* data;
 };
 
-struct gfx_vertex_data {
+struct gfx_mesh {
 	enum gfx_vertex_type type;
 	struct vec3f* positions;
 	struct vec3f* normals;
@@ -148,6 +164,10 @@ struct gfx_vertex_data {
 	struct texture_vertex* tex_verts;
 	size_t num_vertices;
 };
+
+gfx_mesh_t* gfx_mesh_new(enum gfx_vertex_type type, u32 num_verts);
+void gfx_mesh_free(gfx_mesh_t* data);
+size_t gfx_mesh_get_size(const gfx_mesh_t* mesh);
 
 struct gfx_sprite {
 	struct media_image* img;
@@ -213,6 +233,8 @@ BM_EXPORT result gfx_enumerate_displays(const gfx_adapter_t* adapter,
 BM_EXPORT void gfx_set_viewport(u32 width, u32 height);
 BM_EXPORT gfx_shader_t* gfx_system_get_vertex_shader();
 BM_EXPORT gfx_shader_t* gfx_system_get_pixel_shader();
+BM_EXPORT void gfx_system_sampler_push(gfx_sampler_state_t* sampler);
+BM_EXPORT void gfx_system_sampler_pop();
 BM_EXPORT void gfx_system_bind_render_target(void);
 BM_EXPORT void gfx_system_bind_input_layout(gfx_shader_t* shader);
 BM_EXPORT result gfx_create_swap_chain(const struct gfx_config* cfg);
@@ -250,6 +272,7 @@ BM_EXPORT u8* gfx_buffer_get_data(gfx_buffer_t* buf);
 BM_EXPORT void gfx_shader_init(gfx_shader_t* shader);
 BM_EXPORT gfx_shader_t* gfx_shader_new(enum gfx_shader_type type);
 BM_EXPORT gfx_shader_t* gfx_shader_adopt(gfx_shader_t* other);
+BM_EXPORT gfx_shader_t* gfx_shader_copy(gfx_shader_t* other);
 BM_EXPORT void gfx_shader_free(gfx_shader_t* shader);
 BM_EXPORT size_t gfx_shader_cbuffer_fill(gfx_shader_t* shader);
 BM_EXPORT result gfx_shader_compile_from_file(const char* path,
@@ -261,7 +284,7 @@ BM_EXPORT result gfx_shader_new_input_layout(gfx_shader_t* vs);
 /* gfx_vertex_shader -------------------------------------------------------- */
 BM_EXPORT void gfx_vertex_shader_init(gfx_vertex_shader_t* vs);
 BM_EXPORT gfx_vertex_shader_t* gfx_vertex_shader_new(void);
-BM_EXPORT bool gfx_vertex_shader_addref(gfx_vertex_shader_t* vs);
+BM_EXPORT bool gfx_vertex_shader_acquire(gfx_vertex_shader_t* vs);
 BM_EXPORT bool gfx_vertex_shader_release(gfx_vertex_shader_t* vs);
 BM_EXPORT bool gfx_vertex_shader_free(gfx_vertex_shader_t* vs);
 BM_EXPORT gfx_vertex_shader_t*
@@ -277,7 +300,7 @@ gfx_vertex_shader_bind_input_layout(const gfx_vertex_shader_t* vs);
 /* gfx_pixel_shader --------------------------------------------------------- */
 BM_EXPORT void gfx_pixel_shader_init(gfx_pixel_shader_t* ps);
 BM_EXPORT gfx_pixel_shader_t* gfx_pixel_shader_new();
-BM_EXPORT bool gfx_pixel_shader_addref(gfx_pixel_shader_t* ps);
+BM_EXPORT bool gfx_pixel_shader_acquire(gfx_pixel_shader_t* ps);
 BM_EXPORT bool gfx_pixel_shader_release(gfx_pixel_shader_t* ps);
 BM_EXPORT bool gfx_pixel_shader_free(gfx_pixel_shader_t* ps);
 
@@ -299,7 +322,8 @@ BM_EXPORT gfx_shader_var_t* gfx_shader_get_var_by_name(gfx_shader_t* shader,
 BM_EXPORT size_t gfx_shader_var_size(enum gfx_shader_var_type type);
 BM_EXPORT const char* gfx_shader_type_to_string(enum gfx_shader_type type);
 /* sampler ----------------------------------------------------------------- */
-BM_EXPORT gfx_sampler_state_t* gfx_sampler_state_new();
+BM_EXPORT gfx_sampler_state_t*
+gfx_sampler_state_new(struct gfx_sampler_desc* desc);
 BM_EXPORT void gfx_sampler_state_free(gfx_sampler_state_t* sampler);
 BM_EXPORT void gfx_sampler_state_init(gfx_sampler_state_t* sampler);
 BM_EXPORT void gfx_bind_sampler_state(gfx_texture_t* texture, u32 slot);
@@ -312,8 +336,8 @@ BM_EXPORT void gfx_bind_rasterizer(void);
 BM_EXPORT gfx_blend_state_t* gfx_blend_state_new();
 BM_EXPORT void gfx_blend_state_free(gfx_blend_state_t* state);
 BM_EXPORT void gfx_blend_state_init(gfx_blend_state_t* state);
-BM_EXPORT result gfx_blend_state_configure(
-	gfx_blend_state_t* state, const struct gfx_blend_state_config* cfg);
+BM_EXPORT result gfx_blend_configure(gfx_blend_state_t* state,
+				     const struct gfx_blend_desc* cfg);
 BM_EXPORT void gfx_bind_blend_state();
 
 /* texture ----------------------------------------------------------------- */
