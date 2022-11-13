@@ -149,6 +149,13 @@ static inline void vector_pop_back(struct vector* vec, size_t elem_size)
 		vector_erase(vec, elem_size, vec->num_elems - 1);
 }
 
+static inline void vector_pop_front(struct vector* vec, size_t elem_size)
+{
+	assert(vec->num_elems != 0);
+	if (vec->num_elems)
+		vector_erase(vec, elem_size, 0);
+}
+
 #define VECTOR(type)                      \
 	union {                           \
 		struct vector vec;        \
@@ -168,6 +175,7 @@ static inline void vector_pop_back(struct vector* vec, size_t elem_size)
 #define vec_erase(v, i) vector_erase(&v.vec, sizeof(*v.elems), i)
 #define vec_push_back(v, elem) vector_push_back(&v.vec, elem, sizeof(*v.elems))
 #define vec_pop_back(v) vector_pop_back(&v.vec, sizeof(*v.elems))
+#define vec_pop_front(v) vector_pop_front(&v.vec, sizeof(*v.elems))
 #define vec_reserve(v, cap) vector_reserve(&v.vec, sizeof(*v.elems), cap)
 
 // #define vec_resize(v, size) vector_resize(sizeof(*v.elems), &v.vec, size)

@@ -18,22 +18,22 @@ gfx_mesh_t* gfx_mesh_new(enum gfx_vertex_type type, u32 num_verts)
 	data->tangents = NULL;
 	data->tex_verts = NULL;
 
-	if (VERTEX_HAS_POS(type)) {
+	if (GFX_VERTEX_HAS_POS(type)) {
 		size_t sz_pos = sizeof(struct vec3f) * num_verts;
 		data->positions = BM_ALLOC(sz_pos);
 		memset(data->positions, 0, sz_pos);
 	}
-	if (VERTEX_HAS_NORMAL(type)) {
+	if (GFX_VERTEX_HAS_NORMAL(type)) {
 		size_t sz_norm = sizeof(struct vec3f) * num_verts;
 		data->normals = BM_ALLOC(sz_norm);
 		memset(data->normals, 0, sz_norm);
 	}
-	if (VERTEX_HAS_COLOR(type)) {
+	if (GFX_VERTEX_HAS_COLOR(type)) {
 		size_t sz_col = sizeof(struct vec4f) * num_verts;
 		data->colors = BM_ALLOC(sz_col);
 		memset(data->colors, 0, sz_col);
 	}
-	if (VERTEX_HAS_UV(type)) {
+	if (GFX_VERTEX_HAS_UV(type)) {
 		data->tex_verts =
 			BM_ALLOC(sizeof(struct texture_vertex) * num_verts);
 		size_t uv_size = sizeof(struct vec2f);
@@ -86,19 +86,19 @@ size_t gfx_mesh_get_size(const gfx_mesh_t* mesh)
 	size_t size = 0;
 	if (mesh) {
 		size += sizeof(struct gfx_mesh);
-		if (VERTEX_HAS_POS(mesh->type)) {
+		if (GFX_VERTEX_HAS_POS(mesh->type)) {
 			size += sizeof(vec3f_t) * mesh->num_vertices;
 		}
-		if (VERTEX_HAS_COLOR(mesh->type)) {
+		if (GFX_VERTEX_HAS_COLOR(mesh->type)) {
 			size += sizeof(vec4f_t) * mesh->num_vertices;
 		}
-		if (VERTEX_HAS_NORMAL(mesh->type)) {
+		if (GFX_VERTEX_HAS_NORMAL(mesh->type)) {
 			size += sizeof(vec3f_t) * mesh->num_vertices;
 		}
-		if (VERTEX_HAS_TANGENT(mesh->type)) {
+		if (GFX_VERTEX_HAS_TANGENT(mesh->type)) {
 			size += sizeof(vec3f_t) * mesh->num_vertices;
 		}
-		if (VERTEX_HAS_UV(mesh->type)) {
+		if (GFX_VERTEX_HAS_UV(mesh->type)) {
 			for (size_t i = 0; i < mesh->num_vertices; i++) {
 				size += sizeof(vec2f_t) +
 					sizeof(struct texture_vertex);
@@ -252,23 +252,20 @@ void gfx_shader_var_free(gfx_shader_var_t* var)
 	}
 }
 
-void gfx_shader_var_set(gfx_shader_var_t* var, const void* data)
+void gfx_shader_var_set_data(gfx_shader_var_t* var, const void* data)
 {
 	if (var != NULL && data != NULL) {
 		size_t szd = gfx_shader_var_size(var->type);
-		if (var->data != NULL && var->own_data) {
-			BM_FREE(var->data);
-			var->data = NULL;
-		}
 		if (var->data == NULL) {
 			var->data = BM_ALLOC(szd);
 		}
-		memcpy(var->data, data, szd);
+		if (var->data != NULL)
+			memcpy(var->data, data, szd);
 		var->own_data = true;
 	}
 }
 
-void gfx_shader_var_set_from(gfx_shader_var_t* var, const void* data)
+void gfx_shader_var_set_data_ref(gfx_shader_var_t* var, const void* data)
 {
 	if (var != NULL) {
 		if (var->data != NULL && var->own_data) {
@@ -293,18 +290,18 @@ bool gfx_shader_add_var(gfx_shader_t* shader, const gfx_shader_var_t var)
 }
 
 bool gfx_shader_set_var_by_name(gfx_shader_t* shader, const char* name,
-				const void* value, size_t size, bool own_data)
+				const void* value, bool is_reference)
 {
 	for (size_t i = 0; i < shader->vars.num_elems; i++) {
 		gfx_shader_var_t* var =
 			(gfx_shader_var_t*)&shader->vars.elems[i];
 		if (var != NULL && !strcmp(var->name, name)) {
-			if (own_data)
-				gfx_shader_var_set(var, value);
+			if (is_reference)
+				gfx_shader_var_set_data_ref(var, value);
 			else
-				gfx_shader_var_set_from(var, value);
+				gfx_shader_var_set_data(var, value);
+			return true;
 		}
-		return true;
 	}
 	return false;
 }

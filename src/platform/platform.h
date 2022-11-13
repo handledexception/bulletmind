@@ -18,6 +18,7 @@
 
 #include "core/export.h"
 #include "core/types.h"
+#include "core/vector.h"
 
 #include <sys/types.h>
 #include <wchar.h>
@@ -25,6 +26,40 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct os_stack_frame {
+	u64 address;
+	u32 line_num;
+	char func_name[BM_MAX_PATH];
+	char module_name[BM_MAX_PATH];
+	char file_name[BM_MAX_PATH];
+} os_stack_frame_t;
+
+typedef struct os_callstack {
+	size_t frame_count;
+	VECTOR(struct os_stack_frame) frames;
+} os_callstack_t;
+
+BM_EXPORT os_callstack_t* os_callstack_new();
+BM_EXPORT void os_callstack_init(os_callstack_t* cs);
+BM_EXPORT void os_callstack_free(os_callstack_t* cs);
+BM_EXPORT bool os_callstack_read(os_callstack_t* cs);
+/*
+	// Example:
+	os_callstack_t cs;
+	os_callstack_init(&cs);
+	os_callstack_read(&cs);
+	char tmp[MAX_PATH];
+	for (size_t i = 0; i < cs.frames.num_elems; i++) {
+		struct os_stack_frame* f = &cs.frames.elems[i];
+		printf("%s!%s Line %d %s\n",
+			path_get_basename(f->module_name),
+			f->func_name,
+			f->line_num,
+			path_get_basename(f->file_name));
+	}
+	vec_free(cs.frames);
+*/
 
 // file i/o & utf8
 #ifdef _WIN32

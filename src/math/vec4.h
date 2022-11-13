@@ -22,17 +22,21 @@
 #include "math/vec3.h"
 
 typedef struct vec4f {
-	f32 x;
-	f32 y;
-	f32 z;
-	f32 w;
+	union {
+		struct { 
+			f32 x, y, z, w;
+		};
+		f32 elems[4];
+	};
 } vec4f_t;
 
 typedef struct rgba {
-	u8 r;
-	u8 g;
-	u8 b;
-	u8 a;
+	union {
+		struct {
+			u8 r, g, b, a;
+		};
+		f32 elems[4];
+	};
 } rgba_t;
 
 static inline void vec4f_set(struct vec4f* dst, f32 x, f32 y, f32 z, f32 w)
@@ -100,7 +104,7 @@ static inline f32 vec4f_len(const struct vec4f* v)
 	return v_dot > 0.f ? sqrtf(v_dot) : 0.f;
 }
 
-static inline void vec4_mulf(struct vec4f* dst, const struct vec4f* v, f32 s)
+static inline void vec4f_mulf(struct vec4f* dst, const struct vec4f* v, f32 s)
 {
 	vec4f_set(dst, v->x * s, v->y * s, v->z * s, v->w * s);
 }

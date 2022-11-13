@@ -2,6 +2,7 @@
 #include "math/types.h"
 #include "core/asset.h"
 #include "core/memory.h"
+#include "math/types.h"
 
 struct gfx_scene* gfx_scene_new(const char* name)
 {
@@ -9,48 +10,42 @@ struct gfx_scene* gfx_scene_new(const char* name)
 	struct gfx_scene* scene = BM_ALLOC(sizeof(*scene));
 	gfx_scene_init(scene);
 	size_t sz_name = strlen(name);
-	if (sz_name > SCENE_NAME_LENGTH)
-		sz_name = SCENE_NAME_LENGTH;
-	strncpy(&scene->name[0], name, sz_name + 1);
-	if (scene->name[SCENE_NAME_LENGTH] != '\0')
-		scene->name[SCENE_NAME_LENGTH] = '\0';
+	if (sz_name > SCENE_NAME_LENGTH-1)
+		sz_name = SCENE_NAME_LENGTH-1;
+	strncpy(&scene->name[0], name, sz_name);
+	if (scene->name[sz_name+1] != '\0')
+		scene->name[sz_name+1] = '\0';
 
 	return scene;
 }
 
-void gfx_scene_init(struct gfx_scene* scene)
+void gfx_scene_init(gfx_scene_t* scene)
 {
 	if (scene) {
 		memset(scene, 0, sizeof(*scene));
-		vec_init(scene->sprites);
 		vec_init(scene->assets);
 	}
 }
 
-void gfx_scene_free(struct gfx_scene* scene)
+void gfx_scene_free(gfx_scene_t* scene)
 {
 	if (scene) {
-		vec_free(scene->sprites);
+		for (size_t i = 0; i < scene->assets.num_elems; i++) {
+			asset_t* ass = scene->assets.elems[i];
+			asset_free(ass);
+		}
 		vec_free(scene->assets);
 		gfx_mesh_free(scene->mesh);
 		if (scene->index_data != NULL) {
 			BM_FREE(scene->index_data);
 			scene->index_data = NULL;
 		}
-		if (scene->vertex_shader) {
-			gfx_shader_free(scene->vertex_shader);
-			scene->vertex_shader = NULL;
-		}
-		if (scene->pixel_shader) {
-			gfx_shader_free(scene->pixel_shader);
-			scene->pixel_shader = NULL;
-		}
 	}
 	BM_FREE(scene);
 	scene = NULL;
 }
 
-bool gfx_scene_add_asset(struct gfx_scene* scene, asset_t* asset)
+bool gfx_scene_add_asset(gfx_scene_t* scene, asset_t* asset)
 {
 	if (scene && asset) {
 		bool found = false;
@@ -71,7 +66,7 @@ bool gfx_scene_add_asset(struct gfx_scene* scene, asset_t* asset)
 	return false;
 }
 
-bool gfx_scene_remove_asset(struct gfx_scene* scene, const char* name)
+bool gfx_scene_remove_asset(gfx_scene_t* scene, const char* name)
 {
 	if (scene && name) {
 		bool found = false;
@@ -94,27 +89,43 @@ bool gfx_scene_remove_asset(struct gfx_scene* scene, const char* name)
 	return false;
 }
 
-void gfx_scene_set_mesh(struct gfx_scene* scene, struct gfx_mesh* mesh)
+void gfx_scene_set_pos(gfx_scene_t* scene, vec4f_t* pos)
+{
+	if (scene && pos)
+		vec4f_copy(&scene->pos, pos);
+}
+void gfx_scene_set_rotation(gfx_scene_t* scene, vec4f_t* rot)
+{
+	if (scene && rot)
+		vec4f_copy(&scene->rot, rot);
+}
+void gfx_scene_set_scale(gfx_scene_t* scene, vec4f_t* scale)
+{
+	if (scene && scale)
+		vec4f_copy(&scene->scale, scale);
+}
+
+void gfx_scene_set_mesh(gfx_scene_t* scene, struct gfx_mesh* mesh)
 {
 	if (scene && mesh && mesh->num_vertices > 0) {
 		scene->mesh = gfx_mesh_new(mesh->type, mesh->num_vertices);
-		if (VERTEX_HAS_POS(mesh->type)) {
+		if (GFX_VERTEX_HAS_POS(mesh->type)) {
 			memcpy(scene->mesh->positions, mesh->positions,
 			       sizeof(vec3f_t) * mesh->num_vertices);
 		}
-		if (VERTEX_HAS_COLOR(mesh->type)) {
+		if (GFX_VERTEX_HAS_COLOR(mesh->type)) {
 			memcpy(scene->mesh->colors, mesh->colors,
 			       sizeof(vec4f_t) * mesh->num_vertices);
 		}
-		if (VERTEX_HAS_NORMAL(mesh->type)) {
+		if (GFX_VERTEX_HAS_NORMAL(mesh->type)) {
 			memcpy(scene->mesh->normals, mesh->normals,
 			       sizeof(vec3f_t) * mesh->num_vertices);
 		}
-		if (VERTEX_HAS_TANGENT(mesh->type)) {
+		if (GFX_VERTEX_HAS_TANGENT(mesh->type)) {
 			memcpy(scene->mesh->tangents, mesh->tangents,
 			       sizeof(vec3f_t) * mesh->num_vertices);
 		}
-		if (VERTEX_HAS_UV(mesh->type)) {
+		if (GFX_VERTEX_HAS_UV(mesh->type)) {
 			for (size_t i = 0; i < mesh->num_vertices; i++) {
 				scene->mesh->tex_verts[i].size =
 					mesh->tex_verts[i].size;
@@ -126,20 +137,15 @@ void gfx_scene_set_mesh(struct gfx_scene* scene, struct gfx_mesh* mesh)
 	}
 }
 
-void gfx_scene_set_index_data(struct gfx_scene* scene, u32* data, u32 count)
+void gfx_scene_set_index_data(gfx_scene_t* scene, u32* data, u32 count)
 {
-	scene->index_data = BM_ALLOC(sizeof(u32) * count);
-	memcpy(scene->index_data, data, sizeof(u32) * count);
-}
-
-void gfx_scene_set_vertex_shader(struct gfx_scene* scene, gfx_shader_t* vs)
-{
-	if (scene)
-		scene->vertex_shader = vs;
-}
-
-void gfx_scene_set_pixel_shader(struct gfx_scene* scene, gfx_shader_t* ps)
-{
-	if (scene)
-		scene->pixel_shader = ps;
+	if (scene->index_data != NULL) {
+		BM_FREE(scene->index_data);
+		scene->index_data = NULL;
+	}
+	if (scene->index_data == NULL) {
+		scene->index_data = BM_ALLOC(sizeof(u32) * count);
+		memcpy(scene->index_data, data, sizeof(u32) * count);
+		scene->num_indices = count;
+	}
 }

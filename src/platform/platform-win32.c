@@ -15,6 +15,7 @@
  */
 
 #include <Windows.h>
+#include <DbgHelp.h>
 
 #include "platform/platform.h"
 // #include "platform/win-version.h"
@@ -174,3 +175,113 @@ bool os_atomic_compare_exchange_s64(volatile s64* ptr, s64* old_ptr,
 	return previous == old_val;
 }
 #endif
+
+bool os_callstack_read(os_callstack_t* cs)
+{
+	if (!cs)
+		return false;
+
+	bool read_ok = false;
+	DWORD machine = 0;
+#if _WIN64
+	machine = IMAGE_FILE_MACHINE_AMD64;
+#else
+	machine = IMAGE_FILE_MACHINE_I386;
+#endif
+	HANDLE process = GetCurrentProcess();
+	HANDLE thread = GetCurrentThread();
+
+	CONTEXT context;
+	ZeroMemory(&context, sizeof(CONTEXT));
+	context.ContextFlags = CONTEXT_FULL;
+
+	RtlCaptureContext(&context);
+
+	if (SymInitialize(process, NULL, TRUE) == FALSE) {
+		logger(LOG_ERROR, "os_callstack_read: SymInitialize failed!");
+		return false;
+	}
+	SymSetOptions(SYMOPT_LOAD_LINES);
+
+	STACKFRAME frame;
+	ZeroMemory(&frame, sizeof(STACKFRAME));
+#if _WIN64
+	frame.AddrPC.Offset = context.Rip;
+	frame.AddrPC.Mode = AddrModeFlat;
+	frame.AddrFrame.Offset = context.Rbp;
+	frame.AddrFrame.Mode = AddrModeFlat;
+	frame.AddrStack.Offset = context.Rsp;
+	frame.AddrStack.Mode = AddrModeFlat;
+#else
+	frame.AddrPC.Offset = context.Eip;
+	frame.AddrPC.Mode = AddrModeFlat;
+	frame.AddrFrame.Offset = context.Ebp;
+	frame.AddrFrame.Mode = AddrModeFlat;
+	frame.AddrStack.Offset = context.Esp;
+	frame.AddrStack.Mode = AddrModeFlat;
+#endif
+
+	size_t frame_count = 0;
+	while (StackWalk(machine, process, thread, &frame, &context, NULL,
+			 SymFunctionTableAccess, SymGetModuleBase, NULL)) {
+		struct os_stack_frame f;
+		memset(&f, 0, sizeof(struct os_stack_frame));
+
+		f.address = frame.AddrPC.Offset;
+
+#if _WIN64
+		DWORD64 module_base = 0;
+#else
+		DWORD module_base = 0;
+#endif
+		module_base = SymGetModuleBase(process, f.address);
+		if (module_base) {
+			DWORD res = GetModuleFileNameA((HINSTANCE)module_base,
+						       f.module_name, MAX_PATH);
+			if (res == ERROR_INSUFFICIENT_BUFFER) {
+				logger(LOG_ERROR,
+				       "os_callstack_read: Error in GetModuleFileNameA. Buffer size too small.");
+				return false;
+			}
+		} else {
+			sprintf(f.module_name, "Unknown Module");
+		}
+
+#if _WIN64
+		DWORD64 offset = 0;
+#else
+		DWORD offset = 0;
+#endif
+		char symbol_str[sizeof(IMAGEHLP_SYMBOL) + 255];
+		PIMAGEHLP_SYMBOL symbol = (PIMAGEHLP_SYMBOL)symbol_str;
+		symbol->SizeOfStruct = sizeof(IMAGEHLP_SYMBOL) + 255;
+		symbol->MaxNameLength = 254;
+		if (SymGetSymFromAddr(process, f.address, &offset, symbol)) {
+			strncpy(f.func_name, symbol->Name,
+				strlen(symbol->Name));
+		} else {
+			sprintf(f.func_name, "Unknown Function");
+		}
+
+		IMAGEHLP_LINE line;
+		line.SizeOfStruct = sizeof(IMAGEHLP_LINE);
+		DWORD offset_line = 0;
+		if (SymGetLineFromAddr(process, f.address, &offset_line,
+				       &line)) {
+			strncpy(f.file_name, line.FileName,
+				strlen(line.FileName));
+			f.line_num = line.LineNumber;
+		} else {
+			sprintf(f.file_name, "Unknown File");
+		}
+
+		vec_push_back(cs->frames, &f);
+		frame_count++;
+	}
+
+	vec_pop_front(cs->frames); // remove the frame for this func
+
+	cs->frame_count = frame_count;
+
+	return (bool)SymCleanup(&process);
+}

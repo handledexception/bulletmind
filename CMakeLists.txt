@@ -83,7 +83,6 @@ set(BM_CORE_HEADERS
     src/core/algorithm.h
     src/core/binary.h
     src/core/buffer.h
-    src/core/console.h
     src/core/export.h
     src/core/intrinsics.h
     src/core/logger.h
@@ -120,13 +119,15 @@ set(BM_MATH_HEADERS
     src/math/vec2.h
     src/math/vec3.h
     src/math/vec4.h
-    src/math/mat4.h)
+    src/math/mat4.h
+    src/math/quat.h)
 
 set(BM_MATH_SOURCES
     src/math/mat4.c)
 
 # platform
 set(BM_PLATFORM_HEADERS
+    src/platform/console.h
     src/platform/gamepad.h
     src/platform/keyboard.h
     src/platform/keyboard-scancode.h
@@ -229,7 +230,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
         # SDL2.lib
         # SDL2_image.lib
         # SDL2_mixer.lib
-        kernel32)
+        kernel32
+        DbgHelp)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(TARGET_COMPILE_DEFS
         -DBM_DARWIN)

@@ -53,96 +53,96 @@ static inline void vec2f_zero(struct vec2f* dst)
 	vec2f_set(dst, 0.f, 0.f);
 }
 
-static inline void vec2f_copy(struct vec2f* dst, const struct vec2f other)
+static inline void vec2f_copy(struct vec2f* dst, const struct vec2f* other)
 {
-	dst->x = other.x;
-	dst->y = other.y;
+	dst->x = other->x;
+	dst->y = other->y;
 }
 
-static inline void vec2f_add(struct vec2f* dst, const struct vec2f lhs,
-			     const struct vec2f rhs)
+static inline void vec2f_add(struct vec2f* dst, const struct vec2f* lhs,
+			     const struct vec2f* rhs)
 {
-	vec2f_set(dst, lhs.x + rhs.x, lhs.y + rhs.y);
+	vec2f_set(dst, lhs->x + rhs->x, lhs->y + rhs->y);
 }
 
-static inline void vec2f_sub(struct vec2f* dst, const struct vec2f lhs,
-			     const struct vec2f rhs)
+static inline void vec2f_sub(struct vec2f* dst, const struct vec2f* lhs,
+			     const struct vec2f* rhs)
 {
-	vec2f_set(dst, lhs.x - rhs.x, lhs.y - rhs.y);
+	vec2f_set(dst, lhs->x - rhs->x, lhs->y - rhs->y);
 }
 
-static inline void vec2f_mul(struct vec2f* dst, const struct vec2f lhs,
-			     const struct vec2f rhs)
+static inline void vec2f_mul(struct vec2f* dst, const struct vec2f* lhs,
+			     const struct vec2f* rhs)
 {
-	vec2f_set(dst, lhs.x * rhs.x, lhs.y * rhs.y);
+	vec2f_set(dst, lhs->x * rhs->x, lhs->y * rhs->y);
 }
 
-static inline void vec2f_div(struct vec2f* dst, const struct vec2f lhs,
-			     const struct vec2f rhs)
+static inline void vec2f_div(struct vec2f* dst, const struct vec2f* lhs,
+			     const struct vec2f* rhs)
 {
-	vec2f_set(dst, lhs.x / rhs.x, lhs.y / rhs.y);
+	vec2f_set(dst, lhs->x / rhs->x, lhs->y / rhs->y);
 }
 
-static inline void vec2f_addf(struct vec2f* dst, const struct vec2f v, f32 f)
+static inline void vec2f_addf(struct vec2f* dst, const struct vec2f* v, f32 f)
 {
-	vec2f_set(dst, v.x + f, v.y + f);
+	vec2f_set(dst, v->x + f, v->y + f);
 }
 
-static inline void vec2f_subf(struct vec2f* dst, const struct vec2f v, f32 f)
+static inline void vec2f_subf(struct vec2f* dst, const struct vec2f* v, f32 f)
 {
-	vec2f_set(dst, v.x - f, v.y - f);
+	vec2f_set(dst, v->x - f, v->y - f);
 }
 
-static inline void vec2f_mulf(struct vec2f* dst, const struct vec2f v, f32 f)
+static inline void vec2f_mulf(struct vec2f* dst, const struct vec2f* v, f32 f)
 {
-	vec2f_set(dst, v.x * f, v.y * f);
+	vec2f_set(dst, v->x * f, v->y * f);
 }
 
-static inline void vec2f_divf(struct vec2f* dst, const struct vec2f v, f32 f)
+static inline void vec2f_divf(struct vec2f* dst, const struct vec2f* v, f32 f)
 {
-	vec2f_set(dst, v.x / f, v.y / f);
+	vec2f_set(dst, v->x / f, v->y / f);
 }
 
-static inline void vec2i_div(vec2i_t* dst, const vec2i_t v, s32 i)
+static inline void vec2i_div(vec2i_t* dst, const vec2i_t* v, s32 i)
 {
-	vec2i_set(dst, v.x / i, v.y / i);
+	vec2i_set(dst, v->x / i, v->y / i);
 }
 
-static inline void vec2f_negate(struct vec2f* dst, const struct vec2f v)
+static inline void vec2f_negate(struct vec2f* dst, const struct vec2f* v)
 {
-	vec2f_set(dst, -v.x, -v.y);
+	vec2f_set(dst, -v->x, -v->y);
 }
 
-static inline f32 vec2f_dot(const struct vec2f v1, const struct vec2f v2)
+static inline f32 vec2f_dot(const struct vec2f* v1, const struct vec2f* v2)
 {
-	return v1.x * v2.x + v1.y * v2.x;
+	return v1->x * v2->x + v1->y * v2->x;
 }
 
-static inline f32 vec2f_len(const struct vec2f v)
+static inline f32 vec2f_len(const struct vec2f* v)
 {
-	return sqrtf(v.x * v.x + v.y * v.y);
+	return sqrtf(v->x * v->x + v->y * v->y);
 }
 
-static inline f32 vec2f_norm(struct vec2f* dst, const struct vec2f v)
+static inline f32 vec2f_norm(struct vec2f* dst, const struct vec2f* v)
 {
 	const f32 length = 1.f / vec2f_len(v);
 	vec2f_mulf(dst, v, length);
 	return length;
 }
 
-static inline f32 vec2f_dist(const struct vec2f v1, const struct vec2f v2)
+static inline f32 vec2f_dist(const struct vec2f* v1, const struct vec2f* v2)
 {
 	struct vec2f temp;
 	vec2f_sub(&temp, v1, v2);
-	return vec2f_len(temp);
+	return vec2f_len(&temp);
 }
 
-static inline void vec2f_fabsf(struct vec2f* dst, const struct vec2f v)
+static inline void vec2f_fabsf(struct vec2f* dst, const struct vec2f* v)
 {
-	vec2f_set(dst, fabsf(v.x), fabsf(v.y));
+	vec2f_set(dst, fabsf(v->x), fabsf(v->y));
 }
 
-static inline void vec2f_friction(struct vec2f* dst, const struct vec2f a,
+static inline void vec2f_friction(struct vec2f* dst, const struct vec2f* a,
 				  f32 friction)
 {
 	f32 speed = vec2f_len(a);

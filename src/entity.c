@@ -590,16 +590,16 @@ void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 	if (inp_cmd_get_state(eng->inputs, kCommandPlayerSpeed) == true) {
 		p_speed *= 2.f;
 	}
-	if (inp_cmd_get_state(eng->inputs, kCommandPlayerUp) == true) {
+	if (inp_cmd_get_state(eng->inputs, kCommandMoveForward) == true) {
 		p_accel.y = -p_speed;
 	}
-	if (inp_cmd_get_state(eng->inputs, kCommandPlayerDown) == true) {
+	if (inp_cmd_get_state(eng->inputs, kCommandMoveBack) == true) {
 		p_accel.y = p_speed;
 	}
-	if (inp_cmd_get_state(eng->inputs, kCommandPlayerLeft) == true) {
+	if (inp_cmd_get_state(eng->inputs, kCommandMoveLeft) == true) {
 		p_accel.x = p_speed;
 	}
-	if (inp_cmd_get_state(eng->inputs, kCommandPlayerRight) == true) {
+	if (inp_cmd_get_state(eng->inputs, kCommandMoveRight) == true) {
 		p_accel.x = -p_speed;
 	}
 
@@ -619,7 +619,7 @@ void ent_move_player(entity_t* player, engine_t* eng, f64 dt)
 	const vec4f_t trans_vec = {p_accel.x * 0.00005f, 0.f,
 				   p_accel.y * 0.00005f, 1.f};
 	mat4f_translate(&cam_trans, &trans_vec);
-	struct gfx_scene* scene = (struct gfx_scene*)eng->gfx.scenes.elems[0];
+	struct gfx_scene* scene = (gfx_scene_t*)eng->gfx.scenes.elems[0];
 	gfx_shader_var_t* world_var = &scene->shader_vars.elems[0];
 	gfx_shader_var_t* view_proj_var = &scene->shader_vars.elems[1];
 	struct mat4f* world_matrix = (struct mat4f*)world_var->data;

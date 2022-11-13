@@ -328,7 +328,7 @@ void eng_refresh(engine_t* eng, f64 dt)
 		gfx_get_vertex_stride(gfx_get_vertex_type(eng->gfx.system));
 	for (size_t i = 0; i < eng->gfx.scenes.num_elems; i++) {
 		struct gfx_scene* scene =
-			(struct gfx_scene*)eng->gfx.scenes.elems[i];
+			(gfx_scene_t*)eng->gfx.scenes.elems[i];
 
 		// Copy vertex buffer data
 		for (u32 i = 0; i < scene->mesh->num_vertices; i++) {

@@ -31,16 +31,16 @@ const char* cmd_get_name(command_t cmd)
 	static char buffer[256];
 
 	switch (cmd) {
-	case kCommandPlayerUp:
+	case kCommandMoveForward:
 		strcpy(&buffer[0], "Player Move Up");
 		break;
-	case kCommandPlayerDown:
+	case kCommandMoveBack:
 		strcpy(&buffer[0], "Player Move Down");
 		break;
-	case kCommandPlayerLeft:
+	case kCommandMoveLeft:
 		strcpy(&buffer[0], "Player Move Left");
 		break;
-	case kCommandPlayerRight:
+	case kCommandMoveRight:
 		strcpy(&buffer[0], "Player Move Right");
 		break;
 	case kCommandPlayerSpeed:

@@ -113,7 +113,7 @@ struct gfx_depth_state {
 };
 
 struct gfx_raster_state {
-	struct gfx_raster_state_desc desc;
+	struct gfx_raster_desc desc;
 	ID3D11RasterizerState* state;
 };
 
@@ -147,7 +147,7 @@ struct gfx_module {
 	struct gfx_depth_state* depth_state_disabled;
 
 	/* rasterizer */
-	struct gfx_raster_state_desc raster_desc;
+	struct gfx_raster_desc raster_desc;
 	ID3D11RasterizerState* raster_state;
 
 	/* blend */
@@ -1789,7 +1789,7 @@ void gfx_bind_sampler_state(gfx_texture_t* texture, u32 slot)
 //
 // gfx rasterizer
 //
-result gfx_init_rasterizer(const struct gfx_raster_state_desc* desc)
+result gfx_init_rasterizer(const struct gfx_raster_desc* desc)
 {
 	if (!desc)
 		return RESULT_NULL;
@@ -1818,7 +1818,7 @@ result gfx_init_rasterizer(const struct gfx_raster_state_desc* desc)
 			.DepthBias = 0,
 			.DepthBiasClamp = 0.f,
 			.SlopeScaledDepthBias = 0.f,
-			.DepthClipEnable = TRUE,
+			.DepthClipEnable = (BOOL)desc->depth_clip_enabled,
 			.ScissorEnable =
 				(desc->raster_flags & GFX_RASTER_SCISSOR),
 			.MultisampleEnable =

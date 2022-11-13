@@ -19,20 +19,20 @@ extern "C" {
 #define BM_GFX_MAX_VERTICES 256
 #define BM_GFX_MAX_INDICES 256
 
-#define VERTEX_HAS_POS(__vtype__)                                         \
+#define GFX_VERTEX_HAS_POS(__vtype__)                                         \
 	(__vtype__ == GFX_VERTEX_POS || __vtype__ == GFX_VERTEX_POS_UV || \
 	 __vtype__ == GFX_VERTEX_POS_NORM_UV ||                           \
 	 __vtype__ == GFX_VERTEX_POS_COLOR ||                             \
 	 __vtype__ == GFX_VERTEX_POS_NORM_COLOR)
-#define VERTEX_HAS_NORMAL(__vtype__)            \
+#define GFX_VERTEX_HAS_NORMAL(__vtype__)            \
 	(__vtype__ == GFX_VERTEX_POS_NORM_UV || \
 	 __vtype__ == GFX_VERTEX_POS_NORM_COLOR)
-#define VERTEX_HAS_UV(__vtype__) \
+#define GFX_VERTEX_HAS_UV(__vtype__) \
 	(__vtype__ == GFX_VERTEX_POS_UV || __vtype__ == GFX_VERTEX_POS_NORM_UV)
-#define VERTEX_HAS_COLOR(__vtype__)           \
+#define GFX_VERTEX_HAS_COLOR(__vtype__)           \
 	(__vtype__ == GFX_VERTEX_POS_COLOR || \
 	 __vtype__ == GFX_VERTEX_POS_NORM_COLOR)
-#define VERTEX_HAS_TANGENT(__vtype__) (0)
+#define GFX_VERTEX_HAS_TANGENT(__vtype__) (0)
 
 struct media_image; // foward decl
 
@@ -104,11 +104,25 @@ struct gfx_shader {
 	VECTOR(gfx_shader_var_t) vars;
 };
 
-struct gfx_raster_state_desc {
+struct gfx_raster_desc {
 	enum gfx_culling_mode culling_mode;
 	enum gfx_winding_order winding_order;
 	enum gfx_raster_flags raster_flags;
+	f32 depth_bias;
+	f32 depth_bias_clamp;
+	f32 depth_bias_slope;
+	bool depth_clip_enabled;
 };
+BM_EXPORT inline void gfx_raster_desc_init(struct gfx_raster_desc* desc)
+{
+	desc->culling_mode = GFX_CULLING_BACK_FACE;
+	desc->winding_order = GFX_WINDING_CW;
+	desc->raster_flags = 0;
+	desc->depth_bias = 0.0f;
+	desc->depth_bias_clamp = 0.0f;
+	desc->depth_bias_slope = 0.0f;
+	desc->depth_clip_enabled = true;
+}
 
 struct gfx_blend_desc {
 	bool enabled;
@@ -204,7 +218,7 @@ struct gfx_sheet {
 struct gfx_pipeline_desc {
 	// gs_graphics_blend_state_desc_t blend;       // Blend state desc for pipeline
 	// gs_graphics_depth_state_desc_t depth;       // Depth state desc for pipeline
-	struct gfx_raster_state_desc raster; // Raster state desc for pipeline
+	struct gfx_raster_desc raster; // Raster state desc for pipeline
 	// gs_graphics_stencil_state_desc_t stencil;   // Stencil state desc for pipeline
 	// gs_graphics_compute_state_desc_t compute;   // Compute state desc for pipeline
 	// gs_graphics_vertex_layout_desc_t layout; // Vertex layout desc for pipeline
@@ -310,12 +324,12 @@ BM_EXPORT gfx_shader_var_t* gfx_shader_var_new(const char* name,
 BM_EXPORT void gfx_shader_var_init(gfx_shader_var_t* var);
 BM_EXPORT void gfx_shader_var_free(gfx_shader_var_t* var);
 BM_EXPORT void gfx_shader_var_set(gfx_shader_var_t* var, const void* data);
-BM_EXPORT void gfx_shader_var_set_from(gfx_shader_var_t* var, const void* data);
+BM_EXPORT void gfx_shader_var_set_data_ref(gfx_shader_var_t* var, const void* data);
 BM_EXPORT bool gfx_shader_add_var(gfx_shader_t* shader,
 				  const gfx_shader_var_t var);
 BM_EXPORT bool gfx_shader_set_var_by_name(gfx_shader_t* shader,
 					  const char* name, const void* value,
-					  size_t size, bool own_data);
+					  bool is_reference);
 BM_EXPORT size_t gfx_shader_get_vars_size(gfx_shader_t* shader);
 BM_EXPORT gfx_shader_var_t* gfx_shader_get_var_by_name(gfx_shader_t* shader,
 						       const char* name);
@@ -329,7 +343,7 @@ BM_EXPORT void gfx_sampler_state_init(gfx_sampler_state_t* sampler);
 BM_EXPORT void gfx_bind_sampler_state(gfx_texture_t* texture, u32 slot);
 
 /* rasterizer -------------------------------------------------------------- */
-BM_EXPORT result gfx_init_rasterizer(const struct gfx_raster_state_desc* desc);
+BM_EXPORT result gfx_init_rasterizer(const struct gfx_raster_desc* desc);
 BM_EXPORT void gfx_bind_rasterizer(void);
 
 /* blend ----------------------------------------------------------------- */

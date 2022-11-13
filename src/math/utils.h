@@ -20,6 +20,7 @@
 #include "core/types.h"
 
 #include <math.h>
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,6 +44,18 @@ extern "C" {
 #define EPSILON 1e-4f
 #define TINY_EPSILON 1e-5f
 #define M_INFINITE 3.4e38f
+
+static int random_initialized = false;
+static inline double random64(double a, double b) {
+	if (!random_initialized) {
+		srand((unsigned int)time(0));
+		random_initialized = true;
+	}
+    double random = (double)rand() / (double)RAND_MAX;
+    double diff = b - a;
+    double r = random * diff;
+    return a + r;
+}
 
 static inline bool f32_compare(float f1, float f2, float epsilon)
 {

@@ -23,6 +23,7 @@
 #include "core/time_convert.h"
 
 #include <errno.h>
+#include <malloc.h>
 
 FILE* os_wfopen(const wchar_t* path, const char* mode)
 {
@@ -348,4 +349,26 @@ const char* os_bits_string(void)
 	return "64-BIT";
 #endif
 	return "32-BIT";
+}
+
+os_callstack_t* os_callstack_new()
+{
+	struct os_callstack* cs = BM_ALLOC(sizeof(struct os_callstack));
+	os_callstack_init(cs);
+	return cs;
+}
+void os_callstack_init(os_callstack_t* cs)
+{
+	if (cs) {
+		cs->frame_count = 0;
+		vec_init(cs->frames);
+	}
+}
+void os_callstack_free(os_callstack_t* cs)
+{
+	if (cs) {
+		vec_free(cs->frames);
+		BM_FREE(cs);
+		cs = NULL;
+	}
 }

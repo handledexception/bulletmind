@@ -1,5 +1,5 @@
 #include "core/logger.h"
-#include "core/console.h"
+#include "platform/console.h"
 
 #include <stdlib.h>
 
