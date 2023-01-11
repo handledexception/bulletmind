@@ -34,7 +34,7 @@ message(STATUS "cmake install destinations (when running cmake --install):\n\
     CMAKE_INSTALL_BINDIR = ${CMAKE_INSTALL_BINDIR}")
 
 option(BM_BUILD_32BIT "build bulletmind as 32-bit" OFF)
-
+option(BM_USE_CIMGUI "use cimgui wrapper for DearIMGUI" ON)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -66,6 +66,9 @@ set(TARGET_INCLUDE_DIRS
     deps/murmur2
     deps/tomlc99
     deps/SDL2/include)
+if (BM_USE_CIMGUI)
+    list(APPEND TARGET_INCLUDE_DIRS deps/cimgui)
+endif()
 
 # murmur2
 set(MURMURHASH2_SOURCES
@@ -121,9 +124,6 @@ set(BM_MATH_HEADERS
     src/math/vec4.h
     src/math/mat4.h
     src/math/quat.h)
-
-set(BM_MATH_SOURCES
-    src/math/mat4.c)
 
 # platform
 set(BM_PLATFORM_HEADERS
@@ -194,6 +194,12 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
         -DUNICODE
         -D_UNICODE
         -D_CRT_SECURE_NO_WARNINGS)
+    if (BM_USE_CIMGUI)
+        list(APPEND TARGET_COMPILE_DEFS
+            -DBM_USE_CIMGUI
+            -DCIMGUI_DEFINE_ENUMS_AND_STRUCTS
+            -DCIMGUI_USE_DX11)
+    endif()
         # -DSDL_AUDIODRIVER=dsound)
     set(BM_PLATFORM_HEADERS
         ${BM_PLATFORM_HEADERS}
@@ -222,6 +228,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     else()
         set(TARGET_LINK_DIRS
             deps/SDL2/lib/x64)
+        if (BM_USE_CIMGUI)
+            list(APPEND TARGET_LINK_DIRS deps/cimgui/build)
+        endif()
         set(BM_ARCH "x64")
     endif()
 
@@ -232,6 +241,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
         # SDL2_mixer.lib
         kernel32
         DbgHelp)
+    if (BM_USE_CIMGUI)
+        list(APPEND TARGET_LINK_LIBS cimgui.lib)
+    endif()
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(TARGET_COMPILE_DEFS
         -DBM_DARWIN)
@@ -250,7 +262,6 @@ set(BM_TARGET_SOURCES
     ${BM_CORE_HEADERS}
     ${BM_CORE_SOURCES}
     ${BM_MATH_HEADERS}
-    ${BM_MATH_SOURCES}
     ${BM_PLATFORM_HEADERS}
     ${BM_PLATFORM_SOURCES}
     ${BM_GFX_HEADERS}
@@ -417,7 +428,6 @@ add_executable(bm_tests
     ${BM_MEDIA_HEADERS}
     ${BM_MEDIA_SOURCES}
     ${BM_MATH_HEADERS}
-    ${BM_MATH_SOURCES}
     ${BM_PLATFORM_HEADERS}
     ${BM_PLATFORM_SOURCES})
 set_property(TARGET bm_tests PROPERTY C_STANDARD 11)

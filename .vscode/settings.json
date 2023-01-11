@@ -107,7 +107,9 @@
         "fstream": "c",
         "mem_align.h": "c",
         "gamepad.h": "c",
-        "scene.h": "c"
+        "scene.h": "c",
+        "stdarg.h": "c",
+        "cmath": "c"
     },
     "cmake.configureOnOpen": false
 }

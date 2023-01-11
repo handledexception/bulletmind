@@ -25,13 +25,17 @@ static void default_log_handler(enum log_level level, const char* fmt,
 		con_print(LOG_COLOR_YELLOW, stdout, "warn: %s\n", msg);
 		break;
 	case LOG_ERROR:
-		con_print(LOG_COLOR_RED, stdout, "error: %s\n", msg);
+		con_print(LOG_COLOR_RED, stderr, "error: %s\n", msg);
 		break;
 	case LOG_PASS:
 		con_print(LOG_COLOR_BRIGHTGREEN, stdout, "pass: %s\n", msg);
 		break;
 	case LOG_FAIL:
+		// TODO: should fail log use stderr?
 		con_print(LOG_COLOR_BRIGHTRED, stdout, "fail: %s\n", msg);
+		break;
+	case LOG_NOTE:
+		con_print(LOG_COLOR_BRIGHTBLUE, stdout, "note: %s\n", msg);
 		break;
 	}
 }

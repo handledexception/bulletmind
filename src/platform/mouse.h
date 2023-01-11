@@ -2,6 +2,7 @@
 
 #include "core/types.h"
 #include "math/vec2.h"
+#include <math.h>
 
 #define MAX_MOUSE_BUTTONS 16
 
@@ -9,6 +10,7 @@ typedef struct gui_window gui_window_t;
 
 enum mouse_button_state { MOUSE_BUTTON_DOWN = 1, MOUSE_BUTTON_UP = 0 };
 
+enum mouse_mode { MOUSE_MODE_NORMAL, MOUSE_MODE_RELATIVE };
 enum mouse_button {
 	MOUSE_BUTTON_LEFT = 0,
 	MOUSE_BUTTON_RIGHT = 1,
@@ -24,17 +26,92 @@ typedef struct {
 } mouse_button_t;
 
 typedef struct mouse_s {
-	gui_window_t* window;
-	vec2i_t screen_pos;
-	vec2i_t window_pos;
-	vec2i_t wheel;
+	enum mouse_mode mode;
+	vec2f_t scr_pos;
+	vec2f_t scr_last;
+	vec2f_t scr_delta;
+	vec2f_t wnd_pos;
+	vec2f_t wnd_last;
+	vec2f_t wnd_delta;
+	vec2f_t wheel;
+	vec2f_t scale_accum;
+	f32 normal_speed_scale;
+	f32 relative_speed_scale;
 	mouse_button_t buttons[MAX_MOUSE_BUTTONS];
+	gui_window_t* window;
+	bool is_captured;
 } mouse_t;
 
 typedef struct {
-	gui_window_t* window; /* window containing mouse cursor */
-	vec2i_t screen_pos;   /* mouse position on virtual screen */
-	vec2i_t window_pos;   /* mouse position in foreground window */
-	vec2i_t wheel;        /* mouse wheel position */
-	mouse_button_t button;
+	gui_window_t* window;	/* window containing mouse cursor */
+	mouse_t mouse;			/* mouse state during the event */
+	mouse_button_t button;	/*  the mouse button pressed in the event */
 } mouse_event_t;
+
+static inline void mouse_buttons_init(mouse_t* mouse)
+{
+	if (mouse) {
+		for (u16 i = 0; i < MAX_MOUSE_BUTTONS; i++) {
+			mouse->buttons[i].button = i;
+			mouse->buttons[i].state = 0;
+		}
+		// named mouse buttons
+		mouse->buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
+		mouse->buttons[MOUSE_BUTTON_LEFT].state = false;
+		mouse->buttons[MOUSE_BUTTON_MIDDLE].button = MOUSE_BUTTON_MIDDLE;
+		mouse->buttons[MOUSE_BUTTON_MIDDLE].state = false;
+		mouse->buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
+		mouse->buttons[MOUSE_BUTTON_RIGHT].state = false;
+		mouse->buttons[MOUSE_BUTTON_X1].button = MOUSE_BUTTON_X1;
+		mouse->buttons[MOUSE_BUTTON_X1].state = false;
+		mouse->buttons[MOUSE_BUTTON_X2].button = MOUSE_BUTTON_X2;
+		mouse->buttons[MOUSE_BUTTON_X2].state = false;
+	}
+}
+
+static inline void mouse_init(mouse_t* mouse)
+{
+	if (mouse) {
+		mouse->window = NULL;
+		mouse->scr_delta = vec2_zero();
+		mouse->scr_pos = vec2_zero();
+		mouse->wnd_delta = vec2_zero();
+		mouse->wnd_pos = vec2_zero();
+		mouse->wheel = vec2_zero();
+		mouse->normal_speed_scale = 1.0f;
+		mouse->relative_speed_scale = 1.0f;
+		mouse_buttons_init(mouse);
+	}
+}
+
+static int get_scaled_mouse_delta(float scale, int value, float *accum)
+{
+    if (scale != 1.0f) {
+        *accum += scale * value;
+        if (*accum >= 0.0f) {
+            value = (int)floor(*accum);
+        } else {
+            value = (int)ceil(*accum);
+        }
+        *accum -= value;
+    }
+    return value;
+}
+
+static void mouse_set_button_state(mouse_t* mouse, u16 button, u8 state)
+{
+	if (mouse) {
+		mouse->buttons[button].button = button;
+		if (mouse->buttons[button].state != state) {
+			mouse->buttons[button].state = state;
+		}
+	}
+}
+
+static u8 mouse_get_button_state(mouse_t* mouse, u16 button)
+{
+	u8 state = 0;
+	if (mouse && mouse->buttons[button].button == button)
+		state = mouse->buttons[button].state;
+	return state;
+}

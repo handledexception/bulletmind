@@ -4,17 +4,17 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        {
-            "name": "bulletmind (x86)",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}\\ninja-debug-x86\\bulletmind.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}\\ninja-debug-x86",
-            "environment": [],
-            "console": "integratedTerminal"
-        },
+        // {
+        //     "name": "bulletmind (x86)",
+        //     "type": "cppvsdbg",
+        //     "request": "launch",
+        //     "program": "${workspaceFolder}\\ninja-debug-x86\\bulletmind.exe",
+        //     "args": [],
+        //     "stopAtEntry": false,
+        //     "cwd": "${workspaceFolder}\\ninja-debug-x86",
+        //     "environment": [],
+        //     "console": "integratedTerminal"
+        // },
         {
             "name": "bulletmind (x64)",
             "type": "cppvsdbg",

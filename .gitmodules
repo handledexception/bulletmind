@@ -1,0 +1,4 @@
+[submodule "cimgui"]
+	path = deps/cimgui
+	url = https://github.com/handledexception/cimgui.git
+	branch = bulletmind

@@ -28,9 +28,11 @@
 #define APP_VER_REV 0
 #define APP_ASSETS_TOML_PATH "assets/assets.toml"
 #define GFX_ADAPTER_INDEX 0
-#define VIEW_WIDTH 1440
-#define VIEW_HEIGHT 900
+#define VIEW_WIDTH 1280
+#define VIEW_HEIGHT 720
 
+static const int kCommandRotateCam = 123;
+static const vec3f_t kCameraOrigin = { .x = 0.0f, .y = 0.25f, 0.0f };
 static const rgba_t kClearColor = {
 	.r = 0,
 	.g = 0,
@@ -45,13 +47,31 @@ struct application {
 	VECTOR(gui_window_t*) windows;
 	input_state_t* inputs;
 	struct asset_manager* assets;
-	camera_t cam;
+	camera_t* cam;
+	imgui_draw_data_t* ig_draw;
 	VECTOR(struct gfx_scene*) scenes;
 	gfx_buffer_t* vbuf;
 	gfx_buffer_t* ibuf;
 	uint64_t frame_count;
 	f64 frame_timer;
+	f64 start_time;
+	f64 end_time;
 };
+
+void app_frame_start(struct application* app)
+{
+	app->start_time = os_get_time_msec();
+}
+
+void app_frame_end(struct application* app)
+{
+	app->end_time = os_get_time_msec() - app->start_time;
+}
+
+f64 app_frame_time(struct application* app)
+{
+	return app->end_time;
+}
 
 result app_init_gfx(struct application* app, const struct gfx_config* cfg)
 {
@@ -71,23 +91,31 @@ result app_init_gfx(struct application* app, const struct gfx_config* cfg)
 
 	struct gfx_raster_desc rd;
 	gfx_raster_desc_init(&rd);
-	rd.raster_flags = GFX_RASTER_ANTIALIAS_LINES|GFX_RASTER_MULTI_SAMPLE; //|GFX_RASTER_WIREFRAME
+	// rd.culling_mode = GFX_CULLING_FRONT_FACE;
+	// rd.winding_order = GFX_WINDING_CCW;
+	rd.raster_flags = GFX_RASTER_ANTIALIAS_LINES|GFX_RASTER_MULTI_SAMPLE;//|GFX_RASTER_WIREFRAME;
 	ENSURE_OK(gfx_init_rasterizer(&rd));
 
 	rect_t viewport = {.x = 0, .y = 0, .w = cfg->width, .h = cfg->height};
-	vec3f_t cam_eye = {0.f, 0.f, -1.f};
-	vec3f_t cam_dir = {0.f, 0.f, 1.f};
-	vec3f_t cam_up = {0.f, 1.f, 0.f};
-	gfx_camera_new(&app->cam);
-	// gfx_camera_ortho(&app->cam, &cam_eye, &cam_dir, &cam_up, &viewport, Z_NEAR, Z_FAR);
-	gfx_camera_persp(&app->cam, &cam_eye, &cam_dir, &cam_up, &viewport,
-			 45.0f, 0.1, 100.0);
+	app->cam = gfx_camera_new();
+	camera_t cam = gfx_camera_persp(viewport);
+	gfx_camera_set_pos(&cam, vec3_copy(kCameraOrigin));
+	gfx_camera_offset_orientation(app->cam, cam.angles.x, cam.angles.y);
+	memcpy(app->cam, &cam, sizeof(camera_t));
 
+	gfx_init_cimgui();
+	app->ig_draw = malloc(sizeof(imgui_draw_data_t));
+	app->ig_draw->view_mat = malloc(sizeof(mat4f_t));
+	app->ig_draw->proj_mat = malloc(sizeof(mat4f_t));
 	return RESULT_OK;
 }
 
 void app_refresh_gfx(struct application* app)
 {
+	static bool rotate_plane = false;
+	f32 rotation_angle = 0.0f;
+	static f32 bigbox_angle = 0.0f;
+	static const char* bg_want_sprite = "metro";
 	if (app->frame_timer == 0.0)
 		app->frame_timer = os_get_time_msec();
 	if (!app->vbuf || !app->ibuf) {
@@ -102,9 +130,12 @@ void app_refresh_gfx(struct application* app)
 	}
 	memset(vbuf_data, 0, gfx_buffer_get_size(app->vbuf));
 	memset(ibuf_data, 0, gfx_buffer_get_size(app->ibuf));
-
-	gfx_camera_update_view_matrix(&app->cam);
-	gfx_camera_update_proj_matrix(&app->cam);
+	gfx_cimgui_begin();
+	app->ig_draw->cam = app->cam;
+	app->ig_draw->inputs = app->inputs;
+	app->ig_draw->frame_count = app->frame_count;
+	app->ig_draw->frame_time = app_frame_time(app);
+	gfx_cimgui_frame(app->ig_draw);
 	gfx_render_clear(&kClearColor);
 	static size_t sprite_index = 0;
 	size_t vb_data_size = 0;
@@ -119,22 +150,45 @@ void app_refresh_gfx(struct application* app)
 			logger(LOG_WARNING, "app_refresh_gfx: gfx_scene is NULL!");
 			continue;
 		}
-		gfx_sprite_t* sprite = scene->curr_sprite;
+
+		// set bg sprite
+		if (sdx == app->scenes.num_elems-1) {
+			for (size_t adx = 0; adx < scene->assets.num_elems; adx++) {
+				asset_t* asset = scene->assets.elems[adx];
+				if (!strcmp(asset->name, bg_want_sprite)) {
+					scene->curr_sprite = (gfx_sprite_t*)asset->data;
+					break;
+				}
+			}
+			if (os_get_time_msec() - app->frame_timer >= 2000.) {
+				if (!strcmp(bg_want_sprite, "metro"))
+					bg_want_sprite = "rgba_test";
+				else if (!strcmp(bg_want_sprite, "rgba_test"))
+					bg_want_sprite = "metro";
+				app->frame_timer = 0.0;
+			}
+		}
+
 		gfx_shader_t* vs = scene->curr_vertex_shader;
 		gfx_shader_t* ps = scene->curr_pixel_shader;
 		if (vs != NULL) {
-			mat4f_t world_mat, trans_mat, scale_mat, viewproj_mat;
-			mat4f_identity(&world_mat);
-			mat4f_identity(&trans_mat);
-			mat4f_identity(&scale_mat);
-			mat4f_identity(&viewproj_mat);
-			mat4f_translate(&trans_mat, &scene->pos);
-			mat4f_scale(&scale_mat, &scene->scale);
-			mat4f_mul(&world_mat, &world_mat, &trans_mat);
-			mat4f_mul(&world_mat, &world_mat, &scale_mat);
-			mat4f_mul(&viewproj_mat, &app->cam.view_matrix,
-				  &app->cam.proj_matrix);
-			mat4f_transpose(&viewproj_mat, &viewproj_mat);
+			if (!strcmp(scene->name, "bigbox") && rotate_plane) {
+				if (bigbox_angle >= 360.0f)
+					bigbox_angle = 0.0f;
+				rotation_angle = bigbox_angle;
+				bigbox_angle += 0.01f;
+			} else {
+				rotation_angle = scene->rot_angle;
+			}
+			mat4f_t view_mat = gfx_camera_get_view(app->cam);
+			memcpy(app->ig_draw->view_mat, &view_mat, sizeof(mat4f_t));
+			mat4f_t proj_mat = gfx_camera_get_proj(app->cam);
+			memcpy(app->ig_draw->proj_mat, &proj_mat, sizeof(mat4f_t));
+			mat4f_t trans_mat = mat4_translate(scene->pos);
+			mat4f_t scale_mat = mat4_scale(scene->scale);
+			mat4f_t rot_mat = mat4_rotate(rotation_angle, scene->rot_axis);
+			mat4f_t world_mat = mat4_transpose(mat4_mul(mat4_mul(mat4_mul(mat4_identity(), rot_mat), trans_mat), scale_mat));
+			mat4f_t viewproj_mat = mat4_transpose(gfx_camera_get_view_proj(app->cam));
 			gfx_shader_set_var_by_name(vs, "world", &world_mat, false);
 			gfx_shader_set_var_by_name(vs, "view_proj", &viewproj_mat, false);
 		}
@@ -143,9 +197,9 @@ void app_refresh_gfx(struct application* app)
 			gfx_shader_set_var_by_name(ps, "viewport_res",
 						   &viewport_res,
 						   false);
-			if (sprite) {
+			if (scene->curr_sprite) {
 				gfx_shader_set_var_by_name(
-					ps, "texture", sprite->tex, true);
+					ps, "texture", scene->curr_sprite->tex, true);
 			}
 		}
 
@@ -198,69 +252,30 @@ void app_refresh_gfx(struct application* app)
 		gfx_set_pixel_shader(ps);
 		gfx_system_bind_input_layout(vs);
 
-		// Rotate cam around scene
-		// const f32 radius = 2.0f;
-		// f32 camX = sin(os_get_time_sec()) * radius;
-		// f32 camZ = cos(os_get_time_sec()) * radius;
-		// app->cam.eye.x = camX;
-		// app->cam.eye.z = camZ;
+		f32 cam_speed = 0.000125f;
+		vec3f_t cam_vel = { 0.0f, 0.0f, 0.0f };
+		inp_cmd_toggle(app->inputs, kCommandRotateCam, &rotate_plane);
+		if (inp_cmd_get_state(app->inputs, kCommandMoveForward)) { /* W */
+			cam_vel = vec3_add(cam_vel, gfx_camera_forward(app->cam));
+		}
+		if (inp_cmd_get_state(app->inputs, kCommandMoveBack)) { /* S */
+			cam_vel = vec3_add(cam_vel, gfx_camera_backward(app->cam));
+		}
+		if (inp_cmd_get_state(app->inputs, kCommandMoveLeft)) { /* A */
+			cam_vel = vec3_add(cam_vel, gfx_camera_left(app->cam));
+		}
+		if (inp_cmd_get_state(app->inputs, kCommandMoveRight)) { /* D */
+			cam_vel = vec3_add(cam_vel, gfx_camera_right(app->cam));
+		}
+		if (inp_cmd_get_state(app->inputs, kCommandMoveDown)) { /* Q */
+			cam_vel = vec3_mulf(vec3_copy(kVec3Up), cam_speed);
+		}
+		if (inp_cmd_get_state(app->inputs, kCommandMoveUp)) { /* E */
+			cam_vel = vec3_mulf(vec3_copy(kVec3Down), cam_speed);
+		}
 
-		// if (sdx == 0) {
-		// 	gfx_sprite_t* sprite =
-		// 		scene->sprites.elems[sprite_index];
-		// 	gfx_shader_set_var_by_name(ps, "texture", sprite->tex, true);
-		// 	if (os_get_time_msec() - app->frame_timer >= 2000.) {
-		// 		if (++sprite_index >= scene->sprites.num_elems)
-		// 			sprite_index = 0;
-		// 		app->frame_timer = 0.0;
-		// 	}
-		// } else {
-		// 	gfx_sprite_t* sprite = scene->sprites.elems[0];
-		// 	gfx_shader_set_var_by_name(ps, "texture", sprite->tex, 0, true);
-		// 	gfx_shader_var_t* world_var =
-		// 		gfx_shader_get_var_by_name(vs, "world");
-		// 	mat4f_t* world_mat = (mat4f_t*)world_var->data;
-		// 	vec4f_t tv = {0};
-			f32 cam_speed = 0.0025;
-		// 		tv.x = 0.05f;
-			if (inp_cmd_get_state(app->inputs, kCommandMoveForward)) { /* W */
-				vec3f_t front;
-				vec3f_mulf(&front, &app->cam.dir, cam_speed);
-				vec3f_add(&app->cam.eye, &app->cam.eye, &front);
-			}
-		// 		tv.y = 0.05f;
-			if (inp_cmd_get_state(app->inputs, kCommandMoveBack)) { /* S */
-				vec3f_t front;
-				vec3f_mulf(&front, &app->cam.dir, cam_speed);
-				vec3f_sub(&app->cam.eye, &app->cam.eye, &front);
-			}
-			if (inp_cmd_get_state(app->inputs, kCommandMoveLeft)) { /* A */
-				vec3f_t cross;
-				vec3f_cross(&cross, &app->cam.dir, &app->cam.up);
-				vec3f_norm(&cross, &cross);
-				vec3f_mulf(&cross, &cross, cam_speed);
-				vec3f_add(&app->cam.eye, &app->cam.eye, &cross);
-			}
-		// 		tv.x = -0.05f;
-			if (inp_cmd_get_state(app->inputs, kCommandMoveRight)) { /* D */
-				vec3f_t cross;
-				vec3f_cross(&cross, &app->cam.dir, &app->cam.up);
-				vec3f_norm(&cross, &cross);
-				vec3f_mulf(&cross, &cross, cam_speed);
-				vec3f_sub(&app->cam.eye, &app->cam.eye, &cross);
-			}
-			if (inp_cmd_get_state(app->inputs, kCommandMoveUp)) {
-				app->cam.eye.y += cam_speed;
-			}
-			if (inp_cmd_get_state(app->inputs, kCommandMoveDown)) {
-				app->cam.eye.y -= cam_speed;
-			}
-		// 		tv.y = -0.05f;
-		// 	mat4f_t tm;
-		// 	mat4f_identity(&tm);
-		// 	mat4f_translate(&tm, &tv);
-		// 	mat4f_mul(world_mat, world_mat, &tm);
-		// }
+		gfx_camera_set_pos(app->cam, vec3_add(app->cam->transform.position, vec3_mulf(vec3_norm(cam_vel), app_frame_time(app) * cam_speed)));
+
 		//TODO: Move sampler state into pixel shader, add state param to bind function
 		gfx_bind_blend_state();
 		gfx_shader_var_t* tex_var =
@@ -285,8 +300,9 @@ void app_refresh_gfx(struct application* app)
 		gfx_bind_rasterizer();
 		gfx_render_begin(true);
 	}
+	gfx_cimgui_end();
 	gfx_render_end(false, 0);
-	os_sleep_ms(16);
+	// os_sleep_ms(16);
 	app->frame_count++;
 }
 
@@ -294,8 +310,9 @@ result app_init_inputs(struct application* app)
 {
 	if (app->inputs)
 		inp_free(app->inputs);
-	app->inputs = inp_new();
+	app->inputs = inp_new(gui_get_mouse());
 	inp_bind_virtual_key(app->inputs, kCommandQuit, SCANCODE_ESCAPE);
+	inp_bind_virtual_key(app->inputs, kCommandRotateCam, SCANCODE_F5);
 	inp_bind_virtual_key(app->inputs, kCommandMoveForward, SCANCODE_W);
 	inp_bind_virtual_key(app->inputs, kCommandMoveBack, SCANCODE_S);
 	inp_bind_virtual_key(app->inputs, kCommandMoveLeft, SCANCODE_A);
@@ -341,6 +358,8 @@ result app_init_scenes(struct application* app)
 						.data = NULL,
 						.own_data = true};
 	// shader vars
+	vec2f_t xy_scale = vec2_divf(vec2_set(1.0f, 0.5625f), 4.0f);
+
 	asset_t* vs_asset;
 	asset_t* ps_asset;
 	ENSURE_OK(asset_manager_find("vs_pos_color", app->assets, &vs_asset));
@@ -356,120 +375,145 @@ result app_init_scenes(struct application* app)
 	cbuf_size = gfx_shader_get_vars_size(ps);
 	gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
 			GFX_BUFFER_USAGE_DYNAMIC, &ps->cbuffer);
-	int row = 0;
-	int col = 0;
-	for (size_t i = 0; i < 16; i++) {
-		float xoff = col >= 2 ? 0.25f : -0.25f;
-		if (i > 0 && i % 4 == 0) {
-			row++;
-		} else {
-			if (col >= 3)
-				col = 0;
-			else
-				col++;
-		}
-		char scene_name[256];
-		sprintf(&scene_name[0], "BoxScene%d", i);
-		struct gfx_scene* box_scene = gfx_scene_new(&scene_name[0]);
-		gfx_scene_add_asset(box_scene, vs_asset);
-		gfx_scene_add_asset(box_scene, ps_asset);
-		struct gfx_mesh box_mesh;
-		memset(&box_mesh, 0, sizeof(struct gfx_mesh));
-		box_mesh.type = GFX_VERTEX_POS_COLOR;
-		box_mesh.num_vertices = GFX_CUBE_NUM_VERTICES;
-		box_mesh.positions = gfx_cube_positions();
-		vec4f_t colors[GFX_CUBE_NUM_VERTICES];
-		for (size_t c = 0; c < GFX_CUBE_NUM_VERTICES; c++) {
-			colors[c].x = random64(0.1, 1.0);
-			colors[c].y = random64(0.1, 1.0);
-			colors[c].z = random64(0.1, 1.0);
-			colors[c].w = 1.0f;
-		}
-		box_mesh.colors = &colors[0];
-		gfx_scene_set_mesh(box_scene, &box_mesh);
-		gfx_scene_set_index_data(box_scene, gfx_cube_indices(), GFX_CUBE_NUM_INDICES);
-		gfx_scene_set_pos(box_scene, &(vec4f_t){((float)(col)/4.0f), -0.25f, (float)(row)/4.0f, 0.0f});
-		gfx_scene_set_rotation(box_scene, &(vec4f_t){0, 0, 0, 0});
-		gfx_scene_set_scale(box_scene, &(vec4f_t){
-			0.0375f, 0.0375f, 0.0375f, 1.0f});
 
-		vec_push_back(app->scenes, &box_scene);
+	vec3f_t cube_pos[GFX_CUBE_NUM_VERTS];
+	u32 cube_ind[GFX_CUBE_NUM_INDICES];
+	vec3f_t cube_sz = { 1.0f, 1.0f, 1.0f };
+	gfx_compute_cube(cube_sz, &cube_pos[0], &cube_ind[0], true);
+	// reverse_indices_winding(&cube_ind[0], GFX_CUBE_NUM_INDICES);
+
+	int num_rows = 4;
+	int num_cols = 4;
+	for (size_t row = 0; row < num_rows; row++) {
+		for (size_t col = 0; col < num_cols; col++) {
+			char scene_name[256];
+			sprintf(&scene_name[0], "box_row%d_col%d", row, col);
+			struct gfx_scene* box_scene = gfx_scene_new(&scene_name[0]);
+			gfx_scene_add_asset(box_scene, vs_asset);
+			gfx_scene_add_asset(box_scene, ps_asset);
+
+			struct gfx_mesh box_mesh;
+			memset(&box_mesh, 0, sizeof(struct gfx_mesh));
+			box_mesh.type = GFX_VERTEX_POS_COLOR;
+			box_mesh.num_vertices = GFX_CUBE_NUM_VERTS;
+			box_mesh.positions = &cube_pos[0];
+			vec4f_t colors[GFX_CUBE_NUM_VERTS];
+			for (size_t c = 0; c < GFX_CUBE_NUM_VERTS; c++) {
+				colors[c].x = random64(0.1, 1.0);
+				colors[c].y = random64(0.1, 1.0);
+				colors[c].z = random64(0.1, 1.0);
+				colors[c].w = 1.0f;
+			}
+			box_mesh.colors = &colors[0];
+			gfx_scene_set_mesh(box_scene, &box_mesh);
+			gfx_scene_set_index_data(box_scene, &cube_ind[0], GFX_CUBE_NUM_INDICES);
+			gfx_scene_set_pos(box_scene, vec3_set(
+				((float)(col)/4.0f)-xy_scale.x*2,
+				1.0f,
+				((float)(row)/4.0f)
+			));
+			gfx_scene_set_rotation(box_scene, 0.0f, vec3_set(0.0f, 0.0f, 0.0f));
+			gfx_scene_set_scale(box_scene, vec3_set(0.1f, 0.1f, 0.1f));
+
+			vec_push_back(app->scenes, &box_scene);
+		}
 	}
 
-	asset_t* asset;
-	struct gfx_scene* bg_scene = gfx_scene_new("background");
-	// struct gfx_scene* player_scene = gfx_scene_new("player-sprite");
-	ENSURE_OK(asset_manager_find("metro", app->assets, &asset));
-	gfx_scene_add_asset(bg_scene, asset);
-	ENSURE_OK(asset_manager_find("rgba_test", app->assets, &asset));
-	gfx_scene_add_asset(bg_scene, asset);
-	ENSURE_OK(asset_manager_find("vs_pos_uv", app->assets, &asset));
-	gfx_scene_add_asset(bg_scene, asset);
-	gfx_shader_t* vshader = (gfx_shader_t*)asset->data;
-	ENSURE_OK(asset_manager_find("ps_pos_uv", app->assets, &asset));
-	gfx_scene_add_asset(bg_scene, asset);
-	gfx_shader_t* pshader = (gfx_shader_t*)asset->data;
-
-	struct gfx_mesh bg_mesh;
-	memset(&bg_mesh, 0, sizeof(struct gfx_mesh));
-	bg_mesh.type = GFX_VERTEX_POS_UV;
-	bg_mesh.num_vertices = GFX_QUAD_NUM_VERTICES;
-	bg_mesh.positions = gfx_quad_positions();
-	vec2f_t* tv_data = gfx_quad_uvs();
-	struct texture_vertex tex_verts[GFX_QUAD_NUM_VERTICES];
-	for (size_t i = 0; i < GFX_QUAD_NUM_VERTICES; i++) {
-		tex_verts[i].data = (vec2f_t*)(&tv_data[i]);
-		tex_verts[i].size = sizeof(vec2f_t);
+	struct gfx_scene* sc = gfx_scene_new("bigbox");
+	gfx_scene_add_asset(sc, vs_asset);
+	gfx_scene_add_asset(sc, ps_asset);
+	struct gfx_mesh m;
+	memset(&m, 0, sizeof(struct gfx_mesh));
+	m.type = GFX_VERTEX_POS_COLOR;
+	m.num_vertices = GFX_CUBE_NUM_VERTS;
+	m.positions = &cube_pos[0];
+	static vec4f_t vertex_colors[GFX_CUBE_NUM_VERTS];
+	for (size_t c = 0; c < GFX_CUBE_NUM_VERTS; c++) {
+		vertex_colors[c].x = random64(0.1, 1.0);
+		vertex_colors[c].y = random64(0.1, 1.0);
+		vertex_colors[c].z = random64(0.1, 1.0);
+		vertex_colors[c].w = 1.0f;
 	}
-	bg_mesh.tex_verts = &tex_verts[0];
-	gfx_scene_set_mesh(bg_scene, &bg_mesh);
-	gfx_scene_set_index_data(bg_scene, gfx_quad_indices(), GFX_QUAD_NUM_INDICES);
+	m.colors = &vertex_colors[0];
+	gfx_scene_set_mesh(sc, &m);
+	gfx_scene_set_index_data(sc, &cube_ind[0], GFX_CUBE_NUM_INDICES);
+	gfx_scene_set_pos(sc, vec3_set(0.0f, 0.0f, 0.0f));
+	gfx_scene_set_rotation(sc, 45.0f, vec3_set(0.0f, 1.0f, 0.0f));
+	gfx_scene_set_scale(sc, vec3_set(5.0f, 0.01f, 5.0f));
+	vec_push_back(app->scenes, &sc);
 
-	gfx_scene_set_pos(bg_scene, &(vec4f_t){0, 0, 0, 0});
-	gfx_scene_set_rotation(bg_scene, &(vec4f_t){0, 0, 0, 0});
-	vec2f_t xy_scale = { .x = 1.0f, 0.5625f };
-	vec2f_divf(&xy_scale, &xy_scale, 8.0f);
-	gfx_scene_set_scale(bg_scene, &(vec4f_t){xy_scale.x, xy_scale.y, 0.0f, 1.0f});
+	// asset_t* asset;
+	// struct gfx_scene* bg_scene = gfx_scene_new("background");
+	// // struct gfx_scene* player_scene = gfx_scene_new("player-sprite");
+	// ENSURE_OK(asset_manager_find("metro", app->assets, &asset));
+	// gfx_scene_add_asset(bg_scene, asset);
+	// ENSURE_OK(asset_manager_find("rgba_test", app->assets, &asset));
+	// gfx_scene_add_asset(bg_scene, asset);
+	// ENSURE_OK(asset_manager_find("vs_pos_uv", app->assets, &asset));
+	// gfx_scene_add_asset(bg_scene, asset);
+	// gfx_shader_t* vshader = (gfx_shader_t*)asset->data;
+	// ENSURE_OK(asset_manager_find("ps_pos_uv", app->assets, &asset));
+	// gfx_scene_add_asset(bg_scene, asset);
+	// gfx_shader_t* pshader = (gfx_shader_t*)asset->data;
 
-	// vertex shader vars
-	gfx_shader_add_var(vshader, world_var);
-	gfx_shader_add_var(vshader, view_proj_var);
-	cbuf_size = gfx_shader_get_vars_size(vshader);
-	gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
-		       GFX_BUFFER_USAGE_DYNAMIC, &vshader->cbuffer);
-	// pixel shader vars
-	gfx_shader_var_t texture_var = {.name = "texture",
-					.type = GFX_SHADER_VAR_TEX,
-					.data = NULL,
-					.own_data = false};
-	gfx_shader_add_var(pshader, texture_var);
-	gfx_shader_add_var(pshader, viewport_res_var);
-	cbuf_size = gfx_shader_get_vars_size(pshader);
-	gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
-		       GFX_BUFFER_USAGE_DYNAMIC, &pshader->cbuffer);
-	vec_push_back(app->scenes, &bg_scene);
+	// struct gfx_mesh bg_mesh;
+	// memset(&bg_mesh, 0, sizeof(struct gfx_mesh));
+	// bg_mesh.type = GFX_VERTEX_POS_UV;
+	// bg_mesh.num_vertices = GFX_QUAD_NUM_VERTICES;
+	// bg_mesh.positions = gfx_quad_positions();
+	// vec2f_t* tv_data = gfx_quad_uvs();
+	// struct texture_vertex tex_verts[GFX_QUAD_NUM_VERTICES];
+	// for (size_t i = 0; i < GFX_QUAD_NUM_VERTICES; i++) {
+	// 	tex_verts[i].data = (vec2f_t*)(&tv_data[i]);
+	// 	tex_verts[i].size = sizeof(vec2f_t);
+	// }
+	// bg_mesh.tex_verts = &tex_verts[0];
+	// gfx_scene_set_mesh(bg_scene, &bg_mesh);
+	// gfx_scene_set_index_data(bg_scene, gfx_quad_indices(), GFX_QUAD_NUM_INDICES);
+
+	// gfx_scene_set_pos(bg_scene, &(vec4f_t){0, 0, 0, 0});
+	// gfx_scene_set_rotation(bg_scene, &(vec4f_t){0, 0, 0, 0});
+	// gfx_scene_set_scale(bg_scene, &(vec4f_t){xy_scale.x, xy_scale.y, 0.0f, 1.0f});
+
+	// // vertex shader vars
+	// gfx_shader_add_var(vshader, world_var);
+	// gfx_shader_add_var(vshader, view_proj_var);
+	// cbuf_size = gfx_shader_get_vars_size(vshader);
+	// gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
+	// 	       GFX_BUFFER_USAGE_DYNAMIC, &vshader->cbuffer);
+	// // pixel shader vars
+	// gfx_shader_var_t texture_var = {.name = "texture",
+	// 				.type = GFX_SHADER_VAR_TEX,
+	// 				.data = NULL,
+	// 				.own_data = false};
+	// gfx_shader_add_var(pshader, texture_var);
+	// gfx_shader_add_var(pshader, viewport_res_var);
+	// cbuf_size = gfx_shader_get_vars_size(pshader);
+	// gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
+	// 	       GFX_BUFFER_USAGE_DYNAMIC, &pshader->cbuffer);
+	// vec_push_back(app->scenes, &bg_scene);
 	// vec_push_back(app->scenes, &box_scene);
 
 	// cache shaders, sprites, etc. from scene assets
 	for (size_t i = 0; i < app->scenes.num_elems; i++) {
 		gfx_scene_t* scene = app->scenes.elems[i];
-		if (scene) {
-			for (size_t adx = 0; adx < scene->assets.num_elems; adx++) {
-				asset_t* asset = scene->assets.elems[adx];
-				if (asset) {
-					if (asset->kind == ASSET_SHADER) {
-						gfx_shader_t* shader_asset =
-							(gfx_shader_t*)asset->data;
-						if (shader_asset) {
-							if (shader_asset->type == GFX_SHADER_VERTEX)
-								scene->curr_vertex_shader = shader_asset;
-							else if (shader_asset->type == GFX_SHADER_PIXEL)
-								scene->curr_pixel_shader = shader_asset;
-						}
-					} else if (asset->kind == ASSET_SPRITE) {
-						scene->curr_sprite = (gfx_sprite_t*)asset->data;
-					}
+		if (!scene)
+			continue;
+		for (size_t adx = 0; adx < scene->assets.num_elems; adx++) {
+			asset_t* asset = scene->assets.elems[adx];
+			if (!asset)
+				continue;
+			if (asset->kind == ASSET_SHADER) {
+				gfx_shader_t* shader_asset =
+					(gfx_shader_t*)asset->data;
+				if (shader_asset) {
+					if (shader_asset->type == GFX_SHADER_VERTEX)
+						scene->curr_vertex_shader = shader_asset;
+					else if (shader_asset->type == GFX_SHADER_PIXEL)
+						scene->curr_pixel_shader = shader_asset;
 				}
+			} else if (asset->kind == ASSET_SPRITE) {
+				scene->curr_sprite = (gfx_sprite_t*)asset->data;
 			}
 		}
 	}
@@ -767,10 +811,6 @@ result app_init_scenes(struct application* app)
 	// 	       &grid_scene->pixel_shader->cbuffer);
 	// vec_push_back(app->scenes, &grid_scene);
 
-	size_t vertex_buffer_size = (BM_GFX_MAX_VERTICES * sizeof(vec3f_t)) +
-				    (BM_GFX_MAX_VERTICES * sizeof(vec2f_t));
-	logger(LOG_INFO, "Created vertex buffer (%zu bytes)",
-	       vertex_buffer_size);
 	size_t vbuf_size = 0;
 	for (size_t i = 0; i < app->scenes.num_elems; i++) {
 		gfx_scene_t* scene = app->scenes.elems[i];
@@ -780,6 +820,8 @@ result app_init_scenes(struct application* app)
 	}
 	gfx_buffer_new(NULL, vbuf_size, GFX_BUFFER_VERTEX,
 		       GFX_BUFFER_USAGE_DYNAMIC, &app->vbuf);
+	logger(LOG_INFO, "Created vertex buffer (%zu bytes)",
+	       vbuf_size);
 
 	return RESULT_OK;
 }
@@ -802,7 +844,7 @@ result app_init(struct application* app, s32 version, u32 vx, u32 vy,
 	char window_title[256];
 	snprintf(window_title, (sizeof(APP_NAME) + 1 + 16) + 1, "%s %s",
 		 APP_NAME, ver_str);
-	s32 window_flags = GUI_WINDOW_SHOW;
+	s32 window_flags = GUI_WINDOW_SHOW | GUI_WINDOW_CAPTURE_MOUSE;
 	gui_window_t* main_window =
 		gui_create_window(window_title, 0, 0, vx, vy,
 				  window_flags | GUI_WINDOW_CENTERED, NULL);
@@ -828,6 +870,8 @@ result app_init(struct application* app, s32 version, u32 vx, u32 vy,
 	ENSURE_OK(app_init_assets(app, assets_toml_path));
 	ENSURE_OK(app_init_scenes(app));
 
+	app->start_time = os_get_time_msec();
+
 	return RESULT_OK;
 }
 
@@ -835,44 +879,66 @@ void app_refresh(struct application* app)
 {
 	app->running = true;
 	while (app->running) {
+		app_frame_start(app);
+
 		gui_refresh();
 
 		mouse_t mouse;
-		gui_get_global_mouse_state(&mouse);
-		// printf("\rsx: %d sy: %d | wx: %d wy: %d",
-		// 	mouse.screen_pos.x, mouse.screen_pos.y,
-		// 	mouse.window_pos.x, mouse.window_pos.y);
-		inp_set_mouse_pos(&app->inputs->mouse, mouse.screen_pos,
-				  mouse.window_pos);
+		mouse.mode = MOUSE_MODE_RELATIVE;
+		gui_read_mouse_state(&mouse);
+		// inp_set_mouse_pos(&app->inputs->mouse, mouse.scr_pos, mouse.scr_delta, mouse.wnd_pos, mouse.wnd_delta);
+		// printf("dx: %f dy: %f\n", mouse->scr_delta.x, mouse->scr_delta.y);
+		// printf("\rsx: %d sy: %d (sdx: %f sdy: %f) | wx: %d wy: %d (wdx: %f wdy: %f)",
+		// 	mouse->scr_pos.x, mouse->scr_pos.y,
+		// 	mouse->scr_delta.x, mouse->scr_delta.y,
+		// 	mouse->wnd_pos.x, mouse->wnd_pos.y,
+		// 	mouse->wnd_delta.x, mouse->wnd_delta.y
+		// );
+
+		mouse.scr_delta = vec2_mulf(mouse.scr_delta, 0.25f);
+
+		app->cam->angles.x = mouse.scr_delta.x;
+		app->cam->angles.y = mouse.scr_delta.y;
+
+		inp_update_mouse(app->inputs, &mouse);
+
+		gfx_camera_offset_orientation(app->cam, app->cam->angles.x, app->cam->angles.y);
 
 		gui_event_t evt;
-		while (gui_poll_event(&evt)) {
+		while (gui_event_pop(&evt)) {
 			// if (evt.type == GUI_EVENT_MOUSE_MOTION) {
 			// 	printf("sx: %d sy: %d | wx: %d wy: %d\n",
-			// 	       evt.mouse.screen_pos.x,
-			// 	       evt.mouse.screen_pos.y,
-			// 	       evt.mouse.window_pos.x,
-			// 	       evt.mouse.window_pos.y);
+			// 	       evt.mouse.scr_pos.x,
+			// 	       evt.mouse.scr_pos.y,
+			// 	       evt.mouse.wnd_pos.x,
+			// 	       evt.mouse.wnd_pos.y);
 			// 	inp_set_mouse_pos(&app->inputs->mouse,
-			// 		evt.mouse.screen_pos, evt.mouse.window_pos);
+			// 		evt.mouse.scr_pos, evt.mouse.wnd_pos);
 			// }
-			inp_refresh_pressed(app->inputs, &evt);
+			inp_read_gui_event(app->inputs, &evt);
 		}
 		if (inp_cmd_get_state(app->inputs, kCommandQuit))
 			app->running = false;
-		if (inp_cmd_get_state(app->inputs, kCommandPlayerPrimaryFire))
-			printf("mouse left\n");
-		if (inp_cmd_get_state(app->inputs, kCommandPlayerSpeed))
-			printf("mouse mid\n");
-		if (inp_cmd_get_state(app->inputs, kCommandPlayerAltFire))
-			printf("mouse right\n");
+		// if (inp_cmd_get_state(app->inputs, kCommandPlayerPrimaryFire))
+		// 	printf("\nmouse left\n");
+		// if (inp_cmd_get_state(app->inputs, kCommandPlayerSpeed))
+		// 	printf("\nmouse mid\n");
+		// if (inp_cmd_get_state(app->inputs, kCommandPlayerAltFire))
+		// 	printf("\nmouse right\n");
+
 		app_refresh_gfx(app);
+		app_frame_end(app);
 	}
 }
 
 void app_shutdown(struct application* app)
 {
 	if (app != NULL) {
+		gfx_camera_free(app->cam);
+		free(app->ig_draw->view_mat);
+		free(app->ig_draw->proj_mat);
+		free(app->ig_draw);
+
 		gfx_buffer_free(app->ibuf);
 		gfx_buffer_free(app->vbuf);
 		for (size_t i = 0; i < app->scenes.num_elems; i++) {
@@ -909,5 +975,6 @@ int main(int argc, char** argv)
 	app_refresh(&app);
 	app_shutdown(&app);
 	ENSURE_OK(mem_report_leaks());
+	logger(LOG_INFO, "\rRendered %lld frames", app.frame_count);
 	return RESULT_OK;
 }

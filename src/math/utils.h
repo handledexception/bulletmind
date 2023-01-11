@@ -41,7 +41,9 @@ extern "C" {
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 #define LARGE_EPSILON 1e-2f
+#define MED_EPSILON 1e-6f
 #define EPSILON 1e-4f
+
 #define TINY_EPSILON 1e-5f
 #define M_INFINITE 3.4e38f
 
@@ -90,6 +92,12 @@ static inline f32 lerp(f32 a, f32 b, f32 t)
 static inline f64 lerp64(f64 a, f64 b, f64 t)
 {
 	return a + (b - a) * t;
+}
+
+static inline f32 map_range(f32 input_start, f32 input_end, f32 output_start, f32 output_end, f32 val)
+{
+    f32 slope = (output_end - output_start) / (input_end - input_start);
+    return (output_start + (slope * (val - input_start)));
 }
 
 #ifdef __cplusplus

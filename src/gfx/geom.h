@@ -127,3 +127,76 @@ static u32* gfx_cube_indices()
 
 	return (u32*)&indices[0];
 }
+
+#define GFX_CUBE_NUM_FACES 6
+#define GFX_CUBE_NUM_VERTS (GFX_CUBE_NUM_FACES * 4)
+void gfx_compute_cube(const vec3f_t sz, vec3f_t* pos, u32* ind, bool rh_coords)
+{
+	static const vec3f_t face_normals[GFX_CUBE_NUM_FACES] = {
+        {  0,  0,  1 },
+        {  0,  0, -1 },
+        {  1,  0,  0 },
+        { -1,  0,  0 },
+        {  0,  1,  0 },
+        {  0, -1,  0 },
+	};
+	int pos_count = 0;
+	int ind_count = 0;
+	vec3f_t half_sz = vec3_mulf(sz, 0.5f);
+	for (int i = 0; i < GFX_CUBE_NUM_FACES; i++) {
+		vec3f_t norm = face_normals[i];
+		vec3f_t basis;
+		if (i >=4)
+			basis = vec3_set(0.0f, 0.0f, 1.0f);
+		else
+			basis = vec3_set(0.0f, 1.0f, 0.0f);
+		vec3f_t side1 = vec3_cross(norm, basis);
+		vec3f_t side2 = vec3_cross(norm, side1);
+		
+		ind[ind_count++] = pos_count + 0;
+		ind[ind_count++] = pos_count + 1;
+		ind[ind_count++] = pos_count + 2;
+		ind[ind_count++] = pos_count + 0;
+		ind[ind_count++] = pos_count + 2;
+		ind[ind_count++] = pos_count + 3;
+
+		vec3f_t v1 = vec3_sub(norm, side1);
+		v1 = vec3_sub(v1, side2);
+		v1 = vec3_mul(v1, half_sz);
+		pos[pos_count++] = vec3_copy(v1);
+		vec3f_t v2 = vec3_sub(norm, side1);
+		v2 = vec3_add(v2, side2);
+		v2 = vec3_mul(v2, half_sz);
+		pos[pos_count++] = vec3_copy(v2);
+		vec3f_t v3 = vec3_add(side1, side2);
+		v3 = vec3_add(v3, norm);
+		v3 = vec3_mul(v3, half_sz);
+		pos[pos_count++] = vec3_copy(v3);
+		vec3f_t v4 = vec3_add(norm, side1);
+		v4 = vec3_sub(v4, side2);
+		v4 = vec3_mul(v4, half_sz);
+		pos[pos_count++] = vec3_copy(v4);
+	}
+}
+
+// Swap data at index "i" with "j" of pointer "p" (type T)
+#define SWAP_PTR(p, T, i, j) \
+	do { \
+		T* a = &p[i]; \
+		T* b = &p[j]; \
+		T c = *(T*)(&p[j]); \
+		*b = *a; \
+		*a = c; \
+	} while(0)
+
+static inline void reverse_indices_winding(u32* indices, size_t size)
+{
+	for (size_t i = 0; i < size; i+=3) {
+		SWAP_PTR(indices, u32, i, i+2);
+		// u32* a = &indices[i];
+		// u32* b = &indices[i+2];
+		// u32 c = *(u32*)(&indices[i+2]);
+		// *b = *a;
+		// *a = c;
+	}
+}

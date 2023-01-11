@@ -11,9 +11,10 @@ typedef struct asset asset_t;
 
 typedef struct gfx_scene {
 	char name[SCENE_NAME_LENGTH];
-	vec4f_t pos;
-	vec4f_t rot;
-	vec4f_t scale;
+	vec3f_t pos;
+	vec3f_t scale;
+	vec3f_t rot_axis;
+	f32 rot_angle;
 	size_t num_indices;
 	u32* index_data;
 	struct gfx_mesh* mesh;
@@ -28,9 +29,9 @@ BM_EXPORT void gfx_scene_init(gfx_scene_t* scene);
 BM_EXPORT void gfx_scene_free(gfx_scene_t* scene);
 BM_EXPORT bool gfx_scene_add_asset(gfx_scene_t* scene, asset_t* asset);
 BM_EXPORT bool gfx_scene_remove_asset(gfx_scene_t* scene, const char* name);
-BM_EXPORT void gfx_scene_set_pos(gfx_scene_t* scene, vec4f_t* pos);
-BM_EXPORT void gfx_scene_set_rotation(gfx_scene_t* scene, vec4f_t* rot);
-BM_EXPORT void gfx_scene_set_scale(gfx_scene_t* scene, vec4f_t* scale);
+BM_EXPORT void gfx_scene_set_pos(gfx_scene_t* scene, vec3f_t pos);
+BM_EXPORT void gfx_scene_set_rotation(gfx_scene_t* scene, f32 angle, vec3f_t axis);
+BM_EXPORT void gfx_scene_set_scale(gfx_scene_t* scene, vec3f_t scale);
 BM_EXPORT void gfx_scene_set_mesh(gfx_scene_t* scene, struct gfx_mesh* mesh);
 BM_EXPORT void gfx_scene_set_index_data(gfx_scene_t* scene, u32* data,
 					u32 count);

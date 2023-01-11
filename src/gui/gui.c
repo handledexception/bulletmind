@@ -5,6 +5,8 @@
 #include "core/types.h"
 #include "core/memory.h"
 
+#define MAX_GUI_EVENTS 65535
+
 gui_system_t* gui = NULL;
 
 result gui_init(void)
@@ -18,7 +20,7 @@ result gui_init(void)
 	memset(gui, 0, sizeof(*gui));
 	vec_init(gui->windows);
 	vec_init(gui->events);
-
+	gui->window_focused = NULL;
 #if defined(_WIN32)
 	return gui_init_win32(gui);
 #elif defined(__APPLE__)
@@ -54,6 +56,38 @@ void gui_shutdown(void)
 		BM_FREE(gui);
 		gui = NULL;
 	}
+}
+
+bool gui_event_push(const gui_event_t* event)
+{
+	if (gui->events.num_elems >= MAX_GUI_EVENTS)
+		return false;
+	vec_push_back(gui->events, event);
+	return true;
+}
+
+bool gui_event_pop(gui_event_t* event)
+{
+	if (!gui || gui->events.num_elems == 0)
+		return false;
+
+	// logger(LOG_DEBUG, "events: %zu\n", gui->events.num_elems);
+	gui_event_t* evt = (gui_event_t*)vec_begin(gui->events);
+	if (evt == NULL)
+		return false;
+	memcpy(event, evt, sizeof(gui_event_t));
+	vec_erase(gui->events, 0);
+	return true;
+}
+
+mouse_t* gui_get_mouse()
+{
+	return &gui->mouse;
+}
+
+void gui_set_mouse_mode(enum mouse_mode mode)
+{
+	gui->mouse.mode = mode;
 }
 
 gui_display_t* gui_create_display(s32 index)
@@ -114,6 +148,14 @@ void gui_destroy_window(gui_window_t* window)
 	window = NULL;
 }
 
+bool gui_is_valid_window(const gui_window_t* window)
+{
+	if (gui)
+		return gui->is_valid_window(window);
+	else
+		return NULL;
+}
+
 void gui_show_window(gui_window_t* window, bool shown)
 {
 	if (!gui || !window)
@@ -133,6 +175,13 @@ void gui_center_window(gui_window_t* window)
 	if (!gui || !window)
 		return;
 	gui->center_window(window);
+}
+
+bool gui_get_window_size(const gui_window_t* window, s32* w, s32* h, bool client)
+{
+	if (!gui || !window || !w || !h)
+		return false;
+	return gui->get_window_size(window, w, h, client);
 }
 
 bool gui_get_window_rect(const gui_window_t* window, rect_t* rect, bool client)
@@ -165,6 +214,22 @@ gui_window_t* gui_get_window_by_handle(void* handle)
 	return window;
 }
 
+gui_window_t* gui_get_focused_window()
+{
+	if (gui)
+		return gui->window_focused;
+	else
+		return NULL;
+}
+
+bool gui_set_focused_window(const gui_window_t* window)
+{
+	if (gui)
+		return gui->focus_window(window);
+	else
+		return false;
+}
+
 void gui_clear_key_state()
 {
 	if (!gui)
@@ -173,23 +238,33 @@ void gui_clear_key_state()
 		gui->keyboard[i].state = KEY_UP;
 }
 
-void gui_get_global_mouse_state(mouse_t* mouse)
+void gui_read_mouse_state(mouse_t* mouse)
 {
-	if (!gui || !mouse)
+	if (!gui)
 		return;
-	gui->get_global_mouse_state(mouse);
+	gui->read_mouse_state(mouse);
+	if (mouse) {
+		memcpy(mouse, &gui->mouse, sizeof(mouse_t));
+	}
 }
 
-bool gui_poll_event(gui_event_t* event)
+bool gui_capture_mouse(gui_window_t* window, bool captured)
 {
-	if (!gui || gui->events.num_elems == 0)
+	if (!gui)
 		return false;
+	return gui->capture_mouse(window, captured);
+}
 
-	// logger(LOG_DEBUG, "events: %zu\n", gui->events.num_elems);
-	gui_event_t* evt = (gui_event_t*)vec_begin(gui->events);
-	if (evt == NULL)
+bool gui_move_mouse(s32 x, s32 y)
+{
+	if (!gui)
 		return false;
-	memcpy(event, evt, sizeof(gui_event_t));
-	vec_erase(gui->events, 0);
-	return true;
+	return gui->move_mouse(x, y);
+}
+
+bool gui_show_mouse(bool shown)
+{
+	if (!gui)
+		return false;
+	return gui->show_mouse(shown);
 }

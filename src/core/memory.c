@@ -120,8 +120,8 @@ void* mem_alloc(size_t size)
 
 void* mem_realloc(void* ptr, size_t size)
 {
-	if (ptr) {
 #ifdef TRACK_MEMORY
+	if (ptr) {
 		// rewind to retrieve size from header, then forward again to get data
 		size_t* p = (size_t*)(ptr)-1;
 		size_t alloc_size = *p;
@@ -139,7 +139,7 @@ void* mem_realloc(void* ptr, size_t size)
 		ptr = BM_ALLOC(size);
 	}
 #else
-		ptr = allocator.realloc(new_ptr, size);
+	ptr = allocator.realloc(ptr, size);
 #endif
 	return ptr;
 }

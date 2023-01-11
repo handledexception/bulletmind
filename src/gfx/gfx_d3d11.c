@@ -4,7 +4,7 @@
 #include "core/vector.h"
 
 #include "math/types.h"
-
+#include "input.h"
 #include "platform/platform.h"
 
 #include "gfx/gfx.h"
@@ -24,6 +24,12 @@
 #pragma comment(lib, "dxgi")
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "d3dcompiler")
+
+#include "gfx/camera.h"
+#if defined(BM_USE_CIMGUI)
+#include "cimgui.h"
+#include "cimgui_impl.h"
+#endif
 
 #include "gfx/gfx_d3d11_input_layout.h"
 
@@ -128,6 +134,8 @@ struct gfx_module {
 	HMODULE dxgi_dll;
 	HMODULE d3d11_dll;
 
+	HWND hwnd;
+
 	/* dxgi */
 	IDXGIFactory2* dxgi_factory;
 	IDXGIAdapter1* dxgi_adapter;
@@ -166,7 +174,118 @@ struct gfx_module {
 	DXGI_SWAP_EFFECT swap_effect;
 
 	rect_t viewport;
+
+#if defined(BM_USE_CIMGUI)
+	ImGuiContext* igui;
+	ImGuiIO* igio;
+#endif
 };
+
+#if defined(BM_USE_CIMGUI)
+bool gfx_init_cimgui(void)
+{
+	gfx->module->igui = igCreateContext(NULL);
+	if (gfx->module->igui == NULL)
+		return false;
+	gfx->module->igio = igGetIO();
+	if (gfx->module->igio == NULL)
+		return false;
+	gfx->module->igio->ConfigFlags |= (ImGuiConfigFlags_NavEnableKeyboard
+		| ImGuiConfigFlags_DockingEnable); // | ImGuiConfigFlags_ViewportsEnable);
+	igStyleColorsDark(NULL);
+	ImGuiStyle* style = igGetStyle();
+	if (style == NULL)
+		return false;
+	if (gfx->module->igio->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+		style->WindowRounding = 0.0f;
+		style->Colors[ImGuiCol_WindowBg].w = 1.0f;
+	}
+	ImGui_ImplWin32_Init(gfx->module->hwnd);
+	ImGui_ImplDX11_Init((ID3D11Device*)gfx->module->device, (ID3D11DeviceContext*)gfx->module->ctx);
+	return true;
+}
+#endif
+
+void gfx_cimgui_begin(void)
+{
+#if defined(BM_USE_CIMGUI)
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	igNewFrame();
+#endif
+}
+
+void gfx_cimgui_frame(imgui_draw_data_t* ctx)
+{
+	bool show = true;
+	igShowDemoWindow(&show);
+	if (!ctx || !ctx->cam || !ctx->inputs)
+		return;
+	float vspeed = 1.0f;
+	float v_min = -100.0f;
+	float v_max = 100.0f;
+	igBegin("GameData", &show, 0);
+	{
+		igText("Frame: %lld", ctx->frame_count);
+		igText("Frametime: %f", ctx->frame_time);
+		if (igCollapsingHeader_TreeNodeFlags("Inputs", 0)) {
+			vec2f_t mouse_screen = { .x = (f32)ctx->inputs->mouse.scr_pos.x, (f32)ctx->inputs->mouse.scr_pos.y };
+			igDragFloat2("Mouse Pos (Screen)", (float*)&mouse_screen, vspeed, v_min, v_max, NULL, 0);
+			vec2f_t mouse_window = { .x = (f32)ctx->inputs->mouse.wnd_pos.x, (f32)ctx->inputs->mouse.wnd_pos.y };
+			igDragFloat2("Mouse Pos (Window)", (float*)&mouse_window, vspeed, v_min, v_max, NULL, 0);
+		}
+		if (igCollapsingHeader_TreeNodeFlags("Camera Position", 0)) {
+			float* xyz = (float*)&ctx->cam->transform.position;
+			igDragFloat3("XYZ", xyz, vspeed, v_min, v_max, NULL, 0);
+			float* angles = (float*)&ctx->cam->angles;
+			igDragFloat3("Angles", angles, vspeed, v_min, v_max, NULL, 0);
+			float* rot = (float*)&ctx->cam->transform.rotation;
+			igDragFloat4("Rotation", rot, vspeed, v_min, v_max, NULL, 0);
+		}
+		if (igCollapsingHeader_TreeNodeFlags("Camera View Matrix", 0)) {
+			if (ctx->view_mat) {
+				igDragFloat4("M0", (float*)(&ctx->view_mat->x), vspeed, v_min, v_max, NULL, 0);
+				igDragFloat4("M1", (float*)(&ctx->view_mat->y), vspeed, v_min, v_max, NULL, 0);
+				igDragFloat4("M2", (float*)(&ctx->view_mat->z), vspeed, v_min, v_max, NULL, 0);
+				igDragFloat4("M3", (float*)(&ctx->view_mat->w), vspeed, v_min, v_max, NULL, 0);
+			}
+		}
+		if (igCollapsingHeader_TreeNodeFlags("Camera Projection Matrix", 0)) {
+			if (ctx->view_mat) {
+				igDragFloat4("M0", (float*)(&ctx->proj_mat->rows[0]), vspeed, v_min, v_max, NULL, 0);
+				igDragFloat4("M1", (float*)(&ctx->proj_mat->rows[1]), vspeed, v_min, v_max, NULL, 0);
+				igDragFloat4("M2", (float*)(&ctx->proj_mat->rows[2]), vspeed, v_min, v_max, NULL, 0);
+				igDragFloat4("M3", (float*)(&ctx->proj_mat->rows[3]), vspeed, v_min, v_max, NULL, 0);
+			}
+		}
+	}
+	igEnd();
+}
+
+void gfx_cimgui_end(void)
+{
+#if defined(BM_USE_CIMGUI)
+	igRender();
+	ImGui_ImplDX11_RenderDrawData(igGetDrawData());
+	if (gfx->module->igio->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+		igUpdatePlatformWindows();
+		igRenderPlatformWindowsDefault(NULL, NULL);
+	}
+#endif
+}
+
+void gfx_shutdown_cimgui(void)
+{
+#if defined(BM_USE_CIMGUI)
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	if (gfx->module->igui) {
+		igDestroyContext(gfx->module->igui);
+		gfx->module->igui = NULL;
+		gfx->module->igio = NULL;
+	}
+#endif
+}
 
 enum gfx_display_orientation
 gfx_display_orientation_from_dxgi(DXGI_MODE_ROTATION rotation)
@@ -398,7 +517,7 @@ result gfx_enumerate_adapters(struct vector* adapters, bool enum_displays)
 
 		os_wcs_to_utf8(desc.Description, 0, ga.description,
 			       sizeof(ga.description));
-		logger(LOG_INFO, "\033[7mgfx\033[m\tDXGI Adapter %u: %s", i,
+		logger(LOG_INFO, "[gfx]\tDXGI Adapter %u: %s", i,
 		       (const char*)&ga.description[0]);
 		logger(LOG_INFO, "     \tDedicated VRAM: %u",
 		       desc.DedicatedVideoMemory);
@@ -589,7 +708,7 @@ void gfx_set_viewport(u32 width, u32 height)
 	};
 	ID3D11DeviceContext1_RSSetViewports(gfx->module->ctx, 1, &vp);
 	logger(LOG_INFO,
-	       "\033[7mgfx\033[m Set D3D11 Viewport:\n"
+	       "[gfx] Set D3D11 Viewport:\n"
 	       "Width: %f, Height: %f\n"
 	       "Min Depth: %f, Max Depth: %f\n"
 	       "Top Left X: %f, Top Left Y: %f",
@@ -666,7 +785,7 @@ result gfx_init_renderer(const struct gfx_config* cfg, s32 flags)
 				 flags & GFX_USE_ZBUFFER));
 
 	logger(LOG_INFO,
-	       "\033[7mgfx\033[m Created render target and zbuffer\n");
+	       "[gfx] Created render target and zbuffer\n");
 
 	gfx_set_render_targets(gfx->module->render_target,
 			       gfx->module->depth_target);
@@ -756,7 +875,7 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 
 	result res = RESULT_OK;
 	HRESULT hr = S_OK;
-	HWND hwnd = (HWND)cfg->window.hwnd;
+	gfx->module->hwnd = (HWND)cfg->window.hwnd;
 
 	DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsd = {
 		.Scaling = DXGI_SCALING_NONE,
@@ -790,14 +909,14 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 	// 	.SampleDesc.Quality = 0,
 	// 	.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
 	// 	.BufferCount = 2,
-	// 	.OutputWindow = hwnd,
+	// 	.OutputWindow = gfx->module->hwnd,
 	// 	.Windowed = (BOOL)!cfg->fullscreen,
 	// 	.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
 	// 	.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT,
 	// };
 	IDXGISwapChain1* sc1;
 	hr = IDXGIFactory2_CreateSwapChainForHwnd(
-		gfx->module->dxgi_factory, (IUnknown*)gfx->module->device, hwnd,
+		gfx->module->dxgi_factory, (IUnknown*)gfx->module->device, gfx->module->hwnd,
 		&swap_desc1, &fsd, NULL, &sc1);
 	if (FAILED(hr)) {
 		logger(LOG_ERROR, "Error creating Swap Chain!");
@@ -810,7 +929,7 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 	// 				   &swap_desc, &sc);
 	// if (FAILED(hr)) {
 	// 	logger(LOG_ERROR,
-	// 	       "\033[7mgfx\033[m IDXGIFactory2 CreateSwapChain failed!");
+	// 	       "[gfx] IDXGIFactory2 CreateSwapChain failed!");
 	// 	goto cleanup;
 	// }
 	hr = IDXGISwapChain1_QueryInterface(
@@ -818,24 +937,24 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 		(void**)&gfx->module->dxgi_swap_chain);
 	if (FAILED(hr)) {
 		logger(LOG_ERROR,
-		       "\033[7mgfx\033[m IDXGISwapChain1 QI failed!");
+		       "[gfx] IDXGISwapChain1 QI failed!");
 		goto cleanup;
 	}
 	if (cfg->fullscreen) {
 		hr = IDXGIFactory2_MakeWindowAssociation(
-			gfx->module->dxgi_factory, hwnd, 0);
+			gfx->module->dxgi_factory, gfx->module->hwnd, 0);
 		if (FAILED(hr)) {
 			logger(LOG_ERROR,
-			       "\033[7mgfx\033[m IDXGIFactory2 MakeWindowAssociation (fullscreen) failed!");
+			       "[gfx] IDXGIFactory2 MakeWindowAssociation (fullscreen) failed!");
 			goto cleanup;
 		}
 	} else {
 		hr = IDXGIFactory2_MakeWindowAssociation(
-			gfx->module->dxgi_factory, hwnd,
+			gfx->module->dxgi_factory, gfx->module->hwnd,
 			DXGI_MWA_NO_ALT_ENTER | DXGI_MWA_NO_WINDOW_CHANGES);
 		if (FAILED(hr)) {
 			logger(LOG_ERROR,
-			       "\033[7mgfx\033[m IDXGIFactory2 MakeWindowAssociation (windowed) failed!");
+			       "[gfx] IDXGIFactory2 MakeWindowAssociation (windowed) failed!");
 			goto cleanup;
 		}
 	}
@@ -854,7 +973,7 @@ cleanup:
 	}
 
 	if (res == RESULT_OK)
-		logger(LOG_INFO, "\033[7mgfx\033[m Created D3D11 Swap Chain\n");
+		logger(LOG_INFO, "[gfx] Created D3D11 Swap Chain\n");
 
 	return res;
 }
@@ -866,13 +985,13 @@ result gfx_load_dx11_dlls()
 		if (!gfx->module->dxgi_dll) {
 			return RESULT_NULL;
 		}
-		logger(LOG_INFO, "\033[7mgfx\033[m Loaded dxgi.dll");
+		logger(LOG_INFO, "[gfx] Loaded dxgi.dll");
 
 		gfx->module->d3d11_dll = os_dlopen("d3d11.dll");
 		if (!gfx->module->d3d11_dll) {
 			return RESULT_NULL;
 		}
-		logger(LOG_INFO, "\033[7mgfx\033[m Loaded d3d11.dll");
+		logger(LOG_INFO, "[gfx] Loaded d3d11.dll");
 	}
 	return RESULT_OK;
 }
@@ -959,7 +1078,7 @@ result gfx_create_device(s32 adapter)
 				   &feature_level,
 				   (ID3D11DeviceContext**)&gfx->module->ctx);
 	if (FAILED(hr)) {
-		logger(LOG_ERROR, "\033[7mgfx\033[m D3D11CreateDevice failed!");
+		logger(LOG_ERROR, "[gfx] D3D11CreateDevice failed!");
 		return RESULT_ERROR;
 	}
 
@@ -967,32 +1086,32 @@ result gfx_create_device(s32 adapter)
 					 &BM_IID_ID3D11Device1,
 					 (void**)&gfx->module->device);
 	if (FAILED(hr)) {
-		logger(LOG_ERROR, "\033[7mgfx\033[m ID3D11Device1 QI failed!");
+		logger(LOG_ERROR, "[gfx] ID3D11Device1 QI failed!");
 		return RESULT_ERROR;
 	}
 
-	logger(LOG_INFO, "\033[7mgfx\033[m Created D3D11 Device");
+	logger(LOG_INFO, "[gfx] Created D3D11 Device");
 
 	hr = ID3D11DeviceContext_QueryInterface(gfx->module->ctx,
 						&BM_IID_ID3D11DeviceContext1,
 						(void**)&gfx->module->ctx);
 	if (FAILED(hr)) {
 		logger(LOG_ERROR,
-		       "\033[7mgfx\033[m ID3D11DeviceContext1 QI failed!");
+		       "[gfx] ID3D11DeviceContext1 QI failed!");
 		return RESULT_ERROR;
 	}
 
-	logger(LOG_INFO, "\033[7mgfx\033[m Created D3D11 Device Context");
+	logger(LOG_INFO, "[gfx] Created D3D11 Device Context");
 
 	hr = ID3D11Device_QueryInterface(gfx->module->device,
 					 &BM_IID_IDXGIDevice1,
 					 (void**)&gfx->module->dxgi_device);
 	if (FAILED(hr)) {
-		logger(LOG_ERROR, "\033[7mgfx\033[m IDXGIDevice1 QI failed!");
+		logger(LOG_ERROR, "[gfx] IDXGIDevice1 QI failed!");
 		return RESULT_ERROR;
 	}
 
-	logger(LOG_INFO, "\033[7mgfx\033[m Created DXGI Device");
+	logger(LOG_INFO, "[gfx] Created DXGI Device");
 
 	return res;
 }

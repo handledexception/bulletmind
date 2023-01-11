@@ -89,20 +89,22 @@ bool gfx_scene_remove_asset(gfx_scene_t* scene, const char* name)
 	return false;
 }
 
-void gfx_scene_set_pos(gfx_scene_t* scene, vec4f_t* pos)
+void gfx_scene_set_pos(gfx_scene_t* scene, vec3f_t pos)
 {
-	if (scene && pos)
-		vec4f_copy(&scene->pos, pos);
+	if (scene)
+		scene->pos = vec3_copy(pos);
 }
-void gfx_scene_set_rotation(gfx_scene_t* scene, vec4f_t* rot)
+void gfx_scene_set_rotation(gfx_scene_t* scene, f32 angle, vec3f_t axis)
 {
-	if (scene && rot)
-		vec4f_copy(&scene->rot, rot);
+	if (scene) {
+		scene->rot_angle = angle;
+		scene->rot_axis = vec3_copy(axis);
+	}
 }
-void gfx_scene_set_scale(gfx_scene_t* scene, vec4f_t* scale)
+void gfx_scene_set_scale(gfx_scene_t* scene, vec3f_t scale)
 {
-	if (scene && scale)
-		vec4f_copy(&scene->scale, scale);
+	if (scene)
+		scene->scale = vec3_copy(scale);
 }
 
 void gfx_scene_set_mesh(gfx_scene_t* scene, struct gfx_mesh* mesh)

@@ -42,14 +42,14 @@ BM_EXPORT struct media_image* media_image_new();
 BM_EXPORT void media_image_free(struct media_image* img);
 BM_EXPORT result media_image_load(const char* path, struct media_image* img);
 
-static inline struct video_frame*
-video_frame_create(enum pixel_format format, uint32_t width, uint32_t height)
-{
-	struct video_frame* frame =
-		(struct video_frame*)BM_ALLOC(sizeof(struct video_frame));
-	video_frame_init(frame, format, width, height);
-	return frame;
-}
+// static inline struct video_frame*
+// video_frame_create(enum pixel_format format, uint32_t width, uint32_t height)
+// {
+// 	struct video_frame* frame =
+// 		(struct video_frame*)BM_ALLOC(sizeof(struct video_frame));
+// 	video_frame_init(frame, format, width, height);
+// 	return frame;
+// }
 
 static inline void video_frame_destroy(struct video_frame* frame)
 {

@@ -46,21 +46,8 @@ result inp_init(input_state_t* inputs)
 
 	memset(inputs, 0, sizeof(*inputs));
 
-	for (size_t i = SCANCODE_NONE; i < SCANCODE_MAX; i++) {
-		inputs->keys[i].scancode = (u16)i;
-		inputs->keys[i].state = 0;
-	}
-
-	inputs->mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
-	inputs->mouse.buttons[MOUSE_BUTTON_LEFT].state = false;
-	inputs->mouse.buttons[MOUSE_BUTTON_MIDDLE].button = MOUSE_BUTTON_MIDDLE;
-	inputs->mouse.buttons[MOUSE_BUTTON_MIDDLE].state = false;
-	inputs->mouse.buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
-	inputs->mouse.buttons[MOUSE_BUTTON_RIGHT].state = false;
-	inputs->mouse.buttons[MOUSE_BUTTON_X1].button = MOUSE_BUTTON_X1;
-	inputs->mouse.buttons[MOUSE_BUTTON_X1].state = false;
-	inputs->mouse.buttons[MOUSE_BUTTON_X2].button = MOUSE_BUTTON_X2;
-	inputs->mouse.buttons[MOUSE_BUTTON_X2].state = false;
+	keyboard_init(&inputs->keys[0]);
+	mouse_init(&inputs->mouse);
 
 	for (size_t i = 0; i < kCommandMax; i++) {
 		inputs->buttons[i].name = NULL;
@@ -94,7 +81,7 @@ void inp_refresh_mouse(mouse_t* mouse, f32 scale_x, f32 scale_y)
 	// inp_set_mouse_pos(mouse, mouse_screen_pos, mouse_window_pos);
 }
 
-void inp_refresh_pressed(input_state_t* inputs, const gui_event_t* evt)
+void inp_read_gui_event(input_state_t* inputs, const gui_event_t* evt)
 {
 	if (evt) {
 		switch (evt->type) {
@@ -105,14 +92,10 @@ void inp_refresh_pressed(input_state_t* inputs, const gui_event_t* evt)
 					  evt->keyboard.key.state);
 			break;
 		case GUI_EVENT_MOUSE_BUTTON_DOWN:
-			inp_set_mouse_button_state(&inputs->mouse,
-						   evt->mouse.button.button,
-						   evt->mouse.button.state);
-			break;
 		case GUI_EVENT_MOUSE_BUTTON_UP:
-			inp_set_mouse_button_state(&inputs->mouse,
-						   evt->mouse.button.button,
-						   evt->mouse.button.state);
+			mouse_set_button_state(&inputs->mouse,
+					  evt->mouse.button.button,
+					  evt->mouse.button.state);
 			break;
 			/*
 		case SDL_CONTROLLERAXISMOTION:
@@ -233,34 +216,12 @@ u8 inp_get_key_state(keyboard_key_t* keys, u16 scancode)
 	return state;
 }
 
-void inp_set_mouse_pos(mouse_t* mouse, const vec2i_t scr, const vec2i_t wnd)
+void inp_update_mouse(input_state_t* inputs, const mouse_t* mouse)
 {
-	if (mouse) {
-		mouse->screen_pos = scr;
-		mouse->window_pos = wnd;
+	if (inputs && mouse) {
+		memcpy(&inputs->mouse, mouse, sizeof(mouse_t));
 	}
 }
-
-void inp_set_mouse_button_state(mouse_t* mouse, u16 button, u8 state)
-{
-	if (mouse) {
-		mouse->buttons[button].button = button;
-
-		if (mouse->buttons[button].state != state) {
-			mouse->buttons[button].state = state;
-			// mouse->buttons[button].timestamp = os_get_time_ns();
-		}
-	}
-}
-
-u8 inp_get_mouse_button_state(mouse_t* mouse, u16 button)
-{
-	u8 state = 0;
-	if (mouse && mouse->buttons[button].button == button)
-		state = mouse->buttons[button].state;
-	return state;
-}
-
 // const char* inp_gamepad_button_kind_to_string(gamepad_button_kind_t kind)
 // {
 // 	switch (kind) {
@@ -519,6 +480,9 @@ bool inp_bind_virtual_key(input_state_t* inputs, command_t cmd, u16 scancode)
 bool inp_bind_virtual_mouse_button(input_state_t* inputs, command_t cmd,
 				   u16 mouse_button)
 {
+	if (!inputs)
+		return false;
+
 	if (cmd < MAX_VIRTUAL_BUTTONS && mouse_button < MAX_MOUSE_BUTTONS) {
 		inputs->buttons[cmd].state = 0;
 		inputs->buttons[cmd].mouse_button =
@@ -552,8 +516,9 @@ bool inp_bind_virtual_gamepad_button(input_state_t* inputs, command_t cmd,
 
 bool inp_cmd_get_state(input_state_t* inputs, command_t cmd)
 {
+	if (cmd > MAX_VIRTUAL_BUTTONS)
+		return;
 	bool inputs_state = false;
-
 	// special case console so we can toggle console back off again
 	if (inputs->mode == kInputModeGame ||
 	    (inputs->mode == kInputModeConsole && cmd == kCommandConsole)) {
@@ -584,6 +549,8 @@ bool inp_cmd_get_state(input_state_t* inputs, command_t cmd)
 
 void inp_cmd_toggle(input_state_t* inputs, command_t cmd, bool* value)
 {
+	if (cmd > MAX_VIRTUAL_BUTTONS)
+		return;
 	bool toggled = inputs->buttons[cmd].toggled;
 	if (inp_cmd_get_state(inputs, cmd)) {
 		if (!toggled) {

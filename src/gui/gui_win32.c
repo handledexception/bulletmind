@@ -13,6 +13,11 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 
+#if defined(BM_USE_CIMGUI)
+#include "cimgui.h"
+#include "cimgui_impl.h"
+#endif
+
 // #define WS_OVERLAPPEDWINDOW (WS_OVERLAPPED     | \
 //                              WS_CAPTION        | \
 //                              WS_SYSMENU        | \
@@ -28,6 +33,10 @@
 	(WS_EX_APPWINDOW | WS_EX_OVERLAPPEDWINDOW) & \
 		~(WS_EX_DLGMODALFRAME | WS_EX_STATICEDGE | WS_EX_CLIENTEDGE)
 
+static HINSTANCE g_hinstance = NULL;
+static ATOM g_atom = 0;
+static const wchar_t* g_classname = L"BMAppClass";
+
 struct gui_window_data {
 	gui_window_t* window;
 	HWND hwnd;
@@ -38,73 +47,154 @@ struct gui_window_data {
 	DWORD style_ex;
 };
 
-static HINSTANCE g_hinstance = NULL;
-static ATOM g_atom = 0;
-static const wchar_t* g_classname = L"BMAppClass";
+/* utils */
+keyboard_scancode_t win32_virtual_key_to_scancode(WPARAM wp, LPARAM lp);
+void* set_window_user_data(HWND hwnd, void* user_data);
+void* get_window_user_data(HWND hwnd);
+HMODULE get_module_from_wndproc(WNDPROC wp);
 
-keyboard_scancode_t win32_virtual_key_to_scancode(WPARAM wp, LPARAM lp)
+/* window proc */
+LRESULT CALLBACK gui_win32_wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
+
+bool gui_create_window_win32(gui_window_t* window);
+void gui_destroy_window_win32(gui_window_t* window);
+bool gui_is_valid_window_win32(const gui_window_t* window);
+void gui_show_window_win32(gui_window_t* window, bool shown);
+void gui_set_window_pos_win32(gui_window_t* window, const rect_t* rect);
+bool gui_set_focused_window_win32(const gui_window_t* window);
+void gui_center_window_win32(gui_window_t* window);
+bool gui_get_window_size_win32(const gui_window_t* window, s32* w, s32* h, bool client);
+bool gui_get_window_rect_win32(const gui_window_t* window, rect_t* rect, bool client);
+void* gui_get_window_handle_win32(gui_window_t* window);
+void gui_read_mouse_state_win32(mouse_t* mouse);
+bool gui_capture_mouse_win32(gui_window_t* window, bool captured);
+bool gui_move_mouse_win32(s32 x, s32 y);
+bool gui_show_mouse_win32(bool shown);
+
+LRESULT gui_process_mouse_move_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
+LRESULT gui_process_mouse_button_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
+LRESULT gui_process_mouse_capture_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
+LRESULT gui_process_keyboard_win32(UINT msg, WPARAM wp, LPARAM lp);
+LRESULT gui_process_window_focus_lost_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
+LRESULT gui_process_window_activate_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
+
+result gui_init_win32(gui_system_t* gp)
 {
-	keyboard_scancode_t scancode = SCANCODE_NONE;
-	int vk = (int)wp;
-	int sc = ((UINT)lp & 0x00ff0000) >> 16u;
-	int s2vk = (int)MapVirtualKey(sc, MAPVK_VSC_TO_VK_EX);
-	// assert(s2vk == vk);
-	bool is_extended = (lp & (1 << 24)) != 0;
-	// logger(LOG_DEBUG,  "SCANCODE: %d VK: %d MapVirtualKey: %d Extended: %s",
-	//     sc, vk, s2vk, is_extended ? "true":"false");
-	if (sc <= 127)
-		scancode = win32_scancode_lut[sc];
-	else
-		scancode = 0xfdfdfdfd;
-	// logger(LOG_DEBUG,  "SCAN: %d, SC: %d VK: %d MapVirtualKey: %d Extended: %s",
-	//     scancode, sc, vk, s2vk, is_extended ? "true":"false");
+	gui->show_mouse_count = 0;
+	g_hinstance = get_module_from_wndproc(gui_win32_wndproc);
 
-	// switch (vk) {
-	//     case
-	// }
-	// int sc = (lp >> 16) & 0xFF;
-	// assert(sc == scancode);
-	// // assert(vk == vkey);
-	// keyboard_scancode_t code;
-	return scancode;
+	WNDCLASSEX wcex;
+	wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wcex.hIcon = NULL;
+	wcex.hIconSm = NULL;
+	wcex.lpszMenuName = NULL;
+	wcex.lpszClassName = g_classname;
+	wcex.style = GUI_WIN32_CLASS_STYLE;
+	wcex.hbrBackground = NULL;
+	wcex.lpfnWndProc = gui_win32_wndproc;
+	wcex.hInstance = g_hinstance;
+	wcex.cbClsExtra = 0;
+	wcex.cbWndExtra = 0;
+	g_atom = RegisterClassEx(&wcex);
+
+	/* function pointerz */
+	gp->create_window = gui_create_window_win32;
+	gp->destroy_window = gui_destroy_window_win32;
+	gp->is_valid_window = gui_is_valid_window_win32;
+	gp->show_window = gui_show_window_win32;
+	gp->set_window_pos = gui_set_window_pos_win32;
+	gp->focus_window = gui_set_focused_window_win32;
+	gp->center_window = gui_center_window_win32;
+	gp->get_window_size = gui_get_window_size_win32;
+	gp->get_window_rect = gui_get_window_rect_win32;
+	gp->get_handle = gui_get_window_handle_win32;
+	gp->read_mouse_state = gui_read_mouse_state_win32;
+	gp->capture_mouse = gui_capture_mouse_win32;
+	gp->move_mouse = gui_move_mouse_win32;
+	gp->show_mouse = gui_show_mouse_win32;
+
+	return RESULT_OK;
+}
+
+LRESULT CALLBACK gui_win32_wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
+{
+#if defined(BM_USE_CIMGUI)
+	// Allow DearIMGUI to handle Win32 events
+	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wp, lp))
+		return 0;
+#endif
+	gui_window_data_t* data = NULL;
+	// LRESULT result = 0;
+	switch (msg) {
+	case WM_NCCREATE: {
+		CREATESTRUCT* cs = (CREATESTRUCT*)lp;
+		if (cs) {
+			data = (gui_window_data_t*)cs->lpCreateParams;
+			if (data) {
+				data->hwnd = hwnd;
+				set_window_user_data(hwnd, data);
+			}
+		}
+	} break;
+	case WM_ACTIVATEAPP:
+		logger(LOG_DEBUG, "WM_ACTIVATEAPP");
+		gui_clear_key_state();
+		break;
+	// case WM_MOUSELEAVE:
+	// 	return gui_process_mouse_leave_win32(hwnd, msg, wp, lp);
+	case WM_KILLFOCUS:
+		return gui_process_window_focus_lost_win32(hwnd, msg, wp, lp);
+	case WM_ACTIVATE:
+		logger(LOG_DEBUG, "WM_ACTIVATE");
+		return gui_process_window_activate_win32(hwnd, msg, wp, lp);
+	case WM_MOUSEACTIVATE:
+		logger(LOG_DEBUG, "WM_MOUSEACTIVATE");
+		return gui_process_window_activate_win32(hwnd, msg, wp, lp);
+	case WM_MOUSEMOVE:
+		return gui_process_mouse_move_win32(hwnd, msg, wp, lp);
+	case WM_LBUTTONDOWN:
+	case WM_RBUTTONDOWN:
+	case WM_MBUTTONDOWN:
+	case WM_LBUTTONUP:
+	case WM_RBUTTONUP:
+	case WM_MBUTTONUP:
+		return gui_process_mouse_button_win32(hwnd, msg, wp, lp);
+	case WM_CAPTURECHANGED:
+		logger(LOG_DEBUG, "WM_CAPTURECHANGED");
+		return gui_process_mouse_capture_win32(hwnd, msg, wp, lp);
+	case WM_KEYDOWN:
+	case WM_SYSKEYDOWN:
+	case WM_KEYUP:
+	case WM_SYSKEYUP:
+		return gui_process_keyboard_win32(msg, wp, lp);
+	default:
+		data = (gui_window_data_t*)get_window_user_data(hwnd);
+	}
+
+	return DefWindowProc(hwnd, msg, wp, lp);
+}
+
+void gui_refresh_win32(gui_system_t* gp)
+{
+	MSG msg;
+	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
 }
 
 LRESULT gui_process_mouse_move_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 {
-	POINT pos = {.x = 0, .y = 0};
-	POINT win_pos = {.x = 0, .y = 0};
-	GetCursorPos(&pos);
-	gui->mouse.screen_pos.x = pos.x;
-	gui->mouse.screen_pos.y = pos.y;
-	ScreenToClient(hwnd, &pos);
-	gui->mouse.window_pos.x = pos.x;
-	gui->mouse.window_pos.y = pos.y;
-	// gui->mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
-	// gui->mouse.buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
-	// gui->mouse.buttons[MOUSE_BUTTON_MIDDLE].button = MOUSE_BUTTON_MIDDLE;
-	// gui->mouse.buttons[MOUSE_BUTTON_X1].button = MOUSE_BUTTON_X1;
-	// gui->mouse.buttons[MOUSE_BUTTON_X2].button = MOUSE_BUTTON_X2;
-	// gui->mouse.buttons[MOUSE_BUTTON_LEFT].state =
-	// 	GetAsyncKeyState(VK_LBUTTON) & 0x8000 ? 1 : 0;
-	// gui->mouse.buttons[MOUSE_BUTTON_RIGHT].state =
-	// 	GetAsyncKeyState(VK_RBUTTON) & 0x8000 ? 1 : 0;
-	// gui->mouse.buttons[MOUSE_BUTTON_MIDDLE].state =
-	// 	GetAsyncKeyState(VK_MBUTTON) & 0x8000 ? 1 : 0;
-	// gui->mouse.buttons[MOUSE_BUTTON_X1].state =
-	// 	GetAsyncKeyState(VK_XBUTTON1) & 0x8000 ? 1 : 0;
-	// gui->mouse.buttons[MOUSE_BUTTON_X2].state =
-	// 	GetAsyncKeyState(VK_XBUTTON2) & 0x8000 ? 1 : 0;
-
 	gui_event_t evt;
 	memset(&evt, 0, sizeof(gui_event_t));
 	evt.timestamp = os_get_time_ns();
 	evt.type = GUI_EVENT_MOUSE_MOTION;
-	evt.mouse.screen_pos.x = gui->mouse.screen_pos.x;
-	evt.mouse.screen_pos.y = gui->mouse.screen_pos.y;
-	evt.mouse.window_pos.x = gui->mouse.window_pos.x;
-	evt.mouse.window_pos.y = gui->mouse.window_pos.y;
-	evt.mouse.button.button = MOUSE_BUTTON_NONE;
-	evt.mouse.button.state = 0;
+	evt.mouse.mouse.scr_pos   = vec2_copy(gui->mouse.scr_pos);
+	evt.mouse.mouse.scr_delta = vec2_copy(gui->mouse.scr_delta);
+	evt.mouse.mouse.wnd_pos   = vec2_copy(gui->mouse.wnd_pos);
+	evt.mouse.mouse.wnd_delta = vec2_copy(gui->mouse.wnd_delta);
+
 	// evt.mouse.button.state = MOUSE_BUTTON_NON
 	// evt.mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
 	// evt.mouse.buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
@@ -121,7 +211,8 @@ LRESULT gui_process_mouse_move_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	// 	GetAsyncKeyState(VK_XBUTTON1) & 0x8000 ? 1 : 0;
 	// evt.mouse.buttons[MOUSE_BUTTON_X2].state =
 	// 	GetAsyncKeyState(VK_XBUTTON2) & 0x8000 ? 1 : 0;
-	vec_push_back(gui->events, &evt);
+
+	gui_event_push(&evt);
 
 	return 0;
 }
@@ -137,48 +228,99 @@ LRESULT gui_process_mouse_button_win32(HWND hwnd, UINT msg, WPARAM wp,
 		evt.type = GUI_EVENT_MOUSE_BUTTON_DOWN;
 		evt.mouse.button.button = MOUSE_BUTTON_LEFT;
 		evt.mouse.button.state = MOUSE_BUTTON_DOWN;
+		evt.mouse.mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
+		evt.mouse.mouse.buttons[MOUSE_BUTTON_LEFT].state = MOUSE_BUTTON_DOWN;
 		break;
 	case WM_LBUTTONUP:
 		evt.type = GUI_EVENT_MOUSE_BUTTON_UP;
 		evt.mouse.button.button = MOUSE_BUTTON_LEFT;
 		evt.mouse.button.state = MOUSE_BUTTON_UP;
+		evt.mouse.mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
+		evt.mouse.mouse.buttons[MOUSE_BUTTON_LEFT].state = MOUSE_BUTTON_UP;
 		break;
 	case WM_RBUTTONDOWN:
 		evt.type = GUI_EVENT_MOUSE_BUTTON_DOWN;
 		evt.mouse.button.button = MOUSE_BUTTON_RIGHT;
 		evt.mouse.button.state = MOUSE_BUTTON_DOWN;
+		evt.mouse.mouse.buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
+		evt.mouse.mouse.buttons[MOUSE_BUTTON_RIGHT].state = MOUSE_BUTTON_DOWN;
 		break;
 	case WM_RBUTTONUP:
 		evt.type = GUI_EVENT_MOUSE_BUTTON_UP;
 		evt.mouse.button.button = MOUSE_BUTTON_RIGHT;
 		evt.mouse.button.state = MOUSE_BUTTON_UP;
+		evt.mouse.mouse.buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
+		evt.mouse.mouse.buttons[MOUSE_BUTTON_RIGHT].state = MOUSE_BUTTON_UP;
 		break;
 	case WM_MBUTTONDOWN:
 		evt.type = GUI_EVENT_MOUSE_BUTTON_DOWN;
 		evt.mouse.button.button = MOUSE_BUTTON_MIDDLE;
 		evt.mouse.button.state = MOUSE_BUTTON_DOWN;
+		evt.mouse.mouse.buttons[MOUSE_BUTTON_MIDDLE].button = MOUSE_BUTTON_MIDDLE;
+		evt.mouse.mouse.buttons[MOUSE_BUTTON_MIDDLE].state = MOUSE_BUTTON_DOWN;
 		break;
 	case WM_MBUTTONUP:
 		evt.type = GUI_EVENT_MOUSE_BUTTON_UP;
 		evt.mouse.button.button = MOUSE_BUTTON_MIDDLE;
 		evt.mouse.button.state = MOUSE_BUTTON_UP;
+		evt.mouse.mouse.buttons[MOUSE_BUTTON_MIDDLE].button = MOUSE_BUTTON_MIDDLE;
+		evt.mouse.mouse.buttons[MOUSE_BUTTON_MIDDLE].state = MOUSE_BUTTON_UP;
 		break;
 	}
-	vec_push_back(gui->events, &evt);
+
+	gui_event_push(&evt);
+
 	return 0;
 }
 
-LRESULT gui_process_mouse_activate_win32(UINT msg, WPARAM wp, LPARAM lp)
+LRESULT gui_process_window_focus_lost_win32(HWND hwnd, UINT msg, WPARAM wp,
+				       LPARAM lp)
 {
-	return 0;
-}
-
-LRESULT gui_process_mouse_capture_win32(UINT msg, WPARAM wp, LPARAM lp)
-{
-	if (!gui || !lp)
+	gui_window_t* focused = gui_get_focused_window();
+	if (!gui_is_valid_window(focused))
 		return 1;
-	HWND captured = (HWND)lp;
-	gui->mouse.window = gui_get_window_by_handle((void*)captured);
+
+	gui_window_data_t* wd = (gui_window_data_t*)get_window_user_data(hwnd);
+	if (focused == wd->window)
+		gui_set_focused_window(NULL);
+
+	return 0;
+}
+
+LRESULT gui_process_window_activate_win32(HWND hwnd, UINT msg, WPARAM wp,
+				       LPARAM lp)
+{
+	gui_window_data_t* wd = (gui_window_data_t*)get_window_user_data(hwnd);
+	if (wd == NULL)
+		return 1;
+
+	if (!gui_set_focused_window(wd->window))
+		return 1;
+
+	// gui_event_t evt;
+	// memset(&evt, 0, sizeof(gui_event_t));
+	// evt.type = GUI_EVENT_WINDOW_MOUSE_ACTIVATE;
+	// evt.timestamp = os_get_time_ns();
+	// gui_event_push(&evt);
+
+	gui_event_t evt;
+	memset(&evt, 0, sizeof(gui_event_t));
+	evt.type = GUI_EVENT_WINDOW_ACTIVATE;
+	evt.timestamp = os_get_time_ns();
+	gui_event_push(&evt);
+
+	return 0;
+}
+
+LRESULT gui_process_mouse_capture_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
+{
+	if (!gui || !lp) {
+		logger(LOG_DEBUG, "gui_process_mouse_capture_win32: lp == NULL");
+		return 1;
+	}
+
+	logger(LOG_DEBUG, "gui_process_mouse_capture_win32: lp != NULL");
+
 	return 0;
 }
 
@@ -251,77 +393,9 @@ LRESULT gui_process_keyboard_win32(UINT msg, WPARAM wp, LPARAM lp)
 	// #endif
 	//     }
 
-	vec_push_back(gui->events, &evt);
+	gui_event_push(&evt);
 
 	return result;
-}
-
-HMODULE get_module_from_wndproc(WNDPROC wp)
-{
-	HMODULE instance = NULL;
-	void* address = (void*)wp;
-	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-				  GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-			  (LPCWSTR)address, &instance);
-	return instance;
-}
-
-void* set_window_user_data(HWND hwnd, void* user_data)
-{
-	return (void*)SetWindowLongPtr(hwnd, GWLP_USERDATA,
-				       (LONG_PTR)user_data);
-}
-
-void* get_window_user_data(HWND hwnd)
-{
-	DWORD pid = 0;
-	GetWindowThreadProcessId(hwnd, &pid);
-	if (pid != GetCurrentProcessId())
-		return NULL;
-	return (void*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-}
-
-LRESULT CALLBACK gui_win32_wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
-{
-	gui_window_data_t* data = NULL;
-	// LRESULT result = 0;
-	switch (msg) {
-	case WM_NCCREATE: {
-		CREATESTRUCT* cs = (CREATESTRUCT*)lp;
-		if (cs) {
-			data = (gui_window_data_t*)cs->lpCreateParams;
-			if (data) {
-				data->hwnd = hwnd;
-				set_window_user_data(hwnd, data);
-			}
-		}
-	} break;
-	case WM_ACTIVATEAPP:
-		gui_clear_key_state();
-		break;
-	case WM_MOUSEMOVE:
-		return gui_process_mouse_move_win32(hwnd, msg, wp, lp);
-	case WM_LBUTTONDOWN:
-	case WM_RBUTTONDOWN:
-	case WM_MBUTTONDOWN:
-	case WM_LBUTTONUP:
-	case WM_RBUTTONUP:
-	case WM_MBUTTONUP:
-		return gui_process_mouse_button_win32(hwnd, msg, wp, lp);
-	// case WM_CAPTURECHANGED:
-	//     return gui_process_mouse_capture_win32(msg, wp, lp);
-	case WM_MOUSEACTIVATE:
-		return gui_process_mouse_activate_win32(msg, wp, lp);
-	case WM_KEYDOWN:
-	case WM_SYSKEYDOWN:
-	case WM_KEYUP:
-	case WM_SYSKEYUP:
-		return gui_process_keyboard_win32(msg, wp, lp);
-	default:
-		data = (gui_window_data_t*)get_window_user_data(hwnd);
-	}
-
-	return DefWindowProc(hwnd, msg, wp, lp);
 }
 
 void get_window_bounds_for_client_bounds(const rect_t* bounds, DWORD style,
@@ -443,6 +517,11 @@ bool gui_create_window_win32(gui_window_t* window)
 	if (window->flags & GUI_WINDOW_CENTERED)
 		gui->center_window(window);
 
+	if (!SetProp(hwnd, TEXT("gui_window_data_t"), window->data)) {
+		BM_FREE(window->data);
+		return false;
+	}
+
 	return hwnd != NULL;
 }
 
@@ -454,6 +533,14 @@ void gui_destroy_window_win32(gui_window_t* window)
 			window->data = NULL;
 		}
 	}
+}
+
+bool gui_is_valid_window_win32(const gui_window_t* window)
+{
+	if (window && window->data)
+		return window->data->hwnd != NULL;
+	else
+		return false;
 }
 
 void gui_show_window_win32(gui_window_t* window, bool shown)
@@ -473,20 +560,61 @@ void gui_set_window_pos_win32(gui_window_t* window, const rect_t* rect)
 	}
 }
 
+bool gui_set_focused_window_win32(const gui_window_t* window)
+{
+	if (gui->window_focused && !window) {
+		gui_clear_key_state();
+	}
+
+	if (gui->window_focused != window) {
+		// release mouse from current window
+		if (gui_is_valid_window(gui->window_focused)) {
+			if (gui->window_focused->flags & GUI_WINDOW_CAPTURE_MOUSE) {
+				gui_capture_mouse(gui->window_focused, false);
+			}
+		}
+		// capture mouse in new window
+		if (gui_is_valid_window(window)) {
+			// Left mouse pressed and mouse in window
+			POINT p = { 0 };
+			GetCursorPos(&p);
+			rect_t wr = { 0 };
+			gui_get_window_rect(window, &wr, false);
+			bool mouse_in_window = ((p.x > wr.x) && (p.x < wr.w) &&
+				(p.y > wr.y) && (p.y < wr.h));
+			if ((window->flags & GUI_WINDOW_CAPTURE_MOUSE) &&
+				(GetAsyncKeyState(VK_LBUTTON) & 0x8000) &&
+				mouse_in_window) {
+				gui_capture_mouse(window, true);
+			}
+		}
+	}
+
+	gui->window_focused = window;
+	if (gui->window_focused != gui->mouse.window)
+		gui->mouse.window = gui->window_focused;
+
+	return true;
+}
+
 void rect_to_win32_rect(const rect_t* r, RECT* wr)
 {
-	wr->left = r->x;
-	wr->top = r->y;
-	wr->right = r->w;
-	wr->bottom = r->h;
+	if (r && wr) {
+		wr->left = r->x;
+		wr->top = r->y;
+		wr->right = r->w;
+		wr->bottom = r->h;
+	}
 }
 
 void win32_rect_to_rect(const RECT* wr, rect_t* r)
 {
-	r->x = wr->left;
-	r->y = wr->top;
-	r->w = wr->right;
-	r->h = wr->bottom;
+	if (wr && r) {
+		r->x = wr->left;
+		r->y = wr->top;
+		r->w = wr->right;
+		r->h = wr->bottom;
+	}
 }
 
 void gui_center_window_win32(gui_window_t* window)
@@ -532,6 +660,18 @@ void gui_center_window_win32(gui_window_t* window)
 	}
 }
 
+bool gui_get_window_size_win32(const gui_window_t* window, s32* w, s32* h, bool client)
+{
+	rect_t rect = { 0 };
+	if (gui_get_window_rect(window, &rect, client)) {
+		*w = rect.w;
+		*h = rect.h;
+		return true;
+	} else {
+		return false;
+	}
+}
+
 bool gui_get_window_rect_win32(const gui_window_t* window, rect_t* rect,
 			       bool client)
 {
@@ -541,6 +681,7 @@ bool gui_get_window_rect_win32(const gui_window_t* window, rect_t* rect,
 		ok = GetClientRect(window->data->hwnd, &r);
 	else
 		ok = GetWindowRect(window->data->hwnd, &r);
+	win32_rect_to_rect(&r, rect);
 	return (bool)ok;
 }
 
@@ -551,77 +692,216 @@ void* gui_get_window_handle_win32(gui_window_t* window)
 	return NULL;
 }
 
-void gui_get_global_mouse_state_win32(mouse_t* mouse)
+void gui_read_mouse_state_win32(mouse_t* mouse)
 {
-	POINT pos = {.x = 0, .y = 0};
-	GetCursorPos(&pos);
-	mouse->screen_pos.x = pos.x;
-	mouse->screen_pos.y = pos.y;
-	ScreenToClient(GetForegroundWindow(), &pos);
-	mouse->window_pos.x = pos.x;
-	mouse->window_pos.y = pos.y;
-	mouse->buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
-	mouse->buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
-	mouse->buttons[MOUSE_BUTTON_MIDDLE].button = MOUSE_BUTTON_MIDDLE;
-	mouse->buttons[MOUSE_BUTTON_X1].button = MOUSE_BUTTON_X1;
-	mouse->buttons[MOUSE_BUTTON_X2].button = MOUSE_BUTTON_X2;
-	mouse->buttons[MOUSE_BUTTON_LEFT].state =
-		GetAsyncKeyState(VK_LBUTTON) & 0x8000 ? 1 : 0;
-	mouse->buttons[MOUSE_BUTTON_RIGHT].state =
-		GetAsyncKeyState(VK_RBUTTON) & 0x8000 ? 1 : 0;
-	mouse->buttons[MOUSE_BUTTON_MIDDLE].state =
-		GetAsyncKeyState(VK_MBUTTON) & 0x8000 ? 1 : 0;
-	mouse->buttons[MOUSE_BUTTON_X1].state =
-		GetAsyncKeyState(VK_XBUTTON1) & 0x8000 ? 1 : 0;
-	mouse->buttons[MOUSE_BUTTON_X2].state =
-		GetAsyncKeyState(VK_XBUTTON2) & 0x8000 ? 1 : 0;
-}
+	POINT p = {.x = 0, .y = 0};
+	GetCursorPos(&p);
+	vec2f_t pos = vec2_set((f32)p.x, (f32)p.y);
+	gui->mouse.scr_delta = vec2_sub(gui->mouse.scr_pos, pos);
+	gui->mouse.scr_pos = vec2_copy(pos);
+	HWND hwnd = GetForegroundWindow();
+	ScreenToClient(hwnd, &p);
+	pos = vec2_set((f32)p.x, (f32)p.y);
+	gui->mouse.wnd_delta = vec2_sub(gui->mouse.wnd_pos, pos);
+	gui->mouse.wnd_pos = vec2_copy(pos);
 
-result gui_init_win32(gui_system_t* gp)
-{
-	g_hinstance = get_module_from_wndproc(gui_win32_wndproc);
+	gui->mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
+	gui->mouse.buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
+	gui->mouse.buttons[MOUSE_BUTTON_MIDDLE].button = MOUSE_BUTTON_MIDDLE;
+	gui->mouse.buttons[MOUSE_BUTTON_X1].button = MOUSE_BUTTON_X1;
+	gui->mouse.buttons[MOUSE_BUTTON_X2].button = MOUSE_BUTTON_X2;
+	gui->mouse.buttons[MOUSE_BUTTON_LEFT].state = GetAsyncKeyState(VK_LBUTTON) & 0x8000 ? 1 : 0;
+	gui->mouse.buttons[MOUSE_BUTTON_RIGHT].state = GetAsyncKeyState(VK_RBUTTON) & 0x8000 ? 1 : 0;
+	gui->mouse.buttons[MOUSE_BUTTON_MIDDLE].state = GetAsyncKeyState(VK_MBUTTON) & 0x8000 ? 1 : 0;
+	gui->mouse.buttons[MOUSE_BUTTON_X1].state = GetAsyncKeyState(VK_XBUTTON1) & 0x8000 ? 1 : 0;
+	gui->mouse.buttons[MOUSE_BUTTON_X2].state = GetAsyncKeyState(VK_XBUTTON2) & 0x8000 ? 1 : 0;
 
-	WNDCLASSEX wcex;
-	wcex.cbSize = sizeof(WNDCLASSEX);
-	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wcex.hIcon = NULL;
-	wcex.hIconSm = NULL;
-	wcex.lpszMenuName = NULL;
-	wcex.lpszClassName = g_classname;
-	wcex.style = GUI_WIN32_CLASS_STYLE;
-	wcex.hbrBackground = NULL;
-	wcex.lpfnWndProc = gui_win32_wndproc;
-	wcex.hInstance = g_hinstance;
-	wcex.cbClsExtra = 0;
-	wcex.cbWndExtra = 0;
-	g_atom = RegisterClassEx(&wcex);
-
-	/* function pointerz */
-	gp->create_window = gui_create_window_win32;
-	gp->destroy_window = gui_destroy_window_win32;
-	gp->show_window = gui_show_window_win32;
-	gp->set_window_pos = gui_set_window_pos_win32;
-	gp->center_window = gui_center_window_win32;
-	gp->get_window_rect = gui_get_window_rect_win32;
-	gp->get_handle = gui_get_window_handle_win32;
-	gp->get_global_mouse_state = gui_get_global_mouse_state_win32;
-
-	return RESULT_OK;
-}
-
-void gui_refresh_win32(gui_system_t* gp)
-{
-	MSG msg;
-	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
-}
-
-keyboard_scancode_t convert_scancode(void* sc)
-{
-	return SCANCODE_NONE;
-	// switch(sc) {
-
+	// vec2f_t scr_delta = { 0 };
+	// vec2f_t wnd_delta = { 0 };
+	// POINT sp = { 0 };
+	// POINT wp = { 0 };
+	// GetCursorPos(&sp);
+	// vec2f_t scr_pos = vec2_set((f32)sp.x, (f32)sp.y);
+	// mouse->scr_delta = vec2_sub(mouse->scr_pos, scr_pos);
+	// mouse->scr_pos = vec2_copy(scr_pos);
+	// HWND hwnd = GetForegroundWindow();
+	// if (mouse->window) {
+	// 	hwnd = mouse->window->data->hwnd;
 	// }
+	// ScreenToClient(hwnd, &wp); // FIXME: Need to determine the foreground window according to our GUI system!
+	// vec2f_t wnd_pos = vec2_set((f32)wp.x, (f32)wp.y);
+	// mouse->wnd_delta = vec2_sub(mouse->wnd_pos, wnd_pos);
+	// mouse->wnd_pos = vec2_copy(wnd_pos);
+
+	// if (mouse->mode == MOUSE_MODE_RELATIVE) {
+	// 	scr_delta = vec2_copy(scr_pos);
+	// 	scr_pos = vec2_add(mouse->scr_last, scr_delta);
+	// 	mouse->scr_pos = vec2_add(mouse->scr_pos, scr_delta);
+	// } else {
+	// 	scr_delta = vec2_copy(vec2_sub(scr_pos, mouse->scr_last));
+	// 	mouse->scr_pos = vec2_copy(scr_pos);
+	// }
+
+	// if (mouse->window && ((mouse->window->flags & GUI_WINDOW_CAPTURE_MOUSE) == 0)) {
+	// 	int x_max = 0, y_max = 0;
+	// 	rect_t wr = { 0, 0, 1920, 1080 };
+	// 	// gui_get_window_rect(mouse->window, &wr, true);
+	// 	x_max = wr.w - 1;
+	// 	y_max = wr.h - 1;
+	// 	if (mouse->scr_pos.x > x_max)
+	// 		mouse->scr_pos.x = x_max;
+	// 	if (mouse->scr_pos.x < 0)
+	// 		mouse->scr_pos.x = 0;
+	// 	if (mouse->scr_pos.y > y_max)
+	// 		mouse->scr_pos.y = y_max;
+	// 	if (mouse->scr_pos.y < 0)
+	// 		mouse->scr_pos.y = 0;
+	// }
+
+	// mouse->scr_delta = vec2_add(mouse->scr_delta, scr_delta);
+
+	// if (mouse->mode == MOUSE_MODE_RELATIVE) {
+	// 	mouse->scr_last = vec2_copy(mouse->scr_pos);
+	// } else {
+	// 	mouse->scr_last = vec2_copy(scr_pos);
+	// }
+
+	// 	get_scaled_mouse_delta(mouse->relative_speed_scale, x, &mouse->scale_accum.x);
+	// 	get_scaled_mouse_delta(mouse->relative_speed_scale, y, &mouse->scale_accum.y);
+    //     // if (mouse->relative_mode) {
+    //     //     x = GetScaledMouseDelta(mouse->relative_speed_scale, x, &mouse->scale_accum_x);
+    //     //     y = GetScaledMouseDelta(mouse->relative_speed_scale, y, &mouse->scale_accum_y);
+    //     // } else {
+    //     //     x = GetScaledMouseDelta(mouse->normal_speed_scale, x, &mouse->scale_accum_x);
+    //     //     y = GetScaledMouseDelta(mouse->normal_speed_scale, y, &mouse->scale_accum_y);
+    //     // }
+    //     xrel = x;
+    //     yrel = y;
+    //     x = (mouse->last_x + xrel);
+    //     y = (mouse->last_y + yrel);
+    // } else {
+    //     xrel = x - mouse->last_x;
+    //     yrel = y - mouse->last_y;
+    // }
+}
+
+bool gui_capture_mouse_win32(gui_window_t* window, bool captured)
+{
+	bool res = false;
+
+	if (gui_is_valid_window(window)) {
+		if (captured && !gui->mouse.is_captured) {
+			rect_t r;
+			gui_get_window_rect(window, &r, false);
+			s32 w = (r.w-r.x);
+			s32 h = (r.h-r.y);
+			gui_move_mouse(r.x+(w/2), r.y+(h/2));
+			gui_show_mouse(false);
+			RECT wr;
+			rect_to_win32_rect(&r, &wr);
+			ClipCursor(&wr);
+
+			HWND prev_hwnd = SetCapture(window->data->hwnd);
+			logger(LOG_DEBUG, "SetCapture");
+			(void)prev_hwnd;
+
+			gui_event_t evt;
+			memset(&evt, 0, sizeof(gui_event_t));
+			evt.type = GUI_EVENT_MOUSE_CAPTURE;
+			evt.timestamp = os_get_time_ns();
+			gui_event_push(&evt);
+
+			gui->mouse.is_captured = true;
+		} else if (gui->mouse.is_captured) {
+			gui_show_mouse(true);
+			res = ReleaseCapture(window->data->hwnd);
+			logger(LOG_DEBUG, "ReleaseCapture");
+			gui->mouse.is_captured = false;
+		}
+	}
+
+	return gui->mouse.is_captured;
+
+	// if (captured && hwnd != NULL) {
+	// 	SetCapture(window->data->hwnd);
+	// 	rect_t wr;
+	// 	gui_get_window_rect(window, &wr, false);
+	// 	s32 w = (wr.w-wr.x);
+	// 	s32 h = (wr.h-wr.y);
+	// 	SetCursorPos(wr.x+(w/2), wr.y+(h/2));
+	// 	gui_show_mouse(false);
+	// 	return true;
+	// } else {
+	// 	BOOL ok = ReleaseCapture();
+	// 	ok = gui_show_mouse(true);
+	// 	return ok;
+	// }
+
+	// return false;
+}
+
+bool gui_move_mouse_win32(s32 x, s32 y)
+{
+	return SetCursorPos(x, y);
+}
+
+bool gui_show_mouse_win32(bool shown)
+{
+	if (ShowCursor(shown)) {
+		return true;
+	}
+	return false;
+}
+
+/* Win32 Utility Functions */
+keyboard_scancode_t win32_virtual_key_to_scancode(WPARAM wp, LPARAM lp)
+{
+	keyboard_scancode_t scancode = SCANCODE_NONE;
+	int vk = (int)wp;
+	int sc = ((UINT)lp & 0x00ff0000) >> 16u;
+	int s2vk = (int)MapVirtualKey(sc, MAPVK_VSC_TO_VK_EX);
+	// assert(s2vk == vk);
+	bool is_extended = (lp & (1 << 24)) != 0;
+	// logger(LOG_DEBUG,  "SCANCODE: %d VK: %d MapVirtualKey: %d Extended: %s",
+	//     sc, vk, s2vk, is_extended ? "true":"false");
+	if (sc <= 127)
+		scancode = win32_scancode_lut[sc];
+	else
+		scancode = 0xfdfdfdfd;
+	// logger(LOG_DEBUG,  "SCAN: %d, SC: %d VK: %d MapVirtualKey: %d Extended: %s",
+	//     scancode, sc, vk, s2vk, is_extended ? "true":"false");
+
+	// switch (vk) {
+	//     case
+	// }
+	// int sc = (lp >> 16) & 0xFF;
+	// assert(sc == scancode);
+	// // assert(vk == vkey);
+	// keyboard_scancode_t code;
+	return scancode;
+}
+
+void* set_window_user_data(HWND hwnd, void* user_data)
+{
+	return (void*)SetWindowLongPtr(hwnd, GWLP_USERDATA,
+				       (LONG_PTR)user_data);
+}
+
+void* get_window_user_data(HWND hwnd)
+{
+	DWORD pid = 0;
+	GetWindowThreadProcessId(hwnd, &pid);
+	if (pid != GetCurrentProcessId())
+		return NULL;
+	return (void*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+}
+
+HMODULE get_module_from_wndproc(WNDPROC wp)
+{
+	HMODULE instance = NULL;
+	void* address = (void*)wp;
+	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+				  GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+			  (LPCWSTR)address, &instance);
+	return instance;
 }

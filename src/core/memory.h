@@ -27,7 +27,7 @@ extern "C" {
 
 #define BASE_ALIGNMENT 32
 
-#define TRACK_MEMORY
+// #define TRACK_MEMORY
 
 struct memory_allocator {
 	void* (*malloc)(size_t);

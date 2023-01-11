@@ -3,13 +3,29 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-
+#include <stdbool.h>
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <Windows.h>
 #endif
+
+#include "core/types.h"
+
+typedef struct console {
+#if defined(_WIN32)
+	HANDLE inp_handle;
+	HANDLE out_handle;
+	HANDLE err_handle;
+	u32 inp_mode;
+	u32 out_mode;
+	u32 err_mode;
+	bool inp_vt_supported;
+	bool out_vt_supported;
+	bool err_vt_supported;
+#endif;
+} console_t;
 
 enum log_color {
 	LOG_COLOR_DEFAULT = 0,
@@ -27,6 +43,38 @@ enum log_color {
 	LOG_COLOR_NONE
 };
 
+static inline void get_console_info(console_t* con)
+{
+	if (!con)
+		return;
+#if defined(_WIN32)
+	con->inp_handle = GetStdHandle(STD_INPUT_HANDLE);
+	con->out_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	con->err_handle = GetStdHandle(STD_ERROR_HANDLE);
+	if (GetConsoleMode(con->inp_handle, &con->inp_mode) == TRUE) {
+		if (SetConsoleMode(con->inp_handle, con->inp_mode|ENABLE_VIRTUAL_TERMINAL_INPUT) == TRUE)
+			con->inp_vt_supported = true;
+		SetConsoleMode(con->inp_handle, con->inp_mode);
+	}
+	if (GetConsoleMode(con->out_handle, &con->out_mode) == TRUE) {
+		if (SetConsoleMode(con->out_handle, con->out_mode|ENABLE_VIRTUAL_TERMINAL_PROCESSING) == TRUE) {
+			con->out_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+			con->out_vt_supported = true;
+		} else {
+			SetConsoleMode(con->out_handle, con->out_mode);
+		}
+	}
+	if (GetConsoleMode(con->err_handle, &con->err_mode) == TRUE) {
+		if (SetConsoleMode(con->err_handle, con->err_mode|ENABLE_VIRTUAL_TERMINAL_PROCESSING) == TRUE) {
+			con->err_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+			con->err_vt_supported = true;
+		} else {
+			SetConsoleMode(con->err_handle, con->err_mode);
+		}
+	}
+#endif
+}
+
 static inline int con_print(enum log_color color, FILE* stream, const char* fmt,
 			    ...)
 {
@@ -41,11 +89,11 @@ static inline int con_print(enum log_color color, FILE* stream, const char* fmt,
 	if (color == LOG_COLOR_NONE)
 		return fprintf(stream, "%s", buffer);
 #if defined(_WIN32)
-	HANDLE h = 0;
+	console_t con;
+	get_console_info(&con);
 	CONSOLE_SCREEN_BUFFER_INFO info;
 	WORD attr = 0;
-	h = GetStdHandle(STD_OUTPUT_HANDLE);
-	GetConsoleScreenBufferInfo(h, &info);
+	GetConsoleScreenBufferInfo(con.out_handle, &info);
 	switch (color) {
 	case LOG_COLOR_RED:
 		attr = FOREGROUND_RED;
@@ -84,9 +132,9 @@ static inline int con_print(enum log_color color, FILE* stream, const char* fmt,
 		break;
 	}
 	if (attr != 0)
-		SetConsoleTextAttribute(h, attr);
+		SetConsoleTextAttribute(con.out_handle, attr);
 	n = fprintf(stream, "%s", buffer);
-	SetConsoleTextAttribute(h, info.wAttributes);
+	SetConsoleTextAttribute(con.out_handle, info.wAttributes);
 	fflush(stream);
 	return n;
 #elif defined(__APPLE__) || defined(__linux__)

@@ -19,7 +19,6 @@ BM_EXPORT void gfx_activate_d3d11_debug_info(void);
 BM_EXPORT result gfx_com_release_d3d11(void);
 BM_EXPORT D3D11_BLEND gfx_blend_mode_to_d3d11_blend(enum gfx_blend_mode mode);
 BM_EXPORT D3D11_BLEND_OP gfx_blend_op_to_d3d11_blend_op(enum gfx_blend_op op);
-
 #ifdef __cplusplus
 }
 #endif
