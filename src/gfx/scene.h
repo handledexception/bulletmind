@@ -1,5 +1,4 @@
-#ifndef H_BM_GFX_SCENE
-#define H_BM_GFX_SCENE
+#pragma once
 
 #include "gfx/gfx.h"
 #include "core/vector.h"
@@ -22,6 +21,9 @@ typedef struct gfx_scene {
 	gfx_shader_t* curr_pixel_shader;
 	gfx_sprite_t* curr_sprite;
 	VECTOR(asset_t*) assets;
+	vec4f_t clr;
+	vec4f_t clr_start;
+	vec4f_t clr_end;
 } gfx_scene_t;
 
 BM_EXPORT struct gfx_scene* gfx_scene_new(const char* name);
@@ -35,5 +37,3 @@ BM_EXPORT void gfx_scene_set_scale(gfx_scene_t* scene, vec3f_t scale);
 BM_EXPORT void gfx_scene_set_mesh(gfx_scene_t* scene, struct gfx_mesh* mesh);
 BM_EXPORT void gfx_scene_set_index_data(gfx_scene_t* scene, u32* data,
 					u32 count);
-
-#endif

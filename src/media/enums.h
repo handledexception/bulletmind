@@ -102,6 +102,94 @@ enum pixel_format {
 	PIX_FMT_UNKNOWN = FourCC('NONE')
 };
 
+static inline const char* pix_fmt_to_string(enum pixel_format pf)
+{
+	switch (pf) {
+	case PIX_FMT_NONE:
+		return "None";
+	case PIX_FMT_RGB8:
+		return "RGB8";
+	case PIX_FMT_RGB555:
+		return "RGB555";
+	case PIX_FMT_RGB565:
+		return "RGB565";
+	case PIX_FMT_RGB24:
+		return "RGB24";
+	case PIX_FMT_RGB32:
+		return "RGB32";
+	case PIX_FMT_RGBA32:
+		return "RGBA32";
+	case PIX_FMT_ARGB32:
+		return "ARGB32";
+	case PIX_FMT_BGRA32:
+		return "BGRA32";
+	case PIX_FMT_A2R10G10B10:
+		return "A2R10G10B10";
+	case PIX_FMT_A16B16G16R16F:
+		return "A16B16G16R16F";
+	case PIX_FMT_AI44:
+		return "AI44";
+	case PIX_FMT_AYUV:
+		return "AYUV";
+	case PIX_FMT_I420:
+		return "I420";
+	case PIX_FMT_IYUV:
+		return "IYUV";
+	case PIX_FMT_NV11:
+		return "NV11";
+	case PIX_FMT_NV12:
+		return "NV12";
+	case PIX_FMT_UYVY:
+		return "UYVY";
+	case PIX_FMT_Y41P:
+		return "Y41P";
+	case PIX_FMT_Y41T:
+		return "Y41T";
+	case PIX_FMT_Y42T:
+		return "Y42T";
+	case PIX_FMT_YUY2:
+		return "YUY2";
+	case PIX_FMT_YVU9:
+		return "YVU9";
+	case PIX_FMT_YV12:
+		return "YV12";
+	case PIX_FMT_YVYU:
+		return "YVYU";
+	case PIX_FMT_P010:
+		return "P010";
+	case PIX_FMT_P016:
+		return "P016";
+	case PIX_FMT_P210:
+		return "P210";
+	case PIX_FMT_P216:
+		return "P216";
+	case PIX_FMT_v210:
+		return "v210";
+	case PIX_FMT_v216:
+		return "v216";
+	case PIX_FMT_v410:
+		return "v410";
+	case PIX_FMT_Y210:
+		return "Y210";
+	case PIX_FMT_Y216:
+		return "Y216";
+	case PIX_FMT_Y410:
+		return "Y410";
+	case PIX_FMT_Y416:
+		return "Y416";
+	case PIX_FMT_DEPTH_U16:
+		return "DEPTH_U16";
+	case PIX_FMT_DEPTH_U24_S8:
+		return "DEPTH_U24_S8";
+	case PIX_FMT_DEPTH_F32:
+		return "DEPTH_F32";
+	default:
+	case PIX_FMT_UNKNOWN:
+		return "Unknown";
+	}
+	return "";
+}
+
 static inline pix_fmt_bits_per_pixel(enum pixel_format pf)
 {
 	switch (pf) {

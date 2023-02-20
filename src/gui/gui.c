@@ -9,7 +9,7 @@
 
 gui_system_t* gui = NULL;
 
-result gui_init(void)
+result gui_init(enum gui_backend_t backend)
 {
 	logger(LOG_INFO, "gui_init: Initializing GUI subsystem...");
 
@@ -21,26 +21,39 @@ result gui_init(void)
 	vec_init(gui->windows);
 	vec_init(gui->events);
 	gui->window_focused = NULL;
-#if defined(_WIN32)
-	return gui_init_win32(gui);
-#elif defined(__APPLE__)
-	return gui_init_macos(gui);
-#elif defined(__linux__)
-	return gui_init_linux(gui);
+	gui->backend = backend;
+	if (backend == GUI_BACKEND_SDL2) {
+#ifdef BM_USE_SDL2
+		return gui_init_sdl2(gui);
 #endif
+	} else {
+#if defined(_WIN32)
+		return gui_init_win32(gui);
+#elif defined(__APPLE__)
+		return gui_init_macos(gui);
+#elif defined(__linux__)
+		return gui_init_linux(gui);
+#endif
+	}
 
 	return RESULT_NOT_IMPL;
 }
 
 void gui_refresh(void)
 {
-#if defined(_WIN32)
-	gui_refresh_win32(gui);
-#elif defined(__APPLE__)
-	gui_init_macos(gui);
-#elif defined(__linux__)
-	gui_init_linux(gui);
+	if (gui->backend == GUI_BACKEND_SDL2) {
+#ifdef BM_USE_SDL2
+		return gui_refresh_sdl2(gui);
 #endif
+	} else {
+#if defined(_WIN32)
+		gui_refresh_win32(gui);
+#elif defined(__APPLE__)
+		gui_init_macos(gui);
+#elif defined(__linux__)
+		gui_init_linux(gui);
+#endif
+	}
 }
 
 void gui_shutdown(void)
@@ -85,9 +98,14 @@ mouse_t* gui_get_mouse()
 	return &gui->mouse;
 }
 
-void gui_set_mouse_mode(enum mouse_mode mode)
+bool gui_set_mouse_mode(enum mouse_mode mode)
 {
-	gui->mouse.mode = mode;
+	if (gui) {
+		gui->mouse.mode = mode;
+		return gui->set_mouse_mode(mode);
+	} else {
+		return false;
+	}
 }
 
 gui_display_t* gui_create_display(s32 index)
@@ -191,6 +209,17 @@ bool gui_get_window_rect(const gui_window_t* window, rect_t* rect, bool client)
 	return gui->get_window_rect(window, rect, client);
 }
 
+bool gui_get_window_centerpoint(const gui_window_t* window, vec2i_t* p, bool client)
+{
+	rect_t r = { 0 };
+	if (gui_get_window_rect(window, &r, client)) {
+		rect_centerpoint(&r, p);
+		return true;
+	}
+
+	return false;
+}
+
 void* gui_get_window_handle(gui_window_t* window)
 {
 	if (window && window->data)
@@ -242,7 +271,7 @@ void gui_read_mouse_state(mouse_t* mouse)
 {
 	if (!gui)
 		return;
-	gui->read_mouse_state(mouse);
+	gui->read_mouse_state(&gui->mouse);
 	if (mouse) {
 		memcpy(mouse, &gui->mouse, sizeof(mouse_t));
 	}
@@ -267,4 +296,26 @@ bool gui_show_mouse(bool shown)
 	if (!gui)
 		return false;
 	return gui->show_mouse(shown);
+}
+
+bool gui_constrain_mouse(s32 curr_x, s32 curr_y, const rect_t* r)
+{
+	if (!r)
+		return false;
+	s32 w = (r->w-r->x);
+	s32 h = (r->h-r->y);
+	s32 cx = r->x+(w/2);
+	s32 cy = r->y+(h/2);
+	s32 max_x = w;
+	s32 min_x = cx;
+	s32 max_y = h;
+	s32 min_y = cy;
+	if ((s32)curr_x >= max_x-1)
+		gui_move_mouse(r->x+1, r->y+curr_y);
+	if ((s32)curr_x <= 0)
+		gui_move_mouse(r->w-1, r->y+curr_y);
+	if ((s32)curr_y >= max_y-1)
+		gui_move_mouse(r->x+curr_x, r->y+1);
+	if ((s32)curr_y <=  0)
+		gui_move_mouse(r->x+curr_x, r->h-1);
 }

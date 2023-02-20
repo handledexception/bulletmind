@@ -74,7 +74,7 @@ typedef struct engine_s {
 	VECTOR(struct gui_window*) windows;
 	bool fullscreen;
 	struct engine_gfx gfx;
-	input_state_t* inputs;
+	struct input_state* inputs;
 	rect_t window_rect;
 	rect_t cam_rect;
 	rect_t cam_inset;

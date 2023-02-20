@@ -1,5 +1,4 @@
-#ifndef H_GFX
-#define H_GFX
+#pragma once
 
 #include "core/types.h"
 #include "core/export.h"
@@ -66,15 +65,10 @@ typedef struct gfx_sheet gfx_sheet_t;             /* sprite sheet */
 typedef struct gfx_sheet_frame gfx_sheet_frame_t; /* sprite sheet frame */
 typedef struct gfx_mesh gfx_mesh_t;
 
-struct gfx_window {
-#if defined(_WIN32)
-	void* hwnd;
-#endif
-};
-
+typedef struct gui_window gui_window_t;
 struct gfx_config {
 	enum gfx_module_type module;
-	struct gfx_window window;
+	gui_window_t* window;
 	u32 adapter;
 	u32 width;
 	u32 height;
@@ -113,6 +107,7 @@ struct gfx_raster_desc {
 	f32 depth_bias_slope;
 	bool depth_clip_enabled;
 };
+
 BM_EXPORT inline void gfx_raster_desc_init(struct gfx_raster_desc* desc)
 {
 	desc->culling_mode = GFX_CULLING_BACK_FACE;
@@ -228,20 +223,21 @@ extern gfx_system_t* gfx;
 extern bool gfx_hardware_ready;
 extern bool gfx_system_ready;
 
-BM_EXPORT result gfx_init_extra();
+BM_EXPORT result gfx_init(const struct gfx_config* cfg, s32 flags);
 BM_EXPORT void gfx_shutdown(void);
 BM_EXPORT bool gfx_hardware_ok(void);
 BM_EXPORT bool gfx_ok(void);
 
+struct input_state;
 typedef struct camera_s camera_t;
-typedef struct input_state_s input_state_t;
 typedef struct imgui_draw_data {
 	camera_t* cam;
-	input_state_t* inputs;
+	struct input_state* inputs;
 	mat4f_t* view_mat;
 	mat4f_t* proj_mat;
 	f64 frame_time;
 	u64 frame_count;
+	size_t scene_count;
 } imgui_draw_data_t;
 #if defined(BM_USE_CIMGUI)
 BM_EXPORT bool gfx_init_cimgui(void);
@@ -270,6 +266,7 @@ BM_EXPORT void gfx_system_sampler_pop();
 BM_EXPORT void gfx_system_bind_render_target(void);
 BM_EXPORT void gfx_system_bind_input_layout(gfx_shader_t* shader);
 BM_EXPORT result gfx_create_swap_chain(const struct gfx_config* cfg);
+BM_EXPORT result gfx_resize_swap_chain(u32 width, u32 height, enum pixel_format pix_fmt);
 BM_EXPORT result gfx_create_device(s32 adapter);
 BM_EXPORT void gfx_destroy_device(void);
 
@@ -414,5 +411,3 @@ BM_EXPORT u32 gfx_get_vertex_stride(enum gfx_vertex_type type);
 #ifdef __cplusplus
 }
 #endif
-
-#endif // H_GFX

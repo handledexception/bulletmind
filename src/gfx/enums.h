@@ -1,5 +1,4 @@
-#ifndef H_GFX_ENUMS
-#define H_GFX_ENUMS
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -214,5 +213,3 @@ typedef enum {
 #ifdef __cplusplus
 }
 #endif
-
-#endif // H_GFX_ENUMS

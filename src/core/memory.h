@@ -27,7 +27,7 @@ extern "C" {
 
 #define BASE_ALIGNMENT 32
 
-// #define TRACK_MEMORY
+#define TRACK_MEMORY
 
 struct memory_allocator {
 	void* (*malloc)(size_t);
@@ -58,18 +58,18 @@ BM_EXPORT int mem_report_leaks();
 #if defined(BM_DEBUG) && defined(TRACK_MEMORY)
 #define BM_ALLOC(sz)   \
 	mem_alloc(sz); \
-	logger(LOG_DEBUG, "mem_alloc: %s (%zu bytes)", BM_FUNC_SIG, sz);
+	printf("mem_alloc: %s (%zu bytes)\n", BM_FUNC_SIG, sz);
 #define BM_FREE(p)                                                         \
 	do {                                                               \
 		size_t sz = 0;                                             \
 		sz = *((size_t*)(p)-1) - sizeof(size_t);                   \
 		mem_free(p);                                               \
-		logger(LOG_DEBUG, "mem_free: %s (%zu bytes)", BM_FUNC_SIG, \
+		printf("mem_free: %s (%zu bytes)\n", BM_FUNC_SIG, \
 		       sz);                                                \
 	} while (0);
 #define BM_REALLOC(p, sz)   \
 	mem_realloc(p, sz); \
-	logger(LOG_DEBUG, "mem_realloc: %s (%zu bytes)", BM_FUNC_SIG, sz);
+	printf("mem_realloc: %s (%zu bytes)\n", BM_FUNC_SIG, sz);
 #else
 #define BM_ALLOC(sz) mem_alloc(sz)
 #define BM_REALLOC(p, sz) mem_realloc(p, sz)

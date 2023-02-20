@@ -109,7 +109,11 @@
         "gamepad.h": "c",
         "scene.h": "c",
         "stdarg.h": "c",
-        "cmath": "c"
+        "cmath": "c",
+        "gui.h": "c",
+        "guiddef.h": "c",
+        "gfx_d3d11_input_layout.h": "c",
+        "d3dcompiler.h": "c"
     },
     "cmake.configureOnOpen": false
 }

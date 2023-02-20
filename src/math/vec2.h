@@ -14,8 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef H_BM_MATH_VEC2
-#define H_BM_MATH_VEC2
+#pragma once
 
 #include "core/types.h"
 
@@ -26,11 +25,7 @@ extern "C" {
 }
 #endif
 
-typedef struct vec2i {
-	s32 x;
-	s32 y;
-} vec2i_t;
-
+/* --- vec2f --- */
 typedef struct vec2f {
 	f32 x;
 	f32 y;
@@ -39,14 +34,6 @@ typedef struct vec2f {
 static inline vec2f_t vec2_set(f32 x, f32 y)
 {
 	vec2f_t v = { 0 };
-	v.x = x;
-	v.y = y;
-	return v;
-}
-
-static inline vec2i_t vec2i_set(s32 x, s32 y)
-{
-	vec2i_t v = { 0 };
 	v.x = x;
 	v.y = y;
 	return v;
@@ -105,11 +92,6 @@ static inline vec2f_t vec2_divf(const vec2f_t v, f32 f)
 	return vec2_set(v.x / f, v.y / f);
 }
 
-static inline vec2i_t vec2i_divi(const vec2i_t v, s32 i)
-{
-	return vec2i_set(v.x / i, v.y / i);
-}
-
 static inline vec2f_t vec2_negate(const vec2f_t v)
 {
 	return vec2_set(-v.x, -v.y);
@@ -133,7 +115,7 @@ static inline vec2f_t vec2_norm(const vec2f_t v)
 
 static inline f32 vec2_dist(const vec2f_t v1, const vec2f_t v2)
 {
-	return vec2f_len(vec2_sub(v1, v2));
+	return vec2_len(vec2_sub(v1, v2));
 }
 
 static inline vec2f_t vec2_fabsf(const vec2f_t v)
@@ -152,8 +134,79 @@ static inline vec2f_t vec2_friction(const vec2f_t a, f32 friction)
 	return vec2_mulf(a, new_speed);
 }
 
+/* --- vec2i --- */
+typedef struct vec2i {
+	s32 x;
+	s32 y;
+} vec2i_t;
+
+static inline vec2i_t vec2i_set(s32 x, s32 y)
+{
+	vec2i_t v = { 0 };
+	v.x = x;
+	v.y = y;
+	return v;
+}
+
+static inline vec2i_t vec2i_zero()
+{
+	return vec2i_set(0, 0);
+}
+
+static inline vec2i_t vec2i_copy(const vec2i_t v)
+{
+	vec2i_t res = { 0 };
+	res.x = v.x;
+	res.y = v.y;
+	return res;
+}
+
+static inline vec2i_t vec2i_add(vec2i_t a, vec2i_t b)
+{
+	return vec2i_set(a.x + b.x, a.y + b.y);
+}
+
+static inline vec2i_t vec2i_sub(vec2i_t a, vec2i_t b)
+{
+	return vec2i_set(a.x - b.x, a.y - b.y);
+}
+
+static inline vec2i_t vec2i_mul(vec2i_t a, vec2i_t b)
+{
+	return vec2i_set(a.x * b.x, a.y * b.y);
+}
+
+static inline vec2i_t vec2i_div(vec2i_t a, vec2i_t b)
+{
+	return vec2i_set(a.x / b.x, a.y / b.y);
+}
+
+static inline vec2i_t vec2i_addi(const vec2i_t v, s32 s)
+{
+	return vec2i_set(v.x + s, v.y + s);
+}
+
+static inline vec2i_t vec2i_subi(const vec2i_t v, s32 s)
+{
+	return vec2i_set(v.x - s, v.y - s);
+}
+
+static inline vec2i_t vec2i_muli(const vec2i_t v, s32 s)
+{
+	return vec2i_set(v.x * s, v.y * s);
+}
+
+static inline vec2i_t vec2i_divi(const vec2i_t v, s32 s)
+{
+	return vec2i_set(v.x / s, v.y / s);
+}
+
+static inline vec2i_t vec2i_negate(const vec2i_t v)
+{
+	return vec2i_set(-v.x, -v.y);
+}
+
+
 #ifdef __cplusplus
 }
 #endif
-
-#endif // H_BM_MATH_VEC2

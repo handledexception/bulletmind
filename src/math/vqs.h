@@ -1,5 +1,4 @@
-#ifndef H_BM_VQS
-#define H_BM_VQS
+#pragma once
 
 #include "math/quat.h"
 #include "math/mat4.h"
@@ -146,5 +145,3 @@ vqs_down(const vqs_t* transform)
 {
     return (quat_rotate(transform->rotation, vec3_set(0.0f, -1.0f, 0.0f)));
 }
-
-#endif

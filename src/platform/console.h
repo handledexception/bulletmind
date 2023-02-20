@@ -1,5 +1,4 @@
-#ifndef H_BM_CONSOLE
-#define H_BM_CONSOLE
+#pragma once
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -79,7 +78,7 @@ static inline int con_print(enum log_color color, FILE* stream, const char* fmt,
 			    ...)
 {
 	va_list args;
-	char buffer[256];
+	char buffer[4096];
 	int n = 0;
 
 	va_start(args, fmt);
@@ -184,5 +183,3 @@ static inline int con_print(enum log_color color, FILE* stream, const char* fmt,
 	return n;
 #endif
 }
-
-#endif

@@ -3,8 +3,10 @@
 #include "core/utils.h"
 #include "core/vector.h"
 
+#include "gui/gui.h"
+
 #include "math/types.h"
-#include "input.h"
+#include "platform/input.h"
 #include "platform/platform.h"
 
 #include "gfx/gfx.h"
@@ -27,8 +29,12 @@
 
 #include "gfx/camera.h"
 #if defined(BM_USE_CIMGUI)
+#include "gfx/cimgui_defs.h"
 #include "cimgui.h"
 #include "cimgui_impl.h"
+#endif
+#if defined(BM_USE_SDL2)
+#include <SDL.h>
 #endif
 
 #include "gfx/gfx_d3d11_input_layout.h"
@@ -134,6 +140,7 @@ struct gfx_module {
 	HMODULE dxgi_dll;
 	HMODULE d3d11_dll;
 
+	gui_window_t* window;
 	HWND hwnd;
 
 	/* dxgi */
@@ -153,6 +160,7 @@ struct gfx_module {
 	gfx_texture_t* depth_target;
 	struct gfx_depth_state* depth_state_enabled;
 	struct gfx_depth_state* depth_state_disabled;
+	bool depth_enabled;
 
 	/* rasterizer */
 	struct gfx_raster_desc raster_desc;
@@ -200,7 +208,12 @@ bool gfx_init_cimgui(void)
 		style->WindowRounding = 0.0f;
 		style->Colors[ImGuiCol_WindowBg].w = 1.0f;
 	}
+#ifdef BM_USE_SDL2
+	SDL_Window* w = gui_get_sdl_window_from_window(gfx->module->window);
+	ImGui_ImplSDL2_InitForD3D(w);
+#else
 	ImGui_ImplWin32_Init(gfx->module->hwnd);
+#endif
 	ImGui_ImplDX11_Init((ID3D11Device*)gfx->module->device, (ID3D11DeviceContext*)gfx->module->ctx);
 	return true;
 }
@@ -210,7 +223,11 @@ void gfx_cimgui_begin(void)
 {
 #if defined(BM_USE_CIMGUI)
 	ImGui_ImplDX11_NewFrame();
+#if defined(BM_USE_SDL2)
+	ImGui_ImplSDL2_NewFrame();
+#else
 	ImGui_ImplWin32_NewFrame();
+#endif
 	igNewFrame();
 #endif
 }
@@ -224,15 +241,21 @@ void gfx_cimgui_frame(imgui_draw_data_t* ctx)
 	float vspeed = 1.0f;
 	float v_min = -100.0f;
 	float v_max = 100.0f;
-	igBegin("GameData", &show, 0);
+	CImGuiWindowFlags window_flags = 0;
+	window_flags |= CImGuiWindowFlags_NoBackground;
+	window_flags |= CImGuiWindowFlags_NoTitleBar;
+	igBegin("GameData", &show, window_flags);
 	{
 		igText("Frame: %lld", ctx->frame_count);
 		igText("Frametime: %f", ctx->frame_time);
+		igText("Scenes: %zu", ctx->scene_count);
 		if (igCollapsingHeader_TreeNodeFlags("Inputs", 0)) {
-			vec2f_t mouse_screen = { .x = (f32)ctx->inputs->mouse.scr_pos.x, (f32)ctx->inputs->mouse.scr_pos.y };
+			vec2f_t mouse_screen = { .x = (f32)ctx->inputs->mouse.screen_pos.x, (f32)ctx->inputs->mouse.screen_pos.y };
 			igDragFloat2("Mouse Pos (Screen)", (float*)&mouse_screen, vspeed, v_min, v_max, NULL, 0);
-			vec2f_t mouse_window = { .x = (f32)ctx->inputs->mouse.wnd_pos.x, (f32)ctx->inputs->mouse.wnd_pos.y };
+			vec2f_t mouse_window = { .x = (f32)ctx->inputs->mouse.window_pos.x, (f32)ctx->inputs->mouse.window_pos.y };
 			igDragFloat2("Mouse Pos (Window)", (float*)&mouse_window, vspeed, v_min, v_max, NULL, 0);
+			vec2f_t mouse_rel = { .x = (f32)ctx->inputs->mouse.relative.x, (f32)ctx->inputs->mouse.relative.y };
+			igDragFloat2("Mouse Relative", (float*)&mouse_rel, vspeed, v_min, v_max, NULL, 0);
 		}
 		if (igCollapsingHeader_TreeNodeFlags("Camera Position", 0)) {
 			float* xyz = (float*)&ctx->cam->transform.position;
@@ -278,7 +301,13 @@ void gfx_shutdown_cimgui(void)
 {
 #if defined(BM_USE_CIMGUI)
 	ImGui_ImplDX11_Shutdown();
+
+#if defined(BM_USE_SDL2)
+	ImGui_ImplSDL2_Shutdown();
+#else
 	ImGui_ImplWin32_Shutdown();
+#endif
+
 	if (gfx->module->igui) {
 		igDestroyContext(gfx->module->igui);
 		gfx->module->igui = NULL;
@@ -869,13 +898,15 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 {
 	if (gfx == NULL || gfx->module == NULL ||
 	    gfx->module->dxgi_factory == NULL || cfg == NULL ||
-	    cfg->window.hwnd == NULL) {
+	    cfg->window == NULL) {
 		return RESULT_NULL;
 	}
 
 	result res = RESULT_OK;
 	HRESULT hr = S_OK;
-	gfx->module->hwnd = (HWND)cfg->window.hwnd;
+	HWND hwnd = (HWND)gui_get_window_handle(cfg->window);
+	gfx->module->hwnd = (HWND)hwnd;
+	gfx->module->window = cfg->window;
 
 	DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsd = {
 		.Scaling = DXGI_SCALING_NONE,
@@ -896,24 +927,7 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 		.Scaling = DXGI_SCALING_NONE,
 		.SampleDesc = {1, 0},
 	};
-	// DXGI_SWAP_CHAIN_DESC swap_desc = {
-	// 	.BufferDesc.Format = pixel_format_to_dxgi(cfg->pix_fmt),
-	// 	.BufferDesc.Width = cfg->width,
-	// 	.BufferDesc.Height = cfg->height,
-	// 	.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED,
-	// 	.BufferDesc.RefreshRate.Denominator = (UINT)cfg->fps_den,
-	// 	.BufferDesc.RefreshRate.Numerator = (UINT)cfg->fps_num,
-	// 	.BufferDesc.ScanlineOrdering =
-	// 		DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE,
-	// 	.SampleDesc.Count = 1,
-	// 	.SampleDesc.Quality = 0,
-	// 	.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
-	// 	.BufferCount = 2,
-	// 	.OutputWindow = gfx->module->hwnd,
-	// 	.Windowed = (BOOL)!cfg->fullscreen,
-	// 	.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
-	// 	.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT,
-	// };
+
 	IDXGISwapChain1* sc1;
 	hr = IDXGIFactory2_CreateSwapChainForHwnd(
 		gfx->module->dxgi_factory, (IUnknown*)gfx->module->device, gfx->module->hwnd,
@@ -923,15 +937,6 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 		goto cleanup;
 	}
 
-	// IDXGISwapChain* sc = NULL;
-	// hr = IDXGIFactory2_CreateSwapChain(gfx->module->dxgi_factory,
-	// 				   (IUnknown*)gfx->module->device,
-	// 				   &swap_desc, &sc);
-	// if (FAILED(hr)) {
-	// 	logger(LOG_ERROR,
-	// 	       "[gfx] IDXGIFactory2 CreateSwapChain failed!");
-	// 	goto cleanup;
-	// }
 	hr = IDXGISwapChain1_QueryInterface(
 		sc1, &BM_IID_IDXGISwapChain2,
 		(void**)&gfx->module->dxgi_swap_chain);
@@ -961,10 +966,6 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 
 cleanup:
 	if (hr != S_OK) {
-		// if (sc != NULL) {
-		// 	IDXGISwapChain1_Release(sc);
-		// 	sc = NULL;
-		// }
 		if (gfx->module->dxgi_swap_chain != NULL) {
 			IDXGISwapChain1_Release(gfx->module->dxgi_swap_chain);
 			gfx->module->dxgi_swap_chain = NULL;
@@ -976,6 +977,33 @@ cleanup:
 		logger(LOG_INFO, "[gfx] Created D3D11 Swap Chain\n");
 
 	return res;
+}
+
+result gfx_resize_swap_chain(u32 width, u32 height, enum pixel_format pix_fmt)
+{
+	if (!gfx || !gfx->module || !gfx->module->ctx)
+		return RESULT_NULL;
+	gfx_render_target_destroy();
+	gfx_destroy_depth();
+	ID3D11DeviceContext1_OMSetRenderTargets(gfx->module->ctx, 0, NULL, NULL);
+	s32 buffer_count = 2;
+	s32 swap_flags = 0;
+	HRESULT hr = IDXGISwapChain1_ResizeBuffers(gfx->module->dxgi_swap_chain,
+		buffer_count, width, height, pixel_format_to_dxgi(pix_fmt), swap_flags);
+	if (hr != S_OK) {
+		logger(LOG_ERROR, "Error resizing swap chain buffers to %dx%d (pixel format %s)", width, height, pix_fmt_to_string(pix_fmt));
+		return RESULT_ERROR;
+	}
+
+	ENSURE_OK(gfx_render_target_init(width, height, pix_fmt));
+	ENSURE_OK(gfx_init_depth(width, height, PIX_FMT_DEPTH_U24_S8, gfx->module->depth_enabled));
+	gfx_set_render_targets(gfx->module->render_target,
+			       gfx->module->depth_target);
+	gfx_set_viewport(width, height);
+
+	logger(LOG_INFO,
+	       "[gfx] Resized swap chain to %dx%d (pixel format %s)\n", width, height, pix_fmt_to_string(pix_fmt));
+	return RESULT_OK;
 }
 
 result gfx_load_dx11_dlls()
@@ -2342,11 +2370,14 @@ void gfx_bind_depth_state(const struct gfx_depth_state* state)
 void gfx_toggle_depth(bool enabled)
 {
 	if (gfx != NULL && gfx->module != NULL) {
+		gfx->module->depth_enabled = enabled;
 		if (enabled) {
 			gfx_bind_depth_state(gfx->module->depth_state_enabled);
 		} else {
 			gfx_bind_depth_state(gfx->module->depth_state_disabled);
 		}
+	} else {
+		gfx->module->depth_enabled = false;
 	}
 }
 

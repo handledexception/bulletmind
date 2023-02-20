@@ -1,5 +1,4 @@
-#ifndef H_BM_KEY_STATE
-#define H_BM_KEY_STATE
+#pragma once
 
 #include <stdbool.h>
 
@@ -371,5 +370,3 @@ struct keyboard_state {
 
 void gui_key_up_win32(int key, struct key_state* state);
 void gui_key_down_win32(int key, struct key_state* state);
-
-#endif

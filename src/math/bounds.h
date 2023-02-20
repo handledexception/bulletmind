@@ -1,5 +1,4 @@
-#ifndef H_BM_MATH_BOUNDS
-#define H_BM_MATH_BOUNDS
+#pragma once
 
 #include "math/vec3.h"
 
@@ -45,5 +44,3 @@ static inline void bounds_around_centerpoint(bounds_t* dst,
 					     const vec3f_t* size)
 {
 }
-
-#endif

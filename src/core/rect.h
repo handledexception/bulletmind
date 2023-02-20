@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/types.h"
-
+#include "math/vec2.h"
 #include <math.h>
 
 #ifdef __cplusplus
@@ -27,6 +27,16 @@ static inline void center_in_rect(rect_t* dst, const rect_t* outer,
 	dst->y = (outer->y + (outer->h / 2)) - (inner->y + (inner->h / 2));
 	dst->w = inner->w;
 	dst->h = inner->h;
+}
+
+static inline void rect_centerpoint(const rect_t* r, vec2i_t* cp)
+{
+	if (!r || ! cp)
+		return;
+	s32 w = (r->w-r->x);
+	s32 h = (r->h-r->y);
+	cp->x = w/2;
+	cp->y = h/2;
 }
 
 static inline f32 radius_of_circle_in_rect(rect_t r)

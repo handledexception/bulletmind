@@ -14,8 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef H_BM_MATH_UTILS
-#define H_BM_MATH_UTILS
+#pragma once
 
 #include "core/types.h"
 
@@ -94,6 +93,11 @@ static inline f64 lerp64(f64 a, f64 b, f64 t)
 	return a + (b - a) * t;
 }
 
+static inline f32 clampf(f32 val, f32 min_val, f32 max_val)
+{
+	return val > max_val ? max_val : (val < min_val ? min_val : val);
+}
+
 static inline f32 map_range(f32 input_start, f32 input_end, f32 output_start, f32 output_end, f32 val)
 {
     f32 slope = (output_end - output_start) / (input_end - input_start);
@@ -103,5 +107,3 @@ static inline f32 map_range(f32 input_start, f32 input_end, f32 output_start, f3
 #ifdef __cplusplus
 }
 #endif
-
-#endif // H_BM_MATH_UTILS

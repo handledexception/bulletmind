@@ -1,5 +1,4 @@
-#ifndef H_BM_MATH_QUAT
-#define H_BM_MATH_QUAT
+#pragma once
 
 #include "math/vec4.h"
 #include "math/utils.h"
@@ -315,5 +314,3 @@ static inline quat_t quat_from_euler(f32 yaw_deg, f32 pitch_deg, f32 roll_deg)
 
     return q;
 }
-
-#endif // H_BM_MATH_QUAT

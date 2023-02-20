@@ -27,16 +27,17 @@ typedef struct {
 
 typedef struct mouse_s {
 	enum mouse_mode mode;
-	vec2f_t scr_pos;
-	vec2f_t scr_last;
-	vec2f_t scr_delta;
-	vec2f_t wnd_pos;
-	vec2f_t wnd_last;
-	vec2f_t wnd_delta;
-	vec2f_t wheel;
-	vec2f_t scale_accum;
-	f32 normal_speed_scale;
-	f32 relative_speed_scale;
+	vec2i_t screen_pos;
+	vec2i_t screen_pos_last;
+	vec2i_t screen_delta;
+	vec2i_t window_pos;
+	vec2i_t window_pos_last;
+	vec2i_t window_delta;
+	vec2i_t relative;
+	vec2i_t wheel;
+	vec2i_t scale_accum;
+	f32 sensitivity;
+	f32 sensitivity_relative;
 	mouse_button_t buttons[MAX_MOUSE_BUTTONS];
 	gui_window_t* window;
 	bool is_captured;
@@ -73,13 +74,13 @@ static inline void mouse_init(mouse_t* mouse)
 {
 	if (mouse) {
 		mouse->window = NULL;
-		mouse->scr_delta = vec2_zero();
-		mouse->scr_pos = vec2_zero();
-		mouse->wnd_delta = vec2_zero();
-		mouse->wnd_pos = vec2_zero();
-		mouse->wheel = vec2_zero();
-		mouse->normal_speed_scale = 1.0f;
-		mouse->relative_speed_scale = 1.0f;
+		mouse->screen_delta = vec2i_zero();
+		mouse->screen_pos = vec2i_zero();
+		mouse->window_delta = vec2i_zero();
+		mouse->window_pos = vec2i_zero();
+		mouse->wheel = vec2i_zero();
+		mouse->sensitivity = 1.0f;
+		mouse->sensitivity_relative = 1.0f;
 		mouse_buttons_init(mouse);
 	}
 }

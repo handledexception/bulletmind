@@ -14,8 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef H_BM_MATH_VEC3
-#define H_BM_MATH_VEC3
+#pragma once
 
 #include "core/types.h"
 #include "core/export.h"
@@ -271,6 +270,4 @@ static inline void vec3f_cross(struct vec3f* dst, const struct vec3f* v1,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

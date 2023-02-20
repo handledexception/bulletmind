@@ -1,5 +1,4 @@
-#ifndef H_BM_MATH_TYPES
-#define H_BM_MATH_TYPES
+#pragma once
 
 #include "math/bounds.h"
 #include "math/vec2.h"
@@ -8,5 +7,3 @@
 #include "math/mat4.h"
 #include "math/quat.h"
 #include "math/vqs.h"
-
-#endif

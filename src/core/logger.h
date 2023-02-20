@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/types.h"
+
 #include <stdarg.h>
 
 enum log_level {
@@ -18,4 +20,6 @@ typedef void (*log_handler_t)(enum log_level level, const char* fmt,
 void get_log_handler(log_handler_t* handler, void** params);
 void set_log_handler(log_handler_t* handler, void* param);
 void log_va(enum log_level level, const char* fmt, va_list args);
+void logger_init(const char* path);
+void logger_shutdown();
 void logger(enum log_level level, const char* fmt, ...);

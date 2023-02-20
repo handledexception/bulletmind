@@ -14,8 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef H_BM_MATH_MAT4
-#define H_BM_MATH_MAT4
+#pragma once
 
 #include "core/types.h"
 #include "math/vec3.h"
@@ -427,5 +426,3 @@ static inline vec4f_t mat4_mul_vec4(mat4f_t m, vec4f_t v)
         m.elems[3 + 4 * 0] * v.x + m.elems[3 + 4 * 1] * v.y + m.elems[3 + 4 * 2] * v.z + m.elems[3 + 4 * 3] * v.w
     );
 }
-
-#endif

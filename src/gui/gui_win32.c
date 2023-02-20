@@ -65,8 +65,10 @@ bool gui_set_focused_window_win32(const gui_window_t* window);
 void gui_center_window_win32(gui_window_t* window);
 bool gui_get_window_size_win32(const gui_window_t* window, s32* w, s32* h, bool client);
 bool gui_get_window_rect_win32(const gui_window_t* window, rect_t* rect, bool client);
+bool gui_get_window_centerpoint_win32(const gui_window_t* window, vec2i_t* p, bool client);
 void* gui_get_window_handle_win32(gui_window_t* window);
 void gui_read_mouse_state_win32(mouse_t* mouse);
+bool gui_set_mouse_mode_win32(enum mouse_mode mode);
 bool gui_capture_mouse_win32(gui_window_t* window, bool captured);
 bool gui_move_mouse_win32(s32 x, s32 y);
 bool gui_show_mouse_win32(bool shown);
@@ -80,7 +82,6 @@ LRESULT gui_process_window_activate_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM
 
 result gui_init_win32(gui_system_t* gp)
 {
-	gui->show_mouse_count = 0;
 	g_hinstance = get_module_from_wndproc(gui_win32_wndproc);
 
 	WNDCLASSEX wcex;
@@ -108,8 +109,10 @@ result gui_init_win32(gui_system_t* gp)
 	gp->center_window = gui_center_window_win32;
 	gp->get_window_size = gui_get_window_size_win32;
 	gp->get_window_rect = gui_get_window_rect_win32;
+	gp->get_window_centerpoint = gui_get_window_centerpoint_win32;
 	gp->get_handle = gui_get_window_handle_win32;
 	gp->read_mouse_state = gui_read_mouse_state_win32;
+	gp->set_mouse_mode = gui_set_mouse_mode_win32;
 	gp->capture_mouse = gui_capture_mouse_win32;
 	gp->move_mouse = gui_move_mouse_win32;
 	gp->show_mouse = gui_show_mouse_win32;
@@ -190,10 +193,25 @@ LRESULT gui_process_mouse_move_win32(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	memset(&evt, 0, sizeof(gui_event_t));
 	evt.timestamp = os_get_time_ns();
 	evt.type = GUI_EVENT_MOUSE_MOTION;
-	evt.mouse.mouse.scr_pos   = vec2_copy(gui->mouse.scr_pos);
-	evt.mouse.mouse.scr_delta = vec2_copy(gui->mouse.scr_delta);
-	evt.mouse.mouse.wnd_pos   = vec2_copy(gui->mouse.wnd_pos);
-	evt.mouse.mouse.wnd_delta = vec2_copy(gui->mouse.wnd_delta);
+	evt.mouse.mouse.screen_pos   = vec2i_copy(gui->mouse.screen_pos);
+	evt.mouse.mouse.screen_delta = vec2i_copy(gui->mouse.screen_delta);
+	evt.mouse.mouse.window_pos   = vec2i_copy(gui->mouse.window_pos);
+	evt.mouse.mouse.window_delta = vec2i_copy(gui->mouse.window_delta);
+
+	// constrain mouse to window
+	rect_t r = { 0 };
+	gui_get_window_rect(gui->window_focused, &r, false);
+	// if (gui->mouse.is_captured) {
+	// 	s32 w = (r.w-r.x);
+	// 	s32 h = (r.h-r.y);
+	// 	s32 cx = r.x+(w/2);
+	// 	s32 cy = r.y+(h/2);
+	// 	gui_move_mouse(cx, cy);
+	// } else {
+	if (gui->mouse.is_captured) {
+		gui_constrain_mouse(gui->mouse.window_pos.x, gui->mouse.window_pos.y, &r);
+	}
+	// }
 
 	// evt.mouse.button.state = MOUSE_BUTTON_NON
 	// evt.mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
@@ -527,11 +545,9 @@ bool gui_create_window_win32(gui_window_t* window)
 
 void gui_destroy_window_win32(gui_window_t* window)
 {
-	if (window) {
-		if (window->data) {
-			BM_FREE((gui_window_data_t*)window->data);
-			window->data = NULL;
-		}
+	if (window && window->data) {
+		BM_FREE((gui_window_data_t*)window->data);
+		window->data = NULL;
 	}
 }
 
@@ -685,6 +701,17 @@ bool gui_get_window_rect_win32(const gui_window_t* window, rect_t* rect,
 	return (bool)ok;
 }
 
+bool gui_get_window_centerpoint_win32(const gui_window_t* window, vec2i_t* p, bool client)
+{
+	rect_t r = { 0 };
+	if (gui_get_window_rect(window, &r, client)) {
+		rect_centerpoint(&r, p);
+		return true;
+	}
+
+	return false;
+}
+
 void* gui_get_window_handle_win32(gui_window_t* window)
 {
 	if (window && window->data && window->data->hwnd)
@@ -694,16 +721,31 @@ void* gui_get_window_handle_win32(gui_window_t* window)
 
 void gui_read_mouse_state_win32(mouse_t* mouse)
 {
+	static bool wnd_first = true;
+	if (wnd_first && gui->mouse.is_captured && mouse->window && mouse->window->centerpoint.x && mouse->window->centerpoint.y) {
+		gui->mouse.window_delta = vec2i_set(mouse->window->centerpoint.x, mouse->window->centerpoint.y);
+		wnd_first = false;
+	}
+
+	gui->mouse.screen_pos_last = vec2i_copy(gui->mouse.screen_pos);
+	gui->mouse.window_pos_last = vec2i_copy(gui->mouse.window_pos);
+
+	// screen pos
 	POINT p = {.x = 0, .y = 0};
 	GetCursorPos(&p);
-	vec2f_t pos = vec2_set((f32)p.x, (f32)p.y);
-	gui->mouse.scr_delta = vec2_sub(gui->mouse.scr_pos, pos);
-	gui->mouse.scr_pos = vec2_copy(pos);
+	vec2i_t pos = vec2i_set(p.x, p.y);
+	gui->mouse.screen_pos = vec2i_copy(pos);
+	vec2i_t screen_delta = vec2i_sub(gui->mouse.screen_pos, gui->mouse.screen_pos_last);
+	gui->mouse.screen_delta = vec2i_add(gui->mouse.screen_pos, screen_delta);
+	// window pos
 	HWND hwnd = GetForegroundWindow();
 	ScreenToClient(hwnd, &p);
-	pos = vec2_set((f32)p.x, (f32)p.y);
-	gui->mouse.wnd_delta = vec2_sub(gui->mouse.wnd_pos, pos);
-	gui->mouse.wnd_pos = vec2_copy(pos);
+	pos = vec2i_set(p.x, p.y);
+	gui->mouse.window_pos = vec2i_copy(pos);
+	if (gui->mouse.window_pos_last.x) {
+		vec2i_t window_delta = vec2i_sub(gui->mouse.window_pos, gui->mouse.window_pos_last);
+		gui->mouse.window_delta = vec2i_add(gui->mouse.window_delta, window_delta);
+	}
 
 	gui->mouse.buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
 	gui->mouse.buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
@@ -716,30 +758,30 @@ void gui_read_mouse_state_win32(mouse_t* mouse)
 	gui->mouse.buttons[MOUSE_BUTTON_X1].state = GetAsyncKeyState(VK_XBUTTON1) & 0x8000 ? 1 : 0;
 	gui->mouse.buttons[MOUSE_BUTTON_X2].state = GetAsyncKeyState(VK_XBUTTON2) & 0x8000 ? 1 : 0;
 
-	// vec2f_t scr_delta = { 0 };
-	// vec2f_t wnd_delta = { 0 };
+	// vec2f_t screen_delta = { 0 };
+	// vec2f_t window_delta = { 0 };
 	// POINT sp = { 0 };
 	// POINT wp = { 0 };
 	// GetCursorPos(&sp);
-	// vec2f_t scr_pos = vec2_set((f32)sp.x, (f32)sp.y);
-	// mouse->scr_delta = vec2_sub(mouse->scr_pos, scr_pos);
-	// mouse->scr_pos = vec2_copy(scr_pos);
+	// vec2f_t screen_pos = vec2_set((f32)sp.x, (f32)sp.y);
+	// mouse->screen_delta = vec2_sub(mouse->screen_pos, screen_pos);
+	// mouse->screen_pos = vec2_copy(screen_pos);
 	// HWND hwnd = GetForegroundWindow();
 	// if (mouse->window) {
 	// 	hwnd = mouse->window->data->hwnd;
 	// }
 	// ScreenToClient(hwnd, &wp); // FIXME: Need to determine the foreground window according to our GUI system!
-	// vec2f_t wnd_pos = vec2_set((f32)wp.x, (f32)wp.y);
-	// mouse->wnd_delta = vec2_sub(mouse->wnd_pos, wnd_pos);
-	// mouse->wnd_pos = vec2_copy(wnd_pos);
+	// vec2f_t window_pos = vec2_set((f32)wp.x, (f32)wp.y);
+	// mouse->window_delta = vec2_sub(mouse->window_pos, window_pos);
+	// mouse->window_pos = vec2_copy(window_pos);
 
 	// if (mouse->mode == MOUSE_MODE_RELATIVE) {
-	// 	scr_delta = vec2_copy(scr_pos);
-	// 	scr_pos = vec2_add(mouse->scr_last, scr_delta);
-	// 	mouse->scr_pos = vec2_add(mouse->scr_pos, scr_delta);
+	// 	screen_delta = vec2_copy(screen_pos);
+	// 	screen_pos = vec2_add(mouse->scr_last, screen_delta);
+	// 	mouse->screen_pos = vec2_add(mouse->screen_pos, screen_delta);
 	// } else {
-	// 	scr_delta = vec2_copy(vec2_sub(scr_pos, mouse->scr_last));
-	// 	mouse->scr_pos = vec2_copy(scr_pos);
+	// 	screen_delta = vec2_copy(vec2_sub(screen_pos, mouse->scr_last));
+	// 	mouse->screen_pos = vec2_copy(screen_pos);
 	// }
 
 	// if (mouse->window && ((mouse->window->flags & GUI_WINDOW_CAPTURE_MOUSE) == 0)) {
@@ -748,22 +790,22 @@ void gui_read_mouse_state_win32(mouse_t* mouse)
 	// 	// gui_get_window_rect(mouse->window, &wr, true);
 	// 	x_max = wr.w - 1;
 	// 	y_max = wr.h - 1;
-	// 	if (mouse->scr_pos.x > x_max)
-	// 		mouse->scr_pos.x = x_max;
-	// 	if (mouse->scr_pos.x < 0)
-	// 		mouse->scr_pos.x = 0;
-	// 	if (mouse->scr_pos.y > y_max)
-	// 		mouse->scr_pos.y = y_max;
-	// 	if (mouse->scr_pos.y < 0)
-	// 		mouse->scr_pos.y = 0;
+	// 	if (mouse->screen_pos.x > x_max)
+	// 		mouse->screen_pos.x = x_max;
+	// 	if (mouse->screen_pos.x < 0)
+	// 		mouse->screen_pos.x = 0;
+	// 	if (mouse->screen_pos.y > y_max)
+	// 		mouse->screen_pos.y = y_max;
+	// 	if (mouse->screen_pos.y < 0)
+	// 		mouse->screen_pos.y = 0;
 	// }
 
-	// mouse->scr_delta = vec2_add(mouse->scr_delta, scr_delta);
+	// mouse->screen_delta = vec2_add(mouse->screen_delta, screen_delta);
 
 	// if (mouse->mode == MOUSE_MODE_RELATIVE) {
-	// 	mouse->scr_last = vec2_copy(mouse->scr_pos);
+	// 	mouse->scr_last = vec2_copy(mouse->screen_pos);
 	// } else {
-	// 	mouse->scr_last = vec2_copy(scr_pos);
+	// 	mouse->scr_last = vec2_copy(screen_pos);
 	// }
 
 	// 	get_scaled_mouse_delta(mouse->relative_speed_scale, x, &mouse->scale_accum.x);
@@ -785,21 +827,28 @@ void gui_read_mouse_state_win32(mouse_t* mouse)
     // }
 }
 
+bool gui_set_mouse_mode_win32(enum mouse_mode mode)
+{
+	return true;
+}
+
 bool gui_capture_mouse_win32(gui_window_t* window, bool captured)
 {
 	bool res = false;
 
 	if (gui_is_valid_window(window)) {
 		if (captured && !gui->mouse.is_captured) {
-			rect_t r;
+			rect_t r = { 0 };
 			gui_get_window_rect(window, &r, false);
-			s32 w = (r.w-r.x);
-			s32 h = (r.h-r.y);
-			gui_move_mouse(r.x+(w/2), r.y+(h/2));
-			gui_show_mouse(false);
-			RECT wr;
+			rect_centerpoint(&r, &window->centerpoint);
+
+			gui_move_mouse(window->centerpoint.x, window->centerpoint.y);
+
+			RECT wr = { 0 };
 			rect_to_win32_rect(&r, &wr);
 			ClipCursor(&wr);
+
+			gui_show_mouse(false);
 
 			HWND prev_hwnd = SetCapture(window->data->hwnd);
 			logger(LOG_DEBUG, "SetCapture");
@@ -810,7 +859,7 @@ bool gui_capture_mouse_win32(gui_window_t* window, bool captured)
 			evt.type = GUI_EVENT_MOUSE_CAPTURE;
 			evt.timestamp = os_get_time_ns();
 			gui_event_push(&evt);
-
+			gui->mouse.window = window;
 			gui->mouse.is_captured = true;
 		} else if (gui->mouse.is_captured) {
 			gui_show_mouse(true);
@@ -821,23 +870,6 @@ bool gui_capture_mouse_win32(gui_window_t* window, bool captured)
 	}
 
 	return gui->mouse.is_captured;
-
-	// if (captured && hwnd != NULL) {
-	// 	SetCapture(window->data->hwnd);
-	// 	rect_t wr;
-	// 	gui_get_window_rect(window, &wr, false);
-	// 	s32 w = (wr.w-wr.x);
-	// 	s32 h = (wr.h-wr.y);
-	// 	SetCursorPos(wr.x+(w/2), wr.y+(h/2));
-	// 	gui_show_mouse(false);
-	// 	return true;
-	// } else {
-	// 	BOOL ok = ReleaseCapture();
-	// 	ok = gui_show_mouse(true);
-	// 	return ok;
-	// }
-
-	// return false;
 }
 
 bool gui_move_mouse_win32(s32 x, s32 y)
