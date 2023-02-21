@@ -116,9 +116,6 @@ result app_init_gfx(struct application* app, const struct gfx_config* cfg)
     memcpy(app->cam.cam, &perpective_cam, sizeof(camera_t));
 
 	gfx_init_cimgui();
-	app->ig_draw = malloc(sizeof(imgui_draw_data_t));
-	app->ig_draw->view_mat = malloc(sizeof(mat4f_t));
-	app->ig_draw->proj_mat = malloc(sizeof(mat4f_t));
 
 	return RESULT_OK;
 }
@@ -741,12 +738,7 @@ void app_refresh_gfx(struct application* app)
 	memset(vbuf_data, 0, gfx_buffer_get_size(app->vbuf));
 	memset(ibuf_data, 0, gfx_buffer_get_size(app->ibuf));
 	gfx_cimgui_begin();
-	app->ig_draw->cam = app->cam.cam;
-	app->ig_draw->inputs = app->inputs;
-	app->ig_draw->frame_count = app->frame_count;
-	app->ig_draw->scene_count = app->scenes.num_elems;
-	app->ig_draw->frame_time = app_frame_time(app);
-	gfx_cimgui_frame(app->ig_draw);
+	gfx_cimgui_frame(app);
 	gfx_render_clear(&kClearColor);
 	static size_t sprite_index = 0;
 	size_t vb_data_size = 0;
@@ -792,9 +784,7 @@ void app_refresh_gfx(struct application* app)
 				rotation_angle = scene->rot_angle;
 			}
 			mat4f_t view_mat = gfx_camera_get_view(app->cam.cam);
-			memcpy(app->ig_draw->view_mat, &view_mat, sizeof(mat4f_t));
 			mat4f_t proj_mat = gfx_camera_get_proj(app->cam.cam);
-			memcpy(app->ig_draw->proj_mat, &proj_mat, sizeof(mat4f_t));
 			mat4f_t trans_mat = mat4_translate(scene->pos);
 			mat4f_t scale_mat = mat4_scale(scene->scale);
 			mat4f_t rot_mat = mat4_rotate(rotation_angle, scene->rot_axis);
@@ -905,9 +895,6 @@ void app_shutdown(struct application* app)
 	if (app != NULL) {
 		ent_shutdown(app->entities);
 		gfx_camera_free(app->cam.cam);
-		free(app->ig_draw->view_mat);
-		free(app->ig_draw->proj_mat);
-		free(app->ig_draw);
 
 		gfx_buffer_free(app->ibuf);
 		gfx_buffer_free(app->vbuf);
@@ -927,20 +914,16 @@ void accelerate_player(struct application* app, entity_t* player)
 {
     player->acc = vec3_set(0.0f, 0.0f, 0.0f);
     if (inp_cmd_get_state(app->inputs, kCommandMoveForward)) { /* W */
-        player->acc = gfx_camera_forward(app->cam.cam);
-    	// cam_vel = vec3_add(cam_vel, gfx_camera_forward(app->cam.cam));
+        player->acc = vec3_add(player->acc, gfx_camera_forward(app->cam.cam));
     }
     if (inp_cmd_get_state(app->inputs, kCommandMoveBack)) { /* S */
-        player->acc = gfx_camera_backward(app->cam.cam);
-    	// cam_vel = vec3_add(cam_vel, gfx_camera_backward(app->cam.cam));
+        player->acc = vec3_add(player->acc, gfx_camera_backward(app->cam.cam));
     }
     if (inp_cmd_get_state(app->inputs, kCommandMoveLeft)) { /* A */
-        player->acc = gfx_camera_left(app->cam.cam);
-    	// cam_vel = vec3_add(cam_vel, gfx_camera_left(app->cam.cam));
+        player->acc = vec3_add(player->acc, gfx_camera_left(app->cam.cam));
     }
     if (inp_cmd_get_state(app->inputs, kCommandMoveRight)) { /* D */
-        player->acc = gfx_camera_right(app->cam.cam);
-    	// cam_vel = vec3_add(cam_vel, gfx_camera_right(app->cam.cam));
+        player->acc = vec3_add(player->acc, gfx_camera_right(app->cam.cam));
     }
 }
 

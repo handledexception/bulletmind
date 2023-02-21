@@ -28,16 +28,19 @@ void ent_refresh(entity_t* ents, f64 app_start_time, f64 dt)
 
 void ent_accel(entity_t* ent, vec3f_t accel, f64 dt)
 {
-    f32 mass = 5.0f;
-    ent->vel = vec3_norm(vec3_mulf(vec3_add(ent->vel, vec3_mulf(accel, mass)), dt));
+    ent->vel = vec3_norm(vec3_mulf(vec3_add(ent->vel, accel), dt));
     ent->vel = vec3_mulf(ent->vel, 0.01f);
+    ent->vel = vec3_friction(ent->vel, 0.75f);
     ent->pos = vec3_add(ent->pos, vec3_mulf(ent->vel, dt));
+    logger(LOG_DEBUG, "pos: %f,%f,%f | vel: %f,%f,%f | acc: %f,%f,%f",
+        ent->pos.x, ent->pos.y, ent->pos.z,
+        ent->vel.x, ent->vel.y, ent->vel.z,
+        ent->acc.x, ent->acc.y, ent->acc.z);
 }
 
 void ent_refresh_movers(entity_t* ent, f64 dt)
 {
     if (ent_has_caps(ent, ENT_MOVER)) {
-        logger(LOG_DEBUG, "accel: %f, %f, %f", ent->acc.x, ent->acc.y, ent->acc.z);
         ent_accel(ent, ent->acc, dt);
     }
 }

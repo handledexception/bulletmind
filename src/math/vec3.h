@@ -153,119 +153,16 @@ static inline f32 vec3_angle_between_signed(vec3f_t a, vec3f_t b)
 	return (f32)asinf(vec3_len(vec3_cross(a, b)));
 }
 
-
-static inline void vec3f_set(struct vec3f* dst, f32 x, f32 y, f32 z)
+static inline vec3f_t vec3_friction(const vec3f_t a, f32 friction)
 {
-	dst->x = x;
-	dst->y = y;
-	dst->z = z;
-}
-
-static inline void vec3f_zero(struct vec3f* dst)
-{
-	vec3f_set(dst, 0.f, 0.f, 0.f);
-}
-
-static inline void vec3f_copy(struct vec3f* dst, const struct vec3f* src)
-{
-	dst->x = src->x;
-	dst->y = src->y;
-	dst->z = src->z;
-}
-
-static inline void vec3f_add(struct vec3f* dst, const struct vec3f* lhs,
-			     const struct vec3f* rhs)
-{
-	vec3f_set(dst, lhs->x + rhs->x, lhs->y + rhs->y, lhs->z + rhs->z);
-}
-
-static inline void vec3f_sub(struct vec3f* dst, const struct vec3f* lhs,
-			     const struct vec3f* rhs)
-{
-	vec3f_set(dst, lhs->x - rhs->x, lhs->y - rhs->y, lhs->z - rhs->z);
-}
-
-static inline void vec3f_mul(struct vec3f* dst, const struct vec3f* lhs,
-			     const struct vec3f* rhs)
-{
-	vec3f_set(dst, lhs->x * rhs->x, lhs->y * rhs->y, lhs->z * rhs->z);
-}
-
-static inline void vec3f_div(struct vec3f* dst, const struct vec3f* lhs,
-			     const struct vec3f* rhs)
-{
-	vec3f_set(dst, lhs->x / rhs->x, lhs->y / rhs->y, lhs->z / rhs->z);
-}
-
-static inline void vec3f_addf(struct vec3f* dst, const struct vec3f* lhs,
-			      f32 rhs)
-{
-	vec3f_set(dst, lhs->x + rhs, lhs->y + rhs, lhs->z + rhs);
-}
-
-static inline void vec3f_subf(struct vec3f* dst, const struct vec3f* lhs,
-			      f32 rhs)
-{
-	vec3f_set(dst, lhs->x - rhs, lhs->y - rhs, lhs->z - rhs);
-}
-
-static inline void vec3f_mulf(struct vec3f* dst, struct vec3f* lhs, f32 rhs)
-{
-	vec3f_set(dst, lhs->x * rhs, lhs->y * rhs, lhs->z * rhs);
-}
-
-static inline void vec3f_divf(struct vec3f* dst, struct vec3f* lhs, f32 rhs)
-{
-	vec3f_set(dst, lhs->x / rhs, lhs->y / rhs, lhs->z / rhs);
-}
-
-static inline void vec3f_negate(struct vec3f* dst, const struct vec3f* v)
-{
-	vec3f_set(dst, -v->x, -v->y, -v->z);
-	if (dst->x == 0.0f)
-		dst->x = 0.0f;
-	if (dst->y == 0.0f)
-		dst->y = 0.0f;
-	if (dst->z == 0.0f)
-		dst->z = 0.0f;
-}
-
-static inline f32 vec3f_dot(const struct vec3f* v1, const struct vec3f* v2)
-{
-	return (v1->x * v2->x + v1->y * v2->y + v1->z * v2->z);
-}
-
-static inline f32 vec3f_len(const struct vec3f* v)
-{
-	return sqrtf(vec3f_dot(v, v));
-}
-
-static inline f32 vec3f_dist(const struct vec3f* v1, const struct vec3f* v2)
-{
-	struct vec3f tmp;
-	vec3f_sub(&tmp, v1, v2);
-	return vec3f_len(&tmp);
-}
-
-static inline void vec3f_norm(struct vec3f* dst, const struct vec3f* v)
-{
-	f32 len = vec3f_dot(v, v);
-	if (len > 0.f) {
-		len = 1.f / sqrtf(len);
-		dst->x = v->x * len;
-		dst->y = v->y * len;
-		dst->z = v->z * len;
-	} else {
-		vec3f_zero(dst);
-	}
-}
-
-static inline void vec3f_cross(struct vec3f* dst, const struct vec3f* v1,
-			       const struct vec3f* v2)
-{
-	dst->x = (v1->y * v2->z) - (v1->z * v2->y);
-	dst->y = (v1->z * v2->x) - (v1->x * v2->z);
-	dst->z = (v1->x * v2->y) - (v1->y * v2->x);
+	f32 speed = vec3_len(a);
+	f32 new_speed = speed - (speed * friction);
+	// printf("speed: %f | new speed: %f\n", speed, new_speed);
+	if (new_speed > 0.0f)
+		new_speed /= speed;
+	else
+		new_speed = 0.0f;
+	return vec3_mulf(a, new_speed);
 }
 
 #ifdef __cplusplus

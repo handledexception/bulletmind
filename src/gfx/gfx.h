@@ -229,21 +229,13 @@ BM_EXPORT bool gfx_hardware_ok(void);
 BM_EXPORT bool gfx_ok(void);
 
 struct input_state;
+struct application;
 typedef struct camera_s camera_t;
-typedef struct imgui_draw_data {
-	camera_t* cam;
-	struct input_state* inputs;
-	mat4f_t* view_mat;
-	mat4f_t* proj_mat;
-	f64 frame_time;
-	u64 frame_count;
-	size_t scene_count;
-} imgui_draw_data_t;
 #if defined(BM_USE_CIMGUI)
 BM_EXPORT bool gfx_init_cimgui(void);
 BM_EXPORT void gfx_shutdown_cimgui(void);
 BM_EXPORT void gfx_cimgui_begin(void);
-BM_EXPORT void gfx_cimgui_frame(imgui_draw_data_t* ctx);
+BM_EXPORT void gfx_cimgui_frame(struct application* app);
 BM_EXPORT void gfx_cimgui_end(void);
 #endif
 

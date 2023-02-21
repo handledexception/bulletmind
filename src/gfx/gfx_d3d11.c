@@ -29,6 +29,7 @@
 
 #include "gfx/camera.h"
 #if defined(BM_USE_CIMGUI)
+#include "game/app.h"
 #include "gfx/cimgui_defs.h"
 #include "cimgui.h"
 #include "cimgui_impl.h"
@@ -232,12 +233,13 @@ void gfx_cimgui_begin(void)
 #endif
 }
 
-void gfx_cimgui_frame(imgui_draw_data_t* ctx)
+void gfx_cimgui_frame(struct application* app)
 {
+	if (!app)
+		return;
+
 	bool show = true;
 	igShowDemoWindow(&show);
-	if (!ctx || !ctx->cam || !ctx->inputs)
-		return;
 	float vspeed = 1.0f;
 	float v_min = -100.0f;
 	float v_max = 100.0f;
@@ -246,41 +248,41 @@ void gfx_cimgui_frame(imgui_draw_data_t* ctx)
 	window_flags |= CImGuiWindowFlags_NoTitleBar;
 	igBegin("GameData", &show, window_flags);
 	{
-		igText("Frame: %lld", ctx->frame_count);
-		igText("Frametime: %f", ctx->frame_time);
-		igText("Scenes: %zu", ctx->scene_count);
-		if (igCollapsingHeader_TreeNodeFlags("Inputs", 0)) {
-			vec2f_t mouse_screen = { .x = (f32)ctx->inputs->mouse.screen_pos.x, (f32)ctx->inputs->mouse.screen_pos.y };
-			igDragFloat2("Mouse Pos (Screen)", (float*)&mouse_screen, vspeed, v_min, v_max, NULL, 0);
-			vec2f_t mouse_window = { .x = (f32)ctx->inputs->mouse.window_pos.x, (f32)ctx->inputs->mouse.window_pos.y };
-			igDragFloat2("Mouse Pos (Window)", (float*)&mouse_window, vspeed, v_min, v_max, NULL, 0);
-			vec2f_t mouse_rel = { .x = (f32)ctx->inputs->mouse.relative.x, (f32)ctx->inputs->mouse.relative.y };
-			igDragFloat2("Mouse Relative", (float*)&mouse_rel, vspeed, v_min, v_max, NULL, 0);
-		}
-		if (igCollapsingHeader_TreeNodeFlags("Camera Position", 0)) {
-			float* xyz = (float*)&ctx->cam->transform.position;
-			igDragFloat3("XYZ", xyz, vspeed, v_min, v_max, NULL, 0);
-			float* angles = (float*)&ctx->cam->angles;
-			igDragFloat3("Angles", angles, vspeed, v_min, v_max, NULL, 0);
-			float* rot = (float*)&ctx->cam->transform.rotation;
-			igDragFloat4("Rotation", rot, vspeed, v_min, v_max, NULL, 0);
-		}
-		if (igCollapsingHeader_TreeNodeFlags("Camera View Matrix", 0)) {
-			if (ctx->view_mat) {
-				igDragFloat4("M0", (float*)(&ctx->view_mat->x), vspeed, v_min, v_max, NULL, 0);
-				igDragFloat4("M1", (float*)(&ctx->view_mat->y), vspeed, v_min, v_max, NULL, 0);
-				igDragFloat4("M2", (float*)(&ctx->view_mat->z), vspeed, v_min, v_max, NULL, 0);
-				igDragFloat4("M3", (float*)(&ctx->view_mat->w), vspeed, v_min, v_max, NULL, 0);
-			}
-		}
-		if (igCollapsingHeader_TreeNodeFlags("Camera Projection Matrix", 0)) {
-			if (ctx->view_mat) {
-				igDragFloat4("M0", (float*)(&ctx->proj_mat->rows[0]), vspeed, v_min, v_max, NULL, 0);
-				igDragFloat4("M1", (float*)(&ctx->proj_mat->rows[1]), vspeed, v_min, v_max, NULL, 0);
-				igDragFloat4("M2", (float*)(&ctx->proj_mat->rows[2]), vspeed, v_min, v_max, NULL, 0);
-				igDragFloat4("M3", (float*)(&ctx->proj_mat->rows[3]), vspeed, v_min, v_max, NULL, 0);
-			}
-		}
+		igText("Frame: %lld", app->frame_count);
+		igText("Frametime: %f", app->frame_time_end);
+		igText("Scenes: %zu", app->scenes.num_elems);
+		// if (igCollapsingHeader_TreeNodeFlags("Inputs", 0)) {
+		// 	vec2f_t mouse_screen = { .x = (f32)ctx->inputs->mouse.screen_pos.x, (f32)ctx->inputs->mouse.screen_pos.y };
+		// 	igDragFloat2("Mouse Pos (Screen)", (float*)&mouse_screen, vspeed, v_min, v_max, NULL, 0);
+		// 	vec2f_t mouse_window = { .x = (f32)ctx->inputs->mouse.window_pos.x, (f32)ctx->inputs->mouse.window_pos.y };
+		// 	igDragFloat2("Mouse Pos (Window)", (float*)&mouse_window, vspeed, v_min, v_max, NULL, 0);
+		// 	vec2f_t mouse_rel = { .x = (f32)ctx->inputs->mouse.relative.x, (f32)ctx->inputs->mouse.relative.y };
+		// 	igDragFloat2("Mouse Relative", (float*)&mouse_rel, vspeed, v_min, v_max, NULL, 0);
+		// }
+		// if (igCollapsingHeader_TreeNodeFlags("Camera Position", 0)) {
+		// 	float* xyz = (float*)&ctx->cam->transform.position;
+		// 	igDragFloat3("XYZ", xyz, vspeed, v_min, v_max, NULL, 0);
+		// 	float* angles = (float*)&ctx->cam->angles;
+		// 	igDragFloat3("Angles", angles, vspeed, v_min, v_max, NULL, 0);
+		// 	float* rot = (float*)&ctx->cam->transform.rotation;
+		// 	igDragFloat4("Rotation", rot, vspeed, v_min, v_max, NULL, 0);
+		// }
+		// if (igCollapsingHeader_TreeNodeFlags("Camera View Matrix", 0)) {
+		// 	if (ctx->view_mat) {
+		// 		igDragFloat4("M0", (float*)(&ctx->view_mat->x), vspeed, v_min, v_max, NULL, 0);
+		// 		igDragFloat4("M1", (float*)(&ctx->view_mat->y), vspeed, v_min, v_max, NULL, 0);
+		// 		igDragFloat4("M2", (float*)(&ctx->view_mat->z), vspeed, v_min, v_max, NULL, 0);
+		// 		igDragFloat4("M3", (float*)(&ctx->view_mat->w), vspeed, v_min, v_max, NULL, 0);
+		// 	}
+		// }
+		// if (igCollapsingHeader_TreeNodeFlags("Camera Projection Matrix", 0)) {
+		// 	if (ctx->view_mat) {
+		// 		igDragFloat4("M0", (float*)(&ctx->proj_mat->rows[0]), vspeed, v_min, v_max, NULL, 0);
+		// 		igDragFloat4("M1", (float*)(&ctx->proj_mat->rows[1]), vspeed, v_min, v_max, NULL, 0);
+		// 		igDragFloat4("M2", (float*)(&ctx->proj_mat->rows[2]), vspeed, v_min, v_max, NULL, 0);
+		// 		igDragFloat4("M3", (float*)(&ctx->proj_mat->rows[3]), vspeed, v_min, v_max, NULL, 0);
+		// 	}
+		// }
 	}
 	igEnd();
 }

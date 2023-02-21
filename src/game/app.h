@@ -36,7 +36,6 @@ struct application {
 	struct input_state* inputs;
 	struct asset_manager* assets;
 	struct fps_cam cam;
-	imgui_draw_data_t* ig_draw;
 	VECTOR(gfx_scene_t*) scenes;
 	gfx_buffer_t* vbuf;
 	gfx_buffer_t* ibuf;
