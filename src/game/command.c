@@ -138,17 +138,17 @@ bool inp_cmd_get_state(struct input_state* inputs, command_t cmd)
 		gamepad_button_t* gb = vb->pad_button;
 		mouse_button_t* mb = vb->mouse_button;
 		u8 key_state = 0;
-		u8 mouse_button_state = 0;
+		enum mouse_button_state mb_state = 0;
 		u8 gamepad_button_state = 0;
 
 		if (key)
 			key_state = key->state;
 		if (mb)
-			mouse_button_state = mb->state;
+			mb_state = mb->state;
 		if (gb)
 			gamepad_button_state = gb->state;
 
-		inputs_state = (bool)(key_state | mouse_button_state |
+		inputs_state = (bool)(key_state | mb_state |
 				      gamepad_button_state);
 	}
 

@@ -21,7 +21,7 @@ enum mouse_button {
 };
 
 typedef struct {
-	u16 button;
+	enum mouse_button button;
 	u8 state;
 } mouse_button_t;
 
@@ -99,19 +99,20 @@ static int get_scaled_mouse_delta(float scale, int value, float *accum)
     return value;
 }
 
-static void mouse_set_button_state(mouse_t* mouse, u16 button, u8 state)
+static void mouse_set_button_state(mouse_t* mouse, enum mouse_button button, enum mouse_button_state state)
 {
 	if (mouse) {
 		mouse->buttons[button].button = button;
-		if (mouse->buttons[button].state != state) {
-			mouse->buttons[button].state = state;
-		}
+		mouse->buttons[button].state = state;
+		// if (mouse->buttons[button].state != state) {
+		// 	mouse->buttons[button].state = state;
+		// }
 	}
 }
 
-static u8 mouse_get_button_state(mouse_t* mouse, u16 button)
+static enum mouse_button_state mouse_get_button_state(mouse_t* mouse, enum mouse_button button)
 {
-	u8 state = 0;
+	enum mouse_button_state state = 0;
 	if (mouse && mouse->buttons[button].button == button)
 		state = mouse->buttons[button].state;
 	return state;
