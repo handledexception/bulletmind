@@ -1,4 +1,6 @@
-[submodule "cimgui"]
-	path = deps/cimgui
-	url = https://github.com/handledexception/cimgui.git
-	branch = bulletmind-sdl2
+[submodule "thirdparty/tomlc99"]
+	path = thirdparty/tomlc99
+	url = https://github.com/cktan/tomlc99.git
+[submodule "thirdparty/cimgui"]
+	path = thirdparty/cimgui
+	url = https://github.com/cimgui/cimgui.git
