@@ -42,7 +42,7 @@ bool read_toml_config(const char* path, toml_table_t** toml)
 }
 
 // toml does allocation inside toml_raw_to_X functions (i.e. toml_rtos)
-bool read_table_string(toml_table_t* table, const char* key, const char** val)
+bool read_table_string(const toml_table_t* table, const char* key, const char** val)
 {
 	if (table != NULL) {
 		toml_raw_t raw_value = toml_raw_in(table, key);
@@ -61,7 +61,7 @@ bool read_table_string(toml_table_t* table, const char* key, const char** val)
 	return false;
 }
 
-bool read_table_int32(toml_table_t* table, const char* key, s32* val)
+bool read_table_int32(const toml_table_t* table, const char* key, s32* val)
 {
 	if (table != NULL) {
 		const char* raw_value = toml_raw_in(table, key);
@@ -76,7 +76,7 @@ bool read_table_int32(toml_table_t* table, const char* key, s32* val)
 	return false;
 }
 
-bool read_table_f64(toml_table_t* table, const char* key, f64* val)
+bool read_table_f64(const toml_table_t* table, const char* key, f64* val)
 {
 	if (table != NULL) {
 		const char* raw_value = toml_raw_in(table, key);

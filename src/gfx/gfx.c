@@ -46,38 +46,40 @@ gfx_mesh_t* gfx_mesh_new(enum gfx_vertex_type type, u32 num_verts)
 
 	return data;
 }
-void gfx_mesh_free(gfx_mesh_t* data)
+void gfx_mesh_free(gfx_mesh_t* mesh)
 {
-	if (data != NULL) {
-		if (data->positions != NULL) {
-			BM_FREE(data->positions);
-			data->positions = NULL;
+	if (mesh != NULL) {
+		if (mesh->positions != NULL) {
+			BM_FREE(mesh->positions);
+			mesh->positions = NULL;
 		}
-		if (data->normals != NULL) {
-			BM_FREE(data->normals);
-			data->normals = NULL;
+		if (mesh->normals != NULL) {
+			BM_FREE(mesh->normals);
+			mesh->normals = NULL;
 		}
-		if (data->tangents != NULL) {
-			BM_FREE(data->tangents);
-			data->tangents = NULL;
+		if (mesh->tangents != NULL) {
+			BM_FREE(mesh->tangents);
+			mesh->tangents = NULL;
 		}
-		if (data->colors != NULL) {
-			BM_FREE(data->colors);
-			data->colors = NULL;
+		if (mesh->colors != NULL) {
+			BM_FREE(mesh->colors);
+			mesh->colors = NULL;
 		}
-		if (data->tex_verts != NULL) {
-			for (size_t i = 0; i < data->num_vertices; i++) {
-				if (data->tex_verts[i].data != NULL) {
-					BM_FREE(data->tex_verts[i].data);
-					data->tex_verts[i].data = NULL;
-					data->tex_verts[i].size = 0;
+		if (mesh->tex_verts != NULL) {
+			for (size_t i = 0; i < mesh->num_vertices; i++) {
+				if (mesh->tex_verts[i].data != NULL) {
+					BM_FREE(mesh->tex_verts[i].data);
+					mesh->tex_verts[i].data = NULL;
+					mesh->tex_verts[i].size = 0;
 				}
 			}
-			BM_FREE(data->tex_verts);
-			data->tex_verts = NULL;
+
+			BM_FREE(mesh->tex_verts);
+			mesh->tex_verts = NULL;
 		}
-		BM_FREE(data);
-		data = NULL;
+
+		BM_FREE(mesh);
+		mesh = NULL;
 	}
 }
 
@@ -107,6 +109,35 @@ size_t gfx_mesh_get_size(const gfx_mesh_t* mesh)
 	}
 
 	return size;
+}
+
+bool gfx_load_obj(const char* path, gfx_mesh_t** mesh)
+{
+	bool res = false;
+	FILE* f = fopen(path, "r");
+	if (f == NULL) {
+		goto cleanup;
+	}
+
+	fseek(f, 0, SEEK_END);
+	long file_size = ftell(f);
+	fseek(f, 0, SEEK_SET);
+	if (file_size == 0) {
+		goto cleanup;
+	}
+
+	u8* buf = BM_ALLOC(file_size);
+	size_t bytes_read = fread(&buf[0], 1, file_size, f);
+	BM_FREE(buf);
+	buf = NULL;
+	res = true;
+
+cleanup:
+	if (f != NULL) {
+		fclose(f);
+		f = NULL;
+	}
+	return res;
 }
 
 size_t gfx_shader_var_size(enum gfx_shader_var_type type)
@@ -183,7 +214,9 @@ enum gfx_vertex_type gfx_vertex_type_from_string(const char* s)
 	if (!strcmp(s, "posuv"))
 		return GFX_VERTEX_POS_UV;
 	else if (!strcmp(s, "poscol"))
-		return GFX_VERTEX_POS_COLOR;
+		return GFX_VERTEX_POS_COL;
+	else if (!strcmp(s, "poscol_inst"))
+		return GFX_VERTEX_POS_COL_INSTANCED;
 	return GFX_VERTEX_UNKNOWN;
 }
 
@@ -197,10 +230,10 @@ u32 gfx_get_vertex_stride(enum gfx_vertex_type type)
 	case GFX_VERTEX_POS_NORM_UV:
 		stride = (sizeof(struct vec3f) * 2) + sizeof(struct vec2f);
 		break;
-	case GFX_VERTEX_POS_COLOR:
+	case GFX_VERTEX_POS_COL:
 		stride = sizeof(struct vec3f) + sizeof(struct vec4f);
 		break;
-	case GFX_VERTEX_POS_NORM_COLOR:
+	case GFX_VERTEX_POS_NORM_COL:
 		stride = (sizeof(struct vec3f) * 2) + sizeof(struct vec4f);
 		break;
 	default:
@@ -265,7 +298,7 @@ void gfx_shader_var_set_data(gfx_shader_var_t* var, const void* data)
 	}
 }
 
-void gfx_shader_var_set_data_ref(gfx_shader_var_t* var, const void* data)
+void gfx_shader_var_set_data_ref(gfx_shader_var_t* var, void* data)
 {
 	if (var != NULL) {
 		if (var->data != NULL && var->own_data) {
@@ -297,7 +330,7 @@ bool gfx_shader_set_var_by_name(gfx_shader_t* shader, const char* name,
 			(gfx_shader_var_t*)&shader->vars.elems[i];
 		if (var != NULL && !strcmp(var->name, name)) {
 			if (is_reference)
-				gfx_shader_var_set_data_ref(var, value);
+				gfx_shader_var_set_data_ref(var, (void*)value);
 			else
 				gfx_shader_var_set_data(var, value);
 			return true;
@@ -389,6 +422,7 @@ gfx_shader_t* gfx_shader_copy(gfx_shader_t* other)
 {
 	if (other) {
 	}
+	return NULL;
 }
 
 void gfx_shader_init(gfx_shader_t* shader)

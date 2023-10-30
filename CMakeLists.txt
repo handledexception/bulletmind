@@ -63,37 +63,39 @@ endif()
 
 set(TARGET_INCLUDE_DIRS
     src
-    deps/murmur2
-    deps/tomlc99)
+    thirdparty/
+    thirdparty/tomlc99)
 if (BM_USE_SDL2)
-    list(APPEND TARGET_INCLUDE_DIRS deps/SDL2/include)
+    list(APPEND TARGET_INCLUDE_DIRS thirdparty/SDL2/include)
     list(APPEND TARGET_COMPILE_DEFS -DBM_USE_SDL2)
 endif()
 if (BM_USE_CIMGUI)
-    list(APPEND TARGET_INCLUDE_DIRS deps/cimgui)
+    list(APPEND TARGET_INCLUDE_DIRS thirdparty/cimgui thirdparty/cimgui/generator/output)
     list(APPEND TARGET_COMPILE_DEFS -DCM_USE_CIMGUI)
 endif()
 
 # murmur2
 set(MURMURHASH2_SOURCES
-    deps/murmur2/MurmurHash2.h
-    deps/murmur2/MurmurHash2.c)
+    thirdparty/murmur2/MurmurHash2.h
+    thirdparty/murmur2/MurmurHash2.c
+)
+list(APPEND TARGET_INCLUDE_DIRS thirdparty/murmur2)
 
 # tomlc99
 set(TOMLC99_SOURCES
-    deps/tomlc99/toml.h
-    deps/tomlc99/toml.c)
+    thirdparty/tomlc99/toml.h
+    thirdparty/tomlc99/toml.c
+)
 
 # core
 set(BM_CORE_HEADERS
-    src/core/asset.h
     src/core/algorithm.h
     src/core/binary.h
     src/core/buffer.h
     src/core/export.h
+    src/core/file_io.h
     src/core/intrinsics.h
     src/core/logger.h
-    src/core/mem_align.h
     src/core/memory.h
     src/core/path.h
     src/core/random.h
@@ -101,22 +103,25 @@ set(BM_CORE_HEADERS
     src/core/scancode.h
     src/core/string.h
     src/core/time_convert.h
+    src/core/timer.h
     src/core/toml_config.h
     src/core/types.h
     src/core/utils.h
-    src/core/vector.h)
+    src/core/vector.h
+)
 set(BM_CORE_SOURCES
-    src/core/asset.c
     src/core/binary.c
     src/core/buffer.c
+    src/core/file_io.c
     src/core/hashmap.c
     src/core/logger.c
-    src/core/mem_align.c
     src/core/memory.c
     src/core/path.c
     src/core/string.c
+    src/core/timer.c
     src/core/toml_config.c
-    src/core/utils.c)
+    src/core/utils.c
+)
 
 # math
 set(BM_MATH_HEADERS
@@ -127,7 +132,8 @@ set(BM_MATH_HEADERS
     src/math/vec3.h
     src/math/vec4.h
     src/math/mat4.h
-    src/math/quat.h)
+    src/math/quat.h
+)
 
 # platform
 set(BM_PLATFORM_HEADERS
@@ -138,36 +144,42 @@ set(BM_PLATFORM_HEADERS
     src/platform/keyboard-scancode.h
     src/platform/mouse.h
     src/platform/platform.h
-    src/platform/utf8.h)
+    src/platform/utf8.h
+)
 set(BM_PLATFORM_SOURCES
     src/platform/input.c
     src/platform/platform.c
-    src/platform/utf8.c)
+    src/platform/utf8.c
+)
 
 # gfx
 set(BM_GFX_HEADERS
     src/gfx/enums.h
     src/gfx/gfx.h
     src/gfx/camera.h
-    src/gfx/scene.h)
+)
 set(BM_GFX_SOURCES
     src/gfx/gfx.c
     src/gfx/camera.c
-    src/gfx/scene.c
-    src/gfx/sprite.c)
+    src/gfx/sprite.c
+)
 
 set(BM_MEDIA_HEADERS
     src/media/enums.h
     src/media/image.h
-    src/media/targa.h)
+    src/media/targa.h
+)
 set(BM_MEDIA_SOURCES
-    src/media/image.c)
+    src/media/image.c
+)
 
 # gui
 set(BM_GUI_HEADERS
-    src/gui/gui.h)
+    src/gui/gui.h
+)
 set(BM_GUI_SOURCES
-    src/gui/gui.c)
+    src/gui/gui.c
+)
 if (BM_USE_SDL2)
     list(APPEND BM_GUI_SOURCES src/gui/gui_sdl2.c)
 endif()
@@ -176,8 +188,10 @@ endif()
 set(BM_GAME_HEADERS
     # src/audio.h
     src/game/app.h
+    src/game/asset.h
     src/game/command.h
     src/game/entity.h
+    src/game/scene.h
     # src/engine.h
     # src/entity.h
     # src/font.h
@@ -188,12 +202,14 @@ set(BM_GAME_HEADERS
 set(BM_GAME_SOURCES
     # src/audio.c
     src/game/app.c
+    src/game/asset.c
     src/game/command.c
     src/game/entity.c
     # src/engine.c
     # src/entity.c
     # src/font.c
     src/game/main.c
+    src/game/scene.c
     # src/render.c
     # src/resource.c
     # src/sprite.c
@@ -209,8 +225,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
         list(APPEND TARGET_COMPILE_DEFS
             -DBM_USE_CIMGUI
             -DCIMGUI_DEFINE_ENUMS_AND_STRUCTS
+            -DCIMGUI_USE_WIN32
             -DCIMGUI_USE_DX11
-            -DCIMGUI_USE_SDL)
+            -DCIMGUI_USE_SDL2)
     endif()
         # -DSDL_AUDIODRIVER=dsound)
     list(APPEND BM_PLATFORM_HEADERS
@@ -231,16 +248,16 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     if (BM_BUILD_32BIT)
         if (BM_USE_SDL2)
             list(APPEND TARGET_LINK_DIRS
-                deps/SDL2/lib/x86)
+                thirdparty/SDL2/lib/x86)
         endif()
         set(BM_ARCH "x86")
     else()
         if (BM_USE_SDL2)
             list(APPEND TARGET_LINK_DIRS
-                deps/SDL2/lib/x64)
+                thirdparty/SDL2/lib/x64)
         endif()
         if (BM_USE_CIMGUI)
-            list(APPEND TARGET_LINK_DIRS deps/cimgui/build)
+            list(APPEND TARGET_LINK_DIRS thirdparty/cimgui/build)
         endif()
         set(BM_ARCH "x64")
     endif()
@@ -286,6 +303,7 @@ set(BM_TARGET_SOURCES
     ${BM_GAME_HEADERS}
     ${BM_GAME_SOURCES})
 
+# bulletmind
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     add_executable(bulletmind WIN32 ${BM_TARGET_SOURCES})
     # set_target_properties(bulletmind PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:CONSOLE")
@@ -319,102 +337,71 @@ target_link_directories(bulletmind PRIVATE ${TARGET_LINK_DIRS})
 target_link_libraries(bulletmind PRIVATE ${TARGET_LINK_LIBS})
 target_link_options(bulletmind PRIVATE ${TARGET_LINK_OPTS})
 
-
-# set(LIBVV_TARGET_SOURCES
-#     ${MURMURHASH2_SOURCES}
-#     ${BM_CORE_HEADERS}
-#     ${BM_CORE_SOURCES}
-#     ${BM_MATH_HEADERS}
-#     ${BM_MATH_SOURCES}
-#     ${BM_PLATFORM_HEADERS}
-#     ${BM_PLATFORM_SOURCES}
-#     ${BM_GFX_HEADERS}
-#     ${BM_GFX_SOURCES}
-#     ${BM_GUI_HEADERS}
-#     ${BM_GUI_SOURCES})
-# if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-#     set(TARGET_COMPILE_DEFS
-#         -DUNICODE
-#         -D_UNICODE
-#         -D_CRT_SECURE_NO_WARNINGS)
-# endif()
-# add_library(libvv ${LIBVV_TARGET_SOURCES})
-# set_property(TARGET libvv PROPERTY C_STANDARD 11)
-# target_compile_definitions(libvv PRIVATE ${TARGET_COMPILE_DEFS})
-# target_include_directories(libvv PRIVATE src deps/murmur2)
-
-# add_executable(bulletmind-cpp
-#     cpp/main.cpp)
-# add_dependencies(bulletmind-cpp libvv)
-# target_include_directories(bulletmind-cpp PRIVATE src cpp)
-# target_link_libraries(bulletmind-cpp PRIVATE libvv kernel32)
-# set_property(TARGET bulletmind-cpp PROPERTY CXX_STANDARD 17)
-
 # post-build commands
 if (BM_USE_SDL2 AND CMAKE_SYSTEM_NAME STREQUAL Windows)
     add_custom_command(TARGET bulletmind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libFLAC-8.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SDL2/lib/${BM_ARCH}/libFLAC-8.dll
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libFLAC-8.dll)
     add_custom_command(TARGET bulletmind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libjpeg-9.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SDL2/lib/${BM_ARCH}/libjpeg-9.dll
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libjpeg-9.dll)
     add_custom_command(TARGET bulletmind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libmodplug-1.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SDL2/lib/${BM_ARCH}/libmodplug-1.dll
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libmodplug-1.dll)
     add_custom_command(TARGET bulletmind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libmpg123-0.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SDL2/lib/${BM_ARCH}/libmpg123-0.dll
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libmpg123-0.dll)
     add_custom_command(TARGET bulletmind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libogg-0.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SDL2/lib/${BM_ARCH}/libogg-0.dll
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libogg-0.dll)
     add_custom_command(TARGET bulletmind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libopus-0.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SDL2/lib/${BM_ARCH}/libopus-0.dll
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libopus-0.dll)
     add_custom_command(TARGET bulletmind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libopusfile-0.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SDL2/lib/${BM_ARCH}/libopusfile-0.dll
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libopusfile-0.dll)
     add_custom_command(TARGET bulletmind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libpng16-16.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SDL2/lib/${BM_ARCH}/libpng16-16.dll
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libpng16-16.dll)
     add_custom_command(TARGET bulletmind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libtiff-5.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SDL2/lib/${BM_ARCH}/libtiff-5.dll
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libtiff-5.dll)
     add_custom_command(TARGET bulletmind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libvorbis-0.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SDL2/lib/${BM_ARCH}/libvorbis-0.dll
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libvorbis-0.dll)
     add_custom_command(TARGET bulletmind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libvorbisfile-3.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SDL2/lib/${BM_ARCH}/libvorbisfile-3.dll
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libvorbisfile-3.dll)
     add_custom_command(TARGET bulletmind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/libwebp-7.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SDL2/lib/${BM_ARCH}/libwebp-7.dll
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/libwebp-7.dll)
     add_custom_command(TARGET bulletmind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/SDL2.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SDL2/lib/${BM_ARCH}/SDL2.dll
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/SDL2.dll)
     add_custom_command(TARGET bulletmind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/SDL2_image.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SDL2/lib/${BM_ARCH}/SDL2_image.dll
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/SDL2_image.dll)
     add_custom_command(TARGET bulletmind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/SDL2_mixer.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SDL2/lib/${BM_ARCH}/SDL2_mixer.dll
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/SDL2_mixer.dll)
     add_custom_command(TARGET bulletmind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${BM_ARCH}/zlib1.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SDL2/lib/${BM_ARCH}/zlib1.dll
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/zlib1.dll)
 endif()
 # copy assets
@@ -428,24 +415,27 @@ add_custom_command(TARGET bulletmind POST_BUILD
 #     ${CMAKE_CURRENT_SOURCE_DIR}/config
 #     $<TARGET_FILE_DIR:${PROJECT_NAME}>/config)
 
-# add_executable(bm_tests
-#     src/tests.c
-#     ${MURMURHASH2_SOURCES}
-#     ${TOMLC99_SOURCES}
-#     ${BM_CORE_HEADERS}
-#     ${BM_CORE_SOURCES}
-#     ${BM_GFX_HEADERS}
-#     ${BM_GFX_SOURCES}
-#     ${BM_MEDIA_HEADERS}
-#     ${BM_MEDIA_SOURCES}
-#     ${BM_MATH_HEADERS}
-#     ${BM_PLATFORM_HEADERS}
-#     ${BM_PLATFORM_SOURCES})
-# set_property(TARGET bm_tests PROPERTY C_STANDARD 11)
-# target_compile_definitions(bm_tests PRIVATE -D_CRT_SECURE_NO_WARNINGS)
-# target_include_directories(bm_tests PRIVATE
-#     ${TARGET_INCLUDE_DIRS}
-#     deps/tau)
-# target_link_directories(bm_tests PRIVATE ${TARGET_LINK_DIRS})
-# target_link_libraries(bm_tests PRIVATE ${TARGET_LINK_LIBS})
-# target_link_options(bm_tests PRIVATE ${TARGET_LINK_OPTS})
+add_executable(bm_tests
+    src/core/tests.c
+    ${MURMURHASH2_SOURCES}
+    ${TOMLC99_SOURCES}
+    ${BM_CORE_HEADERS}
+    ${BM_CORE_SOURCES}
+    ${BM_MATH_HEADERS}
+    ${BM_PLATFORM_HEADERS}
+    ${BM_PLATFORM_SOURCES}
+    ${BM_GFX_HEADERS}
+    ${BM_GFX_SOURCES}
+    ${BM_GUI_HEADERS}
+    ${BM_GUI_SOURCES}
+    ${BM_MEDIA_HEADERS}
+    ${BM_MEDIA_SOURCES}
+)
+set_property(TARGET bm_tests PROPERTY C_STANDARD 11)
+target_compile_definitions(bm_tests PRIVATE -D_CRT_SECURE_NO_WARNINGS)
+target_include_directories(bm_tests PRIVATE
+    ${TARGET_INCLUDE_DIRS}
+    thirdparty/psi)
+target_link_directories(bm_tests PRIVATE ${TARGET_LINK_DIRS})
+target_link_libraries(bm_tests PRIVATE ${TARGET_LINK_LIBS})
+target_link_options(bm_tests PRIVATE ${TARGET_LINK_OPTS})

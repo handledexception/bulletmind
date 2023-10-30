@@ -18,6 +18,13 @@
 
 #include "core/types.h"
 
+enum seek_dir {
+	SEEK_TO_START,
+	SEEK_TO_END,
+	SEEK_FORWARD,
+	SEEK_REVERSE
+};
+
 typedef struct buffer_s {
 	u8* data;
 	size_t size;
@@ -27,6 +34,8 @@ typedef struct buffer_s {
 
 buffer_t* buffer_new(size_t size);
 buffer_t* buffer_aligned_new(size_t size, size_t alignment);
-void buffer_delete(buffer_t* buf);
-void buffer_setdata(buffer_t* buf, void* data, size_t size);
-u8 buffer_resize(buffer_t* buf, size_t size);
+void buffer_free(buffer_t* buf);
+void buffer_copy_data(buffer_t* buf, void* data, size_t size);
+void buffer_set_data(buffer_t* buf, void* data, size_t size);
+size_t buffer_resize(buffer_t* buf, size_t size);
+void buffer_seek(buffer_t* buf, size_t size, enum seek_dir seek);

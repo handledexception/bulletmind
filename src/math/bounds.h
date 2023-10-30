@@ -2,30 +2,30 @@
 
 #include "math/vec3.h"
 
-struct bounds {
-	struct vec3f min;
-	struct vec3f max;
-};
-
-typedef struct bounds bounds_t;
+typedef struct bounds {
+	vec3f_t min;
+	vec3f_t max;
+} bounds_t;
 
 static inline void bounds_zero(bounds_t* b)
 {
-	vec3f_zero(&b->min);
-	vec3f_zero(&b->max);
+	b->min = kVec3Zero;
+	b->max = kVec3Zero;
 }
 
 static inline void bounds_copy(bounds_t* dst, const bounds_t* src)
 {
-	vec3f_copy(&dst->min, &src->min);
-	vec3f_copy(&dst->max, &src->max);
+	dst->min = vec3_copy(src->min);
+	dst->max = vec3_copy(src->max);
 }
 
-static inline void bounds_get_center(vec3f_t* center, const bounds_t* b)
+static inline vec3f_t bounds_get_center(const bounds_t* b)
 {
-	vec3f_sub(center, &b->max, &b->min);
-	vec3f_mulf(center, center, 0.5f);
-	vec3f_add(center, center, &b->min);
+	vec3f_t center = { 0 };
+	center = vec3_sub(b->max, b->min);
+	center = vec3_mulf(center, 0.5f);
+	center = vec3_add(center, b->min);
+	return center;
 }
 
 static inline bool bounds_intersects(const struct bounds* b1,

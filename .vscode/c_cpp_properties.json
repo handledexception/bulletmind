@@ -10,12 +10,11 @@
                 "_UNICODE"
             ],
             "includePath": [
-                "${workspaceFolder}/deps",
-                "${workspaceFolder}/deps/aja/ajalibraries",
-                "${workspaceFolder}/deps/tau",
-                "${workspaceFolder}/deps/murmur2",
-                "${workspaceFolder}/deps/tomlc99",
-                "${workspaceFolder}/deps/SDL2/include",
+                "${workspaceFolder}/thirdparty",
+                "${workspaceFolder}/thirdparty/cimgui",
+                "${workspaceFolder}/thirdparty/cimgui/imgui",
+                "${workspaceFolder}/thirdparty/tomlc99",
+                "${workspaceFolder}/thirdparty/SDL2/include",
                 "${workspaceFolder}/src"
             ],
             "intelliSenseMode": "windows-msvc-x64",

@@ -24,6 +24,7 @@
 
 #ifdef BM_WINDOWS
 #include <emmintrin.h>
+#define ALIGNED_MALLOC 1
 #endif
 
 #define ALIGN_SIZE(size, align) size = (((size) + (align - 1)) & (~(align - 1)))
@@ -157,7 +158,7 @@ void mem_free(void* ptr)
 		allocator.free(p);
 		recalculate_frees(alloc_size);
 #else
-			allocator.free(ptr);
+		allocator.free(ptr);
 #endif
 	}
 }
@@ -180,17 +181,64 @@ void mem_copy(void* dst, const void* src, size_t size)
 }
 
 #ifdef BM_WINDOWS
-void mem_copy_sse2(void* dst, void* src, size_t size)
+void mem_copy_sse2_aligned(void* dst, void* src, size_t size)
 {
+	size_t num_loops = size >> 7;
 	__m128i* from = (__m128i*)src;
 	__m128i* to = (__m128i*)dst;
-	size_t index = 0;
-	while (size) {
-		__m128i x = _mm_load_si128(&from[index]);
-		_mm_stream_si128(&to[index], x);
-		size -= 16;
-		index++;
-	}
+    for (int i = 0; i < num_loops; ++i) {
+      //_mm_prefetch( ((const char *) src) + 768, _MM_HINT_NTA );
+      //_mm_prefetch( ((const char *) src) + 832, _MM_HINT_NTA );
+        // Unroll for 8 128 bit registers
+        __m128i xmm_reg0 = _mm_load_si128(from);
+        __m128i xmm_reg1 = _mm_load_si128(from + 1);
+        __m128i xmm_reg2 = _mm_load_si128(from + 2);
+        __m128i xmm_reg3 = _mm_load_si128(from + 3);
+        __m128i xmm_reg4 = _mm_load_si128(from + 4);
+        __m128i xmm_reg5 = _mm_load_si128(from + 5);
+        __m128i xmm_reg6 = _mm_load_si128(from + 6);
+        __m128i xmm_reg7 = _mm_load_si128(from + 7);
+        _mm_stream_si128(to, xmm_reg0);
+        _mm_stream_si128(to + 1, xmm_reg1);
+        _mm_stream_si128(to + 2, xmm_reg2);
+        _mm_stream_si128(to + 3, xmm_reg3);
+        _mm_stream_si128(to + 4, xmm_reg4);
+        _mm_stream_si128(to + 5, xmm_reg5);
+        _mm_stream_si128(to + 6, xmm_reg6);
+        _mm_stream_si128(to + 7, xmm_reg7);
+        from += 8;
+        to += 8;
+    }
+}
+
+void mem_copy_sse2_unaligned(void* dst, void* src, size_t size)
+{
+	size_t num_loops = size >> 7;
+	__m128i* from = (__m128i*)src;
+	__m128i* to = (__m128i*)dst;
+    for (int i = 0; i < num_loops; ++i) {
+      //_mm_prefetch( ((const char *) src) + 768, _MM_HINT_NTA );
+      //_mm_prefetch( ((const char *) src) + 832, _MM_HINT_NTA );
+        // Unroll for 8 128 bit registers
+        __m128i xmm_reg0 = _mm_loadu_si128(from);
+        __m128i xmm_reg1 = _mm_loadu_si128(from + 1);
+        __m128i xmm_reg2 = _mm_loadu_si128(from + 2);
+        __m128i xmm_reg3 = _mm_loadu_si128(from + 3);
+        __m128i xmm_reg4 = _mm_loadu_si128(from + 4);
+        __m128i xmm_reg5 = _mm_loadu_si128(from + 5);
+        __m128i xmm_reg6 = _mm_loadu_si128(from + 6);
+        __m128i xmm_reg7 = _mm_loadu_si128(from + 7);
+        _mm_stream_si128(to, xmm_reg0);
+        _mm_stream_si128(to + 1, xmm_reg1);
+        _mm_stream_si128(to + 2, xmm_reg2);
+        _mm_stream_si128(to + 3, xmm_reg3);
+        _mm_stream_si128(to + 4, xmm_reg4);
+        _mm_stream_si128(to + 5, xmm_reg5);
+        _mm_stream_si128(to + 6, xmm_reg6);
+        _mm_stream_si128(to + 7, xmm_reg7);
+        from += 8;
+        to += 8;
+    }
 }
 #endif
 
@@ -216,6 +264,53 @@ int mem_report_leaks()
 	return num_leaks;
 #endif
 	return 0;
+}
+
+bool is_power_of_two(uintptr_t x)
+{
+	return (x & (x - 1)) == 0;
+}
+
+uintptr_t align_forward(uintptr_t ptr, size_t align)
+{
+	uintptr_t p, a, modulo;
+
+	assert(is_power_of_two(align));
+	if (!is_power_of_two(align))
+		return 0;
+
+	p = ptr;
+	a = (uintptr_t)align;
+	modulo = p & (a - 1);
+
+	if (modulo != 0)
+		p += a - modulo;
+
+	return p;
+}
+
+//https://codeyarns.github.io/tech/2017-02-28-aligned-memory-allocation.html
+void* aligned_malloc(size_t size, size_t alignment)
+{
+#ifdef ALIGNED_MALLOC
+	return _aligned_malloc(size, alignment);
+#else
+	const size_t alloc_size = size + (alignment - 1) + sizeof(void*);
+	void* block = malloc(alloc_size);
+	uintptr_t ptr = align_forward((uintptr_t)block, alignment);
+	return (void*)ptr;
+#endif
+}
+
+void aligned_free(void* ptr)
+{
+#ifdef ALIGNED_MALLOC
+	_aligned_free(ptr);
+#else
+	void* p1 =
+		((void**)ptr)[-1]; // get the pointer to the buffer we allocated
+	free(p1);
+#endif
 }
 
 //

@@ -10,7 +10,7 @@ entity_t* ent_init(s32 num_ents)
     return ents;
 }
 
-void ent_refresh(entity_t* ents, f64 app_start_time, f64 dt)
+void ent_refresh(entity_t* ents, f32 friction, f64 app_start_time, f64 now, f64 dt)
 {
     if (ents == NULL)
         return;
@@ -20,28 +20,30 @@ void ent_refresh(entity_t* ents, f64 app_start_time, f64 dt)
         if (ent == NULL)
             continue;
         if (!ent_has_no_caps(ent)) {
-            ent_refresh_movers(ent, dt);
-            ent_update_lifetime(ent, app_start_time);
+            ent_refresh_movers(ent, friction, dt);
+            ent_update_lifetime(ent, now);
         }
     }
 }
 
-void ent_accel(entity_t* ent, vec3f_t accel, f64 dt)
+void ent_accel(entity_t* ent, vec3f_t accel, f32 friction, f64 dt)
 {
-    ent->vel = vec3_norm(vec3_mulf(vec3_add(ent->vel, accel), dt));
-    ent->vel = vec3_mulf(ent->vel, 0.01f);
-    ent->vel = vec3_friction(ent->vel, 0.75f);
-    ent->pos = vec3_add(ent->pos, vec3_mulf(ent->vel, dt));
-    logger(LOG_DEBUG, "pos: %f,%f,%f | vel: %f,%f,%f | acc: %f,%f,%f",
-        ent->pos.x, ent->pos.y, ent->pos.z,
-        ent->vel.x, ent->vel.y, ent->vel.z,
-        ent->acc.x, ent->acc.y, ent->acc.z);
+    accel =  vec3_friction(accel, friction);
+    ent->acc = vec3_copy(accel);
+    ent->vel = vec3_add(ent->vel, accel);
+    ent->vel = vec3_mulf(ent->vel, dt);
+    ent->pos = vec3_add(ent->pos, ent->vel);
+    // printf("dt: %f | pos: %f,%f,%f | vel: %f,%f,%f | acc: %f,%f,%f\n",
+    //     dt,
+    //     ent->pos.x, ent->pos.y, ent->pos.z,
+    //     ent->vel.x, ent->vel.y, ent->vel.z,
+    //     ent->acc.x, ent->acc.y, ent->acc.z);
 }
 
-void ent_refresh_movers(entity_t* ent, f64 dt)
+void ent_refresh_movers(entity_t* ent, f32 friction, f64 dt)
 {
     if (ent_has_caps(ent, ENT_MOVER)) {
-        ent_accel(ent, ent->acc, dt);
+        ent_accel(ent, ent->acc, friction, dt);
     }
 }
 
@@ -105,8 +107,8 @@ entity_t* ent_spawn(entity_t* ents, const char* name, vec3f_t org, s32 caps, f64
             ent->lifetime = ent->timestamp + lifetime;
         else
             ent->lifetime = lifetime;
-		logger(LOG_DEBUG, "ent_spawn: (%f) \"%s\" with caps %d",
-		       ent->timestamp, ent->name, ent->caps);
+        logger(LOG_DEBUG, "ent_spawn: (%f) \"%s\" with caps %d",
+               ent->timestamp, ent->name, ent->caps);
     } else {
         logger(LOG_WARNING, "ent_spawn: no slots available to spawn entity: %s", name);
     }
@@ -119,9 +121,9 @@ void ent_despawn(entity_t* ent)
     ent->caps = 0;
 }
 
-void ent_update_lifetime(entity_t* ent)
+void ent_update_lifetime(entity_t* ent, f64 now)
 {
-    if (ent && ent->lifetime > 0.0 && (os_get_time_sec() >= ent->lifetime)) {
+    if (ent && ent->lifetime > 0.0 && (now >= ent->lifetime)) {
         ent_despawn(ent);
     }
 }

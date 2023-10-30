@@ -36,12 +36,21 @@ typedef struct mat4f {
 
 static inline mat4f_t mat4_zero()
 {
-	mat4f_t m = { 0 };
+	mat4f_t m = {0};
 	m.x = vec4_zero();
 	m.y = vec4_zero();
 	m.z = vec4_zero();
 	m.w = vec4_zero();
 	return m;
+}
+
+static inline mat4f_t mat4_copy(mat4f_t m)
+{
+	mat4f_t copy;
+	for (int i = 0; i < 16; i++) {
+		copy.elems[i] = m.elems[i];
+	}
+	return copy;
 }
 
 static inline mat4f_t mat4_diag(f32 val)
@@ -78,14 +87,14 @@ static inline mat4f_t mat4_mul(mat4f_t a, mat4f_t b)
 
 static inline mat4f_t mat4_mul_list(u32 count, ...)
 {
-    va_list ap;
-    mat4f_t m = mat4_identity();
-    va_start(ap, count);
-    for (u32 i = 0; i < count; ++i) {
-        m = mat4_mul(m, va_arg(ap, mat4f_t));
-    }
-    va_end(ap);
-    return m;
+	va_list ap;
+	mat4f_t m = mat4_identity();
+	va_start(ap, count);
+	for (u32 i = 0; i < count; ++i) {
+		m = mat4_mul(m, va_arg(ap, mat4f_t));
+	}
+	va_end(ap);
+	return m;
 }
 
 static inline mat4f_t mat4_transpose(const mat4f_t m)
@@ -125,118 +134,119 @@ static inline mat4f_t mat4_inverse(mat4f_t m)
 	f32 temp[16];
 
 	temp[0] = m.elems[5] * m.elems[10] * m.elems[15] -
-		m.elems[5] * m.elems[11] * m.elems[14] -
-		m.elems[9] * m.elems[6] * m.elems[15] +
-		m.elems[9] * m.elems[7] * m.elems[14] +
-		m.elems[13] * m.elems[6] * m.elems[11] -
-		m.elems[13] * m.elems[7] * m.elems[10];
+		  m.elems[5] * m.elems[11] * m.elems[14] -
+		  m.elems[9] * m.elems[6] * m.elems[15] +
+		  m.elems[9] * m.elems[7] * m.elems[14] +
+		  m.elems[13] * m.elems[6] * m.elems[11] -
+		  m.elems[13] * m.elems[7] * m.elems[10];
 
 	temp[4] = -m.elems[4] * m.elems[10] * m.elems[15] +
-		m.elems[4] * m.elems[11] * m.elems[14] +
-		m.elems[8] * m.elems[6] * m.elems[15] -
-		m.elems[8] * m.elems[7] * m.elems[14] -
-		m.elems[12] * m.elems[6] * m.elems[11] +
-		m.elems[12] * m.elems[7] * m.elems[10];
+		  m.elems[4] * m.elems[11] * m.elems[14] +
+		  m.elems[8] * m.elems[6] * m.elems[15] -
+		  m.elems[8] * m.elems[7] * m.elems[14] -
+		  m.elems[12] * m.elems[6] * m.elems[11] +
+		  m.elems[12] * m.elems[7] * m.elems[10];
 
 	temp[8] = m.elems[4] * m.elems[9] * m.elems[15] -
-		m.elems[4] * m.elems[11] * m.elems[13] -
-		m.elems[8] * m.elems[5] * m.elems[15] +
-		m.elems[8] * m.elems[7] * m.elems[13] +
-		m.elems[12] * m.elems[5] * m.elems[11] -
-		m.elems[12] * m.elems[7] * m.elems[9];
+		  m.elems[4] * m.elems[11] * m.elems[13] -
+		  m.elems[8] * m.elems[5] * m.elems[15] +
+		  m.elems[8] * m.elems[7] * m.elems[13] +
+		  m.elems[12] * m.elems[5] * m.elems[11] -
+		  m.elems[12] * m.elems[7] * m.elems[9];
 
 	temp[12] = -m.elems[4] * m.elems[9] * m.elems[14] +
-		m.elems[4] * m.elems[10] * m.elems[13] +
-		m.elems[8] * m.elems[5] * m.elems[14] -
-		m.elems[8] * m.elems[6] * m.elems[13] -
-		m.elems[12] * m.elems[5] * m.elems[10] +
-		m.elems[12] * m.elems[6] * m.elems[9];
+		   m.elems[4] * m.elems[10] * m.elems[13] +
+		   m.elems[8] * m.elems[5] * m.elems[14] -
+		   m.elems[8] * m.elems[6] * m.elems[13] -
+		   m.elems[12] * m.elems[5] * m.elems[10] +
+		   m.elems[12] * m.elems[6] * m.elems[9];
 
 	temp[1] = -m.elems[1] * m.elems[10] * m.elems[15] +
-		m.elems[1] * m.elems[11] * m.elems[14] +
-		m.elems[9] * m.elems[2] * m.elems[15] -
-		m.elems[9] * m.elems[3] * m.elems[14] -
-		m.elems[13] * m.elems[2] * m.elems[11] +
-		m.elems[13] * m.elems[3] * m.elems[10];
+		  m.elems[1] * m.elems[11] * m.elems[14] +
+		  m.elems[9] * m.elems[2] * m.elems[15] -
+		  m.elems[9] * m.elems[3] * m.elems[14] -
+		  m.elems[13] * m.elems[2] * m.elems[11] +
+		  m.elems[13] * m.elems[3] * m.elems[10];
 
 	temp[5] = m.elems[0] * m.elems[10] * m.elems[15] -
-		m.elems[0] * m.elems[11] * m.elems[14] -
-		m.elems[8] * m.elems[2] * m.elems[15] +
-		m.elems[8] * m.elems[3] * m.elems[14] +
-		m.elems[12] * m.elems[2] * m.elems[11] -
-		m.elems[12] * m.elems[3] * m.elems[10];
+		  m.elems[0] * m.elems[11] * m.elems[14] -
+		  m.elems[8] * m.elems[2] * m.elems[15] +
+		  m.elems[8] * m.elems[3] * m.elems[14] +
+		  m.elems[12] * m.elems[2] * m.elems[11] -
+		  m.elems[12] * m.elems[3] * m.elems[10];
 
 	temp[9] = -m.elems[0] * m.elems[9] * m.elems[15] +
-		m.elems[0] * m.elems[11] * m.elems[13] +
-		m.elems[8] * m.elems[1] * m.elems[15] -
-		m.elems[8] * m.elems[3] * m.elems[13] -
-		m.elems[12] * m.elems[1] * m.elems[11] +
-		m.elems[12] * m.elems[3] * m.elems[9];
+		  m.elems[0] * m.elems[11] * m.elems[13] +
+		  m.elems[8] * m.elems[1] * m.elems[15] -
+		  m.elems[8] * m.elems[3] * m.elems[13] -
+		  m.elems[12] * m.elems[1] * m.elems[11] +
+		  m.elems[12] * m.elems[3] * m.elems[9];
 
 	temp[13] = m.elems[0] * m.elems[9] * m.elems[14] -
-		m.elems[0] * m.elems[10] * m.elems[13] -
-		m.elems[8] * m.elems[1] * m.elems[14] +
-		m.elems[8] * m.elems[2] * m.elems[13] +
-		m.elems[12] * m.elems[1] * m.elems[10] -
-		m.elems[12] * m.elems[2] * m.elems[9];
+		   m.elems[0] * m.elems[10] * m.elems[13] -
+		   m.elems[8] * m.elems[1] * m.elems[14] +
+		   m.elems[8] * m.elems[2] * m.elems[13] +
+		   m.elems[12] * m.elems[1] * m.elems[10] -
+		   m.elems[12] * m.elems[2] * m.elems[9];
 
 	temp[2] = m.elems[1] * m.elems[6] * m.elems[15] -
-		m.elems[1] * m.elems[7] * m.elems[14] -
-		m.elems[5] * m.elems[2] * m.elems[15] +
-		m.elems[5] * m.elems[3] * m.elems[14] +
-		m.elems[13] * m.elems[2] * m.elems[7] -
-		m.elems[13] * m.elems[3] * m.elems[6];
+		  m.elems[1] * m.elems[7] * m.elems[14] -
+		  m.elems[5] * m.elems[2] * m.elems[15] +
+		  m.elems[5] * m.elems[3] * m.elems[14] +
+		  m.elems[13] * m.elems[2] * m.elems[7] -
+		  m.elems[13] * m.elems[3] * m.elems[6];
 
 	temp[6] = -m.elems[0] * m.elems[6] * m.elems[15] +
-		m.elems[0] * m.elems[7] * m.elems[14] +
-		m.elems[4] * m.elems[2] * m.elems[15] -
-		m.elems[4] * m.elems[3] * m.elems[14] -
-		m.elems[12] * m.elems[2] * m.elems[7] +
-		m.elems[12] * m.elems[3] * m.elems[6];
+		  m.elems[0] * m.elems[7] * m.elems[14] +
+		  m.elems[4] * m.elems[2] * m.elems[15] -
+		  m.elems[4] * m.elems[3] * m.elems[14] -
+		  m.elems[12] * m.elems[2] * m.elems[7] +
+		  m.elems[12] * m.elems[3] * m.elems[6];
 
 	temp[10] = m.elems[0] * m.elems[5] * m.elems[15] -
-		m.elems[0] * m.elems[7] * m.elems[13] -
-		m.elems[4] * m.elems[1] * m.elems[15] +
-		m.elems[4] * m.elems[3] * m.elems[13] +
-		m.elems[12] * m.elems[1] * m.elems[7] -
-		m.elems[12] * m.elems[3] * m.elems[5];
+		   m.elems[0] * m.elems[7] * m.elems[13] -
+		   m.elems[4] * m.elems[1] * m.elems[15] +
+		   m.elems[4] * m.elems[3] * m.elems[13] +
+		   m.elems[12] * m.elems[1] * m.elems[7] -
+		   m.elems[12] * m.elems[3] * m.elems[5];
 
 	temp[14] = -m.elems[0] * m.elems[5] * m.elems[14] +
-		m.elems[0] * m.elems[6] * m.elems[13] +
-		m.elems[4] * m.elems[1] * m.elems[14] -
-		m.elems[4] * m.elems[2] * m.elems[13] -
-		m.elems[12] * m.elems[1] * m.elems[6] +
-		m.elems[12] * m.elems[2] * m.elems[5];
+		   m.elems[0] * m.elems[6] * m.elems[13] +
+		   m.elems[4] * m.elems[1] * m.elems[14] -
+		   m.elems[4] * m.elems[2] * m.elems[13] -
+		   m.elems[12] * m.elems[1] * m.elems[6] +
+		   m.elems[12] * m.elems[2] * m.elems[5];
 
 	temp[3] = -m.elems[1] * m.elems[6] * m.elems[11] +
-		m.elems[1] * m.elems[7] * m.elems[10] +
-		m.elems[5] * m.elems[2] * m.elems[11] -
-		m.elems[5] * m.elems[3] * m.elems[10] -
-		m.elems[9] * m.elems[2] * m.elems[7] +
-		m.elems[9] * m.elems[3] * m.elems[6];
+		  m.elems[1] * m.elems[7] * m.elems[10] +
+		  m.elems[5] * m.elems[2] * m.elems[11] -
+		  m.elems[5] * m.elems[3] * m.elems[10] -
+		  m.elems[9] * m.elems[2] * m.elems[7] +
+		  m.elems[9] * m.elems[3] * m.elems[6];
 
 	temp[7] = m.elems[0] * m.elems[6] * m.elems[11] -
-		m.elems[0] * m.elems[7] * m.elems[10] -
-		m.elems[4] * m.elems[2] * m.elems[11] +
-		m.elems[4] * m.elems[3] * m.elems[10] +
-		m.elems[8] * m.elems[2] * m.elems[7] -
-		m.elems[8] * m.elems[3] * m.elems[6];
+		  m.elems[0] * m.elems[7] * m.elems[10] -
+		  m.elems[4] * m.elems[2] * m.elems[11] +
+		  m.elems[4] * m.elems[3] * m.elems[10] +
+		  m.elems[8] * m.elems[2] * m.elems[7] -
+		  m.elems[8] * m.elems[3] * m.elems[6];
 
 	temp[11] = -m.elems[0] * m.elems[5] * m.elems[11] +
-		m.elems[0] * m.elems[7] * m.elems[9] +
-		m.elems[4] * m.elems[1] * m.elems[11] -
-		m.elems[4] * m.elems[3] * m.elems[9] -
-		m.elems[8] * m.elems[1] * m.elems[7] +
-		m.elems[8] * m.elems[3] * m.elems[5];
+		   m.elems[0] * m.elems[7] * m.elems[9] +
+		   m.elems[4] * m.elems[1] * m.elems[11] -
+		   m.elems[4] * m.elems[3] * m.elems[9] -
+		   m.elems[8] * m.elems[1] * m.elems[7] +
+		   m.elems[8] * m.elems[3] * m.elems[5];
 
 	temp[15] = m.elems[0] * m.elems[5] * m.elems[10] -
-		m.elems[0] * m.elems[6] * m.elems[9] -
-		m.elems[4] * m.elems[1] * m.elems[10] +
-		m.elems[4] * m.elems[2] * m.elems[9] +
-		m.elems[8] * m.elems[1] * m.elems[6] -
-		m.elems[8] * m.elems[2] * m.elems[5];
+		   m.elems[0] * m.elems[6] * m.elems[9] -
+		   m.elems[4] * m.elems[1] * m.elems[10] +
+		   m.elems[4] * m.elems[2] * m.elems[9] +
+		   m.elems[8] * m.elems[1] * m.elems[6] -
+		   m.elems[8] * m.elems[2] * m.elems[5];
 
-	float determinant = m.elems[0] * temp[0] + m.elems[1] * temp[4] + m.elems[2] * temp[8] + m.elems[3] * temp[12];
+	float determinant = m.elems[0] * temp[0] + m.elems[1] * temp[4] +
+			    m.elems[2] * temp[8] + m.elems[3] * temp[12];
 	determinant = 1.0f / determinant;
 
 	for (int i = 0; i < 4 * 4; i++)
@@ -245,7 +255,8 @@ static inline mat4f_t mat4_inverse(mat4f_t m)
 	return res;
 }
 
-static inline mat4f_t mat4_ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far)
+static inline mat4f_t mat4_ortho(f32 left, f32 right, f32 bottom, f32 top,
+				 f32 near, f32 far)
 {
 	mat4f_t m = mat4_identity();
 
@@ -264,11 +275,11 @@ static inline mat4f_t mat4_ortho(f32 left, f32 right, f32 bottom, f32 top, f32 n
 
 static inline mat4f_t mat4_ortho_norm(const mat4f_t* m)
 {
-    mat4f_t r = *m;
-    r.x = vec4_norm(r.x);
-    r.y = vec4_norm(r.y);
-    r.z = vec4_norm(r.z);
-    return r;
+	mat4f_t r = *m;
+	r.x = vec4_norm(r.x);
+	r.y = vec4_norm(r.y);
+	r.z = vec4_norm(r.z);
+	return r;
 }
 
 static inline mat4f_t mat4_persp(f32 fov, f32 aspect, f32 near, f32 far)
@@ -339,90 +350,99 @@ static inline mat4f_t mat4_rotate(f32 angle, vec3f_t axis)
 
 static inline mat4f_t mat4_lookat(vec3f_t eye, vec3f_t dir, vec3f_t up)
 {
-    vec3f_t f = vec3_norm(vec3_sub(dir, eye));
-    vec3f_t s = vec3_norm(vec3_cross(f, up));
-    vec3f_t u = vec3_cross(s, f);
+	vec3f_t f = vec3_norm(vec3_sub(dir, eye));
+	vec3f_t s = vec3_norm(vec3_cross(f, up));
+	vec3f_t u = vec3_cross(s, f);
 
-    mat4f_t m = mat4_identity();
-    m.elems[0 * 4 + 0] = s.x;
-    m.elems[1 * 4 + 0] = s.y;
-    m.elems[2 * 4 + 0] = s.z;
+	mat4f_t m = mat4_identity();
+	m.elems[0 * 4 + 0] = s.x;
+	m.elems[1 * 4 + 0] = s.y;
+	m.elems[2 * 4 + 0] = s.z;
 
-    m.elems[0 * 4 + 1] = u.x;
-    m.elems[1 * 4 + 1] = u.y;
-    m.elems[2 * 4 + 1] = u.z;
+	m.elems[0 * 4 + 1] = u.x;
+	m.elems[1 * 4 + 1] = u.y;
+	m.elems[2 * 4 + 1] = u.z;
 
-    m.elems[0 * 4 + 2] = -f.x;
-    m.elems[1 * 4 + 2] = -f.y;
-    m.elems[2 * 4 + 2] = -f.z;
+	m.elems[0 * 4 + 2] = -f.x;
+	m.elems[1 * 4 + 2] = -f.y;
+	m.elems[2 * 4 + 2] = -f.z;
 
-    m.elems[3 * 4 + 0] = -vec3_dot(s, eye);;
-    m.elems[3 * 4 + 1] = -vec3_dot(u, eye);
-    m.elems[3 * 4 + 2] = vec3_dot(f, eye);
+	m.elems[3 * 4 + 0] = -vec3_dot(s, eye);
+	;
+	m.elems[3 * 4 + 1] = -vec3_dot(u, eye);
+	m.elems[3 * 4 + 2] = vec3_dot(f, eye);
 
-    return m;
+	return m;
 }
 
 // Modified from https://github.com/CedricGuillemet/ImGuizmo/blob/master/ImGuizmo.cpp
 
-static inline void mat4_decompose(const mat4f_t* m, f32* translation, f32* rotation, f32* scale)
+static inline void mat4_decompose(const mat4f_t* m, f32* translation,
+				  f32* rotation, f32* scale)
 {
-    mat4f_t mat = *m;
+	mat4f_t mat = *m;
 
-    scale[0] = vec4_len(mat.x);
-    scale[1] = vec4_len(mat.y);
-    scale[2] = vec4_len(mat.z);
+	scale[0] = vec4_len(mat.x);
+	scale[1] = vec4_len(mat.y);
+	scale[2] = vec4_len(mat.z);
 
-    mat = mat4_ortho_norm(&mat);
+	mat = mat4_ortho_norm(&mat);
 
-    rotation[0] = DEG_TO_RAD(atan2f(mat.m[1][2], mat.m[2][2]));
-    rotation[1] = DEG_TO_RAD(atan2f(-mat.m[0][2], sqrtf(mat.m[1][2] * mat.m[1][2] +
-                mat.m[2][2] * mat.m[2][2])));
-    rotation[2] = DEG_TO_RAD(atan2f(mat.m[0][1], mat.m[0][0]));
+	rotation[0] = DEG_TO_RAD(atan2f(mat.m[1][2], mat.m[2][2]));
+	rotation[1] = DEG_TO_RAD(atan2f(
+		-mat.m[0][2],
+		sqrtf(mat.m[1][2] * mat.m[1][2] + mat.m[2][2] * mat.m[2][2])));
+	rotation[2] = DEG_TO_RAD(atan2f(mat.m[0][1], mat.m[0][0]));
 
-    translation[0] = mat.w.x;
-    translation[1] = mat.w.y;
-    translation[2] = mat.w.z;
+	translation[0] = mat.w.x;
+	translation[1] = mat.w.y;
+	translation[2] = mat.w.z;
 }
 
 // Modified from github.com/CedricGuillemet/ImGuizmo/blob/master/ImGuizmo.cpp
 
-static inline mat4f_t mat4_recompose(const f32* translation, const f32* rotation, const f32* scale)
+static inline mat4f_t mat4_recompose(const f32* translation,
+				     const f32* rotation, const f32* scale)
 {
-    mat4f_t mat = mat4_identity();
+	mat4f_t mat = mat4_identity();
 
-    vec3f_t direction_unary[3] = {
-        vec3_set(1.0f, 0.0f, 0.0f),
-        vec3_set(0.0f, 1.0f, 0.0f),
-        vec3_set(0.0f, 0.0f, 1.0f),
-    };
+	vec3f_t direction_unary[3] = {
+		vec3_set(1.0f, 0.0f, 0.0f),
+		vec3_set(0.0f, 1.0f, 0.0f),
+		vec3_set(0.0f, 0.0f, 1.0f),
+	};
 
-    mat4f_t rot[3] = {mat4_identity(), mat4_identity(), mat4_identity()};
-    for (uint32_t i = 0; i < 3; ++i) {
-        rot[i] = mat4_rotate(DEG_TO_RAD(rotation[i]), direction_unary[i]);
-    }
+	mat4f_t rot[3] = {mat4_identity(), mat4_identity(), mat4_identity()};
+	for (uint32_t i = 0; i < 3; ++i) {
+		rot[i] = mat4_rotate(DEG_TO_RAD(rotation[i]),
+				     direction_unary[i]);
+	}
 
-    mat = mat4_mul_list(3, rot[2], rot[1], rot[0]);
+	mat = mat4_mul_list(3, rot[2], rot[1], rot[0]);
 
-    float valid_scale[3] = { 0 };
-    for (uint32_t i = 0; i < 3; ++i) {
-        valid_scale[i] = fabsf(scale[i]) < MED_EPSILON ? 0.001f : scale[i];
-    }
+	float valid_scale[3] = {0};
+	for (uint32_t i = 0; i < 3; ++i) {
+		valid_scale[i] = fabsf(scale[i]) < MED_EPSILON ? 0.001f
+							       : scale[i];
+	}
 
-    mat.x = vec4_mulf(mat.x, valid_scale[0]);
-    mat.y = vec4_mulf(mat.y, valid_scale[1]);
-    mat.z = vec4_mulf(mat.z, valid_scale[2]);
-    mat.w = vec4_set(translation[0], translation[1], translation[2], 1.f);
+	mat.x = vec4_mulf(mat.x, valid_scale[0]);
+	mat.y = vec4_mulf(mat.y, valid_scale[1]);
+	mat.z = vec4_mulf(mat.z, valid_scale[2]);
+	mat.w = vec4_set(translation[0], translation[1], translation[2], 1.f);
 
-    return mat;
+	return mat;
 }
 
 static inline vec4f_t mat4_mul_vec4(mat4f_t m, vec4f_t v)
 {
-    return vec4_set(
-        m.elems[0 + 4 * 0] * v.x + m.elems[0 + 4 * 1] * v.y + m.elems[0 + 4 * 2] * v.z + m.elems[0 + 4 * 3] * v.w,
-        m.elems[1 + 4 * 0] * v.x + m.elems[1 + 4 * 1] * v.y + m.elems[1 + 4 * 2] * v.z + m.elems[1 + 4 * 3] * v.w,
-        m.elems[2 + 4 * 0] * v.x + m.elems[2 + 4 * 1] * v.y + m.elems[2 + 4 * 2] * v.z + m.elems[2 + 4 * 3] * v.w,
-        m.elems[3 + 4 * 0] * v.x + m.elems[3 + 4 * 1] * v.y + m.elems[3 + 4 * 2] * v.z + m.elems[3 + 4 * 3] * v.w
-    );
+	return vec4_set(
+		m.elems[0 + 4 * 0] * v.x + m.elems[0 + 4 * 1] * v.y +
+			m.elems[0 + 4 * 2] * v.z + m.elems[0 + 4 * 3] * v.w,
+		m.elems[1 + 4 * 0] * v.x + m.elems[1 + 4 * 1] * v.y +
+			m.elems[1 + 4 * 2] * v.z + m.elems[1 + 4 * 3] * v.w,
+		m.elems[2 + 4 * 0] * v.x + m.elems[2 + 4 * 1] * v.y +
+			m.elems[2 + 4 * 2] * v.z + m.elems[2 + 4 * 3] * v.w,
+		m.elems[3 + 4 * 0] * v.x + m.elems[3 + 4 * 1] * v.y +
+			m.elems[3 + 4 * 2] * v.z + m.elems[3 + 4 * 3] * v.w);
 }

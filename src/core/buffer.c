@@ -15,14 +15,20 @@
  */
 
 #include "core/buffer.h"
-#include "core/mem_align.h"
+#include "core/memory.h"
 
 buffer_t* buffer_new(size_t size)
 {
-	buffer_t* buf = (buffer_t*)malloc(sizeof(buffer_t));
+	buffer_t* buf = (buffer_t*)BM_ALLOC(sizeof(*buf));
 	buf->size = size;
-	buf->data = (u8*)malloc(size);
-	memset(buf->data, 0, size);
+	buf->capacity = size;
+	buf->pos = 0;
+	if (size > 0) {
+		buf->data = (u8*)BM_ALLOC(size);
+		memset(buf->data, 0, size);
+	} else {
+		buf->data = NULL;
+	}
 	return buf;
 }
 
@@ -42,63 +48,58 @@ buffer_t* buffer_aligned_new(size_t size, size_t alignment)
 	return buf;
 }
 
-void buffer_delete(buffer_t* buf)
+void buffer_free(buffer_t* buf)
 {
 	if (buf) {
 		if (buf->data) {
-			free(buf->data);
-		}
-		buf->data = NULL;
-		buf->size = 0;
-		free(buf);
-	}
-}
-
-void buffer_setdata(buffer_t* buf, void* data, size_t size)
-{
-	if (buf) {
-		if (buf->data) {
-			free(buf->data);
-			buf->data = (u8*)realloc(buf->data, size);
-			memcpy(buf->data, data, size);
-			buf->size = size;
-		} else {
-			buf->data = (u8*)malloc(size);
-			buf->size = size;
-		}
-	}
-}
-
-u8 buffer_resize(buffer_t* buf, size_t size)
-{
-	if (buf) {
-		// clearing the buffer
-		if (size <= 0) {
-			free(buf->data);
+			BM_FREE(buf->data);
 			buf->data = NULL;
-			buf->size = size;
-			return 0;
-		} else
-			// shrink the buffer
-			if (size <= buf->size && buf->data) {
-				u8* shrink = realloc(buf->data, size);
-				if (shrink != NULL) {
-					buf->data = shrink;
-				} else {
-					free(shrink);
-					return -1;
-				}
-				buf->size = size;
-			} else
-				// grow the buffer
-				if (size > buf->size) {
-					u8* grow =
-						(u8*)malloc(sizeof(u8) * size);
-					memcpy(grow, buf->data, size);
-					buf->data = grow;
-					buf->size = size;
-				}
+		}
+		BM_FREE(buf);
+		buf = NULL;
+	}
+}
+
+void buffer_copy_data(buffer_t* buf, void* data, size_t size)
+{
+	if (!buf)
+		return;
+
+	size_t write_size = buf->pos + size;
+	if (write_size >= buf->capacity) {
+		size_t new_capacity = buf->capacity * 2;
+		while (new_capacity <= write_size)
+			new_capacity *= 2;
+		buffer_resize(buf, new_capacity);
 	}
 
-	return 0;
+	memcpy(buf->data + buf->pos, data, size);
+	buf->size += size;
+	buf->pos += size;
+}
+
+size_t buffer_resize(buffer_t* buf, size_t size)
+{
+	if (!buf)
+		return;
+	u8* data = (u8*)BM_REALLOC(buf->data, size);
+	if (data == NULL)
+		return 0;
+	buf->data = data;
+	buf->capacity = size;
+	return size;
+}
+
+void buffer_seek(buffer_t* buf, size_t size, enum seek_dir seek)
+{
+	if (!buf)
+		return;
+	if (seek == SEEK_TO_START)
+		buf->pos = 0;
+	else if (seek == SEEK_TO_END)
+		buf->pos = buf->size;
+	else if (seek == SEEK_FORWARD)
+		buf->pos += size;
+	else if (seek == SEEK_REVERSE)
+		buf->pos -= size;
 }

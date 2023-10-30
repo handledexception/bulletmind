@@ -23,7 +23,7 @@
 
 typedef struct vec4f {
 	union {
-		struct { 
+		struct {
 			f32 x, y, z, w;
 		};
 		f32 elems[4];
@@ -41,7 +41,7 @@ typedef struct rgba {
 
 static inline vec4f_t vec4_set(f32 x, f32 y, f32 z, f32 w)
 {
-	vec4f_t v = { 0 };
+	vec4f_t v = {0};
 	v.x = x;
 	v.y = y;
 	v.z = z;
@@ -51,7 +51,7 @@ static inline vec4f_t vec4_set(f32 x, f32 y, f32 z, f32 w)
 
 static inline vec4f_t vec4_copy(const vec4f_t v)
 {
-	vec4f_t res = { 0 };
+	vec4f_t res = {0};
 	res.x = v.x;
 	res.y = v.y;
 	res.z = v.z;
@@ -98,14 +98,15 @@ static inline vec4f_t vec4_neg(vec4f_t v)
 static inline bool vec4_close(vec4f_t lhs, vec4f_t rhs)
 {
 	return f32_compare(lhs.x, rhs.x, EPSILON) &&
-		f32_compare(lhs.y, rhs.y, EPSILON) &&
-		f32_compare(lhs.z, rhs.z, EPSILON) &&
-		f32_compare(lhs.w, rhs.w, EPSILON);
+	       f32_compare(lhs.y, rhs.y, EPSILON) &&
+	       f32_compare(lhs.z, rhs.z, EPSILON) &&
+	       f32_compare(lhs.w, rhs.w, EPSILON);
 }
 
 static inline bool vec4_ge(vec4f_t lhs, vec4f_t rhs)
 {
-	return lhs.x >= rhs.x && lhs.y >= rhs.y && lhs.z >= rhs.z && lhs.w >= rhs.w;
+	return lhs.x >= rhs.x && lhs.y >= rhs.y && lhs.z >= rhs.z &&
+	       lhs.w >= rhs.w;
 }
 
 static inline f32 vec4_dot(vec4f_t a, vec4f_t b)
@@ -139,15 +140,14 @@ static inline vec4f_t vec4_from_vec3(vec3f_t v)
 
 static inline vec4f_t vec4_lerp(vec4f_t a, vec4f_t b, f32 step)
 {
-	vec4f_t c = {
-		.x = lerp(a.x, b.x, step),
-		.y = lerp(a.y, b.y, step),
-		.z = lerp(a.z, b.z, step),
-		.w = lerp(a.w, b.w, step)
-	};
+	vec4f_t c = {.x = lerp(a.x, b.x, step),
+		     .y = lerp(a.y, b.y, step),
+		     .z = lerp(a.z, b.z, step),
+		     .w = lerp(a.w, b.w, step)};
 	return c;
 }
 
-static inline void vec4_print(vec4f_t v) {
+static inline void vec4_print(vec4f_t v)
+{
 	printf("%f, %f, %f, %f\n", v.x, v.y, v.z, v.w);
 }

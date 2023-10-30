@@ -33,7 +33,7 @@ typedef struct vec2f {
 
 static inline vec2f_t vec2_set(f32 x, f32 y)
 {
-	vec2f_t v = { 0 };
+	vec2f_t v = {0};
 	v.x = x;
 	v.y = y;
 	return v;
@@ -46,7 +46,7 @@ static inline vec2f_t vec2_zero()
 
 static inline vec2f_t vec2_copy(const vec2f_t v)
 {
-	vec2f_t res = { 0 };
+	vec2f_t res = {0};
 	res.x = v.x;
 	res.y = v.y;
 	return res;
@@ -142,7 +142,7 @@ typedef struct vec2i {
 
 static inline vec2i_t vec2i_set(s32 x, s32 y)
 {
-	vec2i_t v = { 0 };
+	vec2i_t v = {0};
 	v.x = x;
 	v.y = y;
 	return v;
@@ -155,7 +155,7 @@ static inline vec2i_t vec2i_zero()
 
 static inline vec2i_t vec2i_copy(const vec2i_t v)
 {
-	vec2i_t res = { 0 };
+	vec2i_t res = {0};
 	res.x = v.x;
 	res.y = v.y;
 	return res;
@@ -205,7 +205,6 @@ static inline vec2i_t vec2i_negate(const vec2i_t v)
 {
 	return vec2i_set(-v.x, -v.y);
 }
-
 
 #ifdef __cplusplus
 }

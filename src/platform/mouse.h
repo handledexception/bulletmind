@@ -44,9 +44,9 @@ typedef struct mouse_s {
 } mouse_t;
 
 typedef struct {
-	gui_window_t* window;	/* window containing mouse cursor */
-	mouse_t mouse;			/* mouse state during the event */
-	mouse_button_t button;	/*  the mouse button pressed in the event */
+	gui_window_t* window;  /* window containing mouse cursor */
+	mouse_t mouse;         /* mouse state during the event */
+	mouse_button_t button; /*  the mouse button pressed in the event */
 } mouse_event_t;
 
 static inline void mouse_buttons_init(mouse_t* mouse)
@@ -59,7 +59,8 @@ static inline void mouse_buttons_init(mouse_t* mouse)
 		// named mouse buttons
 		mouse->buttons[MOUSE_BUTTON_LEFT].button = MOUSE_BUTTON_LEFT;
 		mouse->buttons[MOUSE_BUTTON_LEFT].state = false;
-		mouse->buttons[MOUSE_BUTTON_MIDDLE].button = MOUSE_BUTTON_MIDDLE;
+		mouse->buttons[MOUSE_BUTTON_MIDDLE].button =
+			MOUSE_BUTTON_MIDDLE;
 		mouse->buttons[MOUSE_BUTTON_MIDDLE].state = false;
 		mouse->buttons[MOUSE_BUTTON_RIGHT].button = MOUSE_BUTTON_RIGHT;
 		mouse->buttons[MOUSE_BUTTON_RIGHT].state = false;
@@ -85,21 +86,22 @@ static inline void mouse_init(mouse_t* mouse)
 	}
 }
 
-static int get_scaled_mouse_delta(float scale, int value, float *accum)
+static int get_scaled_mouse_delta(float scale, int value, float* accum)
 {
-    if (scale != 1.0f) {
-        *accum += scale * value;
-        if (*accum >= 0.0f) {
-            value = (int)floor(*accum);
-        } else {
-            value = (int)ceil(*accum);
-        }
-        *accum -= value;
-    }
-    return value;
+	if (scale != 1.0f) {
+		*accum += scale * value;
+		if (*accum >= 0.0f) {
+			value = (int)floor(*accum);
+		} else {
+			value = (int)ceil(*accum);
+		}
+		*accum -= value;
+	}
+	return value;
 }
 
-static void mouse_set_button_state(mouse_t* mouse, enum mouse_button button, enum mouse_button_state state)
+static void mouse_set_button_state(mouse_t* mouse, enum mouse_button button,
+				   enum mouse_button_state state)
 {
 	if (mouse) {
 		mouse->buttons[button].button = button;
@@ -110,7 +112,8 @@ static void mouse_set_button_state(mouse_t* mouse, enum mouse_button button, enu
 	}
 }
 
-static enum mouse_button_state mouse_get_button_state(mouse_t* mouse, enum mouse_button button)
+static enum mouse_button_state mouse_get_button_state(mouse_t* mouse,
+						      enum mouse_button button)
 {
 	enum mouse_button_state state = 0;
 	if (mouse && mouse->buttons[button].button == button)

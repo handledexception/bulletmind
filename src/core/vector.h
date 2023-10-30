@@ -36,6 +36,8 @@ static inline void vector_free(struct vector* vec)
 static inline void vector_reserve(struct vector* vec, size_t elem_size,
 				  size_t capacity)
 {
+	if (vec == NULL)
+		return;
 	if (capacity == 0 || capacity <= vec->capacity)
 		return;
 	void* ptr = BM_ALLOC(elem_size * capacity);
@@ -51,9 +53,9 @@ static inline void vector_reserve(struct vector* vec, size_t elem_size,
 static inline void vector_ensure_capacity(struct vector* vec, size_t elem_size,
 					  size_t new_capacity)
 {
-	if (!vec || new_capacity == 0)
+	if (vec == NULL)
 		return;
-	if (new_capacity <= vec->capacity)
+	if (new_capacity == 0 || new_capacity <= vec->capacity)
 		return;
 	size_t new_cap = (!vec->capacity) ? new_capacity : vec->capacity * 2;
 	if (new_cap > new_capacity)
@@ -69,15 +71,17 @@ static inline void vector_ensure_capacity(struct vector* vec, size_t elem_size,
 	vec->capacity = new_cap;
 }
 
-static inline void* vector_elem(const struct vector* vec, size_t elem_size,
-				size_t index)
+static inline void* vector_elem(const struct vector* vec, size_t elem_size, size_t index)
 {
-	return (void*)(((uint8_t*)vec->elems) + elem_size * index);
+	if (vec == NULL)
+		return NULL;
+	return (void*)(((uint8_t *)vec->elems) + elem_size * index);
 }
 
-static inline size_t vector_find(const struct vector* vec, size_t elem_size,
-				 const void* elem, size_t index)
+static inline size_t vector_find(const struct vector* vec, const void* elem, size_t elem_size, size_t index)
 {
+	if (vec == NULL)
+		return -1;
 	if (index <= vec->num_elems) {
 		for (size_t i = index; i < vec->num_elems; i++) {
 			void* cmp = vector_elem(vec, elem_size, i);
@@ -91,31 +95,38 @@ static inline size_t vector_find(const struct vector* vec, size_t elem_size,
 
 static inline void* vector_begin(const struct vector* vec, size_t elem_size)
 {
-	if (!vec->num_elems)
+	if (vec == NULL || !vec->num_elems)
 		return NULL;
 	return vector_elem(vec, elem_size, 0);
 }
 
 static inline void* vector_end(const struct vector* vec, size_t elem_size)
 {
-	if (!vec->num_elems)
+	if (vec == NULL || !vec->num_elems)
 		return NULL;
 	return vector_elem(vec, elem_size, vec->num_elems - 1);
 }
 
 static inline size_t vector_size(const struct vector* vec, size_t elem_size)
 {
+	if (vec == NULL)
+		return 0;
 	return elem_size * vec->num_elems;
 }
 
 static inline bool vector_is_empty(const struct vector* vec)
 {
+	if (vec == NULL)
+		return false;
 	return !(vec->elems > 0);
 }
 
 static inline void vector_erase(struct vector* vec, size_t elem_size,
 				size_t idx)
 {
+	if (vec == NULL)
+		return;
+
 	assert(idx < vec->num_elems);
 
 	if (idx >= vec->num_elems || !--vec->num_elems)
@@ -129,12 +140,16 @@ static inline void vector_erase(struct vector* vec, size_t elem_size,
 static inline void vector_push_back(struct vector* vec, const void* elem,
 				    size_t elem_size)
 {
+	if (vec == NULL)
+		return;
 	vector_ensure_capacity(vec, elem_size, ++vec->num_elems);
 	memcpy(vector_end(vec, elem_size), elem, elem_size);
 }
 
 static inline void* vector_push_back_new(struct vector* vec, size_t elem_size)
 {
+	if (vec == NULL)
+		return NULL;
 	void* last;
 	vector_ensure_capacity(vec, elem_size, ++vec->num_elems);
 	last = vector_end(vec, elem_size);
@@ -144,6 +159,8 @@ static inline void* vector_push_back_new(struct vector* vec, size_t elem_size)
 
 static inline void vector_pop_back(struct vector* vec, size_t elem_size)
 {
+	if (vec == NULL)
+		return;
 	assert(vec->num_elems != 0);
 	if (vec->num_elems)
 		vector_erase(vec, elem_size, vec->num_elems - 1);
@@ -151,25 +168,27 @@ static inline void vector_pop_back(struct vector* vec, size_t elem_size)
 
 static inline void vector_pop_front(struct vector* vec, size_t elem_size)
 {
+	if (vec == NULL)
+		return;
 	assert(vec->num_elems != 0);
 	if (vec->num_elems)
 		vector_erase(vec, elem_size, 0);
 }
 
-#define VECTOR(type)                      \
-	union {                           \
+#define VECTOR(type) 			  \
+	union { 					  \
 		struct vector vec;        \
 		struct {                  \
-			type* elems;      \
-			size_t num_elems; \
-			size_t capacity;  \
+			type* elems;          \
+			size_t num_elems;     \
+			size_t capacity;      \
 		};                        \
 	}
 #define vec_init(v) vector_init(&v.vec)
 #define vec_free(v) vector_free(&v.vec)
 #define vec_alloc_size(v) (sizeof(*v.elems) * v.num_elems)
 #define vec_elem(v, i) vector_elem(&v.vec, sizeof(*v.elems), i)
-#define vec_find(v, elem, i) vector_find(&v.vec, sizeof(*v.elems), elem, i)
+#define vec_find(v, elem, i) vector_find(&v.vec, elem, sizeof(*v.elems), i)
 #define vec_begin(v) vector_begin(&v.vec, sizeof(*v.elems))
 #define vec_end(v) vector_end(&v.vec, sizeof(*v.elems))
 #define vec_erase(v, i) vector_erase(&v.vec, sizeof(*v.elems), i)

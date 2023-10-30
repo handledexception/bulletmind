@@ -51,12 +51,18 @@ static inline void get_console_info(console_t* con)
 	con->out_handle = GetStdHandle(STD_OUTPUT_HANDLE);
 	con->err_handle = GetStdHandle(STD_ERROR_HANDLE);
 	if (GetConsoleMode(con->inp_handle, &con->inp_mode) == TRUE) {
-		if (SetConsoleMode(con->inp_handle, con->inp_mode|ENABLE_VIRTUAL_TERMINAL_INPUT) == TRUE)
+		if (SetConsoleMode(con->inp_handle,
+				   con->inp_mode |
+					   ENABLE_VIRTUAL_TERMINAL_INPUT) ==
+		    TRUE)
 			con->inp_vt_supported = true;
 		SetConsoleMode(con->inp_handle, con->inp_mode);
 	}
 	if (GetConsoleMode(con->out_handle, &con->out_mode) == TRUE) {
-		if (SetConsoleMode(con->out_handle, con->out_mode|ENABLE_VIRTUAL_TERMINAL_PROCESSING) == TRUE) {
+		if (SetConsoleMode(con->out_handle,
+				   con->out_mode |
+					   ENABLE_VIRTUAL_TERMINAL_PROCESSING) ==
+		    TRUE) {
 			con->out_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
 			con->out_vt_supported = true;
 		} else {
@@ -64,7 +70,10 @@ static inline void get_console_info(console_t* con)
 		}
 	}
 	if (GetConsoleMode(con->err_handle, &con->err_mode) == TRUE) {
-		if (SetConsoleMode(con->err_handle, con->err_mode|ENABLE_VIRTUAL_TERMINAL_PROCESSING) == TRUE) {
+		if (SetConsoleMode(con->err_handle,
+				   con->err_mode |
+					   ENABLE_VIRTUAL_TERMINAL_PROCESSING) ==
+		    TRUE) {
 			con->err_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
 			con->err_vt_supported = true;
 		} else {

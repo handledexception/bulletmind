@@ -43,7 +43,7 @@ void gui_refresh(void)
 {
 	if (gui->backend == GUI_BACKEND_SDL2) {
 #ifdef BM_USE_SDL2
-		return gui_refresh_sdl2(gui);
+		gui_refresh_sdl2(gui);
 #endif
 	} else {
 #if defined(_WIN32)
@@ -171,7 +171,7 @@ bool gui_is_valid_window(const gui_window_t* window)
 	if (gui)
 		return gui->is_valid_window(window);
 	else
-		return NULL;
+		return false;
 }
 
 void gui_show_window(gui_window_t* window, bool shown)
@@ -195,7 +195,8 @@ void gui_center_window(gui_window_t* window)
 	gui->center_window(window);
 }
 
-bool gui_get_window_size(const gui_window_t* window, s32* w, s32* h, bool client)
+bool gui_get_window_size(const gui_window_t* window, s32* w, s32* h,
+			 bool client)
 {
 	if (!gui || !window || !w || !h)
 		return false;
@@ -209,9 +210,10 @@ bool gui_get_window_rect(const gui_window_t* window, rect_t* rect, bool client)
 	return gui->get_window_rect(window, rect, client);
 }
 
-bool gui_get_window_centerpoint(const gui_window_t* window, vec2i_t* p, bool client)
+bool gui_get_window_centerpoint(const gui_window_t* window, vec2i_t* p,
+				bool client)
 {
-	rect_t r = { 0 };
+	rect_t r = {0};
 	if (gui_get_window_rect(window, &r, client)) {
 		rect_centerpoint(&r, p);
 		return true;
@@ -251,7 +253,7 @@ gui_window_t* gui_get_focused_window()
 		return NULL;
 }
 
-bool gui_set_focused_window(const gui_window_t* window)
+bool gui_set_focused_window(gui_window_t* window)
 {
 	if (gui)
 		return gui->focus_window(window);
@@ -302,20 +304,21 @@ bool gui_constrain_mouse(s32 curr_x, s32 curr_y, const rect_t* r)
 {
 	if (!r)
 		return false;
-	s32 w = (r->w-r->x);
-	s32 h = (r->h-r->y);
-	s32 cx = r->x+(w/2);
-	s32 cy = r->y+(h/2);
+	s32 w = (r->w - r->x);
+	s32 h = (r->h - r->y);
+	s32 cx = r->x + (w / 2);
+	s32 cy = r->y + (h / 2);
 	s32 max_x = w;
 	s32 min_x = cx;
 	s32 max_y = h;
 	s32 min_y = cy;
-	if ((s32)curr_x >= max_x-1)
-		gui_move_mouse(r->x+1, r->y+curr_y);
+	if ((s32)curr_x >= max_x - 1)
+		gui_move_mouse(r->x + 1, r->y + curr_y);
 	if ((s32)curr_x <= 0)
-		gui_move_mouse(r->w-1, r->y+curr_y);
-	if ((s32)curr_y >= max_y-1)
-		gui_move_mouse(r->x+curr_x, r->y+1);
-	if ((s32)curr_y <=  0)
-		gui_move_mouse(r->x+curr_x, r->h-1);
+		gui_move_mouse(r->w - 1, r->y + curr_y);
+	if ((s32)curr_y >= max_y - 1)
+		gui_move_mouse(r->x + curr_x, r->y + 1);
+	if ((s32)curr_y <= 0)
+		gui_move_mouse(r->x + curr_x, r->h - 1);
+	return true;
 }

@@ -1,7 +1,7 @@
 #pragma once
 
+#include "core/export.h"
 #include "gfx/enums.h"
-#include "gfx/win32_types.h"
 
 #ifdef __cplusplus
 extern "C" {

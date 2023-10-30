@@ -17,20 +17,11 @@ u32 hash_ptr(void* p)
 	return hash;
 }
 
-u32 hash_string(const char* s, size_t len)
+u32 hash_key(hash_key_t key)
 {
 	u32 hash = 0;
-	for (size_t i = 0; i < len; i++) {
-		hash = murmur_u32(s[i]) ^ s[i];
-	}
-	return hash;
-}
-
-u32 hash_key(hash_key_t* key)
-{
-	u32 hash = 0;
-	u8* k = (u8*)key->data;
-	for (size_t i = 0; i < key->size; i++) {
+	u8* k = (u8*)key.data;
+	for (size_t i = 0; i < key.size; i++) {
 		hash = murmur_u32(k[i]) ^ k[i];
 	}
 	return hash;
@@ -38,67 +29,60 @@ u32 hash_key(hash_key_t* key)
 
 void hashmap_init(struct hashmap* map)
 {
-	map->buckets.elems = NULL;
-	map->buckets.capacity = 0;
-	map->buckets.num_elems = 0;
-	map->capacity = 0;
-	map->elem_size = 0;
-	map->num_buckets = 0;
+	vec_init(map->buckets);
 }
 
-void hashmap_new(hashmap_t* map, size_t capacity)
+hashmap_t* hashmap_new(void)
 {
-	if (!map) {
-		map = (hashmap_t*)malloc(sizeof(*map));
-	}
+	hashmap_t* map = (hashmap_t*)BM_ALLOC(sizeof(*map));
 	hashmap_init(map);
-	vector_init(&map->buckets);
-	vector_ensure_capacity(&map->buckets, sizeof(struct bucket), capacity);
+	return map;
 }
 
 void hashmap_free(hashmap_t* map)
 {
 	if (map) {
-		vector_free(&map->buckets);
-		hashmap_free(map);
+		vec_free(map->buckets);
+		BM_FREE(map);
+		map = NULL;
 	}
 }
 
-bool hashmap_find(hashmap_t* map, hash_key_t* key, void** elem)
+size_t hashmap_size(hashmap_t* map)
 {
-	assert(map->elem_size > 0);
+	if (map) {
+		return map->buckets.num_elems;
+	} else {
+		return 0;
+	}
+}
 
+bool hashmap_find(hashmap_t* map, hash_key_t key, void** elem)
+{
 	bool found = false;
 	for (size_t i = 0; i < map->buckets.num_elems; i++) {
-		// u32 key_hash = hash_string(key, strlen(key));
 		u32 key_hash = hash_key(key);
-		struct bucket* buk = (struct bucket*)vector_elem(
-			&map->buckets, sizeof(struct bucket), i);
+		hash_bucket_t* buk = &map->buckets.elems[i];
 		if (buk && buk->key == key_hash) {
 			*elem = buk->val;
 			found = true;
 			break;
 		}
 	}
-	return true;
+	return found;
 }
 
-void hashmap_insert(hashmap_t* map, hash_key_t* key, const void* elem,
+void hashmap_insert(hashmap_t* map, hash_key_t key, const void* elem,
 		    size_t elem_size)
 {
-	if (map) {
-		if (map->elem_size != elem_size)
-			map->elem_size = elem_size;
-	}
-	u32 hash = 0;
-	if (key != NULL)
-		hash = hash_key(key);
-	// hash = hash_string(key, strlen(key));
-	struct bucket buk;
-	buk.key = hash;
+	if (!map || !elem)
+		return;
+
+	hash_bucket_t buk;
+	buk.key = hash_key(key);
 	buk.val = BM_ALLOC(elem_size);
 	memcpy(buk.val, elem, elem_size);
-	vector_push_back(&map->buckets, &buk, sizeof(struct bucket));
+	vec_push_back(map->buckets, &buk);
 }
 
-void hashmap_remove(hashmap_t* map, hash_key_t* key) {}
+void hashmap_remove(hashmap_t* map, hash_key_t key) {}

@@ -18,19 +18,21 @@ extern "C" {
 #define BM_GFX_MAX_VERTICES 256
 #define BM_GFX_MAX_INDICES 256
 
-#define GFX_VERTEX_HAS_POS(__vtype__)                                         \
+#define GFX_VERTEX_HAS_POS(__vtype__)                                     \
 	(__vtype__ == GFX_VERTEX_POS || __vtype__ == GFX_VERTEX_POS_UV || \
 	 __vtype__ == GFX_VERTEX_POS_NORM_UV ||                           \
-	 __vtype__ == GFX_VERTEX_POS_COLOR ||                             \
-	 __vtype__ == GFX_VERTEX_POS_NORM_COLOR)
-#define GFX_VERTEX_HAS_NORMAL(__vtype__)            \
+	 __vtype__ == GFX_VERTEX_POS_COL ||                               \
+	 __vtype__ == GFX_VERTEX_POS_COL_INSTANCED ||                     \
+	 __vtype__ == GFX_VERTEX_POS_NORM_COL)
+#define GFX_VERTEX_HAS_NORMAL(__vtype__)        \
 	(__vtype__ == GFX_VERTEX_POS_NORM_UV || \
-	 __vtype__ == GFX_VERTEX_POS_NORM_COLOR)
+	 __vtype__ == GFX_VERTEX_POS_NORM_COL)
 #define GFX_VERTEX_HAS_UV(__vtype__) \
 	(__vtype__ == GFX_VERTEX_POS_UV || __vtype__ == GFX_VERTEX_POS_NORM_UV)
-#define GFX_VERTEX_HAS_COLOR(__vtype__)           \
-	(__vtype__ == GFX_VERTEX_POS_COLOR || \
-	 __vtype__ == GFX_VERTEX_POS_NORM_COLOR)
+#define GFX_VERTEX_HAS_COLOR(__vtype__)               \
+	(__vtype__ == GFX_VERTEX_POS_COL ||           \
+	 __vtype__ == GFX_VERTEX_POS_COL_INSTANCED || \
+	 __vtype__ == GFX_VERTEX_POS_NORM_COL)
 #define GFX_VERTEX_HAS_TANGENT(__vtype__) (0)
 
 struct media_image; // foward decl
@@ -78,9 +80,38 @@ struct gfx_config {
 	enum pixel_format pix_fmt;
 };
 
+struct gfx_display {
+	char name[128];
+	char friendly_name[128];
+	u32 index;
+	u32 refresh_rate;
+	u32 width;
+	u32 height;
+	bool has_desktop;
+	enum gfx_display_orientation orientation;
+	rect_t desktop_coords;
+	void* handle;
+};
+
+struct gfx_adapter {
+	char name[128];
+	char description[128];
+	u32 index;
+	u32 vendor_id;
+	u32 device_id;
+	u32 subsystem_id;
+	u32 revision;
+	u64 driver_version;
+	size_t vram;
+	size_t sys_mem;
+	size_t sys_mem_shared;
+	void* handle;
+	VECTOR(struct gfx_display) displays;
+};
+
 struct gfx_system {
-	gfx_module_t* module;      /* platform graphics module */
-	enum gfx_module_type type; /* module type (D3D11, OpenGL, etc.) */
+	gfx_module_t* module;                /* platform graphics module */
+	enum gfx_module_type type;           /* module type (D3D11, OpenGL, etc.) */
 	VECTOR(struct gfx_adapter) adapters; /* graphics adapters */
 };
 
@@ -171,12 +202,13 @@ struct gfx_mesh {
 	struct vec3f* tangents;
 	struct vec4f* colors;
 	struct texture_vertex* tex_verts;
-	size_t num_vertices;
+	u32 num_vertices;
 };
 
 gfx_mesh_t* gfx_mesh_new(enum gfx_vertex_type type, u32 num_verts);
-void gfx_mesh_free(gfx_mesh_t* data);
+void gfx_mesh_free(gfx_mesh_t* mesh);
 size_t gfx_mesh_get_size(const gfx_mesh_t* mesh);
+bool gfx_load_obj(const char* path, gfx_mesh_t** mesh);
 
 struct gfx_sprite {
 	struct media_image* img;
@@ -258,12 +290,15 @@ BM_EXPORT void gfx_system_sampler_pop();
 BM_EXPORT void gfx_system_bind_render_target(void);
 BM_EXPORT void gfx_system_bind_input_layout(gfx_shader_t* shader);
 BM_EXPORT result gfx_create_swap_chain(const struct gfx_config* cfg);
-BM_EXPORT result gfx_resize_swap_chain(u32 width, u32 height, enum pixel_format pix_fmt);
+BM_EXPORT result gfx_resize_swap_chain(u32 width, u32 height,
+				       enum pixel_format pix_fmt);
 BM_EXPORT result gfx_create_device(s32 adapter);
 BM_EXPORT void gfx_destroy_device(void);
 
 BM_EXPORT void gfx_render_clear(const rgba_t* color);
-BM_EXPORT void gfx_render_begin(bool draw_indexed);
+BM_EXPORT void gfx_render_begin(u32 start_elem, u32 num_elems,
+				u32 num_instances, bool draw_indexed,
+				bool draw_instanced);
 BM_EXPORT void gfx_render_end(bool vsync, u32 flags);
 BM_EXPORT void gfx_set_vertex_shader(gfx_shader_t* vs);
 BM_EXPORT void gfx_set_pixel_shader(gfx_shader_t* ps);
@@ -283,7 +318,8 @@ BM_EXPORT void gfx_buffer_free(gfx_buffer_t* buf);
 BM_EXPORT size_t gfx_buffer_get_size(gfx_buffer_t* buf);
 BM_EXPORT result gfx_buffer_copy(gfx_buffer_t* buf, const void* data,
 				 size_t size);
-BM_EXPORT void gfx_bind_vertex_buffer(gfx_buffer_t* vb, u32 stride, u32 offset);
+BM_EXPORT void gfx_bind_vertex_buffer(gfx_buffer_t* vb, u32 start_slot,
+				      u32 stride, u32 offset);
 BM_EXPORT void gfx_bind_index_buffer(gfx_buffer_t* ib, u32 offset);
 BM_EXPORT void gfx_buffer_upload_constants(const gfx_shader_t* shader);
 BM_EXPORT enum gfx_vertex_type gfx_vertex_type_from_string(const char* s);
@@ -331,7 +367,8 @@ BM_EXPORT gfx_shader_var_t* gfx_shader_var_new(const char* name,
 BM_EXPORT void gfx_shader_var_init(gfx_shader_var_t* var);
 BM_EXPORT void gfx_shader_var_free(gfx_shader_var_t* var);
 BM_EXPORT void gfx_shader_var_set(gfx_shader_var_t* var, const void* data);
-BM_EXPORT void gfx_shader_var_set_data_ref(gfx_shader_var_t* var, const void* data);
+BM_EXPORT void gfx_shader_var_set_data_ref(gfx_shader_var_t* var,
+					   void* data);
 BM_EXPORT bool gfx_shader_add_var(gfx_shader_t* shader,
 				  const gfx_shader_var_t var);
 BM_EXPORT bool gfx_shader_set_var_by_name(gfx_shader_t* shader,

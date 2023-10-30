@@ -31,12 +31,12 @@ static inline void center_in_rect(rect_t* dst, const rect_t* outer,
 
 static inline void rect_centerpoint(const rect_t* r, vec2i_t* cp)
 {
-	if (!r || ! cp)
+	if (!r || !cp)
 		return;
-	s32 w = (r->w-r->x);
-	s32 h = (r->h-r->y);
-	cp->x = w/2;
-	cp->y = h/2;
+	s32 w = (r->w - r->x);
+	s32 h = (r->h - r->y);
+	cp->x = w / 2;
+	cp->y = h / 2;
 }
 
 static inline f32 radius_of_circle_in_rect(rect_t r)

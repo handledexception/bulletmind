@@ -12,7 +12,7 @@
 #include "gfx/gfx.h"
 #include "gfx/gfx_d3d11.h"
 #include "gfx/dxguids.h"
-
+#include "gfx/win32_types.h"
 #define COBJMACROS
 #define CINTERFACE
 #include <dxgi.h>
@@ -30,6 +30,7 @@
 #include "gfx/camera.h"
 #if defined(BM_USE_CIMGUI)
 #include "game/app.h"
+#include "game/entity.h"
 #include "gfx/cimgui_defs.h"
 #include "cimgui.h"
 #include "cimgui_impl.h"
@@ -51,34 +52,34 @@ typedef HRESULT(WINAPI* PFN_CREATE_DXGI_FACTORY2)(UINT flags, REFIID riid,
 static PFN_CREATE_DXGI_FACTORY2 CreateDXGIFactory2Func = NULL;
 static PFN_D3D11_CREATE_DEVICE D3D11CreateDeviceFunc = NULL;
 
-struct gfx_display {
-	char name[128];
-	char friendly_name[128];
-	u32 index;
-	u32 refresh_rate;
-	u32 width;
-	u32 height;
-	bool has_desktop;
-	enum gfx_display_orientation orientation;
-	rect_t desktop_coords;
-	IDXGIOutput* dxgi_output;
-};
+// struct gfx_display {
+// 	char name[128];
+// 	char friendly_name[128];
+// 	u32 index;
+// 	u32 refresh_rate;
+// 	u32 width;
+// 	u32 height;
+// 	bool has_desktop;
+// 	enum gfx_display_orientation orientation;
+// 	rect_t desktop_coords;
+// 	IDXGIOutput* dxgi_output;
+// };
 
-struct gfx_adapter {
-	char name[128];
-	char description[128];
-	u32 index;
-	u32 vendor_id;
-	u32 device_id;
-	u32 subsystem_id;
-	u32 revision;
-	u64 driver_version;
-	size_t vram;
-	size_t sys_mem;
-	size_t sys_mem_shared;
-	IDXGIAdapter1* dxgi_adapter;
-	VECTOR(struct gfx_display) displays;
-};
+// struct gfx_adapter {
+// 	char name[128];
+// 	char description[128];
+// 	u32 index;
+// 	u32 vendor_id;
+// 	u32 device_id;
+// 	u32 subsystem_id;
+// 	u32 revision;
+// 	u64 driver_version;
+// 	size_t vram;
+// 	size_t sys_mem;
+// 	size_t sys_mem_shared;
+// 	IDXGIAdapter1* dxgi_adapter;
+// 	VECTOR(struct gfx_display) displays;
+// };
 
 struct gfx_buffer {
 	u8* data;
@@ -137,6 +138,8 @@ struct gfx_sampler_state {
 };
 
 struct gfx_module {
+	enum gfx_module_type type;
+
 	/* dynamic libs */
 	HMODULE dxgi_dll;
 	HMODULE d3d11_dll;
@@ -199,14 +202,21 @@ bool gfx_init_cimgui(void)
 	gfx->module->igio = igGetIO();
 	if (gfx->module->igio == NULL)
 		return false;
-	gfx->module->igio->ConfigFlags |= (ImGuiConfigFlags_NavEnableKeyboard
-		| ImGuiConfigFlags_DockingEnable); // | ImGuiConfigFlags_ViewportsEnable);
+	ImFontAtlas_AddFontFromFileTTF(gfx->module->igio->Fonts,
+		"assets\\fonts\\Roboto-Medium.ttf", 15, NULL, NULL);
+	gfx->module->igio->ConfigFlags |=
+		(ImGuiConfigFlags_NavEnableKeyboard |
+		 ImGuiConfigFlags_DockingEnable); // | ImGuiConfigFlags_ViewportsEnable);
 	igStyleColorsDark(NULL);
 	ImGuiStyle* style = igGetStyle();
 	if (style == NULL)
 		return false;
+
+	style->WindowRounding = 4.0f;
+	style->FrameRounding = 4.0f;
+	style->WindowBorderSize = 0.0f;
+
 	if (gfx->module->igio->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-		style->WindowRounding = 0.0f;
 		style->Colors[ImGuiCol_WindowBg].w = 1.0f;
 	}
 #ifdef BM_USE_SDL2
@@ -215,22 +225,9 @@ bool gfx_init_cimgui(void)
 #else
 	ImGui_ImplWin32_Init(gfx->module->hwnd);
 #endif
-	ImGui_ImplDX11_Init((ID3D11Device*)gfx->module->device, (ID3D11DeviceContext*)gfx->module->ctx);
+	ImGui_ImplDX11_Init((ID3D11Device*)gfx->module->device,
+			    (ID3D11DeviceContext*)gfx->module->ctx);
 	return true;
-}
-#endif
-
-void gfx_cimgui_begin(void)
-{
-#if defined(BM_USE_CIMGUI)
-	ImGui_ImplDX11_NewFrame();
-#if defined(BM_USE_SDL2)
-	ImGui_ImplSDL2_NewFrame();
-#else
-	ImGui_ImplWin32_NewFrame();
-#endif
-	igNewFrame();
-#endif
 }
 
 void gfx_cimgui_frame(struct application* app)
@@ -238,70 +235,97 @@ void gfx_cimgui_frame(struct application* app)
 	if (!app)
 		return;
 
-	bool show = true;
-	igShowDemoWindow(&show);
-	float vspeed = 1.0f;
-	float v_min = -100.0f;
-	float v_max = 100.0f;
-	CImGuiWindowFlags window_flags = 0;
-	window_flags |= CImGuiWindowFlags_NoBackground;
-	window_flags |= CImGuiWindowFlags_NoTitleBar;
-	igBegin("GameData", &show, window_flags);
+	bool show_demo = true;
+	igShowDemoWindow(&show_demo);
+
+	bool show_stats = true;
+	CImGuiWindowFlags window_flags = (
+		CImGuiWindowFlags_NoResize |
+		CImGuiWindowFlags_NoBackground |
+		CImGuiWindowFlags_NoTitleBar
+	);
+	igSetNextWindowSize((ImVec2){320, -1}, ImGuiCond_None);
+	igSetNextWindowPos((ImVec2){0, 0}, ImGuiCond_None, (ImVec2){0, 0});
+	igBegin("GameData", &show_stats, window_flags);
 	{
-		igText("Frame: %lld", app->frame_count);
-		igText("Frametime: %f", app->frame_time_end);
-		igText("Scenes: %zu", app->scenes.num_elems);
-		// if (igCollapsingHeader_TreeNodeFlags("Inputs", 0)) {
-		// 	vec2f_t mouse_screen = { .x = (f32)ctx->inputs->mouse.screen_pos.x, (f32)ctx->inputs->mouse.screen_pos.y };
-		// 	igDragFloat2("Mouse Pos (Screen)", (float*)&mouse_screen, vspeed, v_min, v_max, NULL, 0);
-		// 	vec2f_t mouse_window = { .x = (f32)ctx->inputs->mouse.window_pos.x, (f32)ctx->inputs->mouse.window_pos.y };
-		// 	igDragFloat2("Mouse Pos (Window)", (float*)&mouse_window, vspeed, v_min, v_max, NULL, 0);
-		// 	vec2f_t mouse_rel = { .x = (f32)ctx->inputs->mouse.relative.x, (f32)ctx->inputs->mouse.relative.y };
-		// 	igDragFloat2("Mouse Relative", (float*)&mouse_rel, vspeed, v_min, v_max, NULL, 0);
-		// }
-		// if (igCollapsingHeader_TreeNodeFlags("Camera Position", 0)) {
-		// 	float* xyz = (float*)&ctx->cam->transform.position;
-		// 	igDragFloat3("XYZ", xyz, vspeed, v_min, v_max, NULL, 0);
-		// 	float* angles = (float*)&ctx->cam->angles;
-		// 	igDragFloat3("Angles", angles, vspeed, v_min, v_max, NULL, 0);
-		// 	float* rot = (float*)&ctx->cam->transform.rotation;
-		// 	igDragFloat4("Rotation", rot, vspeed, v_min, v_max, NULL, 0);
-		// }
-		// if (igCollapsingHeader_TreeNodeFlags("Camera View Matrix", 0)) {
-		// 	if (ctx->view_mat) {
-		// 		igDragFloat4("M0", (float*)(&ctx->view_mat->x), vspeed, v_min, v_max, NULL, 0);
-		// 		igDragFloat4("M1", (float*)(&ctx->view_mat->y), vspeed, v_min, v_max, NULL, 0);
-		// 		igDragFloat4("M2", (float*)(&ctx->view_mat->z), vspeed, v_min, v_max, NULL, 0);
-		// 		igDragFloat4("M3", (float*)(&ctx->view_mat->w), vspeed, v_min, v_max, NULL, 0);
-		// 	}
-		// }
-		// if (igCollapsingHeader_TreeNodeFlags("Camera Projection Matrix", 0)) {
-		// 	if (ctx->view_mat) {
-		// 		igDragFloat4("M0", (float*)(&ctx->proj_mat->rows[0]), vspeed, v_min, v_max, NULL, 0);
-		// 		igDragFloat4("M1", (float*)(&ctx->proj_mat->rows[1]), vspeed, v_min, v_max, NULL, 0);
-		// 		igDragFloat4("M2", (float*)(&ctx->proj_mat->rows[2]), vspeed, v_min, v_max, NULL, 0);
-		// 		igDragFloat4("M3", (float*)(&ctx->proj_mat->rows[3]), vspeed, v_min, v_max, NULL, 0);
-		// 	}
-		// }
+		if (igCollapsingHeader_TreeNodeFlags(
+			    "Stats", ImGuiTreeNodeFlags_DefaultOpen)) {
+			igText("Frame: %lld", app->frame_count);
+			igText("Frame Time: %f", app->frame_perf_time);
+			igText("Time Now: %f", app->time_now);
+			igText("Time Delta: %f", app->time_delta);
+			igText("Scenes: %zu", app->scenes.num_elems);
+			// igText("Instances: %zu", app_scene_instance_count(app));
+		}
+		if (igCollapsingHeader_TreeNodeFlags(
+			    "Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
+			igText("Pos: %f, %f, %f",
+			       app->cam.cam->transform.position.x,
+			       app->cam.cam->transform.position.y,
+			       app->cam.cam->transform.position.z);
+			igText("Rot: %f, %f, %f",
+			       app->cam.cam->transform.rotation.x,
+			       app->cam.cam->transform.rotation.y,
+			       app->cam.cam->transform.rotation.z);
+			igText("Pitch: %f",
+			       app->cam.pitch);
+			igText("Yaw: %f",
+			       app->cam.yaw);
+			igText("Sensitivity: %f",
+			       app->cam.sensitivity);
+		}
+		if (igCollapsingHeader_TreeNodeFlags(
+			    "Player", ImGuiTreeNodeFlags_DefaultOpen)) {
+			entity_t* player =
+				ent_by_index(app->entities, ENT_INDEX_PLAYER);
+			igText("Pos: %f, %f, %f", player->pos.x, player->pos.y,
+			       player->pos.z);
+			igText("Vel: %f, %f, %f", player->vel.x, player->vel.y,
+			       player->vel.z);
+			igText("Acc: %f, %f, %f", player->acc.x, player->acc.y,
+			       player->acc.z);
+		}
+	}
+	igEnd();
+
+	// Debug drawing
+	bool show_debug = true;
+	ImVec2 vp = {
+		.x = (float)gfx->module->viewport.w,
+		.y = (float)gfx->module->viewport.h
+	};
+	igSetNextWindowSize(vp, ImGuiCond_None);
+	igSetNextWindowPos((ImVec2){0, 0}, ImGuiCond_None, (ImVec2){0, 0});
+	igBegin("FullscreenDebug", &show_debug, CImGuiWindowFlags_NoMove | CImGuiWindowFlags_NoFocusOnAppearing | CImGuiWindowFlags_NoBringToFrontOnFocus | CImGuiWindowFlags_NoResize | CImGuiWindowFlags_NoTitleBar | CImGuiWindowFlags_NoBackground);
+	{
+		igRenderText((ImVec2){vp.x/2.0f, vp.y/2.0f}, "1234", NULL, false);
 	}
 	igEnd();
 }
 
+void gfx_cimgui_begin(void)
+{
+	ImGui_ImplDX11_NewFrame();
+#if defined(BM_USE_SDL2)
+	ImGui_ImplSDL2_NewFrame();
+#else
+	ImGui_ImplWin32_NewFrame();
+#endif
+	igNewFrame();
+}
+
 void gfx_cimgui_end(void)
 {
-#if defined(BM_USE_CIMGUI)
 	igRender();
 	ImGui_ImplDX11_RenderDrawData(igGetDrawData());
 	if (gfx->module->igio->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
 		igUpdatePlatformWindows();
 		igRenderPlatformWindowsDefault(NULL, NULL);
 	}
-#endif
 }
 
 void gfx_shutdown_cimgui(void)
 {
-#if defined(BM_USE_CIMGUI)
 	ImGui_ImplDX11_Shutdown();
 
 #if defined(BM_USE_SDL2)
@@ -315,8 +339,8 @@ void gfx_shutdown_cimgui(void)
 		gfx->module->igui = NULL;
 		gfx->module->igio = NULL;
 	}
-#endif
 }
+#endif
 
 enum gfx_display_orientation
 gfx_display_orientation_from_dxgi(DXGI_MODE_ROTATION rotation)
@@ -535,13 +559,12 @@ result gfx_enumerate_adapters(struct vector* adapters, bool enum_displays)
 		struct gfx_adapter ga;
 		memset(&ga, 0, sizeof(struct gfx_adapter));
 
-		hr = IDXGIFactory2_EnumAdapters1(gfx->module->dxgi_factory, i,
-						 &ga.dxgi_adapter);
+		hr = IDXGIFactory2_EnumAdapters1(gfx->module->dxgi_factory, i, (IDXGIAdapter1**)&ga.handle);
 		if (FAILED(hr))
 			continue;
 
 		DXGI_ADAPTER_DESC desc;
-		IDXGIAdapter1_GetDesc(ga.dxgi_adapter, &desc);
+		IDXGIAdapter1_GetDesc((IDXGIAdapter1*)ga.handle, &desc);
 		// ignore Microsoft's 'basic' renderer
 		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c)
 			continue;
@@ -560,7 +583,7 @@ result gfx_enumerate_adapters(struct vector* adapters, bool enum_displays)
 
 		LARGE_INTEGER umd;
 		if (SUCCEEDED(IDXGIAdapter1_CheckInterfaceSupport(
-			    ga.dxgi_adapter, &BM_IID_IDXGIDevice, &umd))) {
+			    (IDXGIAdapter1*)ga.handle, &BM_IID_IDXGIDevice, &umd))) {
 			u16 aa = 0;
 			u16 bb = 0;
 			u16 ccccc = 0;
@@ -625,9 +648,7 @@ static bool gfx_get_monitor_target(const MONITORINFOEX* info,
 					    &source.header) == ERROR_SUCCESS) {
 					// wchar_t info_device[512] = L"";
 					// os_utf8_to_wcs(info->szDevice, 0, info_device, 512);
-					if (wcscmp(info->szDevice,
-						   source.viewGdiDeviceName) ==
-					    0) {
+					if (wcscmp((const wchar_t*)&info->szDevice[0], (const wchar_t*)&source.viewGdiDeviceName[0]) == 0) {
 						target->header.type =
 							DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
 						target->header.size =
@@ -656,21 +677,22 @@ static bool gfx_get_monitor_target(const MONITORINFOEX* info,
 result gfx_enumerate_displays(const gfx_adapter_t* adapter,
 			      struct vector* displays)
 {
-	if (adapter->dxgi_adapter == NULL)
+	IDXGIAdapter1* dxgi_adapter = (IDXGIAdapter1*)adapter->handle;
+	if (dxgi_adapter == NULL)
 		return RESULT_NULL;
 
 	struct gfx_display gd;
 	UINT output_index = 0;
-	if (FAILED(IDXGIAdapter1_EnumOutputs(adapter->dxgi_adapter,
-					     output_index, &gd.dxgi_output)))
+	if (FAILED(IDXGIAdapter1_EnumOutputs(dxgi_adapter,
+					     output_index, (IDXGIOutput**)&gd.handle)))
 		return RESULT_NOT_FOUND;
 
 	for (output_index = 0;
-	     IDXGIAdapter1_EnumOutputs(adapter->dxgi_adapter, output_index,
-				       &gd.dxgi_output) == S_OK;
+	     IDXGIAdapter1_EnumOutputs(dxgi_adapter, output_index,
+				       (IDXGIOutput**)&gd.handle) == S_OK;
 	     output_index++) {
 		DXGI_OUTPUT_DESC desc;
-		if (FAILED(IDXGIOutput_GetDesc(gd.dxgi_output, &desc)))
+		if (FAILED(IDXGIOutput_GetDesc((IDXGIOutput*)gd.handle, &desc)))
 			continue;
 
 		bool target_found = false;
@@ -738,6 +760,10 @@ void gfx_set_viewport(u32 width, u32 height)
 		.TopLeftY = 0.f,
 	};
 	ID3D11DeviceContext1_RSSetViewports(gfx->module->ctx, 1, &vp);
+	gfx->module->viewport.w = (s32)vp.Width;
+	gfx->module->viewport.h = (s32)vp.Height;
+	gfx->module->viewport.x = (s32)vp.TopLeftX;
+	gfx->module->viewport.y = (s32)vp.TopLeftY;
 	logger(LOG_INFO,
 	       "[gfx] Set D3D11 Viewport:\n"
 	       "Width: %f, Height: %f\n"
@@ -761,6 +787,8 @@ result gfx_init_dx11(const struct gfx_config* cfg, s32 flags)
 	}
 	gfx->module = BM_ALLOC(sizeof(*gfx->module));
 	memset(gfx->module, 0, sizeof(*gfx->module));
+
+	gfx->module->type = cfg->module;
 
 	if (gfx_create_device(cfg->adapter) != RESULT_OK) {
 		gfx_shutdown();
@@ -787,12 +815,12 @@ void gfx_shutdown_dx11(void)
 				gfx_display_t* disp =
 					vec_elem(adap->displays, j);
 				if (disp) {
-					IDXGIOutput_Release(disp->dxgi_output);
+					IDXGIOutput_Release((IDXGIOutput*)disp->handle);
 				}
 			}
 		}
 		vec_free(adap->displays);
-		IDXGIAdapter1_Release(adap->dxgi_adapter);
+		IDXGIAdapter1_Release((IDXGIAdapter1*)adap->handle);
 	}
 	vec_free(gfx->adapters);
 
@@ -810,13 +838,11 @@ result gfx_init_renderer(const struct gfx_config* cfg, s32 flags)
 
 	result res = RESULT_OK;
 
-	ENSURE_OK(
-		gfx_render_target_init(cfg->width, cfg->height, cfg->pix_fmt));
+	ENSURE_OK(gfx_render_target_init(cfg->width, cfg->height, cfg->pix_fmt));
 	ENSURE_OK(gfx_init_depth(cfg->width, cfg->height, PIX_FMT_DEPTH_U24_S8,
 				 flags & GFX_USE_ZBUFFER));
 
-	logger(LOG_INFO,
-	       "[gfx] Created render target and zbuffer\n");
+	logger(LOG_INFO, "[gfx] Created render target and zbuffer\n");
 
 	gfx_set_render_targets(gfx->module->render_target,
 			       gfx->module->depth_target);
@@ -911,7 +937,7 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 	gfx->module->window = cfg->window;
 
 	DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsd = {
-		.Scaling = DXGI_SCALING_NONE,
+		.Scaling = DXGI_MODE_SCALING_UNSPECIFIED,
 		.RefreshRate.Denominator = (UINT)cfg->fps_den,
 		.RefreshRate.Numerator = (UINT)cfg->fps_num,
 		.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE,
@@ -932,8 +958,8 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 
 	IDXGISwapChain1* sc1;
 	hr = IDXGIFactory2_CreateSwapChainForHwnd(
-		gfx->module->dxgi_factory, (IUnknown*)gfx->module->device, gfx->module->hwnd,
-		&swap_desc1, &fsd, NULL, &sc1);
+		gfx->module->dxgi_factory, (IUnknown*)gfx->module->device,
+		gfx->module->hwnd, &swap_desc1, &fsd, NULL, &sc1);
 	if (FAILED(hr)) {
 		logger(LOG_ERROR, "Error creating Swap Chain!");
 		goto cleanup;
@@ -943,8 +969,7 @@ result gfx_create_swap_chain(const struct gfx_config* cfg)
 		sc1, &BM_IID_IDXGISwapChain2,
 		(void**)&gfx->module->dxgi_swap_chain);
 	if (FAILED(hr)) {
-		logger(LOG_ERROR,
-		       "[gfx] IDXGISwapChain1 QI failed!");
+		logger(LOG_ERROR, "[gfx] IDXGISwapChain1 QI failed!");
 		goto cleanup;
 	}
 	if (cfg->fullscreen) {
@@ -987,24 +1012,30 @@ result gfx_resize_swap_chain(u32 width, u32 height, enum pixel_format pix_fmt)
 		return RESULT_NULL;
 	gfx_render_target_destroy();
 	gfx_destroy_depth();
-	ID3D11DeviceContext1_OMSetRenderTargets(gfx->module->ctx, 0, NULL, NULL);
+	ID3D11DeviceContext1_OMSetRenderTargets(gfx->module->ctx, 0, NULL,
+						NULL);
 	s32 buffer_count = 2;
 	s32 swap_flags = 0;
-	HRESULT hr = IDXGISwapChain1_ResizeBuffers(gfx->module->dxgi_swap_chain,
-		buffer_count, width, height, pixel_format_to_dxgi(pix_fmt), swap_flags);
+	HRESULT hr = IDXGISwapChain1_ResizeBuffers(
+		gfx->module->dxgi_swap_chain, buffer_count, width, height,
+		pixel_format_to_dxgi(pix_fmt), swap_flags);
 	if (hr != S_OK) {
-		logger(LOG_ERROR, "Error resizing swap chain buffers to %dx%d (pixel format %s)", width, height, pix_fmt_to_string(pix_fmt));
+		logger(LOG_ERROR,
+		       "Error resizing swap chain buffers to %dx%d (pixel format %s)",
+		       width, height, pix_fmt_to_string(pix_fmt));
 		return RESULT_ERROR;
 	}
 
 	ENSURE_OK(gfx_render_target_init(width, height, pix_fmt));
-	ENSURE_OK(gfx_init_depth(width, height, PIX_FMT_DEPTH_U24_S8, gfx->module->depth_enabled));
+	ENSURE_OK(gfx_init_depth(width, height, PIX_FMT_DEPTH_U24_S8,
+				 gfx->module->depth_enabled));
 	gfx_set_render_targets(gfx->module->render_target,
 			       gfx->module->depth_target);
 	gfx_set_viewport(width, height);
 
 	logger(LOG_INFO,
-	       "[gfx] Resized swap chain to %dx%d (pixel format %s)\n", width, height, pix_fmt_to_string(pix_fmt));
+	       "[gfx] Resized swap chain to %dx%d (pixel format %s)\n", width,
+	       height, pix_fmt_to_string(pix_fmt));
 	return RESULT_OK;
 }
 
@@ -1083,7 +1114,7 @@ result gfx_create_device(s32 adapter)
 
 	gfx_adapter_t* adap = vec_elem(gfx->adapters, adapter);
 	if (adap != NULL) {
-		gfx->module->dxgi_adapter = adap->dxgi_adapter;
+		gfx->module->dxgi_adapter = (IDXGIAdapter1*)adap->handle;
 	}
 
 	UINT create_flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
@@ -1126,8 +1157,7 @@ result gfx_create_device(s32 adapter)
 						&BM_IID_ID3D11DeviceContext1,
 						(void**)&gfx->module->ctx);
 	if (FAILED(hr)) {
-		logger(LOG_ERROR,
-		       "[gfx] ID3D11DeviceContext1 QI failed!");
+		logger(LOG_ERROR, "[gfx] ID3D11DeviceContext1 QI failed!");
 		return RESULT_ERROR;
 	}
 
@@ -1184,7 +1214,8 @@ void gfx_render_clear(const rgba_t* color)
 	}
 }
 
-void gfx_render_begin(bool draw_indexed)
+void gfx_render_begin(u32 start_elem, u32 num_elems, u32 num_instances,
+		      bool draw_indexed, bool draw_instanced)
 {
 	if (!gfx_ok())
 		return;
@@ -1193,23 +1224,35 @@ void gfx_render_begin(bool draw_indexed)
 		(gfx_vertex_shader_t*)gfx->module->vertex_shader->impl;
 	gfx_pixel_shader_t* ps =
 		(gfx_pixel_shader_t*)gfx->module->pixel_shader->impl;
+
 	ID3D11DeviceContext1* ctx = gfx->module->ctx;
 	ID3D11DeviceContext1_VSSetShader(ctx, vs->program, NULL, 0);
 	ID3D11DeviceContext1_PSSetShader(ctx, ps->program, NULL, 0);
+
 	gfx_sampler_state_t* sampler = NULL;
 	if (gfx->module->samplers.num_elems > 0) {
 		sampler = gfx->module->samplers.elems[0];
 	}
 	ID3D11DeviceContext1_PSSetSamplers(ctx, 0, 1, &sampler->state);
-	u32 start = 0;
+
 	if (draw_indexed) {
-		u32 base_vertex = 0;
-		u32 index_count = BM_GFX_MAX_INDICES;
-		ID3D11DeviceContext1_DrawIndexed(ctx, index_count, start, 0);
+		if (draw_instanced) {
+			ID3D11DeviceContext1_DrawIndexedInstanced(
+				ctx, num_elems, num_instances, start_elem, 0,
+				0);
+		} else {
+			// u32 index_count = BM_GFX_MAX_INDICES;
+			ID3D11DeviceContext1_DrawIndexed(ctx, num_elems,
+							 start_elem, 0);
+		}
 	} else {
-		u32 vertex_count = BM_GFX_MAX_VERTICES;
-		u32 start_vertex = 0;
-		ID3D11DeviceContext1_Draw(ctx, vertex_count, start);
+		if (draw_instanced) {
+			ID3D11DeviceContext1_DrawInstanced(
+				ctx, num_elems, num_instances, start_elem, 0);
+		} else {
+			// u32 vertex_count = BM_GFX_MAX_VERTICES;
+			ID3D11DeviceContext1_Draw(ctx, num_elems, start_elem);
+		}
 	}
 }
 
@@ -1338,6 +1381,9 @@ result gfx_buffer_new(const void* data, size_t size, enum gfx_buffer_type type,
 	if (!gfx_ok() || buf == NULL)
 		return RESULT_NULL;
 
+	if (size == 0)
+		return RESULT_NO_DATA;
+
 	if (type >= GFX_BUFFER_UNKNOWN) {
 		logger(LOG_ERROR, "gfx_buffer_new: invalid type specified!");
 		return RESULT_UNKNOWN;
@@ -1460,13 +1506,13 @@ result gfx_buffer_copy(gfx_buffer_t* buf, const void* data, size_t size)
 	return RESULT_OK;
 }
 
-void gfx_bind_vertex_buffer(gfx_buffer_t* vb, u32 stride, u32 offset)
+void gfx_bind_vertex_buffer(gfx_buffer_t* vb, u32 start_slot, u32 stride,
+			    u32 offset)
 {
 	if (gfx_ok()) {
-		ID3D11DeviceContext1_IASetVertexBuffers(gfx->module->ctx, 0, 1,
-							&vb->buffer,
-							(UINT*)&stride,
-							(UINT*)&offset);
+		ID3D11DeviceContext1_IASetVertexBuffers(
+			gfx->module->ctx, start_slot, 1, &vb->buffer,
+			(UINT*)&stride, (UINT*)&offset);
 	}
 }
 
@@ -1811,19 +1857,23 @@ result gfx_shader_new_input_layout(gfx_shader_t* shader)
 		num_elems = 1;
 		break;
 	case GFX_VERTEX_POS_UV:
-		descs = &kVertexDescPositionUV[0];
+		descs = &kVertexDescPosUV[0];
 		num_elems = 2;
 		break;
 	case GFX_VERTEX_POS_NORM_UV:
-		descs = &kVertexDescPositionNormalUV[0];
+		descs = &kVertexDescPosNormUV[0];
 		num_elems = 3;
 		break;
-	case GFX_VERTEX_POS_COLOR:
-		descs = &kVertexDescPositionColor[0];
+	case GFX_VERTEX_POS_COL:
+		descs = &kVertexDescPosCol[0];
 		num_elems = 2;
 		break;
-	case GFX_VERTEX_POS_NORM_COLOR:
-		descs = &kVertexDescPositionNormalColor[0];
+	case GFX_VERTEX_POS_COL_INSTANCED:
+		descs = &kVertexDescInstancedPosCol[0];
+		num_elems = 6;
+		break;
+	case GFX_VERTEX_POS_NORM_COL:
+		descs = &kVertexDescPosNormCol[0];
 		num_elems = 3;
 		break;
 	case GFX_VERTEX_UNKNOWN:
@@ -2068,7 +2118,7 @@ void gfx_bind_blend_state()
 //
 // gfx texture
 //
-void gfx_texture_init2d(struct gfx_texture2d* tex2d)
+void gfx_texture2d_init(struct gfx_texture2d* tex2d)
 {
 	if (tex2d != NULL) {
 		tex2d->pix_fmt = PIX_FMT_UNKNOWN;
@@ -2095,7 +2145,7 @@ result gfx_texture2d_create(const u8* data, const struct gfx_texture_desc* desc,
 	gfx_texture_t* tex = *texture;
 	tex->impl = BM_ALLOC(sizeof(struct gfx_texture2d));
 	struct gfx_texture2d* tex2d = (struct gfx_texture2d*)tex->impl;
-	gfx_texture_init2d(tex2d);
+	gfx_texture2d_init(tex2d);
 	tex2d->width = desc->width;
 	tex2d->height = desc->height;
 	tex2d->pix_fmt = desc->pix_fmt;
@@ -2247,8 +2297,8 @@ result gfx_render_target_init(u32 width, u32 height, enum pixel_format pf)
 	if (FAILED(hr))
 		return RESULT_NULL;
 
-	return RESULT_OK;
-}
+ 	return RESULT_OK;
+ }
 
 void gfx_render_target_destroy(void)
 {

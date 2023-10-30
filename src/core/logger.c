@@ -50,15 +50,15 @@ static void default_log_handler(enum log_level level, const char* fmt,
 }
 
 static void file_log_handler(enum log_level level, const char* fmt,
-				va_list args, void* param)
+			     va_list args, void* param)
 {
 	(void)param;
 
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
 	char datetime[20];
-	sprintf(datetime, "%d-%02d-%02d %02d:%02d:%02d",
-		tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+	sprintf(datetime, "%d-%02d-%02d %02d:%02d:%02d", tm.tm_year + 1900,
+		tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
 	char msg[4096];
 	vsnprintf(msg, sizeof(msg), fmt, args);
@@ -66,33 +66,40 @@ static void file_log_handler(enum log_level level, const char* fmt,
 	switch (level) {
 	case LOG_DEBUG:
 #ifdef BM_DEBUG
-		con_print(LOG_COLOR_CYAN, stdout, "%s|DEBUG|%s\n", datetime, msg);
+		con_print(LOG_COLOR_CYAN, stdout, "%s|DEBUG|%s\n", datetime,
+			  msg);
 		fprintf(g_logger->log_file, "%s|DEBUG|%s\n", datetime, msg);
 #endif
 		break;
 	case LOG_INFO:
-		con_print(LOG_COLOR_DEFAULT, stdout, "%s|INFO|%s\n", datetime, msg);
+		con_print(LOG_COLOR_DEFAULT, stdout, "%s|INFO|%s\n", datetime,
+			  msg);
 		fprintf(g_logger->log_file, "%s|INFO|%s\n", datetime, msg);
 		break;
 	case LOG_WARNING:
-		con_print(LOG_COLOR_YELLOW, stdout, "%s|WARN|%s\n", datetime, msg);
+		con_print(LOG_COLOR_YELLOW, stdout, "%s|WARN|%s\n", datetime,
+			  msg);
 		fprintf(g_logger->log_file, "%s|WARN|%s\n", datetime, msg);
 		break;
 	case LOG_ERROR:
-		con_print(LOG_COLOR_RED, stderr, "%s|ERROR|%s\n", datetime, msg);
+		con_print(LOG_COLOR_RED, stderr, "%s|ERROR|%s\n", datetime,
+			  msg);
 		fprintf(g_logger->log_file, "%s|ERROR|%s\n", datetime, msg);
 		break;
 	case LOG_PASS:
-		con_print(LOG_COLOR_BRIGHTGREEN, stdout, "%s|PASS|%s\n", datetime, msg);
+		con_print(LOG_COLOR_BRIGHTGREEN, stdout, "%s|PASS|%s\n",
+			  datetime, msg);
 		fprintf(g_logger->log_file, "%s|PASS|%s\n", datetime, msg);
 		break;
 	case LOG_FAIL:
 		// TODO: should fail log use stderr?
-		con_print(LOG_COLOR_BRIGHTRED, stdout, "%s|FAIL|%s\n", datetime, msg);
+		con_print(LOG_COLOR_BRIGHTRED, stdout, "%s|FAIL|%s\n", datetime,
+			  msg);
 		fprintf(g_logger->log_file, "%s|FAIL|%s\n", datetime, msg);
 		break;
 	case LOG_NOTE:
-		con_print(LOG_COLOR_BRIGHTBLUE, stdout, "%s|NOTE|%s\n", datetime, msg);
+		con_print(LOG_COLOR_BRIGHTBLUE, stdout, "%s|NOTE|%s\n",
+			  datetime, msg);
 		fprintf(g_logger->log_file, "%s|NOTE|%s\n", datetime, msg);
 		break;
 	}
@@ -113,7 +120,7 @@ void logger_init(const char* path)
 	if (path != NULL) {
 		g_logger->handler = file_log_handler;
 		g_logger->log_file = fopen(path, "a");
-	} 
+	}
 	if (g_logger->log_file == NULL) {
 		g_logger->handler = default_log_handler;
 	}

@@ -46,6 +46,11 @@ BM_EXPORT void mem_copy_sse2(void* dst, void* src, size_t size);
 BM_EXPORT void mem_log_usage();
 BM_EXPORT int mem_report_leaks();
 
+BM_EXPORT bool is_power_of_two(uintptr_t x);
+BM_EXPORT uintptr_t align_forward(uintptr_t ptr, size_t align);
+BM_EXPORT void* aligned_malloc(size_t size, size_t alignment);
+BM_EXPORT void aligned_free(void* ptr);
+
 #define BM_FUNC_SIG __func__
 #if defined(_MSC_VER)
 #undef BM_FUNC_SIG
@@ -58,18 +63,17 @@ BM_EXPORT int mem_report_leaks();
 #if defined(BM_DEBUG) && defined(TRACK_MEMORY)
 #define BM_ALLOC(sz)   \
 	mem_alloc(sz); \
-	printf("mem_alloc: %s (%zu bytes)\n", BM_FUNC_SIG, sz);
-#define BM_FREE(p)                                                         \
-	do {                                                               \
-		size_t sz = 0;                                             \
-		sz = *((size_t*)(p)-1) - sizeof(size_t);                   \
-		mem_free(p);                                               \
-		printf("mem_free: %s (%zu bytes)\n", BM_FUNC_SIG, \
-		       sz);                                                \
+	printf("mem_alloc: %s (%zu bytes)\n", BM_FUNC_SIG, (size_t)sz);
+#define BM_FREE(p)                                                     \
+	do {                                                           \
+		size_t sz = 0;                                         \
+		sz = *((size_t*)(p)-1) - sizeof(size_t);               \
+		mem_free(p);                                           \
+		printf("mem_free: %s (%zu bytes)\n", BM_FUNC_SIG, (size_t)sz); \
 	} while (0);
 #define BM_REALLOC(p, sz)   \
 	mem_realloc(p, sz); \
-	printf("mem_realloc: %s (%zu bytes)\n", BM_FUNC_SIG, sz);
+	printf("mem_realloc: %s (%zu bytes)\n", BM_FUNC_SIG, (size_t)sz);
 #else
 #define BM_ALLOC(sz) mem_alloc(sz)
 #define BM_REALLOC(p, sz) mem_realloc(p, sz)

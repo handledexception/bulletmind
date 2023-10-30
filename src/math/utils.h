@@ -47,15 +47,16 @@ extern "C" {
 #define M_INFINITE 3.4e38f
 
 static int random_initialized = false;
-static inline double random64(double a, double b) {
+static inline double random64(double a, double b)
+{
 	if (!random_initialized) {
 		srand((unsigned int)time(0));
 		random_initialized = true;
 	}
-    double random = (double)rand() / (double)RAND_MAX;
-    double diff = b - a;
-    double r = random * diff;
-    return a + r;
+	double random = (double)rand() / (double)RAND_MAX;
+	double diff = b - a;
+	double r = random * diff;
+	return a + r;
 }
 
 static inline bool f32_compare(float f1, float f2, float epsilon)
@@ -98,10 +99,11 @@ static inline f32 clampf(f32 val, f32 min_val, f32 max_val)
 	return val > max_val ? max_val : (val < min_val ? min_val : val);
 }
 
-static inline f32 map_range(f32 input_start, f32 input_end, f32 output_start, f32 output_end, f32 val)
+static inline f32 map_range(f32 input_start, f32 input_end, f32 output_start,
+			    f32 output_end, f32 val)
 {
-    f32 slope = (output_end - output_start) / (input_end - input_start);
-    return (output_start + (slope * (val - input_start)));
+	f32 slope = (output_end - output_start) / (input_end - input_start);
+	return (output_start + (slope * (val - input_start)));
 }
 
 #ifdef __cplusplus

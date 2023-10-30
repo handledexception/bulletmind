@@ -200,7 +200,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	       (const void*)view_proj_matrix, sizeof(mat4f_t));
 
 	vec_init(eng->gfx.scenes);
-	struct gfx_scene* scene = gfx_scene_new(6, 2, GFX_VERTEX_POS_COLOR);
+	struct gfx_scene* scene = gfx_scene_new(6, 2, GFX_VERTEX_POS_COL);
 	vec_init(scene->shader_vars);
 	scene->mesh->positions[0] = (vec3f_t){-0.5f, 0.f, -0.5f};
 	scene->mesh->positions[1] = (vec3f_t){0.5f, 0.f, -0.5f};
@@ -215,7 +215,7 @@ bool eng_init(const char* name, s32 version, engine_t* eng)
 	scene->mesh->colors[4] = (vec4f_t){0.f, 1.f, 0.f, 1.f};
 	scene->mesh->colors[5] = (vec4f_t){0.f, 0.f, 1.f, 1.f};
 
-	struct gfx_scene* scene2 = gfx_scene_new(3, 2, GFX_VERTEX_POS_COLOR);
+	struct gfx_scene* scene2 = gfx_scene_new(3, 2, GFX_VERTEX_POS_COL);
 	vec_init(scene2->shader_vars);
 	scene2->mesh->positions[0] = (vec3f_t){-0.5f, 0.f, 0.5f};
 	scene2->mesh->positions[1] = (vec3f_t){0.5f, 0.f, 0.5f};

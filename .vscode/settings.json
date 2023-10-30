@@ -113,7 +113,14 @@
         "gui.h": "c",
         "guiddef.h": "c",
         "gfx_d3d11_input_layout.h": "c",
-        "d3dcompiler.h": "c"
+        "d3dcompiler.h": "c",
+        "image.h": "c",
+        "d3d12.h": "c",
+        "dxgi1_4.h": "c",
+        "hashmap.h": "c",
+        "functional": "c",
+        "cimgui_defs.h": "c",
+        "stdlib.h": "c"
     },
     "cmake.configureOnOpen": false
 }

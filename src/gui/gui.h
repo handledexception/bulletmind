@@ -126,7 +126,7 @@ struct gui_system {
 	void  (*destroy_window)(gui_window_t* window);					/* platform window destroy function */
 	bool  (*is_valid_window)(const gui_window_t* window);			/* is window and internal handle valid? */
 	void  (*show_window)(gui_window_t* window, bool shown);			/* platform window show function */
-	bool  (*focus_window)(const gui_window_t* window);				/* set focused window */
+	bool  (*focus_window)(gui_window_t* window);				/* set focused window */
 	void  (*set_window_pos)(gui_window_t* window, const rect_t* rect);
 	bool  (*get_window_size)(const gui_window_t* window, s32* w, s32* h, bool client);
 	bool  (*get_window_rect)(const gui_window_t* window, rect_t* rect, bool client);
@@ -168,7 +168,8 @@ BM_EXPORT void gui_refresh_linux(gui_system_t* gp);
 typedef struct SDL_Window SDL_Window;
 BM_EXPORT result gui_init_sdl2(gui_system_t* gs);
 BM_EXPORT void gui_refresh_sdl2(gui_system_t* gs);
-BM_EXPORT SDL_Window* gui_get_sdl_window_from_window(const gui_window_t* window);
+BM_EXPORT SDL_Window*
+gui_get_sdl_window_from_window(const gui_window_t* window);
 #endif
 
 BM_EXPORT mouse_t* gui_get_mouse();
@@ -179,19 +180,23 @@ BM_EXPORT bool gui_show_mouse(bool shown);
 BM_EXPORT bool gui_constrain_mouse(s32 curr_x, s32 curr_y, const rect_t* r);
 BM_EXPORT gui_display_t* gui_create_display(s32 index);
 BM_EXPORT void gui_destroy_display(gui_display_t* display);
-BM_EXPORT gui_window_t* gui_create_window(const char* title,
-	s32 x, s32 y, s32 w, s32 h, s32 flags, gui_window_t* parent);
+BM_EXPORT gui_window_t* gui_create_window(const char* title, s32 x, s32 y,
+					  s32 w, s32 h, s32 flags,
+					  gui_window_t* parent);
 BM_EXPORT void gui_destroy_window(gui_window_t* window);
 BM_EXPORT bool gui_is_valid_window(const gui_window_t* window);
 BM_EXPORT void gui_show_window(gui_window_t* window, bool shown);
 BM_EXPORT void gui_set_window_pos(gui_window_t* window, const rect_t* rect);
 BM_EXPORT void gui_center_window(gui_window_t* window);
-BM_EXPORT bool gui_get_window_size(const gui_window_t* window, s32* w, s32* h, bool client);
-BM_EXPORT bool gui_get_window_rect(const gui_window_t* window, rect_t* rect, bool client);
-BM_EXPORT bool gui_get_window_centerpoint(const gui_window_t* window, vec2i_t* p, bool client);
+BM_EXPORT bool gui_get_window_size(const gui_window_t* window, s32* w, s32* h,
+				   bool client);
+BM_EXPORT bool gui_get_window_rect(const gui_window_t* window, rect_t* rect,
+				   bool client);
+BM_EXPORT bool gui_get_window_centerpoint(const gui_window_t* window,
+					  vec2i_t* p, bool client);
 BM_EXPORT void* gui_get_window_handle(gui_window_t* window);
 BM_EXPORT gui_window_t* gui_get_window_by_handle(void* handle);
-BM_EXPORT bool gui_set_focused_window(const gui_window_t* window);
+BM_EXPORT bool gui_set_focused_window(gui_window_t* window);
 BM_EXPORT gui_window_t* gui_get_focused_window();
 BM_EXPORT void gui_clear_key_state();
 BM_EXPORT void gui_read_mouse_state(mouse_t* mouse);

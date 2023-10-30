@@ -30,17 +30,17 @@ typedef struct vec3f {
 	f32 z;
 } vec3f_t;
 
-static const vec3f_t kVec3Zero		= {  0.0f,  0.0f,  0.0f };
-static const vec3f_t kVec3Left		= { -1.0f,  0.0f,  0.0f };
-static const vec3f_t kVec3Right		= {  1.0f,  0.0f,  0.0f };
-static const vec3f_t kVec3Up		= {  0.0f,  1.0f,  0.0f };
-static const vec3f_t kVec3Down		= {  0.0f, -1.0f,  0.0f };
-static const vec3f_t kVec3Forward	= {  0.0f,  0.0f,  1.0f };
-static const vec3f_t kVec3Backward	= {  0.0f,  0.0f, -1.0f };
+static const vec3f_t kVec3Zero = {0.0f, 0.0f, 0.0f};
+static const vec3f_t kVec3Left = {-1.0f, 0.0f, 0.0f};
+static const vec3f_t kVec3Right = {1.0f, 0.0f, 0.0f};
+static const vec3f_t kVec3Up = {0.0f, 1.0f, 0.0f};
+static const vec3f_t kVec3Down = {0.0f, -1.0f, 0.0f};
+static const vec3f_t kVec3Forward = {0.0f, 0.0f, 1.0f};
+static const vec3f_t kVec3Backward = {0.0f, 0.0f, -1.0f};
 
 static inline vec3f_t vec3_default()
 {
-	vec3f_t v = { 0 };
+	vec3f_t v = {0};
 	v.x = 0.0f;
 	v.y = 0.0f;
 	v.z = 0.0f;
@@ -49,7 +49,7 @@ static inline vec3f_t vec3_default()
 
 static inline vec3f_t vec3_set(f32 x, f32 y, f32 z)
 {
-	vec3f_t v = { 0 };
+	vec3f_t v = {0};
 	v.x = x;
 	v.y = y;
 	v.z = z;
@@ -58,7 +58,7 @@ static inline vec3f_t vec3_set(f32 x, f32 y, f32 z)
 
 static inline vec3f_t vec3_copy(const vec3f_t v)
 {
-	vec3f_t res = { 0 };
+	vec3f_t res = {0};
 	res.x = v.x;
 	res.y = v.y;
 	res.z = v.z;
@@ -102,7 +102,7 @@ static inline vec3f_t vec3_neg(vec3f_t v)
 
 static inline f32 vec3_dot(vec3f_t a, vec3f_t b)
 {
-	return (f32)((a.x * b.x) + (a.y * b.y) + (a.z * b.z));
+	return (f32)(a.x * b.x + a.y * b.y + a.z * b.z);
 }
 
 static inline f32 vec3_len(vec3f_t v)
@@ -136,11 +136,8 @@ static inline vec3f_t vec3_norm(vec3f_t v)
 
 static inline vec3f_t vec3_cross(vec3f_t a, vec3f_t b)
 {
-	return vec3_set(
-		a.y * b.z - a.z * b.y,
-		a.z * b.x - a.x * b.z,
-		a.x * b.y - a.y * b.x
-	);
+	return vec3_set(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z,
+			a.x * b.y - a.y * b.x);
 }
 
 static inline f32 vec3_angle_between(vec3f_t a, vec3f_t b)
@@ -157,7 +154,8 @@ static inline vec3f_t vec3_friction(const vec3f_t a, f32 friction)
 {
 	f32 speed = vec3_len(a);
 	f32 new_speed = speed - (speed * friction);
-	// printf("speed: %f | new speed: %f\n", speed, new_speed);
+	// if (speed > 0.0f && new_speed > 0.0f)
+	// 	printf("speed: %f | new speed: %f\n", speed, new_speed);
 	if (new_speed > 0.0f)
 		new_speed /= speed;
 	else

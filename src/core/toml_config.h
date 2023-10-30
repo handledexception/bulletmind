@@ -21,6 +21,6 @@
 #include <toml.h>
 
 bool read_toml_config(const char* path, toml_table_t** toml);
-bool read_table_string(toml_table_t* table, const char* key, const char** val);
-bool read_table_int32(toml_table_t* table, const char* key, s32* val);
-bool read_table_f64(toml_table_t* table, const char* key, f64* val);
+bool read_table_string(const toml_table_t* table, const char* key, const char** val);
+bool read_table_int32(const toml_table_t* table, const char* key, s32* val);
+bool read_table_f64(const toml_table_t* table, const char* key, f64* val);

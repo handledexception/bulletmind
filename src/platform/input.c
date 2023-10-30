@@ -93,8 +93,8 @@ void inp_read_gui_event(struct input_state* inputs, const gui_event_t* evt)
 		case GUI_EVENT_MOUSE_BUTTON_DOWN:
 		case GUI_EVENT_MOUSE_BUTTON_UP:
 			mouse_set_button_state(&inputs->mouse,
-					  evt->mouse.button.button,
-					  evt->mouse.button.state);
+					       evt->mouse.button.button,
+					       evt->mouse.button.state);
 			break;
 			/*
 		case SDL_CONTROLLERAXISMOTION:

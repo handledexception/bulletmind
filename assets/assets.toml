@@ -1,4 +1,14 @@
 [[assets]]
+name = "vs_pos_color_instanced"
+path = "assets/shader/pos_color_instanced.vs.hlsl"
+kind = "shader"
+vertex_type = "poscol_inst"
+[[assets]]
+name = "ps_pos_color_instanced"
+path = "assets/shader/pos_color_instanced.ps.hlsl"
+kind = "shader"
+
+[[assets]]
 name = "vs_pos_uv"
 path = "assets/shader/solid.vs.hlsl"
 kind = "shader"
@@ -7,6 +17,7 @@ vertex_type = "posuv"
 name = "ps_pos_uv"
 path = "assets/shader/solid.ps.hlsl"
 kind = "shader"
+
 [[assets]]
 name = "vs_pos_color"
 path = "assets/shader/pos_color.vs.hlsl"
@@ -16,6 +27,7 @@ vertex_type = "poscol"
 name = "ps_pos_color"
 path = "assets/shader/pos_color.ps.hlsl"
 kind = "shader"
+
 [[assets]]
 name = "vs_fullscreen"
 path = "assets/shader/fullscreen.vs.hlsl"
@@ -40,4 +52,9 @@ kind = "sprite"
 [[assets]]
 name = "rgba_test"
 path = "assets/image/rgba.tga"
+kind = "sprite"
+
+[[assets]]
+name = "tiled_wall_64x64"
+path = "assets/image/tiled_wall_64x64.tga"
 kind = "sprite"
