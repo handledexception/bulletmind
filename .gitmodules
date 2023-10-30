@@ -4,3 +4,7 @@
 [submodule "thirdparty/cimgui"]
 	path = thirdparty/cimgui
 	url = https://github.com/cimgui/cimgui.git
+[submodule "thirdparty/psi"]
+	path = thirdparty/psi
+	url = https://github.com/handledexception/psi.git
+	branch = main
