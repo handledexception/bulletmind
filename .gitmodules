@@ -1,10 +1,15 @@
 [submodule "thirdparty/tomlc99"]
 	path = thirdparty/tomlc99
 	url = https://github.com/cktan/tomlc99.git
-[submodule "thirdparty/cimgui"]
-	path = thirdparty/cimgui
-	url = https://github.com/cimgui/cimgui.git
 [submodule "thirdparty/psi"]
 	path = thirdparty/psi
 	url = https://github.com/handledexception/psi.git
 	branch = main
+[submodule "thirdparty/luapower-all"]
+	path = thirdparty/luapower-all
+	url = https://github.com/handledexception/luapower-all.git
+	branch = master
+[submodule "thirdparty/cimgui"]
+	path = thirdparty/cimgui
+	url = https://github.com/handledexception/cimgui.git
+	branch = docker_inter
