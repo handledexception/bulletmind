@@ -11,5 +11,5 @@
 	branch = master
 [submodule "thirdparty/cimgui"]
 	path = thirdparty/cimgui
-	url = https://github.com/handledexception/cimgui.git
+	url = https://github.com/cimgui/cimgui.git
 	branch = docker_inter
