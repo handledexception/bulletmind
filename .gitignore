@@ -1,6 +1,7 @@
 /out
 /msvc
 /ninja*
+/build*
 cloc.bat
 cloc.exe
 imgui.ini

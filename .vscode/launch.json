@@ -8,10 +8,10 @@
             "name": "bulletmind (x64)",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}\\ninja-debug-x64\\bulletmind.exe",
+            "program": "${workspaceFolder}\\build-debug-x64\\game\\bulletmind.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}\\ninja-debug-x64",
+            "cwd": "${workspaceFolder}\\build-debug-x64\\game",
             "environment": [],
             "console": "integratedTerminal"
         },
