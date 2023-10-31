@@ -1,13 +1,17 @@
 Bulletmind
-(c) 2019-2020 Paul Hindt
+(c) 2019-2023 Paul Hindt
 
-WIP 2D game using written in C11.
+WIP game project written in C11.
+
+Currently only builds on Windows, as it only has a graphics backend for D3D11.
+
+TODOs:
+- Linux and macOS platforms
 
 Dependencies:
-- SDL2 - https://www.libsdl.org/download-2.0.php
-- tomlc99 - https://github.com/cktan/tomlc99
-
-Optional Dependencies:
 - cimgui
-1. Download LuaJit from: https://github.com/luapower/all/archive/master.zip
-2. 
+- luapower-all (for cimgui build)
+- SDL2
+- SDL2_image
+- SDL2_mixer
+- tomlc99
