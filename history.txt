@@ -239,9 +239,14 @@ SUM:                            77           1451           1084           6799
 ================================================================================= 
 Sun 10/23/2022 
 ================================================================================= 
-     100 files     103 text files.
-classified 103 filesDuplicate file check 103 files (100 known unique)Unique:      100 files                                               103 unique files.                              
-Counting:  100      14 files ignored.
+     100 files
+     103 text files.
+classified 103 files
+Duplicate file check 103 files (100 known unique)
+Unique:      100 files                                          
+     103 unique files.                              
+Counting:  100
+      14 files ignored.
 
 http://cloc.sourceforge.net v 1.60  T=0.18 s (555.4 files/s, 90635.2 lines/s)
 -------------------------------------------------------------------------------
@@ -255,9 +260,14 @@ SUM:                           101           1892           2493          12098
 ================================================================================= 
 Tue 06/20/2023 
 ================================================================================= 
-     100 files     113 text files.
-classified 113 filesDuplicate file check 113 files (111 known unique)Unique:      100 files                                               113 unique files.                              
-Counting:  100      16 files ignored.
+     100 files
+     113 text files.
+classified 113 files
+Duplicate file check 113 files (111 known unique)
+Unique:      100 files                                          
+     113 unique files.                              
+Counting:  100
+      16 files ignored.
 
 http://cloc.sourceforge.net v 1.60  T=0.22 s (498.9 files/s, 92621.0 lines/s)
 -------------------------------------------------------------------------------
@@ -267,4 +277,21 @@ C                               42           1432           1674           9297
 C/C++ Header                    68            917           1282           5820
 -------------------------------------------------------------------------------
 SUM:                           110           2349           2956          15117
+-------------------------------------------------------------------------------
+================================================================================= 
+Mon 11/06/2023 
+================================================================================= 
+     100 files     139 text files.
+classified 139 filesDuplicate file check 139 files (134 known unique)Unique:      100 files                                               139 unique files.                              
+Counting:  100      40 files ignored.
+
+http://cloc.sourceforge.net v 1.60  T=0.24 s (500.5 files/s, 90347.1 lines/s)
+-------------------------------------------------------------------------------
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+C                               46           1514           1783           9730
+C/C++ Header                    72            948           1296           6087
+CMake                            2             26              8            268
+-------------------------------------------------------------------------------
+SUM:                           120           2488           3087          16085
 -------------------------------------------------------------------------------
