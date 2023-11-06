@@ -18,6 +18,9 @@
 
 #include "core/types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 enum seek_dir {
 	SEEK_TO_START,
 	SEEK_TO_END,
@@ -39,3 +42,7 @@ void buffer_copy_data(buffer_t* buf, void* data, size_t size);
 void buffer_set_data(buffer_t* buf, void* data, size_t size);
 size_t buffer_resize(buffer_t* buf, size_t size);
 void buffer_seek(buffer_t* buf, size_t size, enum seek_dir seek);
+
+#ifdef __cplusplus
+}
+#endif

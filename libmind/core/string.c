@@ -133,7 +133,7 @@ u32 str_length(string_t* s)
 			s->size = sz;
 		}
 	} else {
-		return s->size;
+		return (u32)s->size;
 	}
 	return sz;
 }
@@ -142,11 +142,11 @@ bool str_starts_with(const string_t* s, const char* prefix)
 {
 	if (s != NULL) {
 		u32 len = str_length(s);
-		u32 prefix_len = strlen(prefix);
+		u32 prefix_len = (u32)strlen(prefix);
 		const char* data = str_get(s);
 		if (prefix_len < len && prefix != NULL && data != NULL) {
 			u32 found_count = 0;
-			for (int i = 0; i < prefix_len; i++) {
+			for (u32 i = 0; i < prefix_len; i++) {
 				if (data[i] != prefix[i]) {
 					break;
 				} else {

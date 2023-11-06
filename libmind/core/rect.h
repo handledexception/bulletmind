@@ -7,6 +7,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 typedef struct {
 	s32 x, y;
 	s32 w, h;

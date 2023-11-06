@@ -4,6 +4,9 @@
 
 #include <stdarg.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 enum log_level {
 	LOG_ERROR = 100,
 	LOG_WARNING = 200,
@@ -23,3 +26,7 @@ void log_va(enum log_level level, const char* fmt, va_list args);
 void logger_init(const char* path);
 void logger_shutdown();
 void logger(enum log_level level, const char* fmt, ...);
+
+#ifdef __cplusplus
+}
+#endif

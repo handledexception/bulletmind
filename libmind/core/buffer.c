@@ -81,7 +81,7 @@ void buffer_copy_data(buffer_t* buf, void* data, size_t size)
 size_t buffer_resize(buffer_t* buf, size_t size)
 {
 	if (!buf)
-		return;
+		return 0;
 	u8* data = (u8*)BM_REALLOC(buf->data, size);
 	if (data == NULL)
 		return 0;

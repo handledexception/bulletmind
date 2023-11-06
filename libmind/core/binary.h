@@ -18,6 +18,10 @@
 
 #include "core/types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SET_FLAG(flags, bit_idx) flags |= (1 << bit_idx)
 #define CLEAR_FLAG(flags, bit_idx) flags &= ~(1 << bit_idx)
 #define TOGGLE_FLAG(flags, bit_idx) flags ^= (1 << bit_idx)
@@ -75,3 +79,7 @@ bool bin_stream_write(stream_t* stream, u8* data, const size_t size,
 // void binary_writer_write_s16(stream_t* stream, const s16 value);
 // void binary_writer_write_s32(stream_t* stream, const s32 value);
 // void binary_writer_write_s64(stream_t* stream, const s64 value);
+
+#ifdef __cplusplus
+}
+#endif

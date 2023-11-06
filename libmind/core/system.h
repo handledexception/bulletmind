@@ -3,6 +3,14 @@
 
 #include "core/export.h"
 
-extern BM_EXPORT int core_system_exit();
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+BM_EXPORT int core_system_exit();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
