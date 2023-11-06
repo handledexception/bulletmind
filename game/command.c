@@ -124,8 +124,9 @@ bool inp_bind_virtual_gamepad_button(struct input_state* inputs, command_t cmd,
 
 bool inp_cmd_get_state(struct input_state* inputs, command_t cmd)
 {
-	if (cmd > MAX_VIRTUAL_BUTTONS)
-		return;
+	if (cmd > MAX_VIRTUAL_BUTTONS) {
+		return false;
+	}
 	bool inputs_state = false;
 	// special case console so we can toggle console back off again
 	if (inputs->mode == kInputModeGame ||

@@ -45,7 +45,8 @@ struct application {
 	struct asset_manager* assets;
 	struct fps_cam cam;
 	u32* cube_indices;
-	hashmap_t* meshes;
+	hashmap_t* mesh_map;
+	VECTOR(gfx_mesh_t*) meshes;
 	VECTOR(gfx_scene_t*) scenes;
 	VECTOR(gfx_scene_inst_t*) scene_insts;
 	gfx_buffer_t* vbuf;
@@ -61,7 +62,7 @@ struct application {
 	f64 frame_timer;
 };
 
-result app_init(struct application* app, const char* name, s32 version, u32 vx, u32 vy,
+result app_init(struct application* app, const char* name, u32 version, u32 vx, u32 vy,
 		const char* assets_toml_path);
 result app_init_gfx(struct application* app, const struct gfx_config* cfg);
 result app_init_inputs(struct application* app);
@@ -74,6 +75,7 @@ void app_refresh_entities(struct application* app);
 void app_refresh_mouse(struct application* app);
 void app_toggle_mouse_capture(struct application* app);
 void app_toggle_fly_camera(struct application* app);
+void app_free_meshes(struct application* app);
 void app_shutdown(struct application* app);
 void app_frame_step(struct application* app);
 u32 app_scene_instance_count(struct application* app);

@@ -31,7 +31,7 @@ void ent_accel(entity_t* ent, vec3f_t accel, f32 friction, f64 dt)
     accel =  vec3_friction(accel, friction);
     ent->acc = vec3_copy(accel);
     ent->vel = vec3_add(ent->vel, accel);
-    ent->vel = vec3_mulf(ent->vel, dt);
+    ent->vel = vec3_mulf(ent->vel, (f32)dt);
     ent->pos = vec3_add(ent->pos, ent->vel);
     // printf("dt: %f | pos: %f,%f,%f | vel: %f,%f,%f | acc: %f,%f,%f\n",
     //     dt,

@@ -10,12 +10,14 @@
                 "_UNICODE"
             ],
             "includePath": [
+                "${workspaceFolder}",
+                "${workspaceFolder}/game",
+                "${workspaceFolder}/libmind",
                 "${workspaceFolder}/thirdparty",
                 "${workspaceFolder}/thirdparty/cimgui",
                 "${workspaceFolder}/thirdparty/cimgui/imgui",
                 "${workspaceFolder}/thirdparty/tomlc99",
-                "${workspaceFolder}/thirdparty/SDL2/include",
-                "${workspaceFolder}/src"
+                "${workspaceFolder}/thirdparty/SDL/include",
             ],
             "intelliSenseMode": "windows-msvc-x64",
             "compilerPath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\bin\\Hostx64\\x64\\cl.exe",

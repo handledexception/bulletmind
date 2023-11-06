@@ -202,10 +202,12 @@ struct gfx_mesh {
 	struct vec3f* tangents;
 	struct vec4f* colors;
 	struct texture_vertex* tex_verts;
+	u32* indices;
 	u32 num_vertices;
+	u32 num_indices;
 };
 
-gfx_mesh_t* gfx_mesh_new(enum gfx_vertex_type type, u32 num_verts);
+gfx_mesh_t* gfx_mesh_new(enum gfx_vertex_type type, u32 num_verts, u32 num_indices);
 void gfx_mesh_free(gfx_mesh_t* mesh);
 size_t gfx_mesh_get_size(const gfx_mesh_t* mesh);
 bool gfx_load_obj(const char* path, gfx_mesh_t** mesh);

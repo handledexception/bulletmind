@@ -15,8 +15,6 @@ typedef struct gfx_scene {
 	vec3f_t scale;
 	vec3f_t rot_axis;
 	f32 rot_angle;
-	size_t num_indices;
-	u32* index_data;
 	gfx_mesh_t* mesh;
 	gfx_shader_t* curr_vertex_shader;
 	gfx_shader_t* curr_pixel_shader;
@@ -34,11 +32,6 @@ BM_EXPORT void gfx_scene_set_rotation(gfx_scene_t* scene, f32 angle,
 				      vec3f_t axis);
 BM_EXPORT void gfx_scene_set_scale(gfx_scene_t* scene, vec3f_t scale);
 BM_EXPORT void gfx_scene_set_mesh(gfx_scene_t* scene, gfx_mesh_t* mesh);
-BM_EXPORT void gfx_scene_copy_mesh(gfx_scene_t* scene, gfx_mesh_t* mesh);
-BM_EXPORT void gfx_scene_set_index_data(gfx_scene_t* scene, u32* data,
-					u32 count);
-BM_EXPORT void gfx_scene_copy_index_data(gfx_scene_t* scene, u32* data,
-					 u32 count);
 
 typedef struct gfx_scene_inst {
 	u32 num_instances;

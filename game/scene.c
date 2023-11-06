@@ -24,7 +24,6 @@ void gfx_scene_init(gfx_scene_t* scene)
 		memset(scene, 0, sizeof(*scene));
 		vec_init(scene->assets);
 		scene->mesh = NULL;
-		scene->index_data = NULL;
 	}
 }
 
@@ -36,11 +35,6 @@ void gfx_scene_free(gfx_scene_t* scene)
 			asset_free(ass);
 		}
 		vec_free(scene->assets);
-		gfx_mesh_free(scene->mesh);
-		if (scene->index_data != NULL) {
-			BM_FREE(scene->index_data);
-			scene->index_data = NULL;
-		}
 	}
 	BM_FREE(scene);
 	scene = NULL;
@@ -112,59 +106,6 @@ void gfx_scene_set_mesh(gfx_scene_t* scene, gfx_mesh_t* mesh)
 {
 	if (scene && mesh && mesh->num_vertices > 0) {
 		scene->mesh = mesh;
-	}
-}
-
-void gfx_scene_copy_mesh(gfx_scene_t* scene, gfx_mesh_t* mesh)
-{
-	if (scene && mesh && mesh->num_vertices > 0) {
-		scene->mesh = gfx_mesh_new(mesh->type, mesh->num_vertices);
-		if (GFX_VERTEX_HAS_POS(mesh->type)) {
-			memcpy(scene->mesh->positions, mesh->positions,
-			       sizeof(vec3f_t) * mesh->num_vertices);
-		}
-		if (GFX_VERTEX_HAS_COLOR(mesh->type)) {
-			memcpy(scene->mesh->colors, mesh->colors,
-			       sizeof(vec4f_t) * mesh->num_vertices);
-		}
-		if (GFX_VERTEX_HAS_NORMAL(mesh->type)) {
-			memcpy(scene->mesh->normals, mesh->normals,
-			       sizeof(vec3f_t) * mesh->num_vertices);
-		}
-		if (GFX_VERTEX_HAS_TANGENT(mesh->type)) {
-			memcpy(scene->mesh->tangents, mesh->tangents,
-			       sizeof(vec3f_t) * mesh->num_vertices);
-		}
-		if (GFX_VERTEX_HAS_UV(mesh->type)) {
-			for (size_t i = 0; i < mesh->num_vertices; i++) {
-				scene->mesh->tex_verts[i].size =
-					mesh->tex_verts[i].size;
-				memcpy(scene->mesh->tex_verts[i].data,
-				       mesh->tex_verts[i].data,
-				       sizeof(vec2f_t));
-			}
-		}
-	}
-}
-
-void gfx_scene_set_index_data(gfx_scene_t* scene, u32* data, u32 count)
-{
-	if (scene && data) {
-		scene->index_data = data;
-		scene->num_indices = count;
-	}
-}
-
-void gfx_scene_copy_index_data(gfx_scene_t* scene, u32* data, u32 count)
-{
-	if (scene->index_data != NULL) {
-		BM_FREE(scene->index_data);
-		scene->index_data = NULL;
-	}
-	if (scene->index_data == NULL) {
-		scene->index_data = BM_ALLOC(sizeof(u32) * count);
-		memcpy(scene->index_data, data, sizeof(u32) * count);
-		scene->num_indices = count;
 	}
 }
 

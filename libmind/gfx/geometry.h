@@ -148,11 +148,17 @@ void gfx_compute_cube(const vec3f_t sz, vec3f_t* pos, u32* ind, bool rh_coords)
 		vec3f_t side2 = vec3_cross(norm, side1);
 
 		ind[ind_count++] = pos_count + 0;
+		// printf("f=%d i=%d p=%d\n", i, pos_count + 0, pos_count);
 		ind[ind_count++] = pos_count + 1;
+		// printf("f=%d i=%d p=%d\n", i, pos_count + 1, pos_count);
 		ind[ind_count++] = pos_count + 2;
+		// printf("f=%d i=%d p=%d\n", i, pos_count + 2, pos_count);
 		ind[ind_count++] = pos_count + 0;
+		// printf("f=%d i=%d p=%d\n", i, pos_count + 0, pos_count);
 		ind[ind_count++] = pos_count + 2;
+		// printf("f=%d i=%d p=%d\n", i, pos_count + 2, pos_count);
 		ind[ind_count++] = pos_count + 3;
+		// printf("f=%d i=%d p=%d\n\n", i, pos_count + 3, pos_count);
 
 		vec3f_t v1 = vec3_sub(norm, side1);
 		v1 = vec3_sub(v1, side2);
@@ -183,7 +189,7 @@ void gfx_compute_cube(const vec3f_t sz, vec3f_t* pos, u32* ind, bool rh_coords)
 		*a = c;             \
 	} while (0)
 
-static inline void reverse_indices_winding(u32* indices, size_t size)
+static inline void gfx_reverse_winding(u32* indices, size_t size)
 {
 	for (size_t i = 0; i < size; i += 3) {
 		SWAP_PTR(indices, u32, i, i + 2);

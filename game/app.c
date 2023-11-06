@@ -50,7 +50,7 @@ void mat4_printf(mat4f_t m)
 	);
 }
 
-void scene_copy_buffers(gfx_scene_inst_t* si)
+void scene_inst_copy_buffers(gfx_scene_inst_t* si)
 {
 	gfx_scene_t* scene = si->scene;
 
@@ -104,14 +104,14 @@ void scene_copy_buffers(gfx_scene_inst_t* si)
 			(tv_data_size * scene->mesh->num_vertices);
 	}
 
-	for (u32 idx = 0; idx < scene->num_indices; idx++) {
-		memcpy(&ibuf_data[idx], &scene->index_data[idx],
+	for (u32 idx = 0; idx < scene->mesh->num_indices; idx++) {
+		memcpy(&ibuf_data[idx], &scene->mesh->indices[idx],
 				sizeof(u32));
 	}
 
 	gfx_buffer_copy(si->vbuf, vbuf_data, vb_data_size);
 	gfx_buffer_copy(si->ibuf, ibuf_data,
-			scene->num_indices * sizeof(u32));
+			scene->mesh->num_indices * sizeof(u32));
 }
 
 u32 app_scene_instance_count(struct application* app)
@@ -128,7 +128,7 @@ u32 app_scene_instance_count(struct application* app)
 	return instances;
 }
 
-result app_init(struct application* app, const char* name, s32 version, u32 vx, u32 vy,
+result app_init(struct application* app, const char* name, u32 version, u32 vx, u32 vy,
 		const char* assets_toml_path)
 {
 	if (app == NULL)
@@ -175,7 +175,7 @@ result app_init(struct application* app, const char* name, s32 version, u32 vx, 
 	ENSURE_OK(app_init_gfx(app, &gfx_cfg));
 	ENSURE_OK(app_init_inputs(app));
 	ENSURE_OK(app_init_assets(app, assets_toml_path));
-	// ENSURE_OK(app_init_meshes(app));
+	ENSURE_OK(app_init_meshes(app));
 	ENSURE_OK(app_init_scenes(app));
 
 	app->app_time_start = os_get_time_sec();
@@ -232,7 +232,7 @@ result app_init(struct application* app, const char* name, s32 version, u32 vx, 
 	// 		str_clear(&vert_lines.elems[i]);
 	// 	}
 	// 	gfx_mesh_t* mesh = gfx_mesh_new(GFX_VERTEX_POS_COL, num_verts);
-		
+
 	// 	vec_free(lines);
 	// 	vec_free(vert_lines);
 
@@ -318,18 +318,17 @@ result app_init_assets(struct application* app, const char* assets_toml_path)
 
 result app_init_meshes(struct application* app)
 {
-	app->meshes = hashmap_new();
+	vec_init(app->meshes);
+	app->mesh_map = hashmap_new();
 
-	vec3f_t cube_pos[GFX_CUBE_NUM_VERTS];
-	u32 cube_ind[GFX_CUBE_NUM_INDICES];
 	vec3f_t cube_sz = { 1.0f, 1.0f, 1.0f };
-	gfx_compute_cube(cube_sz, &cube_pos[0], &cube_ind[0], true);
+	gfx_mesh_t *cube_pos_col = gfx_mesh_new(GFX_VERTEX_POS_COL, GFX_CUBE_NUM_VERTS, GFX_CUBE_NUM_INDICES);
+	gfx_mesh_t *cube_pos_uvs = gfx_mesh_new(GFX_VERTEX_POS_UV, GFX_CUBE_NUM_VERTS, GFX_CUBE_NUM_INDICES);
+	gfx_compute_cube(cube_sz, cube_pos_col->positions, cube_pos_col->indices, true);
+	memcpy(cube_pos_uvs->positions, cube_pos_col->positions, sizeof(vec3f_t) * GFX_CUBE_NUM_VERTS);
+	memcpy(cube_pos_uvs->indices, cube_pos_col->indices, sizeof(u32) * GFX_CUBE_NUM_INDICES);
+	// gfx_reverse_winding(cube_pos_col->indices, GFX_CUBE_NUM_INDICES);
 
-	gfx_mesh_t cube_mesh;
-	memset(&cube_mesh, 0, sizeof(gfx_mesh_t));
-	cube_mesh.type = GFX_VERTEX_POS_COL;
-	cube_mesh.num_vertices = GFX_CUBE_NUM_VERTS;
-	cube_mesh.positions = &cube_pos[0];
 	vec4f_t colors[GFX_CUBE_NUM_VERTS];
 	for (size_t c = 0; c < GFX_CUBE_NUM_VERTS; c++) {
 		colors[c].x = (f32)random64(0.1, 1.0);
@@ -337,19 +336,46 @@ result app_init_meshes(struct application* app)
 		colors[c].z = (f32)random64(0.1, 1.0);
 		colors[c].w = 1.0f;
 	}
-	cube_mesh.colors = &colors[0];
-	hash_key_t cube_key = {
-		.data = "cube",
-		.size = 4,
-	};
+	memcpy(cube_pos_col->colors, &colors[0], sizeof(vec4f_t) * GFX_CUBE_NUM_VERTS);
 	
-	gfx_mesh_t *themesh = NULL;
-	hashmap_insert(app->meshes, cube_key, &cube_mesh, sizeof(gfx_mesh_t));
-	hashmap_find(app->meshes, cube_key, &themesh);
-		// gfx_scene_copy_mesh(si->scene, &box_mesh);
-		// gfx_scene_copy_index_data(si->scene, &cube_ind[0], GFX_CUBE_NUM_INDICES);
+	vec2f_t* tv_data = gfx_cube_uvs();
+	for (size_t i = 0; i < GFX_CUBE_NUM_VERTS; i++) {
+		memcpy((vec2f_t*)cube_pos_uvs->tex_verts[i].data, &tv_data[i], sizeof(vec2f_t));
+		cube_pos_uvs->tex_verts[i].size = sizeof(vec2f_t);
+	}
+
+	vec_push_back(app->meshes, &cube_pos_col);
+	vec_push_back(app->meshes, &cube_pos_uvs);
+
+	hash_key_t cube_key_pos_col = {
+		.data = "cube_pos_col",
+		.size = 12,
+		.seed = 0x1337c0d3
+	};
+	hashmap_insert(app->mesh_map, cube_key_pos_col, cube_pos_col, sizeof(gfx_mesh_t));
+
+	hash_key_t cube_key_pos_uvs = {
+		.data = "cube_pos_uvs",
+		.size = 12,
+		.seed = 0x1337c0d3
+	};
+	hashmap_insert(app->mesh_map, cube_key_pos_uvs, cube_pos_uvs, sizeof(gfx_mesh_t));
 
 	return RESULT_OK;
+}
+
+void app_free_meshes(struct application* app)
+{
+	for (u32 i = 0; i < app->meshes.num_elems; i++) {
+		gfx_mesh_t* m = *(gfx_mesh_t**)vec_elem(app->meshes, i);
+		if (m != NULL) {
+			gfx_mesh_free(m);
+			m = NULL;
+		}
+	}
+	vec_free(app->meshes);
+
+	hashmap_free(app->mesh_map);
 }
 
 result app_init_scenes(struct application* app)
@@ -401,10 +427,13 @@ result app_init_scenes(struct application* app)
 	vec3f_t cube_sz = { 1.0f, 1.0f, 1.0f };
 	gfx_compute_cube(cube_sz, &cube_pos[0], &cube_ind[0], true);
 
-	// gfx_mesh_t cube_mesh;
-	// gfx_mesh_new(GFX_VERTEX_P
-	// hash_key_t cube_key = { .data = "cube", .size = 4 };
-	// hashmap_insert(app->meshes, &cube_key, &cube_mesh, sizeof(gfx_mesh_t));
+	gfx_mesh_t *cube_mesh = NULL;
+	hash_key_t cube_mesh_key = {
+		.data = "cube_pos_col",
+		.size = 12,
+		.seed = 0x1337c0d3
+	};
+	hashmap_find(app->mesh_map, cube_mesh_key, &cube_mesh);
 	// reverse_indices_winding(&cube_ind[0], GFX_CUBE_NUM_INDICES);
 
 	u32 num_rows = 32;
@@ -436,21 +465,22 @@ result app_init_scenes(struct application* app)
 		gfx_scene_add_asset(si->scene, vs_asset_inst);
 		gfx_scene_add_asset(si->scene, ps_asset_inst);
 
-		gfx_mesh_t box_mesh;
-		memset(&box_mesh, 0, sizeof(gfx_mesh_t));
-		box_mesh.type = GFX_VERTEX_POS_COL;
-		box_mesh.num_vertices = GFX_CUBE_NUM_VERTS;
-		box_mesh.positions = &cube_pos[0];
-		vec4f_t colors[GFX_CUBE_NUM_VERTS];
-		for (size_t c = 0; c < GFX_CUBE_NUM_VERTS; c++) {
-			colors[c].x = (f32)random64(0.1, 1.0);
-			colors[c].y = (f32)random64(0.1, 1.0);
-			colors[c].z = (f32)random64(0.1, 1.0);
-			colors[c].w = 1.0f;
-		}
-		box_mesh.colors = &colors[0];
-		gfx_scene_copy_mesh(si->scene, &box_mesh);
-		gfx_scene_copy_index_data(si->scene, &cube_ind[0], GFX_CUBE_NUM_INDICES);
+		// gfx_mesh_t box_mesh;
+		// memset(&box_mesh, 0, sizeof(gfx_mesh_t));
+		// box_mesh.type = GFX_VERTEX_POS_COL;
+		// box_mesh.num_vertices = GFX_CUBE_NUM_VERTS;
+		// box_mesh.positions = &cube_pos[0];
+		// vec4f_t colors[GFX_CUBE_NUM_VERTS];
+		// for (size_t c = 0; c < GFX_CUBE_NUM_VERTS; c++) {
+		// 	colors[c].x = (f32)random64(0.1, 1.0);
+		// 	colors[c].y = (f32)random64(0.1, 1.0);
+		// 	colors[c].z = (f32)random64(0.1, 1.0);
+		// 	colors[c].w = 1.0f;
+		// }
+		// box_mesh.colors = &colors[0];
+		// gfx_scene_copy_mesh(si->scene, &box_mesh);
+		// gfx_scene_copy_index_data(si->scene, &cube_ind[0], GFX_CUBE_NUM_INDICES);
+		gfx_scene_set_mesh(si->scene, cube_mesh);
 
 		float box_scale = 0.09f;
 		si->scene->rot_angle = 0.0f;
@@ -482,7 +512,7 @@ result app_init_scenes(struct application* app)
 		gfx_buffer_new(NULL, sizeof(mat4f_t) * num_instances, GFX_BUFFER_VERTEX,
 			GFX_BUFFER_USAGE_DYNAMIC, &si->vbuf_xform);
 
-		scene_copy_buffers(si);
+		scene_inst_copy_buffers(si);
 
 		vec_push_back(app->scene_insts, &si);
 	}
@@ -513,18 +543,19 @@ result app_init_scenes(struct application* app)
 		gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
 				GFX_BUFFER_USAGE_DYNAMIC, &vs->cbuffer);
 
-		gfx_mesh_t m;
-		memset(&m, 0, sizeof(gfx_mesh_t));
-		m.type = GFX_VERTEX_POS_UV;
-		m.num_vertices = GFX_CUBE_NUM_VERTS;
-		m.positions = &cube_pos[0];
-		vec2f_t* tv_data = gfx_cube_uvs();
-		struct texture_vertex tex_verts[GFX_CUBE_NUM_VERTS];
-		for (size_t i = 0; i < GFX_CUBE_NUM_VERTS; i++) {
-			tex_verts[i].data = (vec2f_t*)(&tv_data[i]);
-			tex_verts[i].size = sizeof(vec2f_t);
-		}
-		m.tex_verts = &tex_verts[0];
+		// gfx_mesh_t m;
+		// memset(&m, 0, sizeof(gfx_mesh_t));
+		// m.type = GFX_VERTEX_POS_UV;
+		// m.num_vertices = GFX_CUBE_NUM_VERTS;
+		// m.positions = &cube_pos[0];
+		// vec2f_t* tv_data = gfx_cube_uvs();
+		// struct texture_vertex tex_verts[GFX_CUBE_NUM_VERTS];
+		// for (size_t i = 0; i < GFX_CUBE_NUM_VERTS; i++) {
+		// 	tex_verts[i].data = (vec2f_t*)(&tv_data[i]);
+		// 	tex_verts[i].size = sizeof(vec2f_t);
+		// }
+		// m.tex_verts = &tex_verts[0];
+
 		// vec4f_t vert_colors[GFX_CUBE_NUM_VERTS];
 		// float step = 0.01;
 		// for (size_t c = 0; c < GFX_CUBE_NUM_VERTS; c++) {
@@ -535,8 +566,18 @@ result app_init_scenes(struct application* app)
 		// 	step += 0.01;
 		// }
 		// m.colors = &vert_colors[0];
-		gfx_scene_copy_mesh(sc, &m);
-		gfx_scene_copy_index_data(sc, &cube_ind[0], GFX_CUBE_NUM_INDICES);
+
+		gfx_mesh_t *cube_mesh = NULL;
+		hash_key_t cube_mesh_key = {
+			.data = "cube_pos_uvs",
+			.size = 12,
+			.seed = 0x1337c0d3
+		};
+		hashmap_find(app->mesh_map, cube_mesh_key, &cube_mesh);
+
+		gfx_scene_set_mesh(sc, cube_mesh);
+		// gfx_scene_copy_mesh(sc, &m);
+		// gfx_scene_copy_index_data(sc, &cube_ind[0], GFX_CUBE_NUM_INDICES);
 		gfx_scene_set_pos(sc, vec3_set(0,0,0));
 		gfx_scene_set_rotation(sc, 0.0f, vec3_set(0, 0, 0));
 		// gfx_scene_set_rotation(sc, 45.0f, vec3_set(0.0f, 1.0f, 0.0f));
@@ -1164,8 +1205,8 @@ void app_refresh_gfx(struct application* app)
 				(tex_vert_size * scene->mesh->num_vertices);
 		}
 
-		for (u32 idx = 0; idx < scene->num_indices; idx++) {
-			memcpy(&ibuf_data[idx], &scene->index_data[idx],
+		for (u32 idx = 0; idx < scene->mesh->num_indices; idx++) {
+			memcpy(&ibuf_data[idx], &scene->mesh->indices[idx],
 				   sizeof(u32));
 		}
 
@@ -1192,7 +1233,7 @@ void app_refresh_gfx(struct application* app)
 
 		gfx_buffer_copy(app->vbuf, vbuf_data, vb_data_size);
 		gfx_buffer_copy(app->ibuf, ibuf_data,
-				scene->num_indices * sizeof(u32));
+				scene->mesh->num_indices * sizeof(u32));
 
 		gfx_render_begin(0, BM_GFX_MAX_INDICES, 1, true, false);
 	}
@@ -1279,6 +1320,8 @@ void app_shutdown(struct application* app)
 
 		gfx_buffer_free(app->ibuf);
 		gfx_buffer_free(app->vbuf);
+
+		app_free_meshes(app);
 
 		// free scenes
 		for (size_t i = 0; i < app->scenes.num_elems; i++) {

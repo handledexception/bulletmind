@@ -7,7 +7,7 @@ gfx_system_t* gfx = NULL;
 bool gfx_hardware_ready = false;
 bool gfx_system_ready = false;
 
-gfx_mesh_t* gfx_mesh_new(enum gfx_vertex_type type, u32 num_verts)
+gfx_mesh_t* gfx_mesh_new(enum gfx_vertex_type type, u32 num_verts, u32 num_indices)
 {
 	struct gfx_mesh* data = BM_ALLOC(sizeof(struct gfx_mesh));
 	data->type = type;
@@ -17,7 +17,15 @@ gfx_mesh_t* gfx_mesh_new(enum gfx_vertex_type type, u32 num_verts)
 	data->normals = NULL;
 	data->tangents = NULL;
 	data->tex_verts = NULL;
+	data->indices = NULL;
+	data->num_indices = num_indices;
 
+	if ((GFX_VERTEX_HAS_POS(type) ||
+		GFX_VERTEX_HAS_NORMAL(type) ||
+		GFX_VERTEX_HAS_COLOR(type) ||
+		GFX_VERTEX_HAS_UV(type)) && num_indices > 0) {
+		data->indices = BM_ALLOC(sizeof(u32) * num_indices);
+	}
 	if (GFX_VERTEX_HAS_POS(type)) {
 		size_t sz_pos = sizeof(struct vec3f) * num_verts;
 		data->positions = BM_ALLOC(sz_pos);
@@ -49,6 +57,10 @@ gfx_mesh_t* gfx_mesh_new(enum gfx_vertex_type type, u32 num_verts)
 void gfx_mesh_free(gfx_mesh_t* mesh)
 {
 	if (mesh != NULL) {
+		if (mesh->indices != NULL) {
+			BM_FREE(mesh->indices);
+			mesh->indices = NULL;
+		}
 		if (mesh->positions != NULL) {
 			BM_FREE(mesh->positions);
 			mesh->positions = NULL;

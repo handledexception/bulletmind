@@ -1,5 +1,6 @@
 #include "game/app.h"
 #include "core/logger.h"
+#include "core/utils.h"
 #include "platform/platform.h"
 
 #ifdef BM_WINDOWS
@@ -15,10 +16,6 @@
 #define VIEW_WIDTH 1280
 #define VIEW_HEIGHT 800
 
-// #if defined(BM_WINDOWS) && !defined(BM_DEBUG)
-// int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow)
-// #else
-// #endif
 int main(int argc, char** argv)
 {
 	logger_init("bulletmind.log");
@@ -32,7 +29,7 @@ int main(int argc, char** argv)
 
 	struct application app;
 	memset(&app, 0, sizeof(struct application));
-	const u32 app_ver = pack_version(APP_VER_MAJ, APP_VER_MIN, APP_VER_REV);
+	u32 app_ver = pack_version(APP_VER_MAJ, APP_VER_MIN, APP_VER_REV);
 	ENSURE_OK(app_init(&app, APP_NAME, app_ver, VIEW_WIDTH, VIEW_HEIGHT,
 			   APP_ASSETS_TOML_PATH));
 	app_refresh(&app);
