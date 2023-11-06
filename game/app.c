@@ -39,6 +39,7 @@ static const int     kCommandToggleFlyCam 	  = 102;
 static const vec3f_t kWorldOrigin  = { .x = 0.f,  .y = 0.0f, .z = 0.0f };
 static const vec3f_t kCameraOrigin = { .x = 0.0f, .y = 2.0f, .z = 0.0f };
 static const rgba_t  kClearColor   = { .r = 0,    .g = 0,    .b = 0, .a = 255 };
+static const u32 	 kDefaultHashmapSeed = 0x1337c0d3;
 
 void mat4_printf(mat4f_t m)
 {
@@ -48,70 +49,6 @@ void mat4_printf(mat4f_t m)
 		m.z.x, m.z.y, m.z.z, m.z.w,
 		m.w.x, m.w.y, m.w.z, m.w.w
 	);
-}
-
-void scene_inst_copy_buffers(gfx_scene_inst_t* si)
-{
-	gfx_scene_t* scene = si->scene;
-
-	u8* vbuf_data = gfx_buffer_get_data(si->vbuf);
-	u32* ibuf_data = (u32*)gfx_buffer_get_data(si->ibuf);
-	if (!vbuf_data || !ibuf_data) {
-		logger(LOG_ERROR, "app_refresh_gfx: vertex/index buffer(s) data not set!");
-		return;
-	}
-	memset(vbuf_data, 0, gfx_buffer_get_size(si->vbuf));
-	memset(ibuf_data, 0, gfx_buffer_get_size(si->ibuf));
-
-	size_t vb_data_size = 0;
-	size_t vb_data_offs = 0;
-	size_t tv_data_size = 0;
-	size_t stride = gfx_get_vertex_stride(scene->mesh->type);
-
-	for (u32 vdx = 0; vdx < si->scene->mesh->num_vertices; vdx++) {
-		if (GFX_VERTEX_HAS_POS(scene->mesh->type)) {
-			memcpy((void*)&vbuf_data[vb_data_offs],
-					(const void*)&scene->mesh->positions[vdx],
-					sizeof(vec3f_t));
-			vb_data_offs += sizeof(vec3f_t);
-		}
-		if (GFX_VERTEX_HAS_COLOR(scene->mesh->type)) {
-			memcpy((void*)&vbuf_data[vb_data_offs],
-					(const void*)&scene->mesh->colors[vdx],
-					sizeof(vec4f_t));
-			vb_data_offs += sizeof(vec4f_t);
-		}
-		if (GFX_VERTEX_HAS_UV(scene->mesh->type)) {
-			struct texture_vertex* tex_vert =
-				&scene->mesh->tex_verts[vdx];
-			tv_data_size = tex_vert->size;
-			memcpy((void*)&vbuf_data[vb_data_offs],
-					(const void*)tex_vert->data,
-					tv_data_size);
-			vb_data_offs += tv_data_size;
-		}
-	}
-	if (GFX_VERTEX_HAS_POS(scene->mesh->type)) {
-		vb_data_size +=
-			(sizeof(vec3f_t) * scene->mesh->num_vertices);
-	}
-	if (GFX_VERTEX_HAS_COLOR(scene->mesh->type)) {
-		vb_data_size +=
-			(sizeof(vec4f_t) * scene->mesh->num_vertices);
-	}
-	if (GFX_VERTEX_HAS_UV(scene->mesh->type)) {
-		vb_data_size +=
-			(tv_data_size * scene->mesh->num_vertices);
-	}
-
-	for (u32 idx = 0; idx < scene->mesh->num_indices; idx++) {
-		memcpy(&ibuf_data[idx], &scene->mesh->indices[idx],
-				sizeof(u32));
-	}
-
-	gfx_buffer_copy(si->vbuf, vbuf_data, vb_data_size);
-	gfx_buffer_copy(si->ibuf, ibuf_data,
-			scene->mesh->num_indices * sizeof(u32));
 }
 
 u32 app_scene_instance_count(struct application* app)
@@ -350,14 +287,14 @@ result app_init_meshes(struct application* app)
 	hash_key_t cube_key_pos_col = {
 		.data = "cube_pos_col",
 		.size = 12,
-		.seed = 0x1337c0d3
+		.seed = kDefaultHashmapSeed
 	};
 	hashmap_insert(app->mesh_map, cube_key_pos_col, cube_pos_col, sizeof(gfx_mesh_t));
 
 	hash_key_t cube_key_pos_uvs = {
 		.data = "cube_pos_uvs",
 		.size = 12,
-		.seed = 0x1337c0d3
+		.seed = kDefaultHashmapSeed
 	};
 	hashmap_insert(app->mesh_map, cube_key_pos_uvs, cube_pos_uvs, sizeof(gfx_mesh_t));
 
@@ -431,7 +368,7 @@ result app_init_scenes(struct application* app)
 	hash_key_t cube_mesh_key = {
 		.data = "cube_pos_col",
 		.size = 12,
-		.seed = 0x1337c0d3
+		.seed = kDefaultHashmapSeed
 	};
 	hashmap_find(app->mesh_map, cube_mesh_key, &cube_mesh);
 	// reverse_indices_winding(&cube_ind[0], GFX_CUBE_NUM_INDICES);
@@ -512,7 +449,7 @@ result app_init_scenes(struct application* app)
 		gfx_buffer_new(NULL, sizeof(mat4f_t) * num_instances, GFX_BUFFER_VERTEX,
 			GFX_BUFFER_USAGE_DYNAMIC, &si->vbuf_xform);
 
-		scene_inst_copy_buffers(si);
+		gfx_scene_inst_copy_buffers(si);
 
 		vec_push_back(app->scene_insts, &si);
 	}
@@ -571,7 +508,7 @@ result app_init_scenes(struct application* app)
 		hash_key_t cube_mesh_key = {
 			.data = "cube_pos_uvs",
 			.size = 12,
-			.seed = 0x1337c0d3
+			.seed = kDefaultHashmapSeed
 		};
 		hashmap_find(app->mesh_map, cube_mesh_key, &cube_mesh);
 

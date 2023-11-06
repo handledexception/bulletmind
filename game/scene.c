@@ -144,3 +144,67 @@ void gfx_scene_inst_free(gfx_scene_inst_t* scene)
 		scene = NULL;
 	}
 }
+
+void gfx_scene_inst_copy_buffers(gfx_scene_inst_t* si)
+{
+	gfx_scene_t* scene = si->scene;
+
+	u8* vbuf_data = gfx_buffer_get_data(si->vbuf);
+	u32* ibuf_data = (u32*)gfx_buffer_get_data(si->ibuf);
+	if (!vbuf_data || !ibuf_data) {
+		logger(LOG_ERROR, "app_refresh_gfx: vertex/index buffer(s) data not set!");
+		return;
+	}
+	memset(vbuf_data, 0, gfx_buffer_get_size(si->vbuf));
+	memset(ibuf_data, 0, gfx_buffer_get_size(si->ibuf));
+
+	size_t vb_data_size = 0;
+	size_t vb_data_offs = 0;
+	size_t tv_data_size = 0;
+	size_t stride = gfx_get_vertex_stride(scene->mesh->type);
+
+	for (u32 vdx = 0; vdx < si->scene->mesh->num_vertices; vdx++) {
+		if (GFX_VERTEX_HAS_POS(scene->mesh->type)) {
+			memcpy((void*)&vbuf_data[vb_data_offs],
+					(const void*)&scene->mesh->positions[vdx],
+					sizeof(vec3f_t));
+			vb_data_offs += sizeof(vec3f_t);
+		}
+		if (GFX_VERTEX_HAS_COLOR(scene->mesh->type)) {
+			memcpy((void*)&vbuf_data[vb_data_offs],
+					(const void*)&scene->mesh->colors[vdx],
+					sizeof(vec4f_t));
+			vb_data_offs += sizeof(vec4f_t);
+		}
+		if (GFX_VERTEX_HAS_UV(scene->mesh->type)) {
+			struct texture_vertex* tex_vert =
+				&scene->mesh->tex_verts[vdx];
+			tv_data_size = tex_vert->size;
+			memcpy((void*)&vbuf_data[vb_data_offs],
+					(const void*)tex_vert->data,
+					tv_data_size);
+			vb_data_offs += tv_data_size;
+		}
+	}
+	if (GFX_VERTEX_HAS_POS(scene->mesh->type)) {
+		vb_data_size +=
+			(sizeof(vec3f_t) * scene->mesh->num_vertices);
+	}
+	if (GFX_VERTEX_HAS_COLOR(scene->mesh->type)) {
+		vb_data_size +=
+			(sizeof(vec4f_t) * scene->mesh->num_vertices);
+	}
+	if (GFX_VERTEX_HAS_UV(scene->mesh->type)) {
+		vb_data_size +=
+			(tv_data_size * scene->mesh->num_vertices);
+	}
+
+	for (u32 idx = 0; idx < scene->mesh->num_indices; idx++) {
+		memcpy(&ibuf_data[idx], &scene->mesh->indices[idx],
+				sizeof(u32));
+	}
+
+	gfx_buffer_copy(si->vbuf, vbuf_data, vb_data_size);
+	gfx_buffer_copy(si->ibuf, ibuf_data,
+			scene->mesh->num_indices * sizeof(u32));
+}

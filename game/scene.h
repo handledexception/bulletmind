@@ -45,3 +45,4 @@ typedef struct gfx_scene_inst {
 BM_EXPORT gfx_scene_inst_t* gfx_scene_inst_new(const char* name,
 					       u32 num_instances);
 BM_EXPORT void gfx_scene_inst_free(gfx_scene_inst_t* scene);
+BM_EXPORT void gfx_scene_inst_copy_buffers(gfx_scene_inst_t* si);
