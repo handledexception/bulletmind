@@ -31,9 +31,7 @@
 
 static struct memory_allocator allocator = {malloc, realloc, free};
 
-// #define LOG_ALLOCATIONS
-
-#ifdef TRACK_MEMORY
+#ifdef BM_TRACK_MEMORY
 struct memory_stats {
 	s32 live_alloc_count;
 	s32 total_alloc_count;
@@ -54,10 +52,10 @@ arena_t mem_arena = {NULL, 0, 0, 0};
 
 static void recalculate_allocs(size_t size)
 {
-#ifdef LOG_ALLOCATIONS
+#ifdef BM_LOG_MEMORY
 	logger(LOG_DEBUG, "MEM ALLOC %zu", size);
 #endif
-#ifdef TRACK_MEMORY
+#ifdef BM_TRACK_MEMORY
 	os_atomic_inc_s32(&mem_stats.live_alloc_count);
 	os_atomic_inc_s32(&mem_stats.total_alloc_count);
 	os_atomic_set_s32(&mem_stats.total_bytes_allocated,
@@ -76,19 +74,19 @@ static void recalculate_allocs(size_t size)
 		os_atomic_set_s32(&mem_stats.min_bytes_allocated,
 				  (s32)mem_stats.live_bytes_allocated);
 	}
-#ifdef LOG_ALLOCATIONS
+#ifdef BM_LOG_MEMORY
 	logger(LOG_DEBUG, "[allocs] allocated %zu bytes in %zu allocations",
-	       live_bytes_allocated, live_alloc_count);
+	       mem_stats.live_bytes_allocated, mem_stats.live_alloc_count);
 #endif
 #endif
 }
 
 static void recalculate_frees(size_t size)
 {
-#ifdef LOG_ALLOCATIONS
+#ifdef BM_LOG_MEMORY
 	logger(LOG_DEBUG, "MEM FREE %zu", size);
 #endif
-#ifdef TRACK_MEMORY
+#ifdef BM_TRACK_MEMORY
 	os_atomic_dec_s32(&mem_stats.live_alloc_count);
 	os_atomic_inc_s32(&mem_stats.total_free_count);
 	os_atomic_set_s32(&mem_stats.total_bytes_freed,
@@ -96,9 +94,9 @@ static void recalculate_frees(size_t size)
 
 	size_t new_size = mem_stats.live_bytes_allocated - size;
 	os_atomic_set_s32(&mem_stats.live_bytes_allocated, (s32)new_size);
-#ifdef LOG_ALLOCATIONS
+#ifdef BM_LOG_MEMORY
 	logger(LOG_DEBUG, "[frees] allocated %zu bytes in %zu allocations",
-	       live_bytes_allocated, live_alloc_count);
+	       mem_stats.live_bytes_allocated, mem_stats.live_alloc_count);
 #endif
 #endif
 }
@@ -106,7 +104,7 @@ static void recalculate_frees(size_t size)
 void* mem_alloc(size_t size)
 {
 	void* ptr = NULL;
-#ifdef TRACK_MEMORY
+#ifdef BM_TRACK_MEMORY
 	// set size before ptr for later recall
 	size_t alloc_size = size + sizeof(size_t);
 	ptr = allocator.malloc(alloc_size);
@@ -121,7 +119,7 @@ void* mem_alloc(size_t size)
 
 void* mem_realloc(void* ptr, size_t size)
 {
-#ifdef TRACK_MEMORY
+#ifdef BM_TRACK_MEMORY
 	if (ptr) {
 		// rewind to retrieve size from header, then forward again to get data
 		size_t* p = (size_t*)(ptr)-1;
@@ -148,7 +146,7 @@ void* mem_realloc(void* ptr, size_t size)
 void mem_free(void* ptr)
 {
 	if (ptr) {
-#ifdef TRACK_MEMORY
+#ifdef BM_TRACK_MEMORY
 		// retrieve size of allocation from ptr header
 		u8* p = (u8*)ptr;
 		size_t* hdr = (size_t*)(p)-1;
@@ -244,7 +242,7 @@ void mem_copy_sse2_unaligned(void* dst, void* src, size_t size)
 
 int mem_report_leaks()
 {
-#ifdef TRACK_MEMORY
+#ifdef BM_TRACK_MEMORY
 	int num_leaks =
 		mem_stats.total_alloc_count - mem_stats.total_free_count;
 	logger(LOG_INFO,

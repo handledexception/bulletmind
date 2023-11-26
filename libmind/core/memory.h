@@ -27,7 +27,8 @@ extern "C" {
 
 #define BASE_ALIGNMENT 32
 
-#define TRACK_MEMORY
+#define BM_TRACK_MEMORY
+// #define BM_LOG_MEMORY
 
 struct memory_allocator {
 	void* (*malloc)(size_t);
@@ -59,26 +60,50 @@ BM_EXPORT void aligned_free(void* ptr);
 #undef BM_FUNC_SIG
 #define BM_FUNC_SIG __FUNCTION__
 #endif
-#ifndef BM_ALLOC
-#if defined(BM_DEBUG) && defined(TRACK_MEMORY)
-#define BM_ALLOC(sz)   \
-	mem_alloc(sz); \
-	printf("mem_alloc: %s (%zu bytes)\n", BM_FUNC_SIG, (size_t)sz);
-#define BM_FREE(p)                                                     \
-	do {                                                           \
-		size_t sz = 0;                                         \
-		sz = *((size_t*)(p)-1) - sizeof(size_t);               \
-		mem_free(p);                                           \
-		printf("mem_free: %s (%zu bytes)\n", BM_FUNC_SIG, (size_t)sz); \
-	} while (0);
-#define BM_REALLOC(p, sz)   \
-	mem_realloc(p, sz); \
-	printf("mem_realloc: %s (%zu bytes)\n", BM_FUNC_SIG, (size_t)sz);
+
+#if !defined(BM_ALLOC) && defined(BM_DEBUG) && defined(BM_TRACK_MEMORY)
+	#ifdef BM_LOG_MEMORY
+		#define BM_ALLOC(sz) \
+			mem_alloc(sz); \
+			printf("mem_alloc: %s (%zu bytes)\n", BM_FUNC_SIG, (size_t)sz);
+	#else
+		#define BM_ALLOC(sz) mem_alloc(sz)
+	#endif
 #else
-#define BM_ALLOC(sz) mem_alloc(sz)
-#define BM_REALLOC(p, sz) mem_realloc(p, sz)
-#define BM_FREE(p) mem_free(p)
+	#define BM_ALLOC(sz) mem_alloc(sz)
 #endif
+
+#if !defined(BM_FREE) && defined(BM_DEBUG) && defined(BM_TRACK_MEMORY)
+#ifdef BM_LOG_MEMORY
+	#define BM_FREE(p) \
+		do { \
+			size_t sz = 0; \
+			sz = *((size_t*)(p)-1) - sizeof(size_t); \
+			mem_free(p); \
+			printf("mem_free: %s (%zu bytes)\n", BM_FUNC_SIG, (size_t)sz); \
+		} while (0);
+#else
+	#define BM_FREE(p) \
+		do { \
+			size_t sz = 0; \
+			sz = *((size_t*)(p)-1) - sizeof(size_t); \
+			mem_free(p); \
+		} while (0);
+#endif
+#else
+	#define BM_FREE(p) mem_free(p)
+#endif
+
+#if !defined(BM_REALLOC) && defined(BM_DEBUG) && defined(BM_TRACK_MEMORY)
+#ifdef BM_LOG_MEMORY
+	#define BM_REALLOC(p, sz) \
+		mem_realloc(p, sz); \
+		printf("mem_realloc: %s (%zu bytes)\n", BM_FUNC_SIG, (size_t)sz);
+#else
+	#define BM_REALLOC(p, sz) mem_realloc(p, sz)
+#endif
+#else
+	#define BM_REALLOC(p, sz) mem_realloc(p, sz)
 #endif
 
 // Basic linear allocator
