@@ -35,9 +35,9 @@ int main(int argc, char** argv)
 	app_refresh(&app);
 	app_shutdown(&app);
 
-	logger_shutdown();
-	
 	ENSURE_OK(mem_report_leaks());
+
+	logger_shutdown();
 
 	return RESULT_OK;
 }
