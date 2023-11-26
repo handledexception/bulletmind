@@ -1,5 +1,4 @@
 #include "core/logger.h"
-#include "core/memory.h"
 #include "platform/console.h"
 
 #include <stdlib.h>
@@ -116,7 +115,7 @@ void log_va(enum log_level level, const char* fmt, va_list args)
 
 void logger_init(const char* path)
 {
-	g_logger = BM_ALLOC(sizeof(logger_t));
+	g_logger = malloc(sizeof(logger_t));
 	if (path != NULL) {
 		g_logger->handler = file_log_handler;
 		g_logger->log_file = fopen(path, "a");
@@ -133,7 +132,7 @@ void logger_shutdown()
 			fclose(g_logger->log_file);
 			g_logger->log_file = NULL;
 		}
-		BM_FREE(g_logger);
+		free(g_logger);
 		g_logger = NULL;
 	}
 }
