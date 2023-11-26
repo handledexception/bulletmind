@@ -9,7 +9,7 @@ struct asset_manager;
 struct gfx_config;
 struct input_state;
 typedef struct gfx_scene gfx_scene_t;
-typedef struct gfx_scene_inst gfx_scene_inst_t;
+// typedef struct gfx_scene_inst gfx_scene_inst_t;
 typedef struct gfx_mesh gfx_mesh_t;
 typedef struct gfx_buffer gfx_buffer_t;
 typedef struct gui_window gui_window_t;
@@ -48,7 +48,7 @@ struct application {
 	hashmap_t* mesh_map;
 	VECTOR(gfx_mesh_t*) meshes;
 	VECTOR(gfx_scene_t*) scenes;
-	VECTOR(gfx_scene_inst_t*) scene_insts;
+	// VECTOR(gfx_scene_inst_t*) scene_insts;
 	gfx_buffer_t* vbuf;
 	gfx_buffer_t* ibuf;
 	uint64_t frame_count;

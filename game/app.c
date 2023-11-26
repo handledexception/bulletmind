@@ -56,10 +56,10 @@ u32 app_scene_instance_count(struct application* app)
 	if (app == NULL)
 		return 0;
 	u32 instances = 0;
-	for (int i = 0; i < app->scene_insts.num_elems; i++) {
-		gfx_scene_inst_t* inst = app->scene_insts.elems[i];
-		if (inst != NULL) {
-			instances += inst->num_instances;
+	for (int i = 0; i < app->scenes.num_elems; i++) {
+		gfx_scene_t* scene = app->scenes.elems[i];
+		if (scene != NULL) {
+			instances += scene->num_instances;
 		}
 	}
 	return instances;
@@ -79,7 +79,7 @@ result app_init(struct application* app, const char* name, u32 version, u32 vx, 
 	app->frame_count = 0;
 	app->frame_timer = 0.0;
 	vec_init(app->scenes);
-	vec_init(app->scene_insts);
+	// vec_init(app->scene_insts);
 
 	ENSURE_OK(gui_init(GUI_BACKEND_SDL2));
 	char ver_str[16];
@@ -182,8 +182,6 @@ result app_init(struct application* app, const char* name, u32 version, u32 vx, 
 
 result app_init_gfx(struct application* app, const struct gfx_config* cfg)
 {
-	// geom_init();
-
 	ENSURE_OK(gfx_init(cfg, GFX_USE_ZBUFFER));
 
 	//TODO: Move sampler state stuff into pixel shader
@@ -385,12 +383,12 @@ result app_init_scenes(struct application* app)
 		ENSURE_OK(asset_manager_find("vs_pos_color_instanced", app->assets, &vs_asset_inst));
 		ENSURE_OK(asset_manager_find("ps_pos_color_instanced", app->assets, &ps_asset_inst));
 
-		gfx_scene_inst_t* si = gfx_scene_inst_new("box_inst", num_instances);
+		gfx_scene_t* si = gfx_scene_new("box_inst", num_instances);
 
 		gfx_shader_t* vs = (gfx_shader_t*)vs_asset_inst->data;
 		gfx_shader_t* ps = (gfx_shader_t*)ps_asset_inst->data;
-		si->scene->curr_vertex_shader = vs;
-		si->scene->curr_pixel_shader = ps;
+		si->curr_vertex_shader = vs;
+		si->curr_pixel_shader = ps;
 		gfx_shader_add_var(vs, view_proj_var);
 		size_t cbuf_size = gfx_shader_get_vars_size(vs);
 		gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
@@ -399,14 +397,14 @@ result app_init_scenes(struct application* app)
 		gfx_buffer_new(NULL, cbuf_size, GFX_BUFFER_CONSTANT,
 				GFX_BUFFER_USAGE_DYNAMIC, &ps->cbuffer);
 
-		gfx_scene_add_asset(si->scene, vs_asset_inst);
-		gfx_scene_add_asset(si->scene, ps_asset_inst);
-		gfx_scene_set_mesh(si->scene, cube_mesh);
+		gfx_scene_add_asset(si, vs_asset_inst);
+		gfx_scene_add_asset(si, ps_asset_inst);
+		gfx_scene_set_mesh(si, cube_mesh);
 
 		float box_scale = 0.09f;
-		si->scene->rot_angle = 0.0f;
-		si->scene->rot_axis = vec3_set(0.0f, 0.0f, 0.0f);
-		si->scene->scale = vec3_set(box_scale, box_scale, box_scale);
+		si->rot_angle = 0.0f;
+		si->rot_axis = vec3_set(0.0f, 0.0f, 0.0f);
+		si->scale = vec3_set(box_scale, box_scale, box_scale);
 		for (u32 row = 0; row < num_rows; row++) {
 			for (u32 col = 0; col < num_cols; col++) {
 				vec3f_t pos;
@@ -415,8 +413,8 @@ result app_init_scenes(struct application* app)
 				pos.z = ((float)(row)/4.0f);
 
 				mat4f_t trans_mat = mat4_translate(pos);
-				mat4f_t scale_mat = mat4_scale(si->scene->scale);
-				mat4f_t rot_mat = mat4_rotate(si->scene->rot_angle, si->scene->rot_axis);
+				mat4f_t scale_mat = mat4_scale(si->scale);
+				mat4f_t rot_mat = mat4_rotate(si->rot_angle, si->rot_axis);
 				mat4f_t world_mat = mat4_mul(mat4_mul(mat4_mul(mat4_identity(), rot_mat), trans_mat), scale_mat);
 
 				size_t tdx = row * num_rows + col;
@@ -424,7 +422,7 @@ result app_init_scenes(struct application* app)
 			}
 		}
 
-		size_t vbuf_size = gfx_mesh_get_size(si->scene->mesh);
+		size_t vbuf_size = gfx_mesh_get_size(si->mesh);
 		gfx_buffer_new(NULL, vbuf_size, GFX_BUFFER_VERTEX,
 			GFX_BUFFER_USAGE_DYNAMIC, &si->vbuf);
 		size_t index_buffer_size = sizeof(u32) * BM_GFX_MAX_INDICES;
@@ -433,9 +431,9 @@ result app_init_scenes(struct application* app)
 		gfx_buffer_new(NULL, sizeof(mat4f_t) * num_instances, GFX_BUFFER_VERTEX,
 			GFX_BUFFER_USAGE_DYNAMIC, &si->vbuf_xform);
 
-		gfx_scene_inst_copy_buffers(si);
+		gfx_scene_copy_instance_buffers(si);
 
-		vec_push_back(app->scene_insts, &si);
+		vec_push_back(app->scenes, &si);
 	}
 
 	{
@@ -447,7 +445,7 @@ result app_init_scenes(struct application* app)
 		gfx_shader_t* vs = (gfx_shader_t*)vs_asset->data;
 		gfx_shader_t* ps = (gfx_shader_t*)ps_asset->data;
 
-		gfx_scene_t* sc = gfx_scene_new("floor_box");
+		gfx_scene_t* sc = gfx_scene_new("floor_box", 1);
 		gfx_scene_add_asset(sc, vs_asset);
 		gfx_scene_add_asset(sc, ps_asset);
 		gfx_scene_add_asset(sc, tex_asset);
@@ -651,7 +649,6 @@ void app_refresh_gfx(struct application* app)
 	mat4f_t viewproj_mat = mat4_transpose(gfx_camera_get_view_proj(app->cam.cam));
 	static f32 y_angle = 0.0f;
 	static bool reverse_y_angle = false;
-	// static const char* bg_want_sprite = "metro";
 	size_t vb_data_size = 0;
 	size_t vb_data_offs = 0;
 	size_t tex_vert_size = 0;
@@ -670,168 +667,168 @@ void app_refresh_gfx(struct application* app)
 	for (size_t sdx = 0; sdx < app->scenes.num_elems; sdx++) {
 		vb_data_offs = 0;
 		gfx_scene_t* scene = (gfx_scene_t*)app->scenes.elems[sdx];
-		if (!scene) {
+		if (!scene || scene->num_instances == 0) {
 			logger(LOG_WARNING, "app_refresh_gfx: gfx_scene is NULL!");
 			continue;
 		}
 
-		gfx_shader_t* vs = scene->curr_vertex_shader;
-		gfx_shader_t* ps = scene->curr_pixel_shader;
-		if (vs != NULL) {
-			mat4f_t trans_mat = mat4_translate(scene->pos);
-			mat4f_t scale_mat = mat4_scale(scene->scale);
-			mat4f_t rot_mat = mat4_rotate(scene->rot_angle, scene->rot_axis);
-			mat4f_t world_mat = mat4_transpose(mat4_mul(mat4_mul(mat4_mul(mat4_identity(), rot_mat), trans_mat), scale_mat));
-			gfx_shader_set_var_by_name(vs, "world", &world_mat, false);
-			gfx_shader_set_var_by_name(vs, "view_proj", &viewproj_mat, false);
-		}
-		if (ps != NULL) {
-			vec2f_t viewport_res = { (f32)app->window->bounds.w, (f32)app->window->bounds.h};
-			gfx_shader_set_var_by_name(ps, "viewport_res",
-						   &viewport_res,
-						   false);
-			if (scene->curr_sprite) {
-				gfx_shader_set_var_by_name(
-					ps, "texture", scene->curr_sprite->tex, true);
+		if (scene->num_instances == 1) {
+			gfx_shader_t* vs = scene->curr_vertex_shader;
+			gfx_shader_t* ps = scene->curr_pixel_shader;
+			if (vs != NULL) {
+				mat4f_t trans_mat = mat4_translate(scene->pos);
+				mat4f_t scale_mat = mat4_scale(scene->scale);
+				mat4f_t rot_mat = mat4_rotate(scene->rot_angle, scene->rot_axis);
+				mat4f_t world_mat = mat4_transpose(mat4_mul(mat4_mul(mat4_mul(mat4_identity(), rot_mat), trans_mat), scale_mat));
+				gfx_shader_set_var_by_name(vs, "world", &world_mat, false);
+				gfx_shader_set_var_by_name(vs, "view_proj", &viewproj_mat, false);
 			}
-		}
+			if (ps != NULL) {
+				vec2f_t viewport_res = { (f32)app->window->bounds.w, (f32)app->window->bounds.h};
+				gfx_shader_set_var_by_name(ps, "viewport_res",
+							&viewport_res,
+							false);
+				if (scene->curr_sprite) {
+					gfx_shader_set_var_by_name(
+						ps, "texture", scene->curr_sprite->tex, true);
+				}
+			}
 
-		// FIXME: need a function to get vertex shader stride from gfx_shader_t*
-		vert_stride = gfx_get_vertex_stride(scene->mesh->type);
+			// FIXME: need a function to get vertex shader stride from gfx_shader_t*
+			vert_stride = gfx_get_vertex_stride(scene->mesh->type);
 
-		// Copy vertex buffer data
-		// FIXME: Move this out of the main loop and into gfx/scene init code
-		for (u32 vdx = 0; vdx < scene->mesh->num_vertices; vdx++) {
+			// Copy vertex buffer data
+			// FIXME: Move this out of the main loop and into gfx/scene init code
+			for (u32 vdx = 0; vdx < scene->mesh->num_vertices; vdx++) {
+				if (GFX_VERTEX_HAS_POS(scene->mesh->type)) {
+					memcpy((void*)&vbuf_data[vb_data_offs],
+							(const void*)&scene->mesh->positions[vdx],
+							sizeof(vec3f_t));
+					vb_data_offs += sizeof(vec3f_t);
+				}
+				if (GFX_VERTEX_HAS_COLOR(scene->mesh->type)) {
+					memcpy((void*)&vbuf_data[vb_data_offs],
+							(const void*)&scene->mesh->colors[vdx],
+							sizeof(vec4f_t));
+					vb_data_offs += sizeof(vec4f_t);
+				}
+				if (GFX_VERTEX_HAS_UV(scene->mesh->type)) {
+					struct texture_vertex* tex_vert =
+						&scene->mesh->tex_verts[vdx];
+					tex_vert_size = tex_vert->size;
+					memcpy((void*)&vbuf_data[vb_data_offs],
+							(const void*)tex_vert->data,
+							tex_vert_size);
+					vb_data_offs += tex_vert_size;
+				}
+			}
 			if (GFX_VERTEX_HAS_POS(scene->mesh->type)) {
-				memcpy((void*)&vbuf_data[vb_data_offs],
-						(const void*)&scene->mesh->positions[vdx],
-						sizeof(vec3f_t));
-				vb_data_offs += sizeof(vec3f_t);
+				vb_data_size +=
+					(sizeof(vec3f_t) * scene->mesh->num_vertices);
 			}
 			if (GFX_VERTEX_HAS_COLOR(scene->mesh->type)) {
-				memcpy((void*)&vbuf_data[vb_data_offs],
-						(const void*)&scene->mesh->colors[vdx],
-						sizeof(vec4f_t));
-				vb_data_offs += sizeof(vec4f_t);
+				vb_data_size +=
+					(sizeof(vec4f_t) * scene->mesh->num_vertices);
 			}
 			if (GFX_VERTEX_HAS_UV(scene->mesh->type)) {
-				struct texture_vertex* tex_vert =
-					&scene->mesh->tex_verts[vdx];
-				tex_vert_size = tex_vert->size;
-				memcpy((void*)&vbuf_data[vb_data_offs],
-						(const void*)tex_vert->data,
-						tex_vert_size);
-				vb_data_offs += tex_vert_size;
+				vb_data_size +=
+					(tex_vert_size * scene->mesh->num_vertices);
 			}
-		}
-		if (GFX_VERTEX_HAS_POS(scene->mesh->type)) {
-			vb_data_size +=
-				(sizeof(vec3f_t) * scene->mesh->num_vertices);
-		}
-		if (GFX_VERTEX_HAS_COLOR(scene->mesh->type)) {
-			vb_data_size +=
-				(sizeof(vec4f_t) * scene->mesh->num_vertices);
-		}
-		if (GFX_VERTEX_HAS_UV(scene->mesh->type)) {
-			vb_data_size +=
-				(tex_vert_size * scene->mesh->num_vertices);
-		}
 
-		for (u32 idx = 0; idx < scene->mesh->num_indices; idx++) {
-			memcpy(&ibuf_data[idx], &scene->mesh->indices[idx],
-				   sizeof(u32));
-		}
-
-		gfx_set_vertex_shader(vs);
-		gfx_set_pixel_shader(ps);
-		gfx_system_bind_input_layout(vs);
-
-		//TODO: Move sampler state into pixel shader, add state param to bind function
-		gfx_shader_var_t* tex_var =
-			gfx_shader_get_var_by_name(ps, "texture");
-		if (tex_var) {
-			gfx_bind_sampler_state((gfx_texture_t*)tex_var->data, 0);
-		}
-
-		gfx_bind_vertex_buffer(app->vbuf, 0, (u32)vert_stride, 0);
-		gfx_bind_index_buffer(app->ibuf, 0);
-
-		if (gfx_shader_cbuffer_fill(vs) > 0) {
-			gfx_buffer_upload_constants(vs);
-		}
-		if (gfx_shader_cbuffer_fill(ps) > 0) {
-			gfx_buffer_upload_constants(ps);
-		}
-
-		gfx_buffer_copy(app->vbuf, vbuf_data, vb_data_size);
-		gfx_buffer_copy(app->ibuf, ibuf_data,
-				scene->mesh->num_indices * sizeof(u32));
-
-		gfx_render_begin(0, BM_GFX_MAX_INDICES, 1, true, false);
-	}
-
-	// Render instanced scenes
-	for (size_t i = 0; i < app->scene_insts.num_elems; i++) {
-		gfx_scene_inst_t* si = app->scene_insts.elems[i];
-		if (si == NULL)
-			continue;
-		gfx_shader_t* vs = si->scene->curr_vertex_shader;
-		gfx_shader_t* ps = si->scene->curr_pixel_shader;
-		gfx_set_vertex_shader(vs);
-		gfx_set_pixel_shader(ps);
-		gfx_shader_set_var_by_name(vs, "view_proj", &viewproj_mat, false);
-
-		float box_scale = 0.125f;
-		si->scene->rot_angle = 0.0f;
-		si->scene->rot_axis = vec3_set(0.0f, 0.0f, 0.0f);
-		si->scene->scale = vec3_set(box_scale, box_scale, box_scale);
-		u32 num_rows = 32;
-		u32 num_cols = 32;
-		vec2f_t xy_scale = vec2_divf(vec2_set(1.0f, 0.5625f), 4.0f);
-		for (u32 row = 0; row < num_rows; row++) {
-			for (u32 col = 0; col < num_cols; col++) {
-				vec3f_t pos;
-				f32 frow = (f32)row+1;
-				f32 fcol = (f32)col+1;
-				pos.x = (fcol / 4.0f) - xy_scale.x * 2.0f;
-				pos.y = 3.0f + cosf((y_angle * (f32)app->fps_frame_time) - (frow + 4.0f * fcol) * (M_PI / 180.0f));
-				pos.z = frow / 4.0f;
-
-				mat4f_t trans_mat = mat4_translate(pos);
-				mat4f_t scale_mat = mat4_scale(si->scene->scale);
-				mat4f_t rot_mat = mat4_rotate(si->scene->rot_angle, si->scene->rot_axis);
-				mat4f_t world_mat = mat4_mul(mat4_mul(mat4_mul(mat4_identity(), rot_mat), trans_mat), scale_mat);
-
-				size_t tdx = row * num_rows + col;
-				si->transforms[tdx] = mat4_transpose(world_mat);
+			for (u32 idx = 0; idx < scene->mesh->num_indices; idx++) {
+				memcpy(&ibuf_data[idx], &scene->mesh->indices[idx],
+					sizeof(u32));
 			}
-		}
 
-		gfx_system_bind_input_layout(vs);
+			gfx_set_vertex_shader(vs);
+			gfx_set_pixel_shader(ps);
+			gfx_system_bind_input_layout(vs);
 
-		u32 stride = gfx_get_vertex_stride(si->scene->mesh->type);
-		gfx_bind_vertex_buffer(si->vbuf, 0, stride, 0);
-		gfx_bind_index_buffer(si->ibuf, 0);
-		gfx_render_begin(0, BM_GFX_MAX_INDICES, 1, true, false);
+			//TODO: Move sampler state into pixel shader, add state param to bind function
+			gfx_shader_var_t* tex_var =
+				gfx_shader_get_var_by_name(ps, "texture");
+			if (tex_var) {
+				gfx_bind_sampler_state((gfx_texture_t*)tex_var->data, 0);
+			}
 
-		gfx_buffer_copy(si->vbuf_xform, (const void*)si->transforms, sizeof(mat4f_t) * si->num_instances);
-		gfx_bind_vertex_buffer(si->vbuf_xform, 1, sizeof(mat4f_t), 0);
-		if (gfx_shader_cbuffer_fill(vs) > 0) {
-			gfx_buffer_upload_constants(vs);
-		}
-		if (gfx_shader_cbuffer_fill(ps) > 0) {
-			gfx_buffer_upload_constants(ps);
-		}
-		gfx_render_begin(0, BM_GFX_MAX_INDICES, si->num_instances, true, true);
+			gfx_bind_vertex_buffer(app->vbuf, 0, (u32)vert_stride, 0);
+			gfx_bind_index_buffer(app->ibuf, 0);
 
-		if (reverse_y_angle)
-			y_angle -= 1.0f;
-		else
-			y_angle += 1.0f;
-		if (y_angle >= 360.0f || y_angle <= 0.0f) {
-			reverse_y_angle = !reverse_y_angle;
+			if (gfx_shader_cbuffer_fill(vs) > 0) {
+				gfx_buffer_upload_constants(vs);
+			}
+			if (gfx_shader_cbuffer_fill(ps) > 0) {
+				gfx_buffer_upload_constants(ps);
+			}
+
+			gfx_buffer_copy(app->vbuf, vbuf_data, vb_data_size);
+			gfx_buffer_copy(app->ibuf, ibuf_data,
+					scene->mesh->num_indices * sizeof(u32));
+
+			gfx_render_begin(0, BM_GFX_MAX_INDICES, 1, true, false);
+		} else {
+			gfx_scene_t* si = app->scenes.elems[sdx];
+			if (si == NULL || si->num_instances <= 1) {
+				continue;
+			}
+			gfx_shader_t* vs = si->curr_vertex_shader;
+			gfx_shader_t* ps = si->curr_pixel_shader;
+			gfx_set_vertex_shader(vs);
+			gfx_set_pixel_shader(ps);
+			gfx_shader_set_var_by_name(vs, "view_proj", &viewproj_mat, false);
+
+			float box_scale = 0.125f;
+			si->rot_angle = 0.0f;
+			si->rot_axis = vec3_set(0.0f, 0.0f, 0.0f);
+			si->scale = vec3_set(box_scale, box_scale, box_scale);
+			u32 num_rows = 32;
+			u32 num_cols = 32;
+			vec2f_t xy_scale = vec2_divf(vec2_set(1.0f, 0.5625f), 4.0f);
+			for (u32 row = 0; row < num_rows; row++) {
+				for (u32 col = 0; col < num_cols; col++) {
+					vec3f_t pos;
+					f32 frow = (f32)row+1;
+					f32 fcol = (f32)col+1;
+					pos.x = (fcol / 4.0f) - xy_scale.x * 2.0f;
+					pos.y = 3.0f + cosf((y_angle * (f32)app->fps_frame_time) - (frow + 4.0f * fcol) * (M_PI / 180.0f));
+					pos.z = frow / 4.0f;
+
+					mat4f_t trans_mat = mat4_translate(pos);
+					mat4f_t scale_mat = mat4_scale(si->scale);
+					mat4f_t rot_mat = mat4_rotate(si->rot_angle, si->rot_axis);
+					mat4f_t world_mat = mat4_mul(mat4_mul(mat4_mul(mat4_identity(), rot_mat), trans_mat), scale_mat);
+
+					size_t tdx = row * num_rows + col;
+					si->transforms[tdx] = mat4_transpose(world_mat);
+				}
+			}
+
+			gfx_system_bind_input_layout(vs);
+
+			u32 stride = gfx_get_vertex_stride(si->mesh->type);
+			gfx_bind_vertex_buffer(si->vbuf, 0, stride, 0);
+			gfx_bind_index_buffer(si->ibuf, 0);
+			gfx_render_begin(0, BM_GFX_MAX_INDICES, 1, true, false);
+
+			gfx_buffer_copy(si->vbuf_xform, (const void*)si->transforms, sizeof(mat4f_t) * si->num_instances);
+			gfx_bind_vertex_buffer(si->vbuf_xform, 1, sizeof(mat4f_t), 0);
+			if (gfx_shader_cbuffer_fill(vs) > 0) {
+				gfx_buffer_upload_constants(vs);
+			}
+			if (gfx_shader_cbuffer_fill(ps) > 0) {
+				gfx_buffer_upload_constants(ps);
+			}
+			gfx_render_begin(0, BM_GFX_MAX_INDICES, si->num_instances, true, true);
+
+			if (reverse_y_angle)
+				y_angle -= 1.0f;
+			else
+				y_angle += 1.0f;
+			if (y_angle >= 360.0f || y_angle <= 0.0f) {
+				reverse_y_angle = !reverse_y_angle;
+			}
+			// printf("%.2f %d\n", y_angle, reverse_y_angle);
 		}
-		// printf("%.2f %d\n", y_angle, reverse_y_angle);
 	}
 
 	gfx_cimgui_end();
@@ -861,15 +858,8 @@ void app_shutdown(struct application* app)
 		}
 		vec_free(app->scenes);
 
-		// free instanced scenes
-		for (size_t i = 0; i < app->scene_insts.num_elems; i++) {
-			gfx_scene_inst_free(app->scene_insts.elems[i]);
-		}
-		vec_free(app->scene_insts);
-
 		asset_manager_free(app->assets);
 		inp_free(app->inputs);
-		// geom_free();
 		gfx_shutdown();
 		gui_shutdown();
 	}
